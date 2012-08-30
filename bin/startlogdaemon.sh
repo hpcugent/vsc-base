@@ -28,9 +28,9 @@ D="$D]"
 #print help if asked
 if [[ "$D" == *-h* ]]
 then
-    python -c "import logdaemon; logdaemon.main($D)
+    python -c "import logdaemon; logdaemon.main($D)"
 #else: start the daemon and set the environment
 else
-    for i in `python -c "import logdaemon; logdaemon.main($D)`; do export $i; echo $i; done;
+    for i in `python -c "import logdaemon; logdaemon.main($D)"`; do export $i; echo $i; done;
 
 # now use mpi to get these environment variables to the clients.

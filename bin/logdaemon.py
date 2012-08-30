@@ -2,8 +2,8 @@
 # Copyright 2011-2012 Jens Timmerman
 #
 # This file is part of VSC-tools,
-# originally created by the HPC team of the University of Ghent (http://ugent.be/hpc).
-# 
+# originally created by the HPC team of the University of Ghent (http://ugent.be/hpc)
+# and the VSC (Flemish Supercomputer Centre - https://vscentrum.be/nl/en).
 #
 # http://github.com/hpcugent/VSC-tools
 #
