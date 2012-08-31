@@ -229,7 +229,7 @@ def logToFile(filename, boolean=True, filehandler=None, name=None):
     enable (or disable) logging to file
     given filename
     will log to a file with the given name using a rotatingfilehandler
-    this will let the file grow to MAX_BYTES and then rotate it
+    this will let the file grow to MAX_BYTES and then compress it with  bz2 and rotate it
     saving the last BACKUPCOUNT files. 
     
     returns the filehandler (this can be used to later disable logging to file)
@@ -243,7 +243,8 @@ def logToFile(filename, boolean=True, filehandler=None, name=None):
             filehandler = logging.handlers.RotatingFileHandler(
                                     filename, 'a',
                                     maxBytes=MAX_BYTES,
-                                    backupCount=BACKUPCOUNT)
+                                    backupCount=BACKUPCOUNT,
+                                    encoding='bz2')
             filehandler.setFormatter(formatter)
         logger.addHandler(filehandler)
         logger.logtofile = True
