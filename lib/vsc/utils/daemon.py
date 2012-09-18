@@ -1,12 +1,15 @@
 #!/usr/bin/env python
+"""
+Found at:
+http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 
-##
-# Copyright 2007 Sander Marechal (http://www.jejik.com)
-# Released as Public Domain
-# Retrieved from:
-# http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
-#
-##
+--> mentioned in the comments below the code
+#5 Anonymous Coward Posted on 2008-11-26@16:37
+What is the license on this code? Can I have it under GPL?
+#6 Sander Marechal (http://www.jejik.com) Posted on 2008-11-26@16:40
+@Anonymous Coward This is really basic stuff and not very original. It's Public Domain, so do with it as you please.
+
+"""
 import sys, os, time, atexit
 from signal import SIGTERM
 
@@ -65,7 +68,7 @@ class Daemon:
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
-        file(self.pidfile, 'w+').write("%s\n" % pid)
+        file(self.pidfile,'w+').write("%s\n" % pid)
 
     def delpid(self):
         os.remove(self.pidfile)
@@ -76,7 +79,7 @@ class Daemon:
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pf = file(self.pidfile, 'r')
+            pf = file(self.pidfile,'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
@@ -97,7 +100,7 @@ class Daemon:
         """
         # Get the pid from the pidfile
         try:
-            pf = file(self.pidfile, 'r')
+            pf = file(self.pidfile,'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
@@ -134,4 +137,3 @@ class Daemon:
         You should override this method when you subclass Daemon. It will be called after the process has been
         daemonized by start() or restart().
         """
-        pass
