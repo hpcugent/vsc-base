@@ -33,16 +33,16 @@ from vsc.dateandtime import date_parser, datetime_parser
 from optparse import OptionParser, OptionGroup, Option
 import sys, re, os
 
-extra_options = ("extend", "date", "time")
-
 
 class ExtOption(Option):
     """Extended options class"""
 
-    ACTIONS = Option.ACTIONS + extra_options + ('shorthelp', 'store_debuglog') ## shorthelp has no extra arguments
-    STORE_ACTIONS = Option.STORE_ACTIONS + extra_options + ('store_debuglog',)
-    TYPED_ACTIONS = Option.TYPED_ACTIONS + extra_options
-    ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + extra_options
+    EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "time",)
+
+    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('shorthelp', 'store_debuglog') ## shorthelp has no extra arguments
+    STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('store_debuglog',)
+    TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
+    ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
     def take_action(self, action, dest, opt, value, values, parser):
         if action == 'shorthelp':
@@ -51,7 +51,7 @@ class ExtOption(Option):
         elif action == 'store_debuglog':
             setLogLevelDebug()
             Option.take_action(self, 'store_true', dest, opt, value, values, parser)
-        elif action in extra_options:
+        elif action in self.EXTOPTION_EXTRA_OPTIONS:
             if action == "extend":
                 ## comma separated list convert in list
                 lvalue = value.split(",")
@@ -63,7 +63,7 @@ class ExtOption(Option):
                 lvalue = datetime_parser(value)
                 setattr(values, dest, lvalue)
             else:
-                raise(Exception("Unknown extended option action %s (known: %s)" % (action, extra_options)))
+                raise(Exception("Unknown extended option action %s (known: %s)" % (action, self.EXTOPTION_EXTRA_OPTIONS)))
         else:
             Option.take_action(self, action, dest, opt, value, values, parser)
 
@@ -150,12 +150,12 @@ class ExtOptionParser(OptionParser):
 
         return env_long_opts
 
-OPTNAME_SEPARATOR = '_'
-
-debug_options_build = False
-
 class GeneralOption:
     """Simple wrapper class for option parsing"""
+    OPTIONNAME_SEPARATOR = '_'
+
+    DEBUG_OPTIONS_BUILD = False ## enable debug mode when building the options ?
+
     USAGE = None
     ALLOPTSMANDATORY = True
     PARSER = ExtOptionParser
@@ -184,8 +184,8 @@ class GeneralOption:
     def set_debug(self):
         """Check if debug options are on and then set fancylogger to debug"""
         if self.options is None:
-            if debug_options_build:
-                setLogLevelDebug()  ## debug mode when building the options ?
+            if self.DEBUG_OPTIONS_BUILD:
+                setLogLevelDebug()
 
 
     def make_debug_options(self):
@@ -241,7 +241,7 @@ class GeneralOption:
 
             ## can be ''
             if prefix:
-                dest = "%s%s%s" % (prefix, OPTNAME_SEPARATOR, key)
+                dest = "%s%s%s" % (prefix, self.OPTIONNAME_SEPARATOR, key)
             else:
                 dest = "%s" % key
 
@@ -285,7 +285,7 @@ class GeneralOption:
         """Break the options dict by prefix in sub-dict"""
         subdict = {}
         for k in self.options.__dict__.keys():
-            levels = k.split(OPTNAME_SEPARATOR)
+            levels = k.split(self.OPTIONNAME_SEPARATOR)
             lastlvl = subdict
             for lvl in levels[:-1]: ## 0 or more
                 lastlvl.setdefault(lvl, {})
