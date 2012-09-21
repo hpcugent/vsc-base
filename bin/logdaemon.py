@@ -20,12 +20,14 @@
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-This is a logging server, 
+This is a logging server,
 it will listen to all interfaces on a system assigned port
 and log to ./log.log by default
 with it's pidfile written to $TMPDIR/logdaemon.pid
 
-should be used with startlogdaemon.sh
+For an example of how to use this, see startlogdaemon.sh
+
+then use mpi to get these environment variables to the clients.
 """
 from optparse import OptionParser
 from vsc import fancylogger
@@ -40,7 +42,7 @@ import traceback
 class LogDaemon(Daemon):
     """
     This is the logging daemon, it get a logger and can log to a local file.
-    It can start running in the background and log incoming udp packets 
+    It can start running in the background and log incoming udp packets
     to the created logger.
     """
 

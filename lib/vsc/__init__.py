@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
-
 #the vsc namespace is used in different folders allong the system
 #so explicitly declare this is also the vsc namespace
 import pkg_resources

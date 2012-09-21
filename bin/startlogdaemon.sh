@@ -32,5 +32,5 @@ then
 #else: start the daemon and set the environment
 else
     for i in `python -c "import logdaemon; logdaemon.main($D)"`; do export $i; echo $i; done;
-
+fi
 # now use mpi to get these environment variables to the clients.
