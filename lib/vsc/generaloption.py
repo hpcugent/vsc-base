@@ -240,10 +240,10 @@ class GeneralOption:
                 hlp += " (%s)" % (";".join(extra_help))
 
             ## can be ''
-            if prefix:
-                dest = "%s%s%s" % (prefix, self.OPTIONNAME_SEPARATOR, key)
+            if prefix is None or len(prefix) == 0:
+                dest = key
             else:
-                dest = "%s" % key
+                dest = "".join([prefix, self.OPTIONNAME_SEPARATOR, key])
 
             self.processed_options[dest] = [typ, default, action] ## add longopt
 
