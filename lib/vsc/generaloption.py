@@ -63,7 +63,8 @@ class ExtOption(Option):
                 lvalue = datetime_parser(value)
                 setattr(values, dest, lvalue)
             else:
-                raise(Exception("Unknown extended option action %s (known: %s)" % (action, self.EXTOPTION_EXTRA_OPTIONS)))
+                raise(Exception("Unknown extended option action %s (known: %s)" %
+                                (action, self.EXTOPTION_EXTRA_OPTIONS)))
         else:
             Option.take_action(self, action, dest, opt, value, values, parser)
 
@@ -311,30 +312,36 @@ class GeneralOption:
         for opt_name in opt_names:
             opt_value = self.options.__dict__[opt_name]
             if ignore and ignore.search(opt_name):
-                self.log.debug("generate_cmd_line adding %s value %s matches ignore. not adding to args." % (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s matches ignore. not adding to args." %
+                               (opt_name, opt_value))
                 continue
 
             typ, default, action = self.processed_options[opt_name]
             if opt_value == default:
                 ## do nothing
-                self.log.debug("generate_cmd_line adding %s value %s default found. not adding to args." % (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s default found. not adding to args." %
+                               (opt_name, opt_value))
                 continue
             elif opt_value is None:
                 ## do nothing
-                self.log.debug("generate_cmd_line adding %s value %s. None found. not adding to args." % (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s. None found. not adding to args." %
+                               (opt_name, opt_value))
                 continue
 
             if action in ("store_true", "store_false",):
                 ## not default!
-                self.log.debug("generate_cmd_line adding %s value %s. store action found" % (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s. store action found" %
+                               (opt_name, opt_value))
                 args.append("--%s" % opt_name)
             elif action in ("extend",):
                 ## comma separated
-                self.log.debug("generate_cmd_line adding %s value %s. extend action, return as comma-separated list" % (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s. extend action, return as comma-separated list" %
+                               (opt_name, opt_value))
                 args.append("--%s=%s" % (opt_name, ",".join(opt_value)))
             elif action in ("append",):
                 ## add multiple times
-                self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args" % (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args" %
+                               (opt_name, opt_value))
                 for v in opt_value:
                     args.append("--%s='%s'" % (opt_name, v))
             else:

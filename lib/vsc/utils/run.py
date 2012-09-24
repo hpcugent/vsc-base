@@ -215,16 +215,18 @@ class Run(object):
                     self._cwd_before_startpath = os.getcwd()  ## store it some one can return to it
                     os.chdir(self.startpath)
                 except:
-                    self.raiseException("_start_in_path: failed to change path from %s to startpath %s" % (self._cwd_before_startpath, self.startpath))
+                    self.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
+                                        (self._cwd_before_startpath, self.startpath))
             else:
-                self.log.raiseExcpetion("_start_in_path: provided startpath %s exists but is no directory" % self.startpath)
+                self.log.raiseExcpetion("_start_in_path: provided startpath %s exists but is no directory" %
+                                        self.startpath)
         else:
             self.raiseException("_start_in_path: startpath %s does not exist" % self.startpath)
 
     def _return_to_previous_start_in_path(self):
         """Change to original path before the change to startpath"""
         if self._cwd_before_startpath is None:
-            self.log.warning("_return_to_previous_start_in_path: previous cwd is empty. Not tryinmg anything")
+            self.log.warning("_return_to_previous_start_in_path: previous cwd is empty. Not trying anything")
             return
 
         if os.path.exists(self._cwd_before_startpath):
@@ -232,14 +234,18 @@ class Run(object):
                 try:
                     currentpath = os.getcwd()
                     if not currentpath == self.startpath:
-                        self.log.warning("_return_to_previous_start_in_path: current diretory %s does not match startpath %s" % (currentpath, self.startpath))
+                        self.log.warning(("_return_to_previous_start_in_path: current diretory %s does not match "
+                                          "startpath %s") % (currentpath, self.startpath))
                     os.chdir(self._cwd_before_startpath)
                 except:
-                    self.raiseException("_return_to_previous_start_in_path: failed to change path from current %s to previous path %s" % (currentpath, self._cwd_before_startpath))
+                    self.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
+                                         "to previous path %s") % (currentpath, self._cwd_before_startpath))
             else:
-                self.log.raiseExcpetion("_return_to_previous_start_in_path: provided previous cwd path %s exists but is no directory" % self._cwd_before_startpath)
+                self.log.raiseExcpetion(("_return_to_previous_start_in_path: provided previous cwd path %s exists "
+                                         "but is no directory") % self._cwd_before_startpath)
         else:
-            self.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" % self._cwd_before_startpath)
+            self.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
+                                self._cwd_before_startpath)
 
 
     def _make_popen_named_args(self, others=None):
@@ -295,7 +301,8 @@ class Run(object):
             self._process_exitcode = self._process.wait()
             self._process_output = self._read_process(-1) ## -1 is read all
         except:
-            self.log.raiseException("_wait_for_process: problem during wait exitcode %s output %s" % (self._process_exitcode, self._process_output))
+            self.log.raiseException("_wait_for_process: problem during wait exitcode %s output %s" %
+                                    (self._process_exitcode, self._process_output))
 
     def _cleanup_process(self):
         """Cleanup any leftovers from the process"""
@@ -314,7 +321,8 @@ class Run(object):
     def _post_exitcode(self):
         """Postprocess the exitcode in self._process_exitcode"""
         if not self._process_exitcode == 0:
-            self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: output %s" % (self.cmd, self._process_output))
+            self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: output %s" %
+                                            (self.cmd, self._process_output))
         else:
             self.log.debug("_post_exitcode: success cmd %s: output %s" % (self.cmd, self._process_output))
 
@@ -373,7 +381,8 @@ class RunLoop(Run):
             self._loop_count += 1
 
 
-        self.log.debug("_wait_for_process: loop stopped after %s iterations (ec %s loop_continue %s)" % (self._loop_count, ec, self._loop_continue))
+        self.log.debug("_wait_for_process: loop stopped after %s iterations (ec %s loop_continue %s)" %
+                       (self._loop_count, ec, self._loop_continue))
 
         # read remaining data (all of it)
         output = self._read_process(-1)
@@ -469,16 +478,19 @@ class RunFile(Run):
                 if os.path.isfile(self.filename):
                     self.log.warning("_make_popen_named_args: going to overwrite existing file %s" % self.filename)
                 elif os.path.isdir(self.filename):
-                    self.raiseException("_make_popen_named_args: writing to filename %s impossible. Path exists and is a directory." % self.filename)
+                    self.raiseException(("_make_popen_named_args: writing to filename %s impossible. Path exists and "
+                                         "is a directory.") % self.filename)
                 else:
-                    self.raiseException("_make_popen_named_args: path exists and is not a file or directory %s" % self.filename)
+                    self.raiseException("_make_popen_named_args: path exists and is not a file or directory %s" %
+                                        self.filename)
             else:
                 dirname = os.path.dirname(self.filename)
                 if not os.path.isdir(dirname):
                     try:
                         os.makedirs(dirname)
                     except:
-                        self.log.raiseException("_make_popen_named_args: dirname %s for file %s does not exists. Creating it failed." % (dirname, self.filename))
+                        self.log.raiseException(("_make_popen_named_args: dirname %s for file %s does not exists. "
+                                                 "Creating it failed.") % (dirname, self.filename))
 
             try:
                 self.filehandle = open(self.filename, 'w')
@@ -580,7 +592,8 @@ class RunQA(RunLoop, RunAsync):
             if reg_q.search(q):
                 return (a, reg_q)
             else:
-                self.log.error("_parse_q_a process_qa: question %s converted in %s does not match itself" % (q, reg_q_txt))
+                self.log.error("_parse_q_a process_qa: question %s converted in %s does not match itself" %
+                               (q, reg_q_txt))
 
         new_qa = {}
         self.log.debug("new_qa: ")
@@ -621,7 +634,8 @@ class RunQA(RunLoop, RunAsync):
             res = q.search(self._process_output)
             if output and res:
                 fa = a % res.groupdict()
-                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" % (fa, q.pattern, idx >= nr_qa, self._process_output[-50:]))
+                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" %
+                               (fa, q.pattern, idx >= nr_qa, self._process_output[-50:]))
                 self._process_module.send_all(self._process, fa)
                 hit = True
                 break
@@ -653,9 +667,11 @@ class RunQA(RunLoop, RunAsync):
                 os.killpg(pgid, signal.SIGKILL)
                 os.kill(pid, signal.SIGKILL)
             except OSError, err:
-                self.log.debug("_loop_process_output exception caught when killing child process (pid %s pgid %s): %s" % (pid, pgid, err))
+                self.log.debug("_loop_process_output exception caught when killing child process (pid %s pgid %s): %s" %
+                               (pid, pgid, err))
 
-            self.log.error("_loop_process_output: max misses %s reached: end of output %s" % (self.LOOP_MAX_MISS_COUNT, self._process_output[-500:]))
+            self.log.error("_loop_process_output: max misses %s reached: end of output %s" %
+                           (self.LOOP_MAX_MISS_COUNT, self._process_output[-500:]))
 
             ## stop the main loop (although process.poll will also stop it)
             self._loop_continue = False
