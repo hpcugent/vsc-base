@@ -26,187 +26,176 @@ Linux cpu affinity.
     Based on sched.h and includes therein
 """
 
-from vsc.fancylogger import getLogger
-from ctypes.util import find_library
 import ctypes
 import os
+from ctypes.util import find_library
+from vsc.fancylogger import getLogger
 
-_logger=getLogger("affinity")
+_logger = getLogger("affinity")
 
-_libc_lib=find_library('c')
+_libc_lib = find_library('c')
 _libc = ctypes.cdll.LoadLibrary(_libc_lib)
 
-"""
-/* Type for array elements in 'cpu_set_t'.  */
-typedef unsigned long int __cpu_mask;
-"""
-cpu_mask_t=ctypes.c_ulong
+#/* Type for array elements in 'cpu_set_t'.  */
+#typedef unsigned long int __cpu_mask;
+cpu_mask_t = ctypes.c_ulong
 
-"""
-/* using pid_t for __pid_t */
-typedef unsigned pid_t;
-"""
-pid_t=ctypes.c_uint
+#/* using pid_t for __pid_t */
+#typedef unsigned pid_t;
+pid_t = ctypes.c_uint
 
-"""
 #define __CPU_SETSIZE  1024
 #define __NCPUBITS     (8 * sizeof(__cpu_mask))
-"""
 CPU_SETSIZE = 1024
 NCPUBITS = 8 * ctypes.sizeof(cpu_mask_t)
 NMASKBITS = CPU_SETSIZE / NCPUBITS
 
 
-"""
-/* Data structure to describe CPU mask.  */
-typedef struct
-{
-  __cpu_mask __bits[__NMASKBITS];
-} cpu_set_t;
-"""
+#/* Data structure to describe CPU mask.  */
+#typedef struct
+#{
+#  __cpu_mask __bits[__NMASKBITS];
+#} cpu_set_t;
 class cpu_set_t(ctypes.Structure):
-    _fields_ = [('__bits',cpu_mask_t*NMASKBITS)]
+    _fields_ = [('__bits', cpu_mask_t * NMASKBITS)]
 
-    def __init__(self,*args,**kwargs):
-        super(cpu_set_t,self).__init__(*args,**kwargs)
-        self.log=getLogger(self.__class__.__name__)
-        self.cpus=None
+    def __init__(self, *args, **kwargs):
+        super(cpu_set_t, self).__init__(*args, **kwargs)
+        self.log = getLogger(self.__class__.__name__)
+        self.cpus = None
 
     def __str__(self):
         return self.convert_bits_hr()
 
-    def convert_hr_bits(self,txt):
+    def convert_hr_bits(self, txt):
         """Convert human readable text into __bits"""
-        self.cpus=[0]*CPU_SETSIZE
+        self.cpus = [0] * CPU_SETSIZE
         for rng in txt.split(','):
-            indices=[int(x) for x in rng.split('-')]*2 ## always at least 2 elements: twice the same or start,end,start,end
+            indices = [int(x) for x in rng.split('-')] * 2  # always at least 2 elements: twice the same or start,end,start,end
 
             ## sanity check
             if indices[1] < indices[0]:
-                self.log.raiseException("convert_hr_bits: end is lower then start in '%s'"%rng)
+                self.log.raiseException("convert_hr_bits: end is lower then start in '%s'" % rng)
             elif indices[0] < 0:
-                self.log.raiseException("convert_hr_bits: negative start in '%s'"%rng)
-            elif indices[1] > CPU_SETSIZE+1 :  ## also covers start, since end > start
-                self.log.raiseException("convert_hr_bits: negative start in '%s'"%rng)
+                self.log.raiseException("convert_hr_bits: negative start in '%s'" % rng)
+            elif indices[1] > CPU_SETSIZE + 1 :  # also covers start, since end > start
+                self.log.raiseException("convert_hr_bits: end larger then max %s in '%s'" % (CPU_SETSIZE, rng))
 
-            self.cpus[indices[0]:indices[1]+1]=[1]*(indices[1]+1-indices[0])
-        self.log.debug("convert_hr_bits: converted %s into cpus %s"%(txt,self.cpus))
+            self.cpus[indices[0]:indices[1] + 1] = [1] * (indices[1] + 1 - indices[0])
+        self.log.debug("convert_hr_bits: converted %s into cpus %s" % (txt, self.cpus))
 
     def convert_bits_hr(self):
         """Convert __bits into human readable text"""
         if self.cpus is None:
             self.get_cpus()
-        cpus_index=[idx for idx,cpu in enumerate(self.cpus) if cpu == 1]
-        prev=-2 ## not adjacent to 0 !
-        parsed_idx=[]
+        cpus_index = [idx for idx, cpu in enumerate(self.cpus) if cpu == 1]
+        prev = -2  # not adjacent to 0 !
+        parsed_idx = []
         for idx in cpus_index:
-            if prev+1 < idx:
-                parsed_idx.append("%s"%idx)
+            if prev + 1 < idx:
+                parsed_idx.append("%s" % idx)
             else:
-                first_idx=parsed_idx[-1].split("-")[0]
-                parsed_idx[-1]="%s-%s"%(first_idx,idx)
-            prev=idx
+                first_idx = parsed_idx[-1].split("-")[0]
+                parsed_idx[-1] = "%s-%s" % (first_idx, idx)
+            prev = idx
         return ",".join(parsed_idx)
 
     def get_cpus(self):
         """Convert bits in list len == CPU_SETSIZE
             Use 1 / 0 per cpu
         """
-        self.cpus=[]
-        for bitmask in getattr(self,'__bits'):
+        self.cpus = []
+        for bitmask in getattr(self, '__bits'):
             for idx in xrange(NCPUBITS):
-                self.cpus.append(bitmask&1)
+                self.cpus.append(bitmask & 1)
                 bitmask >>= 1
         return self.cpus
 
     def set_bits(self):
         """Given self.cpus, set the bits"""
-        __bits=getattr(self,'__bits')
-        prev_cpus=map(long,self.cpus)
+        __bits = getattr(self, '__bits')
+        prev_cpus = map(long, self.cpus)
         for idx in xrange(NMASKBITS):
-            cpus=[2**cpuidx for cpuidx,val in enumerate(self.cpus[idx*NCPUBITS:(idx+1)*NCPUBITS]) if val ==1]
-            __bits[idx]=cpu_mask_t(sum(cpus))
+            cpus = [2 ** cpuidx for cpuidx, val in enumerate(self.cpus[idx * NCPUBITS:(idx + 1) * NCPUBITS]) if val == 1]
+            __bits[idx] = cpu_mask_t(sum(cpus))
         ## sanity check
         if not prev_cpus == self.get_cpus():
             ## get_cpus() rescans
-            self.log.raiseException("set_bits: something went wrong: previous cpus %s; current ones %s"%(prev_cpus[:20],self.cpus[:20]))
+            self.log.raiseException("set_bits: something went wrong: previous cpus %s; current ones %s" % (prev_cpus[:20], self.cpus[:20]))
         else:
-            self.log.debug("set_bits: new set to %s"%self.convert_bits_hr())
+            self.log.debug("set_bits: new set to %s" % self.convert_bits_hr())
 
     def str_cpus(self):
         if self.cpus is None:
             self.get_cpus()
-        return "".join(["%d"%x for x in self.cpus])
+        return "".join(["%d" % x for x in self.cpus])
 
-"""
-/* Get the CPU affinity for a task */
-extern int sched_getaffinity (pid_t __pid, size_t __cpusetsize,
-                              cpu_set_t *__cpuset);
 
-/* Set the CPU affinity for a task */
-extern int sched_setaffinity (pid_t __pid, size_t __cpusetsize,
-                              cpu_set_t *__cpuset);
 
-"""
+#/* Get the CPU affinity for a task */
+#extern int sched_getaffinity (pid_t __pid, size_t __cpusetsize,
+#                              cpu_set_t *__cpuset);
 
-def sched_getaffinity(cs=None,pid=None):
+def sched_getaffinity(cs=None, pid=None):
     if cs is None:
-        cs=cpu_set_t()
+        cs = cpu_set_t()
     if pid is None:
-        pid=os.getpid()
+        pid = os.getpid()
 
-    ec=_libc.sched_getaffinity(pid_t(pid),
+    ec = _libc.sched_getaffinity(pid_t(pid),
                               ctypes.sizeof(cpu_set_t),
                               ctypes.pointer(cs))
     if ec == 0:
-        _logger.debug("sched_getaffinity for pid %s returned cpuset %s"%(pid,cs))
+        _logger.debug("sched_getaffinity for pid %s returned cpuset %s" % (pid, cs))
     else:
-        _logger.error("sched_getaffinity failed for pid %s ec %s"%(pid,ec))
+        _logger.error("sched_getaffinity failed for pid %s ec %s" % (pid, ec))
     return cs
 
-def sched_setaffinity(cs,pid=None):
-    if pid is None:
-        pid=os.getpid()
 
-    ec=_libc.sched_setaffinity(pid_t(pid),
+#/* Set the CPU affinity for a task */
+#extern int sched_setaffinity (pid_t __pid, size_t __cpusetsize,
+#                              cpu_set_t *__cpuset);
+
+def sched_setaffinity(cs, pid=None):
+    if pid is None:
+        pid = os.getpid()
+
+    ec = _libc.sched_setaffinity(pid_t(pid),
                               ctypes.sizeof(cpu_set_t),
                               ctypes.pointer(cs))
     if ec == 0:
-        _logger.debug("sched_setaffinity for pid %s and cpuset %s"%(pid,cs))
+        _logger.debug("sched_setaffinity for pid %s and cpuset %s" % (pid, cs))
     else:
-        _logger.error("sched_setaffinity failed for pid %s cpuset %s ec %s"%(pid,cs,ec))
+        _logger.error("sched_setaffinity failed for pid %s cpuset %s ec %s" % (pid, cs, ec))
 
 
-"""
-/* Get index of currently used CPU.  */
-extern int sched_getcpu (void) __THROW;
-"""
+#/* Get index of currently used CPU.  */
+#extern int sched_getcpu (void) __THROW;
 def sched_getcpu():
     return _libc.sched_getcpu()
 
-"""
-Utility funciton
-    tobin not used anymore
-"""
+#Utility function
+#    tobin not used anymore
 def tobin(s):
+    """Convert integer to binary format"""
     ## bin() missing in 2.4
     # eg: self.cpus.extend([int(x) for x in tobin(bitmask).zfill(NCPUBITS)[::-1]])
-    if s<=1:
+    if s <= 1:
         return str(s)
     else:
-        return tobin(s>>1) + str(s&1)
+        return tobin(s >> 1) + str(s & 1)
 
 
 
 if __name__ == '__main__':
     ## some examples of usage
-    cs=cpu_set_t()
-    print "__bits",cs.__bits
-    print "sizeof cpu_set_t",ctypes.sizeof(cs)
-    x=sched_getaffinity()
-    print "x",x
-    hr_mask="1-5,7,9,10-15"
-    print hr_mask,x.convert_hr_bits(hr_mask)
+    cs = cpu_set_t()
+    print "__bits", cs.__bits
+    print "sizeof cpu_set_t", ctypes.sizeof(cs)
+    x = sched_getaffinity()
+    print "x", x
+    hr_mask = "1-5,7,9,10-15"
+    print hr_mask, x.convert_hr_bits(hr_mask)
     print x
     x.set_bits()
     print x
@@ -217,7 +206,7 @@ if __name__ == '__main__':
     x.convert_hr_bits("1")
     x.set_bits()
     sched_setaffinity(x)
-    y=sched_getaffinity()
-    print x,y
+    y = sched_getaffinity()
+    print x, y
 
     print sched_getcpu()
