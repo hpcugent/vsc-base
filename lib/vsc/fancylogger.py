@@ -258,7 +258,7 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
                     'mode': 'a',
                     'maxBytes': max_bytes,
                     'backupCount': backup_count,
-                    'encoding': 'bz2', # 
+                    #'encoding': 'bz2',  # enabling this encodes the whole stream, not only on rollover TODO implment compression on dorollover()
                     }
     return _logToSomething(logging.handlers.RotatingFileHandler,
                            handleropts,
