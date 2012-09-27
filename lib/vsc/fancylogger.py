@@ -460,7 +460,7 @@ else:
     _default_logTo = logToScreen
 
 
-_default_handlers = logging._handlerList  ## There's always one
+_default_handlers = logging._handlerList[:]  ## There's always one
 def disableDefaultHandlers(name=None):
     """Disable the default handlers on all fancyloggers
         DANGEROUS: if not other handler is availabel, logging will fail (and raise)
