@@ -171,8 +171,12 @@ class Run(object):
                 just return True/False
 
 """
+        self._run_pre()
+        self._wait_for_process()
+        return self._run_post()
 
-        ## pre
+    def _run_pre(self):
+        """Non-vlocking start"""
         if self._process_module is None:
             self._prep_module()
 
@@ -189,8 +193,8 @@ class Run(object):
 
         self._init_input()
 
-        self._wait_for_process()
 
+    def _run_post(self):
         self._cleanup_process()
 
         self._post_exitcode()
@@ -682,6 +686,10 @@ class RunQA(RunLoop, RunAsync):
             do nothing
         """
         ## TODO: do super ?
+
+class RunAsyncLoop(RunLoop, RunAsync):
+    """Async read in loop"""
+    pass
 
 
 class RunAsyncLoopLog(RunLoopLog, RunAsync):
