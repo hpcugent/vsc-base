@@ -167,8 +167,15 @@ class NamedLogger(logging.getLoggerClass()):
         if self.isEnabledFor(levelno):
             self._handleFunction(write_and_flush_stream, levelno, data=data)
 
+    def streamDebug(self, data):
+        self.streamLog(logging.DEBUG, data)
+
     def streamInfo(self, data):
         self.streamLog(logging.INFO, data)
+
+    def streamError(self, data):
+        self.streamLog(logging.ERROR, data)
+
 
 def thread_name():
     """
@@ -390,9 +397,16 @@ def setLogLevelInfo():
 
 def setLogLevelWarning():
     """
-    shorthand for setting loglevel to Info
+    shorthand for setting loglevel to Warning
     """
     setLogLevel(logging.WARNING)
+
+def setLogLevelError():
+    """
+    shorthand for setting loglevel to Error
+    """
+    setLogLevel(logging.ERROR)
+
 
 def getAllExistingLoggers():
     """
@@ -426,6 +440,7 @@ def getAllFancyloggers():
 logging.setLoggerClass(NamedLogger)
 
 #log to a server if FANCYLOG_SERVER is set.
+_default_logTo = None
 if 'FANCYLOG_SERVER' in os.environ:
     server = os.environ['FANCYLOG_SERVER']
     port = DEFAULT_UDP_PORT
@@ -438,8 +453,34 @@ if 'FANCYLOG_SERVER' in os.environ:
     port = int(port)
 
     logToUDP(server, port)
+    _default_logTo = logToUDP
 else:
     #log to screen by default
     logToScreen(enable=True)
+    _default_logTo = logToScreen
+
+
+_default_handlers = logging._handlerList  ## There's always one
+def disableDefaultHandlers(name=None):
+    """Disable the default handlers on all fancyloggers
+        DANGEROUS: if not other handler is availabel, logging will fail (and raise)
+    """
+    if _default_logTo is None:
+        return
+    for weakref_handler in _default_handlers:
+        try:
+            _default_logTo(enable=False, handler=weakref_handler())
+        except:
+            pass
+
+def enableDefaultHandlers(name=None):
+    """(re)Enable the default handlers on all fancyloggers"""
+    if _default_logTo is None:
+        return
+    for weakref_handler in _default_handlers:
+        try:
+            _default_logTo(enable=True, handler=weakref_handler())
+        except:
+            pass
 
 
