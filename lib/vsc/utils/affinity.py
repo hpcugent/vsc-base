@@ -24,8 +24,11 @@
 """
 Linux cpu affinity.
     Based on sched.h and bits/sched.h
+    see man sched_getaffinity and sched_setaffinity
+    also provides a cpuset class to convert between human readable cpusets and the bit version
 Linux priority
     Based on sys/resources.h and bits/resources.h
+    see man getpriority and setpriority
 """
 
 import ctypes
@@ -96,6 +99,9 @@ id_t = ctypes.c_uint
 #  __cpu_mask __bits[__NMASKBITS];
 #} cpu_set_t;
 class cpu_set_t(ctypes.Structure):
+    """Class that implements the cpu_set_t struct
+        also provides some methods to convert between bit representation and soem human readable format
+    """
     _fields_ = [('__bits', cpu_mask_t * NMASKBITS)]
 
     def __init__(self, *args, **kwargs):
@@ -165,6 +171,7 @@ class cpu_set_t(ctypes.Structure):
             self.log.debug("set_bits: new set to %s" % self.convert_bits_hr())
 
     def str_cpus(self):
+        """Return a string representation of the cpus"""
         if self.cpus is None:
             self.get_cpus()
         return "".join(["%d" % x for x in self.cpus])
@@ -176,6 +183,7 @@ class cpu_set_t(ctypes.Structure):
 #                              cpu_set_t *__cpuset);
 
 def sched_getaffinity(cs=None, pid=None):
+    """Get the affinity"""
     if cs is None:
         cs = cpu_set_t()
     if pid is None:
@@ -196,6 +204,7 @@ def sched_getaffinity(cs=None, pid=None):
 #                              cpu_set_t *__cpuset);
 
 def sched_setaffinity(cs, pid=None):
+    """Set the affinity"""
     if pid is None:
         pid = os.getpid()
 
@@ -211,6 +220,7 @@ def sched_setaffinity(cs, pid=None):
 #/* Get index of currently used CPU.  */
 #extern int sched_getcpu (void) __THROW;
 def sched_getcpu():
+    """Get currently used cpu"""
     return _libc.sched_getcpu()
 
 #Utility function
