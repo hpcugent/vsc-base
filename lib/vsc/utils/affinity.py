@@ -41,6 +41,10 @@ _logger = getLogger("affinity")
 _libc_lib = find_library('c')
 _libc = ctypes.cdll.LoadLibrary(_libc_lib)
 
+#/* Type for array elements in 'cpu_set_t'.  */
+#typedef unsigned long int __cpu_mask;
+cpu_mask_t = ctypes.c_ulong
+
 ##define __CPU_SETSIZE  1024
 ##define __NCPUBITS     (8 * sizeof(__cpu_mask))
 CPU_SETSIZE = 1024
@@ -68,15 +72,9 @@ PRIO_PROCESS = 0
 PRIO_PGRP = 1
 PRIO_USER = 2
 
-
-#/* Type for array elements in 'cpu_set_t'.  */
-#typedef unsigned long int __cpu_mask;
-cpu_mask_t = ctypes.c_ulong
-
 #/* using pid_t for __pid_t */
 #typedef unsigned pid_t;
 pid_t = ctypes.c_uint
-
 
 ##if defined __USE_GNU && !defined __cplusplus
 #typedef enum __rlimit_resource __rlimit_resource_t;
@@ -176,12 +174,9 @@ class cpu_set_t(ctypes.Structure):
             self.get_cpus()
         return "".join(["%d" % x for x in self.cpus])
 
-
-
 #/* Get the CPU affinity for a task */
 #extern int sched_getaffinity (pid_t __pid, size_t __cpusetsize,
 #                              cpu_set_t *__cpuset);
-
 def sched_getaffinity(cs=None, pid=None):
     """Get the affinity"""
     if cs is None:
@@ -202,7 +197,6 @@ def sched_getaffinity(cs=None, pid=None):
 #/* Set the CPU affinity for a task */
 #extern int sched_setaffinity (pid_t __pid, size_t __cpusetsize,
 #                              cpu_set_t *__cpuset);
-
 def sched_setaffinity(cs, pid=None):
     """Set the affinity"""
     if pid is None:
@@ -215,7 +209,6 @@ def sched_setaffinity(cs, pid=None):
         _logger.debug("sched_setaffinity for pid %s and cpuset %s" % (pid, cs))
     else:
         _logger.error("sched_setaffinity failed for pid %s cpuset %s ec %s" % (pid, cs, ec))
-
 
 #/* Get index of currently used CPU.  */
 #extern int sched_getcpu (void) __THROW;
