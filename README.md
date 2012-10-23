@@ -3,7 +3,6 @@
 Common tools used within our organization.
 
 Originally created by the HPC team of the University of Ghent (http://ugent.be/hpc)
-and the VSC (Flemish Supercomputer Centre - https://vscentrum.be/nl/en).
 
 ## vsc
 Common namespace used by all our python modules
@@ -25,3 +24,13 @@ Collection of utilities:
 A collection of python scripts :
 - __logdaemon.py__: A daemon that listens on a port for udp packets and logs them to file, works toghether with fancylogger.
 - __startlogdaemon.py__ : Script that will start the logdaemon for  you and set environment variables for fancylogger.
+
+# License
+VSC-tools is made available under the GNU General Public License (GPL) version 2.
+
+# Acknowledgements
+EasyBuild was created with support of [Ghent University](http://www.ugent.be/en),
+the [Flemish Supercomputer Centre (VSC)](https://vscentrum.be/nl/en),
+the [Hercules foundation and the Department of Economy](http://www.herculesstichting.be/in_English),
+and [the Department of Economy, Science and Innovation (EWI)](http://www.ewi-vlaanderen.be/en).
+
