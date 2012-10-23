@@ -1,6 +1,6 @@
 ##
 # Copyright 2011-2012 Jens Timmerman
-# Copyright 2012 Stijn De Weirdt 
+# Copyright 2012 Stijn De Weirdt
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
