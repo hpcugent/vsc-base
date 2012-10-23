@@ -3,7 +3,7 @@
 # Copyright 2012 Andy Georges
 #
 # This file is part of VSC-tools,
-# originally created by the HPC team of the University of Ghent (http://ugent.be/hpc).
+# originally created by the HPC team of Ghent University (http://ugent.be/hpc).
 #
 #
 # http://github.com/hpcugent/VSC-tools
@@ -12,23 +12,19 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation v2.
 #
-# EasyBuild is distributed in the hope that it will be useful,
+# VSC-tools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
+##
 """
 Wrapper around the standard Python mail library.
 
-@author Andy Georges
-
-Created Apr 11, 2012
-
 - Send a plain text message
 - Send an HTML message, with a plain text alternative
-
 """
 
 import re
@@ -46,11 +42,17 @@ class VscMailError(Exception):
     def __init__(self, mail_host=None, mail_to=None, mail_from=None, mail_subject=None, err=None):
         """Initialisation.
 
-        @type mail_host: string representing the SMTP host for actually sending the mail.
-        @type mail_to: string representing a well-formed email address of the recipient.
-        @type mail_from: string representing a well-formed email address of the sender.
-        @type mail_subject: string representing the subject of the mail.
-        @type err: the original exception, if any.
+        @type mail_host: string
+        @type mail_to: string
+        @type mail_from: string
+        @type mail_subject: string
+        @type err: Exception subclass
+
+        @param mail_host: the SMTP host for actually sending the mail.
+        @param mail_to: a well-formed email address of the recipient.
+        @param mail_from: a well-formed email address of the sender.
+        @param mail_subject: the subject of the mail.
+        @param err: the original exception, if any.
         """
         self.mail_host = mail_host
         self.mail_to = mail_to
@@ -126,11 +128,17 @@ class VscMail(object):
                      message):
         """Send out the given message by mail to the given recipient(s).
 
-        @type mail_to: string or a list of strings representing one or more valid email addresses.
-        @type mail_from: string representing a valid email address.
-        @type reply_to: string representing a valid email address for the (potential) replies.
-        @type mail_subject: string  representing the subject of the email.
-        @type message: string representing the body of the mail.
+        @type mail_to: string or list of strings
+        @type mail_from: string
+        @type reply_to: string
+        @type mail_subject: string
+        @type message: string
+
+        @param mail_to: a valid recipient email address
+        @param mail_from: a valid sender email address.
+        @param reply_to: a valid email address for the (potential) replies.
+        @param mail_subject: the subject of the email.
+        @param message: the body of the mail.
         """
         self.log.info("Sending mail [%s] to %s." % (mail_subject, mail_to))
 
@@ -145,7 +153,16 @@ class VscMail(object):
         self._send(mail_from, mail_to, mail_subject, msg)
 
     def _replace_images_cid(self, html, images):
-        """Replaces all occurences of the src="IMAGE" with src="cid:IMAGE" in the HTML."""
+        """Replaces all occurences of the src="IMAGE" with src="cid:IMAGE" in the provided html argument.
+
+        @type html: string
+        @type images: list of strings
+
+        @param html: HTML data, containing image tags for each of the provided images
+        @param images: references to the images occuring in the HTML payload
+
+        @return: the altered HTML string.
+        """
 
         for im in images:
             re_src = re.compile("src=\"%s\"" % im)
@@ -169,10 +186,23 @@ class VscMail(object):
 
         The images and css are included in the message, and should be provided separately.
 
-        @type mail_to: a string or a list of strings representing one or more valid email addresses.
-        @type mail_from: string representing a valid email address.
-        @type reply_to: a string representing a valid email address for the (potential) replies.
-        @type message: a string representing the body of the mail.
+        @type mail_to: string or list of strings
+        @type mail_from: string
+        @type reply_to: string
+        @type mail_subject: string
+        @type html_message: string
+        @type text_alternative: string
+        @type images: list of strings
+        @type css: string
+
+        @type mail_to: a valid recipient email addresses.
+        @type mail_from: a valid sender email address.
+        @type reply_to: a valid email address for the (potential) replies.
+        @type html_message: the actual payload, body of the mail
+        @type text_alternative: plain-text version of the mail body
+        @type images: the images that are referenced in the HTML body. These should be available as files on the
+                      filesystem in the directory where the script runs. Caveat: assume jpeg image type.
+        @type css: CSS definitions
         """
 
         # Create message container - the correct MIME type is multipart/alternative.
