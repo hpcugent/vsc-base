@@ -29,7 +29,7 @@ A collection of python scripts :
 VSC-tools is made available under the GNU General Public License (GPL) version 2.
 
 # Acknowledgements
-EasyBuild was created with support of [Ghent University](http://www.ugent.be/en),
+VSC-tools was created with support of [Ghent University](http://www.ugent.be/en),
 the [Flemish Supercomputer Centre (VSC)](https://vscentrum.be/nl/en),
 the [Hercules foundation and the Department of Economy](http://www.herculesstichting.be/in_English),
 and [the Department of Economy, Science and Innovation (EWI)](http://www.ewi-vlaanderen.be/en).
