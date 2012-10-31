@@ -12,7 +12,10 @@
 ##
 """Various functions that are missing from the default Python library.
 
-nub(list): keep the unique elements in the list
+- nub(list): keep the unique elements in the list
+- find_sublist_index(list, sublist): find the index of the first occurence of the sublist in the list
+- Monoid: implementation of the monoid concept
+- MonoidDict: dictionary that combines values upon insertiong according to the given monoid
 
 """
 
