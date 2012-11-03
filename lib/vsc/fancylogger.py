@@ -74,6 +74,8 @@ import inspect
 import logging.handlers
 import threading
 import os
+import sys
+import traceback
 
 #constants
 LOGGER_NAME = "fancylogger"
@@ -129,7 +131,19 @@ class NamedLogger(logging.getLoggerClass()):
         logs an exception (as warning, since it can be caught higher up and handled)
         and raises it afterwards
         """
-        self.warning(message)
+        fullmessage = message
+        if exception == Exception:
+            # assumes no control by codemonkey
+            # lets see if there is something more to report on
+            exc, detail, tb = sys.exc_info()
+            if exc is not None:
+                exception = exc
+                # extend the message with the traceback and some more details
+                # or use self.exception() instead of self.warning()?
+                tb_text = traceback.format_tb(tb)
+                message += " (%s)" % detail
+                fullmessage += " (%s\n%s)" % (detail, tb_text)
+        self.warning(fullmessage)
         raise exception(message)
 
     def _handleFunction(self, function, levelno, **kwargs):
