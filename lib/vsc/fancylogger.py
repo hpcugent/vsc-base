@@ -70,7 +70,6 @@ handler.setFormatter(logging.Formatter(formatstring))
 # set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
 # this will make fancylogger log to that that server and port instead of the screen.
 """
-from logging import Logger
 import inspect
 import logging.handlers
 import threading
@@ -157,7 +156,7 @@ class NamedLogger(logging.getLoggerClass()):
         def write_and_flush_stream(hdlr, data=None):
             """Write to stream and flush the handler"""
             if (not hasattr(hdlr, 'stream')) or hdlr.stream is None:
-                ## no stream or not initialised. 
+                ## no stream or not initialised.
                 raise("write_and_flush_stream failed. No active stream attribute.")
             if data is not None:
                 hdlr.stream.write(data)
@@ -305,7 +304,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
     logger = getLogger(name)
 
     if not hasattr(logger, loggeroption):
-        ## not set. 
+        ## not set.
         setattr(logger, loggeroption, False) ## set default to False
 
     if enable and not getattr(logger, loggeroption):
@@ -457,9 +456,9 @@ else:
 
 
 _default_handlers = logging._handlerList[:]  ## There's always one
-def disableDefaultHandlers(name=None):
+def disableDefaultHandlers():
     """Disable the default handlers on all fancyloggers
-        DANGEROUS: if not other handler is availabel, logging will fail (and raise)
+        DANGEROUS: if not other handler is available, logging will fail (and raise IOError [Errno 32] Broken pipe)
     """
     if _default_logTo is None:
         return
@@ -469,7 +468,7 @@ def disableDefaultHandlers(name=None):
         except:
             pass
 
-def enableDefaultHandlers(name=None):
+def enableDefaultHandlers():
     """(re)Enable the default handlers on all fancyloggers"""
     if _default_logTo is None:
         return
