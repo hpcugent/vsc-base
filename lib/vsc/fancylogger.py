@@ -140,7 +140,7 @@ class NamedLogger(logging.getLoggerClass()):
                 exception = exc
                 # extend the message with the traceback and some more details
                 # or use self.exception() instead of self.warning()?
-                tb_text = traceback.format_tb(tb)
+                tb_text = "\n".join(traceback.format_tb(tb))
                 message += " (%s)" % detail
                 fullmessage += " (%s\n%s)" % (detail, tb_text)
         self.warning(fullmessage)
