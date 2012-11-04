@@ -72,9 +72,9 @@ handler.setFormatter(logging.Formatter(formatstring))
 """
 import inspect
 import logging.handlers
-import threading
 import os
 import sys
+import threading
 import traceback
 
 #constants
@@ -126,23 +126,31 @@ class NamedLogger(logging.getLoggerClass()):
         """
         return FancyLogRecord(name, level, pathname, lineno, msg, args, excinfo)
 
-    def raiseException(self, message, exception=Exception):
+    def raiseException(self, message, exception=None, catch=False):
         """
         logs an exception (as warning, since it can be caught higher up and handled)
         and raises it afterwards
+            catch: boolean, try to catch raised exception and add relevant info to message
+                (this will also happen if exception is not specified)
         """
         fullmessage = message
-        if exception == Exception:
+
+        if catch or exception is None:
             # assumes no control by codemonkey
             # lets see if there is something more to report on
             exc, detail, tb = sys.exc_info()
             if exc is not None:
-                exception = exc
+                if exception is None:
+                    exception = exc
                 # extend the message with the traceback and some more details
                 # or use self.exception() instead of self.warning()?
                 tb_text = "\n".join(traceback.format_tb(tb))
                 message += " (%s)" % detail
                 fullmessage += " (%s\n%s)" % (detail, tb_text)
+
+        if exception is None:
+            exception = Exception
+
         self.warning(fullmessage)
         raise exception(message)
 
