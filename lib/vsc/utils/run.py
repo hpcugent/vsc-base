@@ -463,6 +463,10 @@ class RunAsync(Run):
         if readsize is None:
             readsize = self.readsize
 
+        if self._process.stdout is None:
+            ## Nothing yet/anymore
+            return ''
+
         try:
             if readsize is not None  and readsize < 0:
                 ## read all blocking (it's not why we should use async
