@@ -29,13 +29,13 @@
 A class that can be used to generated options to python scripts in a general way.
 """
 
-
-from vsc.fancylogger import getLogger, setLogLevelDebug
-from vsc.dateandtime import date_parser, datetime_parser
-
+import os
+import re
+import StringIO
+import sys
 from optparse import OptionParser, OptionGroup, Option
-import sys, re, os
-
+from vsc.dateandtime import date_parser, datetime_parser
+from vsc.fancylogger import getLogger, setLogLevelDebug
 
 class ExtOption(Option):
     """Extended options class"""
@@ -83,7 +83,12 @@ class ExtOptionParser(OptionParser):
     shorthelp = ('h', "--shorthelp",)
     longhelp = ('H', "--help",)
 
-    def print_shorthelp(self, fn=None):
+    def __init__(self, *args, **kwargs):
+        self.help_to_string = kwargs.pop('help_to_string', None)
+        self.help_to_file = kwargs.pop('help_to_file', None)
+        OptionParser.__init__(self, *args, **kwargs)
+
+    def print_shorthelp(self, fh=None):
         from optparse import SUPPRESS_HELP as nohelp ## supported in optparse of python v2.4
 
         for opt in self._get_all_options():
@@ -103,7 +108,15 @@ class ExtOptionParser(OptionParser):
         for optgrp in removeoptgrp:
             self.option_groups.remove(optgrp)
 
-        self.print_help(fn)
+        self.print_help(fh)
+
+    def print_help(self, fh=None):
+        """Intercept print to file to print to string"""
+        if self.help_to_string:
+            self.help_to_file = StringIO.StringIO()
+        if fh is None:
+            fh = self.help_to_file
+        OptionParser.print_help(self, fh)
 
     def _add_help_option(self):
         from optparse import _ ## this is gettext normally
@@ -166,8 +179,12 @@ class GeneralOption(object):
     INTERSPERSED = True ## mix args with options
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
+        self.no_system_exit = kwargs.pop('go_nosystemexit', None) # unit test option
 
-        self.parser = self.PARSER(option_class=ExtOption, usage=self.USAGE, **kwargs)
+        kwargs.update({'option_class':ExtOption,
+                       'usage':self.USAGE,
+                       })
+        self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
         self.log = getLogger(self.__class__.__name__)
@@ -192,7 +209,6 @@ class GeneralOption(object):
         if self.options is None:
             if self.DEBUG_OPTIONS_BUILD:
                 setLogLevelDebug()
-
 
     def make_debug_options(self):
         """Add debug option"""
@@ -277,7 +293,16 @@ class GeneralOption(object):
         if options_list is None:
             options_list = sys.argv[1:]
 
-        (self.options, self.args) = self.parser.parse_args(options_list)
+        try:
+            (self.options, self.args) = self.parser.parse_args(options_list)
+        except SystemExit, err:
+            if self.no_system_exit:
+                self.log.debug("parseoptions: no_system_exit set after parse_args err %s code %s" %
+                               (err.message, err.code))
+                return
+            else:
+                sys.exit(err.code)
+
         #args should be empty, since everything is optional
         if len(self.args) > 1:
             self.log.debug("Found remaining args %s" % self.args)
@@ -359,3 +384,33 @@ class GeneralOption(object):
         self.log.debug("commandline args %s" % args)
         return args
 
+if __name__ == '__main__':
+    class TestOption1(GeneralOption):
+        """Create simple test class"""
+        def base_options(self):
+            """Make base options"""
+            opts = {"base":("Long and short base option", None, "store_true", False, 'b'),
+                    "longbase":("Long-only base option", None, "store_true", True),
+                  }
+            descr = ["Base", "Base level of options"]
+
+            prefix = None ## base, no prefixes
+            self.add_group_parser(opts, descr, prefix=prefix)
+
+        def level1_options(self):
+            """Make the level1 related options"""
+            opts = {"level":("Long and short option", None, "store_true", False, 'l'),
+                    "longlevel":("Long-only level option", None, "store_true", True),
+                  }
+            descr = ["Level1", "1 higher level of options"]
+
+            prefix = 'level'
+            self.add_group_parser(opts, descr, prefix=prefix)
+
+        def make_init(self):
+            self.base_options()
+            self.level1_options()
+
+    topt = TestOption1(go_args=['-H'], help_to_string=True, go_nosystemexit=True, prog='optiontest1')
+    print topt.options
+    print topt.parser.help_to_file.getvalue()
