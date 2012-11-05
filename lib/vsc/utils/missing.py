@@ -130,13 +130,23 @@ class TestNub(unittest.TestCase):
     """Test for the nub function."""
 
     @with_checker([int])
-    def test_nub(self, list_of_ints):
-        nubbed = nub(2 * list_of_ints)
+    def test_length(self, list_of_ints):
+        nubbed = nub(list_of_ints)
         self.assertTrue(len(list_of_ints) >= len(nubbed))
+
+    @with_checker([int])
+    def test_membership(self, list_of_ints):
+        nubbed = nub(list_of_ints)
         for x in list_of_ints:
             self.assertTrue(x in nubbed)
+
+    @with_checker([int])
+    def test_order(self, list_of_ints):
+        nubbed = nub(2 * list_of_ints)
         for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
             self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
+
+
 
 
 if __name__ == '__main__':
