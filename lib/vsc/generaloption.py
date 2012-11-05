@@ -154,7 +154,7 @@ class ExtOptionParser(OptionParser):
 
         return env_long_opts
 
-class GeneralOption:
+class GeneralOption(object):
     """Simple wrapper class for option parsing"""
     OPTIONNAME_SEPARATOR = '_'
 
@@ -164,8 +164,10 @@ class GeneralOption:
     ALLOPTSMANDATORY = True
     PARSER = ExtOptionParser
     INTERSPERSED = True ## mix args with options
-    def __init__(self):
-        self.parser = self.PARSER(option_class=ExtOption, usage=self.USAGE)
+    def __init__(self, **kwargs):
+        go_args = kwargs.pop('go_args', None)
+
+        self.parser = self.PARSER(option_class=ExtOption, usage=self.USAGE, **kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
         self.log = getLogger(self.__class__.__name__)
@@ -180,7 +182,7 @@ class GeneralOption:
 
         self.make_init()
 
-        self.parseoptions()
+        self.parseoptions(options_list=go_args)
 
         self.postprocess()
 
@@ -270,9 +272,12 @@ class GeneralOption:
         self.parser.add_option_group(opt_grp)
 
 
-    def parseoptions(self, optionsstring=sys.argv[1:]):
+    def parseoptions(self, options_list=None):
         """parse the options"""
-        (self.options, self.args) = self.parser.parse_args(optionsstring)
+        if options_list is None:
+            options_list = sys.argv[1:]
+
+        (self.options, self.args) = self.parser.parse_args(options_list)
         #args should be empty, since everything is optional
         if len(self.args) > 1:
             self.log.debug("Found remaining args %s" % self.args)
