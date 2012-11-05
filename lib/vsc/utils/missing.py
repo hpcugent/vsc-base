@@ -133,6 +133,8 @@ class TestNub(unittest.TestCase):
     def test_nub(self, list_of_ints):
         nubbed = nub(2 * list_of_ints)
         self.assertTrue(len(list_of_ints) >= len(nubbed))
+        for x in list_of_ints:
+            self.assertTrue(x in nubbed)
         for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
             self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
