@@ -127,6 +127,23 @@ class GeneralOptionTest(TestCase):
                            )
         self.assertEqual(topt.parser.help_to_file.getvalue(), TestOption1HelpLong)
 
+    def test_enable_disable(self):
+        """Test the enable/disable prefix
+            longbase is a store_true with default True; with --disable one can set it to False
+            level_level : --enable- keeps the defined action
+        """
+        topt = TestOption1(go_args=[], go_nosystemexit=True)
+        self.assertEqual(str(topt.options),
+            "{'debug': False, 'longbase': True, 'level_level': False, 'base': False, 'level_longlevel': True}")
+
+        topt = TestOption1(go_args=['--level_level', '--longbase'])
+        self.assertEqual(str(topt.options),
+            "{'debug': False, 'longbase': True, 'level_level': True, 'base': False, 'level_longlevel': True}")
+
+        topt = TestOption1(go_args=['--enable-level_level', '--disable-longbase'])
+        self.assertEqual(str(topt.options),
+            "{'debug': False, 'longbase': False, 'level_level': True, 'base': False, 'level_longlevel': True}")
+
 
 def suite():
     """ returns all the testcases in this module """

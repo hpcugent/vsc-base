@@ -39,6 +39,8 @@ from vsc.fancylogger import getLogger, setLogLevelDebug
 
 class ExtOption(Option):
     """Extended options class"""
+    ENABLE = 'enable' # do nothing
+    DISABLE = 'disable' # inverse action
 
     EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "time",)
 
@@ -54,6 +56,18 @@ class ExtOption(Option):
         elif action == 'store_debuglog':
             setLogLevelDebug()
             Option.take_action(self, 'store_true', dest, opt, value, values, parser)
+        elif action in ('store_true', 'store_false'):
+            if opt.startswith("--%s-" % self.ENABLE):
+                ## keep action
+                pass
+            elif opt.startswith("--%s-" % self.DISABLE):
+                ## reverse action
+                if action == 'store_true':
+                    action = 'store_false'
+                elif action == 'store_false':
+                    action = 'store_true'
+
+            Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
             if action == "extend":
                 ## comma separated list convert in list
@@ -116,6 +130,18 @@ class ExtOptionParser(OptionParser):
             self.help_to_file = StringIO.StringIO()
         if fh is None:
             fh = self.help_to_file
+
+
+        if hasattr(self.option_class, 'ENABLE') and hasattr(self.option_class, 'DISABLE'):
+            def _is_enable_disable(x):
+                """Does the option start with ENABLE/DISABLE"""
+                _e = x.startswith("--%s-" % self.option_class.ENABLE)
+                _d = x.startswith("--%s-" % self.option_class.DISABLE)
+                return _e or _d
+            for opt in self._get_all_options():
+                # remove all long_opts with ENABLE/DISABLE naming
+                opt._long_opts = [x for x in opt._long_opts if not _is_enable_disable(x)]
+
         OptionParser.print_help(self, fh)
 
     def _add_help_option(self):
@@ -177,6 +203,7 @@ class GeneralOption(object):
     ALLOPTSMANDATORY = True
     PARSER = ExtOptionParser
     INTERSPERSED = True ## mix args with options
+
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None) # unit test option
@@ -284,6 +311,9 @@ class GeneralOption(object):
             except IndexError:
                 shortopt = None
 
+            if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
+                args.append("--%s-%s" % (self.parser.option_class.ENABLE, dest))
+                args.append("--%s-%s" % (self.parser.option_class.DISABLE, dest))
             opt_grp.add_option(*args, **nameds)
         self.parser.add_option_group(opt_grp)
 
@@ -411,6 +441,11 @@ if __name__ == '__main__':
             self.base_options()
             self.level1_options()
 
-    topt = TestOption1(go_args=['-H'], help_to_string=True, go_nosystemexit=True, prog='optiontest1')
+    topt = TestOption1(go_args=[], go_nosystemexit=True)
     print topt.options
-    print topt.parser.help_to_file.getvalue()
+
+    topt = TestOption1(go_args=['--level_level', '--longbase'])
+    print topt.options
+    topt = TestOption1(go_args=['--enable-level_level', '--disable-longbase'])
+    print topt.options
+
