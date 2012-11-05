@@ -16,14 +16,20 @@
 - find_sublist_index(list, sublist): find the index of the first occurence of the sublist in the list
 - Monoid: implementation of the monoid concept
 - MonoidDict: dictionary that combines values upon insertiong according to the given monoid
-
 """
 
+import unittest
+from paycheck import with_checker
+
+
 def nub(list_):
-    """Returns the unique items of a list.
+    """Returns the unique items of a list, while preserving order of the original list, i.e. the first unique element
+    encoutered is retained.
 
     Code is taken from
     http://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-in-python-whilst-preserving-order
+
+    Supposedly, this is one of the fastest ways to determine the unique elements of a list.
 
     @type list_: a list :-)
 
@@ -120,4 +126,17 @@ class MonoidDict(dict):
             return super(MonoidDict, self).__getitem__(key)
 
 
+class TestNub(unittest.TestCase):
+    """Test for the nub function."""
+
+    @with_checker([int])
+    def test_nub(self, list_of_ints):
+        nubbed = nub(2 * list_of_ints)
+        self.assertTrue(len(list_of_ints) >= len(nubbed))
+        for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
+            self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
+
+
+if __name__ == '__main__':
+    unittest.main()
 
