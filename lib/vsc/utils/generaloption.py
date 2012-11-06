@@ -34,15 +34,49 @@ import re
 import StringIO
 import sys
 from optparse import OptionParser, OptionGroup, Option
-from vsc.dateandtime import date_parser, datetime_parser
+from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.fancylogger import getLogger, setLogLevelDebug
+
+import shlex
+import subprocess
+
+def shell_quote(x):
+    """Add quotes so it can be apssed to shell"""
+    # TODO move to vsc/utils/missing
+    # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
+    # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
+    return subprocess.list2cmdline([x])
+
+def shell_unquote(x):
+    """Take a literal string, remove the quotes as if it were passed by shell
+    """
+    # TODO move to vsc/utils/missing
+    ## it expects a string
+    return shlex.split(x)[0]
+
+
+def set_columns(cols=None):
+    """Set os.environ COLUMNS variable
+        if it is not set already
+    """
+    if cols is None:
+        stty = '/usr/bin/stty'
+        if os.path.exists(stty):
+            try:
+                cols = int(os.popen('%s size 2>/dev/null' % stty).read().strip().split(' ')[1])
+            except:
+                ## do nothing
+                pass
+
+    if cols is not None and 'COLUMNS' not in os.environ:
+        os.environ['COLUMNS'] = "%s" % cols
 
 class ExtOption(Option):
     """Extended options class"""
     ENABLE = 'enable' # do nothing
     DISABLE = 'disable' # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "time",)
+    EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "datetime",)
 
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('shorthelp', 'store_debuglog') ## shorthelp has no extra arguments
     STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('store_debuglog',)
@@ -50,22 +84,27 @@ class ExtOption(Option):
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
     def take_action(self, action, dest, opt, value, values, parser):
+        orig_action = action # keep copy
+
         if action == 'shorthelp':
             parser.print_shorthelp()
             parser.exit()
-        elif action == 'store_debuglog':
-            setLogLevelDebug()
-            Option.take_action(self, 'store_true', dest, opt, value, values, parser)
-        elif action in ('store_true', 'store_false'):
+        elif action in ('store_true', 'store_false', 'store_debuglog'):
+            if action == 'store_debuglog':
+                action = 'store_true'
+
             if opt.startswith("--%s-" % self.ENABLE):
                 ## keep action
                 pass
             elif opt.startswith("--%s-" % self.DISABLE):
                 ## reverse action
-                if action == 'store_true':
+                if action in ('store_true', 'store_debuglog'):
                     action = 'store_false'
-                elif action == 'store_false':
+                elif action in ('store_false',):
                     action = 'store_true'
+
+            if orig_action == 'store_debuglog' and action == 'store_true':
+                setLogLevelDebug()
 
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
@@ -87,12 +126,13 @@ class ExtOption(Option):
 
 class ExtOptionParser(OptionParser):
     """Make an option parser that
-        limits the - h / - -shorthelp to short opts only, -H / - -help for all options
+        limits the -h / --shorthelp to short opts only, -H / --help for all options
         pass options through environment
-            eg export PROGNAME_SOMEOPTION = value will generate - -someoption = value
-                      PROGNAME_OTHEROPTION = 1 will generate - -otheroption
+            eg export PROGNAME_SOMEOPTION = value will generate --someoption=value
+                      PROGNAME_OTHEROPTION = 1 will generate --otheroption
                       PROGNAME_OTHEROPTION = 0 (or no or false) won't do anything
             distinction is made based on option.action in TYPED_ACTIONS
+        allow --enable- / --disable- (using eg ExtOption option_class)
     """
     shorthelp = ('h', "--shorthelp",)
     longhelp = ('H', "--help",)
@@ -101,6 +141,23 @@ class ExtOptionParser(OptionParser):
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
         OptionParser.__init__(self, *args, **kwargs)
+
+        if self.epilog is None:
+            self.epilog = []
+
+        if hasattr(self.option_class, 'ENABLE') and hasattr(self.option_class, 'DISABLE'):
+            epilogtxt = 'Boolean options support %(disable)s prefix to do the inverse of the action,'
+            epilogtxt += ' e.g. option --someopt also supports --disable-someopt.'
+            self.epilog.append(epilogtxt % {'disable': self.option_class.DISABLE})
+
+    def format_epilog(self, formatter):
+        """Allow multiple epilog parts"""
+        res = []
+        if not isinstance(self.epilog, (list, tuple,)):
+            self.epilog = [self.epilog]
+        for epi in self.epilog:
+            res.append(formatter.format_epilog(epi))
+        return "".join(res)
 
     def print_shorthelp(self, fh=None):
         from optparse import SUPPRESS_HELP as nohelp ## supported in optparse of python v2.4
@@ -130,7 +187,6 @@ class ExtOptionParser(OptionParser):
             self.help_to_file = StringIO.StringIO()
         if fh is None:
             fh = self.help_to_file
-
 
         if hasattr(self.option_class, 'ENABLE') and hasattr(self.option_class, 'DISABLE'):
             def _is_enable_disable(x):
@@ -172,10 +228,8 @@ class ExtOptionParser(OptionParser):
 
         epilogprefixtxt = "All long option names can be passed as environment variables. "
         epilogprefixtxt += "Variable name is %(prefix)s_<LONGNAME> "
-        epilogprefixtxt += "eg. --debug is same as setting %(prefix)s_DEBUG in environment"
-        if self.epilog is None:
-            self.epilog = ''
-        self.epilog += epilogprefixtxt % {'prefix':prefix}
+        epilogprefixtxt += "eg. --someopt is same as setting %(prefix)s_SOMEOPT in the environment."
+        self.epilog.append(epilogprefixtxt % {'prefix':prefix})
 
         for opt in self._get_all_options():
             if opt._long_opts is None: continue
@@ -194,7 +248,14 @@ class ExtOptionParser(OptionParser):
         return env_long_opts
 
 class GeneralOption(object):
-    """Simple wrapper class for option parsing"""
+    """Simple wrapper class for option parsing
+        go_ options are for this class, the remainder is passed to the parser
+            go_args : use these instaed of of sys.argv[1:]
+            go_columns : specify column width (in columns)
+
+        - TODO read from config file:
+            http://stackoverflow.com/questions/1880404/using-a-file-to-store-optparse-arguments
+    """
     OPTIONNAME_SEPARATOR = '_'
 
     DEBUG_OPTIONS_BUILD = False ## enable debug mode when building the options ?
@@ -208,6 +269,8 @@ class GeneralOption(object):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None) # unit test option
 
+        set_columns(kwargs.pop('go_columns', None))
+
         kwargs.update({'option_class':ExtOption,
                        'usage':self.USAGE,
                        })
@@ -219,7 +282,6 @@ class GeneralOption(object):
         self.args = None
         self.processed_options = {}
 
-
         self.set_debug()
 
         self.make_debug_options()
@@ -230,7 +292,6 @@ class GeneralOption(object):
 
         self.postprocess()
 
-
     def set_debug(self):
         """Check if debug options are on and then set fancylogger to debug"""
         if self.options is None:
@@ -239,7 +300,7 @@ class GeneralOption(object):
 
     def make_debug_options(self):
         """Add debug option"""
-        opts = {'debug':("Enable debug log mode (default %default)", None, "store_debuglog", False, 'd')
+        opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd')
                 }
         descr = ['Debug options', '']
         self.log.debug("Add debug options descr %s opts %s (no prefix)" % (descr, opts))
@@ -286,7 +347,7 @@ class GeneralOption(object):
                     extra_help.append("def %s" % default)
 
             if len(extra_help) > 0:
-                hlp += " (%s)" % (";".join(extra_help))
+                hlp += " (%s)" % ("; ".join(extra_help))
 
             ## can be ''
             if prefix is None or len(prefix) == 0:
@@ -295,7 +356,6 @@ class GeneralOption(object):
                 dest = "".join([prefix, self.OPTIONNAME_SEPARATOR, key])
 
             self.processed_options[dest] = [typ, default, action] ## add longopt
-
 
             nameds = {'dest':dest, 'help':hlp, 'action':action, 'metavar':key.upper()}
             if default is not None:
@@ -315,8 +375,8 @@ class GeneralOption(object):
                 args.append("--%s-%s" % (self.parser.option_class.ENABLE, dest))
                 args.append("--%s-%s" % (self.parser.option_class.DISABLE, dest))
             opt_grp.add_option(*args, **nameds)
-        self.parser.add_option_group(opt_grp)
 
+        self.parser.add_option_group(opt_grp)
 
     def parseoptions(self, options_list=None):
         """parse the options"""
@@ -358,11 +418,13 @@ class GeneralOption(object):
         self.log.debug("Returned subdict %s" % subdict)
         return subdict
 
-    def generate_cmd_line(self, ignore=None):
+    def generate_cmd_line(self, ignore=None, add_default=None):
         """Create the commandline options that would create the current self.options
-            - this assumes that optname is longopt!
+            opt_name is destination
+            - ignore : regex on destination
+            - add_default : print value that are equal to default
         """
-        if ignore:
+        if ignore is not None:
             self.log.debug("generate_cmd_line ignore %s" % ignore)
             ignore = re.compile(ignore)
         else:
@@ -374,78 +436,75 @@ class GeneralOption(object):
 
         for opt_name in opt_names:
             opt_value = self.options.__dict__[opt_name]
-            if ignore and ignore.search(opt_name):
-                self.log.debug("generate_cmd_line adding %s value %s matches ignore. not adding to args." %
+            if ignore is not None and ignore.search(opt_name):
+                self.log.debug("generate_cmd_line adding %s value %s matches ignore. Not adding to args." %
                                (opt_name, opt_value))
                 continue
 
-            typ, default, action = self.processed_options[opt_name]
+            default, action = self.processed_options[opt_name][1:] # skip 0th element type
             if opt_value == default:
                 ## do nothing
-                self.log.debug("generate_cmd_line adding %s value %s default found. not adding to args." %
-                               (opt_name, opt_value))
-                continue
-            elif opt_value is None:
+                msg = ''
+                if not add_default:
+                    msg = ' Not adding to args.'
+                self.log.debug("generate_cmd_line adding %s value %s default found.%s" %
+                               (opt_name, opt_value, msg))
+                if not add_default:
+                    continue
+
+            if opt_value is None:
                 ## do nothing
                 self.log.debug("generate_cmd_line adding %s value %s. None found. not adding to args." %
                                (opt_name, opt_value))
                 continue
 
-            if action in ("store_true", "store_false",):
+            if action in ("store_true", "store_false", 'store_debuglog'):
                 ## not default!
                 self.log.debug("generate_cmd_line adding %s value %s. store action found" %
                                (opt_name, opt_value))
-                args.append("--%s" % opt_name)
+                if (action in ('store_true', 'store_debuglog',)  and default == True and opt_value == False) or \
+                    (action in ('store_false',) and default == False and opt_value == True):
+                    if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
+                        args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
+                    else:
+                        self.log.error(("generate_cmd_line: %s : can't set inverse of default %s with action %s "
+                                        "with missing ENABLE/DISABLE in option_class") %
+                                       (opt_name, default, action))
+                else:
+                    if opt_value == default and ((action in ('store_true', 'store_debuglog',) and default == False) \
+                                                 or (action in ('store_false',) and default == True)):
+                        if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
+                            args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
+                        else:
+                            self.log.debug(("generate_cmd_line: %s : action %s can only set to inverse of default %s "
+                                            "and current value is default. Not adding to args.") %
+                                           (opt_name, action, default))
+                    else:
+                        args.append("--%s" % opt_name)
             elif action in ("extend",):
                 ## comma separated
                 self.log.debug("generate_cmd_line adding %s value %s. extend action, return as comma-separated list" %
                                (opt_name, opt_value))
-                args.append("--%s=%s" % (opt_name, ",".join(opt_value)))
+
+                if default is not None:
+                    ## remove these. if default is set, extend extends the default!
+                    for def_el in default:
+                        opt_value.remove(def_el)
+
+                if len(opt_value) == 0:
+                    self.log.debug('generate_cmd_line skipping.')
+                    continue
+
+                args.append("--%s=%s" % (opt_name, shell_quote(",".join(opt_value))))
             elif action in ("append",):
                 ## add multiple times
                 self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args" %
                                (opt_name, opt_value))
-                for v in opt_value:
-                    args.append("--%s='%s'" % (opt_name, v))
+                args.extend(["--%s=%s" % (opt_name, shell_quote(v)) for v in opt_value])
             else:
                 self.log.debug("generate_cmd_line adding %s value %s" % (opt_name, opt_value))
-                args.append("--%s='%s'" % (opt_name, opt_value))
+                args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
 
         self.log.debug("commandline args %s" % args)
         return args
-
-if __name__ == '__main__':
-    class TestOption1(GeneralOption):
-        """Create simple test class"""
-        def base_options(self):
-            """Make base options"""
-            opts = {"base":("Long and short base option", None, "store_true", False, 'b'),
-                    "longbase":("Long-only base option", None, "store_true", True),
-                  }
-            descr = ["Base", "Base level of options"]
-
-            prefix = None ## base, no prefixes
-            self.add_group_parser(opts, descr, prefix=prefix)
-
-        def level1_options(self):
-            """Make the level1 related options"""
-            opts = {"level":("Long and short option", None, "store_true", False, 'l'),
-                    "longlevel":("Long-only level option", None, "store_true", True),
-                  }
-            descr = ["Level1", "1 higher level of options"]
-
-            prefix = 'level'
-            self.add_group_parser(opts, descr, prefix=prefix)
-
-        def make_init(self):
-            self.base_options()
-            self.level1_options()
-
-    topt = TestOption1(go_args=[], go_nosystemexit=True)
-    print topt.options
-
-    topt = TestOption1(go_args=['--level_level', '--longbase'])
-    print topt.options
-    topt = TestOption1(go_args=['--enable-level_level', '--disable-longbase'])
-    print topt.options
 
