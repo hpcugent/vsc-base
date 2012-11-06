@@ -18,8 +18,6 @@
 - MonoidDict: dictionary that combines values upon insertiong according to the given monoid
 """
 
-import unittest
-from paycheck import with_checker
 
 
 def nub(list_):
