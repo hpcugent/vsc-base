@@ -19,7 +19,6 @@
 """
 
 
-
 def nub(list_):
     """Returns the unique items of a list, while preserving order of the original list, i.e. the first unique element
     encoutered is retained.
@@ -97,12 +96,12 @@ class MonoidDict(dict):
     operation in the monoid.
     """
 
-    def __init__(self, monoid):
+    def __init__(self, monoid, *args, **kwargs):
         """Initialise.
 
         @type monoid: Monoid instance
         """
-        super(MonoidDict, self).__init__(monoid.null)
+        super(MonoidDict, self).__init__(*args, **kwargs)
         self.monoid = monoid
 
     def __setitem__(self, key, value):
