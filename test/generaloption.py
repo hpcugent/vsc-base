@@ -57,6 +57,7 @@ class TestOption1(GeneralOption):
                 "extenddefault":("Test action extend with default set", None, 'extend', ['zero']),
                 "date":('Test action datetime.date', None, 'date', None),
                 "datetime":('Test action datetime.datetime', None, 'datetime', None),
+                "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'), # type is mandatory
                 }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -72,21 +73,26 @@ class TestOption1(GeneralOption):
 TestOption1HelpShort = """Usage: optiontest1 [options]
 
 Options:
-  -h    show short help message and exit
-  -H    show full help message and exit
+  -h             show short help message and exit
+  -H             show full help message and exit
 
   Debug options:
-    -d  Enable debug log mode (def False)
+    -d           Enable debug log mode (def False)
 
   Base:
     Base level of options
 
-    -b  Long and short base option (def False)
+    -b           Long and short base option (def False)
 
   Level1:
     1 higher level of options
 
-    -l  Long and short option (def False)
+    -l           Long and short option (def False)
+
+  ExtOption:
+    action from ExtOption
+
+    -o OPTIONAL  Test action optional (def DEFAULT)
 
 Boolean options support disable prefix to do the inverse of the action, e.g. option --someopt also
 supports --disable-someopt.
@@ -128,6 +134,8 @@ Options:
     --ext_extenddefault=EXTENDDEFAULT
                         Test action extend with default set (type comma-separated list; def
                         ['zero'])
+    -o OPTIONAL, --ext_optional=OPTIONAL
+                        Test action optional (def DEFAULT)
 
 Boolean options support disable prefix to do the inverse of the action, e.g. option --someopt also
 supports --disable-someopt.
@@ -175,9 +183,10 @@ class GeneralOptionTest(TestCase):
         """Test the creation of cmd_line args to match options"""
         ign = r'(^(base|debug)$)|(^ext)'
         topt = TestOption1(go_args=['--level_level', '--longbase', shell_unquote('--store="some whitespace"')])
-        self.assertEqual(str(topt.options) ,
-        ("{'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True, 'base': False, "
-         "'ext_extend': None, 'debug': False, 'ext_extenddefault': ['zero'], 'store': 'some whitespace', 'ext_datetime': None}"))
+        self.assertEqual(topt.options ,
+                         {'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True,
+                          'base': False, 'ext_optional': None, 'ext_extend': None, 'debug': False,
+                          'ext_extenddefault': ['zero'], 'store': 'some whitespace', 'ext_datetime': None})
 
         self.assertEqual(topt.generate_cmd_line(ignore=ign), ['--level_level', '--store="some whitespace"'])
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
@@ -198,7 +207,8 @@ class GeneralOptionTest(TestCase):
         ign = r'(^(base|debug)$)|(^ext)'
         topt = TestOption1(go_args=['--enable-level_level', '--disable-longbase'])
         self.assertEqual(topt.options, {'level_level': True, 'ext_date': None, 'longbase': False,
-                                        'level_longlevel': True, 'base': False, 'ext_extend': None, 'debug': False,
+                                        'level_longlevel': True, 'base': False, 'ext_optional': None,
+                                        'ext_extend': None, 'debug': False,
                                         'ext_extenddefault': ['zero'], 'store': None, 'ext_datetime': None})
 
 
@@ -208,6 +218,9 @@ class GeneralOptionTest(TestCase):
         """Test date and datetime action"""
         topt = TestOption1(go_args=['--ext_date=1970-01-01'])
         self.assertEqual(topt.options.ext_date , datetime.date(1970, 1, 1))
+
+        topt = TestOption1(go_args=['--ext_date=TODAY'])
+        self.assertEqual(topt.options.ext_date , datetime.date.today())
 
         topt = TestOption1(go_args=['--ext_datetime=1970-01-01 01:01:01.000001'])
         self.assertEqual(topt.options.ext_datetime , datetime.datetime(1970, 1, 1, 1, 1, 1, 1))
@@ -222,6 +235,26 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext_extenddefault=one,two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
 
+    def test_store_or_None(self):
+        """Test store_or_None action"""
+        topt = TestOption1(go_args=[], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optional, None)
+
+        topt = TestOption1(go_args=['--ext_optional'], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optional, 'DEFAULT')
+
+        topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optional, 'DEFAULT')
+
+        topt = TestOption1(go_args=['--ext_optional', 'REALVALUE'], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optional, 'REALVALUE')
+
+        topt = TestOption1(go_args=['--ext_optional=REALVALUE'], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optional, 'REALVALUE')
+
+        topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optional, 'REALVALUE')
+
 
 def suite():
     """ returns all the testcases in this module """
@@ -232,17 +265,17 @@ if __name__ == '__main__':
         just uncomment the parts you need
     """
     ## help
-#    topt = TestOption1(go_args=['-h'], go_nosystemexit=True, go_columns=100,
-#                       help_to_string=True,
-#                       prog='optiontest1',
-#                       )
-#    print topt.parser.help_to_file.getvalue()
-#
-#    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
-#                       help_to_string=True,
-#                       prog='optiontest1',
-#                       )
-#    print topt.parser.help_to_file.getvalue()
+    topt = TestOption1(go_args=['-h'], go_nosystemexit=True, go_columns=100,
+                       help_to_string=True,
+                       prog='optiontest1',
+                       )
+    print topt.parser.help_to_file.getvalue()
+
+    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
+                       help_to_string=True,
+                       prog='optiontest1',
+                       )
+    print topt.parser.help_to_file.getvalue()
 
 #    ## test shell_quote/shell_unquote
 #    value = 'value with whitespace'
@@ -284,3 +317,24 @@ if __name__ == '__main__':
 #    # default ['zero'], will be extended
 #    topt = TestOption1(go_args=['--ext_extenddefault=one,two,three'])
 #    print topt.options.ext_extenddefault.__repr__()
+
+    ## store_or_None
+#    topt = TestOption1(go_args=[], go_nosystemexit=True,)
+#    print topt.options.ext_optional == None
+#
+#    topt = TestOption1(go_args=['--ext_optional'], go_nosystemexit=True,)
+#    print topt.options.ext_optional == 'DEFAULT'
+#
+#    topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
+#    print topt.options.ext_optional == 'DEFAULT'
+#
+#    topt = TestOption1(go_args=['--ext_optional', 'REALVALUE'], go_nosystemexit=True,)
+#    print topt.options.ext_optional == 'REALVALUE'
+#
+#    topt = TestOption1(go_args=['--ext_optional=REALVALUE'], go_nosystemexit=True,)
+#    print topt.options.ext_optional == 'REALVALUE'
+#
+#    topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
+#    print topt.options.ext_optional == 'REALVALUE'
+
+

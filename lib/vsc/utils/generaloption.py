@@ -29,11 +29,12 @@
 A class that can be used to generated options to python scripts in a general way.
 """
 
+import copy
 import os
 import re
 import StringIO
 import sys
-from optparse import OptionParser, OptionGroup, Option
+from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.fancylogger import getLogger, setLogLevelDebug
 
@@ -45,14 +46,14 @@ def shell_quote(x):
     # TODO move to vsc/utils/missing
     # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
     # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
-    return subprocess.list2cmdline([x])
+    return subprocess.list2cmdline([str(x)])
 
 def shell_unquote(x):
     """Take a literal string, remove the quotes as if it were passed by shell
     """
     # TODO move to vsc/utils/missing
     ## it expects a string
-    return shlex.split(x)[0]
+    return shlex.split(str(x))[0]
 
 
 def set_columns(cols=None):
@@ -77,11 +78,45 @@ class ExtOption(Option):
     DISABLE = 'disable' # inverse action
 
     EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "datetime",)
+    EXTOPTION_STORE_OR = ('store_or_None',) # callback type
 
-    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('shorthelp', 'store_debuglog') ## shorthelp has no extra arguments
-    STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('store_debuglog',)
-    TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
+    ## shorthelp has no extra arguments
+    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + ('shorthelp', 'store_debuglog',)
+    STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('store_debuglog', 'store_or_None',)
+    TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
+
+    def _set_attrs(self, attrs):
+        Option._set_attrs(self, attrs)
+        if self.action in self.EXTOPTION_STORE_OR:
+            setattr(self, 'store_or', self.action)
+
+            def store_or(option, opt_str, value, parser, *args, **kwargs):
+                """Callback for supporting options with optional values."""
+                # see http://stackoverflow.com/questions/1229146/parsing-empty-options-in-python
+                # ugly code, optparse is crap
+                if parser.rargs and not parser.rargs[0].startswith('-'):
+                    val = parser.rargs[0]
+                    parser.rargs.pop(0)
+                else:
+                    val = kwargs.get('orig_default', None)
+
+                setattr(parser.values, option.dest, val)
+
+            ## without the following, --x=y doesn't work; only --x y
+            self.nargs = 0 # allow 0 args, will also use 0 args
+            if self.type is None:
+                # set to not None, for takes_value to return True
+                self.type = 'string'
+
+            self.callback = store_or
+            self.callback_kwargs = {'orig_default': copy.deepcopy(self.default),
+                                    }
+            self.action = 'callback' # act as callback
+            if self.store_or == 'store_or_None':
+                self.default = None
+            else:
+                raise ValueError("_set_attrs: unknown store_or %s" % self.store_or)
 
     def take_action(self, action, dest, opt, value, values, parser):
         orig_action = action # keep copy
