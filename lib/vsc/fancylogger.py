@@ -70,11 +70,12 @@ handler.setFormatter(logging.Formatter(formatstring))
 # set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
 # this will make fancylogger log to that that server and port instead of the screen.
 """
-from logging import Logger
 import inspect
 import logging.handlers
-import threading
 import os
+import sys
+import threading
+import traceback
 
 #constants
 LOGGER_NAME = "fancylogger"
@@ -125,12 +126,32 @@ class NamedLogger(logging.getLoggerClass()):
         """
         return FancyLogRecord(name, level, pathname, lineno, msg, args, excinfo)
 
-    def raiseException(self, message, exception=Exception):
+    def raiseException(self, message, exception=None, catch=False):
         """
         logs an exception (as warning, since it can be caught higher up and handled)
         and raises it afterwards
+            catch: boolean, try to catch raised exception and add relevant info to message
+                (this will also happen if exception is not specified)
         """
-        self.warning(message)
+        fullmessage = message
+
+        if catch or exception is None:
+            # assumes no control by codemonkey
+            # lets see if there is something more to report on
+            exc, detail, tb = sys.exc_info()
+            if exc is not None:
+                if exception is None:
+                    exception = exc
+                # extend the message with the traceback and some more details
+                # or use self.exception() instead of self.warning()?
+                tb_text = "\n".join(traceback.format_tb(tb))
+                message += " (%s)" % detail
+                fullmessage += " (%s\n%s)" % (detail, tb_text)
+
+        if exception is None:
+            exception = Exception
+
+        self.warning(fullmessage)
         raise exception(message)
 
     def _handleFunction(self, function, levelno, **kwargs):
@@ -157,7 +178,7 @@ class NamedLogger(logging.getLoggerClass()):
         def write_and_flush_stream(hdlr, data=None):
             """Write to stream and flush the handler"""
             if (not hasattr(hdlr, 'stream')) or hdlr.stream is None:
-                ## no stream or not initialised. 
+                ## no stream or not initialised.
                 raise("write_and_flush_stream failed. No active stream attribute.")
             if data is not None:
                 hdlr.stream.write(data)
@@ -305,7 +326,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
     logger = getLogger(name)
 
     if not hasattr(logger, loggeroption):
-        ## not set. 
+        ## not set.
         setattr(logger, loggeroption, False) ## set default to False
 
     if enable and not getattr(logger, loggeroption):
@@ -457,9 +478,9 @@ else:
 
 
 _default_handlers = logging._handlerList[:]  ## There's always one
-def disableDefaultHandlers(name=None):
+def disableDefaultHandlers():
     """Disable the default handlers on all fancyloggers
-        DANGEROUS: if not other handler is availabel, logging will fail (and raise)
+        DANGEROUS: if not other handler is available, logging will fail (and raise IOError [Errno 32] Broken pipe)
     """
     if _default_logTo is None:
         return
@@ -469,7 +490,7 @@ def disableDefaultHandlers(name=None):
         except:
             pass
 
-def enableDefaultHandlers(name=None):
+def enableDefaultHandlers():
     """(re)Enable the default handlers on all fancyloggers"""
     if _default_logTo is None:
         return

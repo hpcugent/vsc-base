@@ -69,6 +69,11 @@ import sys
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
 
+class DummyFunction(object):
+    def __getattr__(self, name):
+        def dummy(*args, **kwargs):
+            pass
+        return dummy
 
 class Run(object):
     """Base class for static run method"""
@@ -81,6 +86,8 @@ class Run(object):
         return r._run()
 
     def __init__(self, cmd=None, **kwargs):
+        if kwargs.pop('disable_log', None):
+            self.log = DummyFunction() ## No logging
         if not hasattr(self, 'log'):
             self.log = getLogger(self._get_log_name())
 
@@ -176,7 +183,7 @@ class Run(object):
         return self._run_post()
 
     def _run_pre(self):
-        """Non-vlocking start"""
+        """Non-blocking start"""
         if self._process_module is None:
             self._prep_module()
 
@@ -456,6 +463,10 @@ class RunAsync(Run):
         if readsize is None:
             readsize = self.readsize
 
+        if self._process.stdout is None:
+            ## Nothing yet/anymore
+            return ''
+
         try:
             if readsize is not None  and readsize < 0:
                 ## read all blocking (it's not why we should use async
@@ -471,8 +482,8 @@ class RunAsync(Run):
 
 class RunFile(Run):
     """Popen to filehandle"""
-    def __init__(self, cmd, filename=None, **kwargs):
-        self.filename = filename
+    def __init__(self, cmd, **kwargs):
+        self.filename = kwargs.pop('filename', None)
         self.filehandle = None
         super(RunFile, self).__init__(cmd, **kwargs)
 
@@ -558,12 +569,13 @@ class RunQA(RunLoop, RunAsync):
     """Question/Answer processing"""
     LOOP_MAX_MISS_COUNT = 20
 
-    def __init__(self, qa=None, **kwargs):
+    def __init__(self, cmd, **kwargs):
+        qa = kwargs.pop('qa', None)
         self.qa, self.qa_std, self.no_qa = self._parse_qa(qa)
         self._loop_miss_count = None ## maximum number of misses
         self._loop_previous_ouput_length = None ## track length of output through loop
 
-        super(RunQA, self).__init__(**kwargs)
+        super(RunQA, self).__init__(cmd, **kwargs)
 
     def _init_input(self):
         """Handle input, if any in a simple way"""
