@@ -21,6 +21,7 @@ Collection of utilities:
 - __daemon.py__ : Daemon class written by Sander Marechal (http://www.jejik.com) to start a python script as a daemon.
 - __missing.py__: Small functions and tools that are commonly used but not
   available in the Python (2.x) API.
+- __cache.py__ : File cache to store pickled data identified by a key accompanied by a timestamp,
 
 ## bin
 A collection of python scripts :
