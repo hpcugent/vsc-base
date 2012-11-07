@@ -110,7 +110,6 @@ class MonoidDict(dict):
             current = super(MonoidDict, self).__getitem__(key)
             super(MonoidDict, self).__setitem__(key, self.monoid(current, value))
         else:
-            print "Key does not yet exist, adding value"
             super(MonoidDict, self).__setitem__(key, value)
 
     def __getitem__(self, key):
