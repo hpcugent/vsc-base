@@ -35,6 +35,7 @@ import re
 import StringIO
 import sys
 from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT
+from optparse import SUPPRESS_HELP as nohelp ## supported in optparse of python v2.4
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.fancylogger import getLogger, setLogLevelDebug
 
@@ -73,7 +74,18 @@ def set_columns(cols=None):
         os.environ['COLUMNS'] = "%s" % cols
 
 class ExtOption(Option):
-    """Extended options class"""
+    """Extended options class
+        enable/disable support
+        actions
+            shorthelp : hook for shortend help messages
+            store_debuglog : turns on fancylogger debugloglevel
+            extend : extend default list (or create new one if is None)
+            date : convert into datetime.date
+            datetime : convert into datetime.datetime
+            store_or_None : set default to None if no option passed,
+                            set to default if option without value passed,
+                            set to value if option with value passed
+    """
     ENABLE = 'enable' # do nothing
     DISABLE = 'disable' # inverse action
 
@@ -87,6 +99,7 @@ class ExtOption(Option):
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
     def _set_attrs(self, attrs):
+        """overwrite _set_attrs to allow store_or callbacks"""
         Option._set_attrs(self, attrs)
         if self.action in self.EXTOPTION_STORE_OR:
             setattr(self, 'store_or', self.action)
@@ -119,6 +132,7 @@ class ExtOption(Option):
                 raise ValueError("_set_attrs: unknown store_or %s" % self.store_or)
 
     def take_action(self, action, dest, opt, value, values, parser):
+        """extended take_action"""
         orig_action = action # keep copy
 
         if action == 'shorthelp':
@@ -195,8 +209,7 @@ class ExtOptionParser(OptionParser):
         return "".join(res)
 
     def print_shorthelp(self, fh=None):
-        from optparse import SUPPRESS_HELP as nohelp ## supported in optparse of python v2.4
-
+        """print a shortened help (no longopts)"""
         for opt in self._get_all_options():
             if opt._short_opts is None or len([x for x in opt._short_opts if len(x) > 0]) == 0:
                 opt.help = nohelp
@@ -236,24 +249,26 @@ class ExtOptionParser(OptionParser):
         OptionParser.print_help(self, fh)
 
     def _add_help_option(self):
-        from optparse import _ ## this is gettext normally
+        """Add shorthelp and longhelp"""
+        from optparse import _ # this is gettext normally
         self.add_option("-%s" % self.shorthelp[0],
-                        self.shorthelp[1], ## *self.shorthelp[1:], syntax error in Python 2.4
+                        self.shorthelp[1], # *self.shorthelp[1:], syntax error in Python 2.4
                         action="shorthelp",
                         help=_("show short help message and exit"))
         self.add_option("-%s" % self.longhelp[0],
-                        self.longhelp[1], ## *self.longhelp[1:], syntax error in Python 2.4
+                        self.longhelp[1], # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
                         help=_("show full help message and exit"))
 
     def _get_args(self, args):
+        """prepend the options set through the environment"""
         regular_args = OptionParser._get_args(self, args)
         env_args = self.get_env_options()
-        return env_args + regular_args ## prepend the environment options as longopts
+        return env_args + regular_args # prepend the environment options as longopts
 
     def get_env_options_prefix(self):
         """Return the prefix to use for options passed through the environment"""
-        prefix = self.get_prog_name().rsplit('.', 1)[0].upper() ## sys.argv[0] or the prog= argument of the optionparser, strip possible extension
+        prefix = self.get_prog_name().rsplit('.', 1)[0].upper() # sys.argv[0] or the prog= argument of the optionparser, strip possible extension
         return prefix
 
     def get_env_options(self):
@@ -273,19 +288,19 @@ class ExtOptionParser(OptionParser):
                 env_opt_name = "%s_%s" % (prefix, lo.lstrip('-').upper())
                 val = os.environ.get(env_opt_name, None)
                 if not val is None:
-                    if opt.action in opt.TYPED_ACTIONS: ## not all typed actions are mandatory, but let's assume so
+                    if opt.action in opt.TYPED_ACTIONS: # not all typed actions are mandatory, but let's assume so
                         env_long_opts.append("%s=%s" % (lo, val))
                     else:
-                        ## interpretation of values: 0/no/false means: don't set it
+                        # interpretation of values: 0/no/false means: don't set it
                         if not ("%s" % val).lower() in ("0", "no", "false",):
                             env_long_opts.append("%s" % lo)
 
         return env_long_opts
 
 class GeneralOption(object):
-    """Simple wrapper class for option parsing
+    """'Used-to-be simple' wrapper class for option parsing
         go_ options are for this class, the remainder is passed to the parser
-            go_args : use these instaed of of sys.argv[1:]
+            go_args : use these instead of of sys.argv[1:]
             go_columns : specify column width (in columns)
 
         - TODO read from config file:
@@ -428,7 +443,7 @@ class GeneralOption(object):
             else:
                 sys.exit(err.code)
 
-        #args should be empty, since everything is optional
+        # args should be empty, since everything is optional
         if len(self.args) > 1:
             self.log.debug("Found remaining args %s" % self.args)
             if self.ALLOPTSMANDATORY:
@@ -476,15 +491,19 @@ class GeneralOption(object):
                                (opt_name, opt_value))
                 continue
 
+            # this is the action as parsed by the class, not the actual action set in option
+            # (eg action store_or_None is shown here as store_or_None, not as callback)
             default, action = self.processed_options[opt_name][1:] # skip 0th element type
+
             if opt_value == default:
                 ## do nothing
+                ## except for store_or_None and friends
                 msg = ''
-                if not add_default:
+                if not (add_default or action in ('store_or_None',)):
                     msg = ' Not adding to args.'
                 self.log.debug("generate_cmd_line adding %s value %s default found.%s" %
                                (opt_name, opt_value, msg))
-                if not add_default:
+                if not (add_default or action in ('store_or_None',)):
                     continue
 
             if opt_value is None:
@@ -493,7 +512,14 @@ class GeneralOption(object):
                                (opt_name, opt_value))
                 continue
 
-            if action in ("store_true", "store_false", 'store_debuglog'):
+            if action in ('store_or_None',):
+                if opt_value == default:
+                    self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" % (action, opt_name, opt_value))
+                    args.append("--%s" % (opt_name))
+                else:
+                    self.log.debug("generate_cmd_line %s adding %s non-default value %s" % (action, opt_name, opt_value))
+                    args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
+            elif action in ("store_true", "store_false", 'store_debuglog'):
                 ## not default!
                 self.log.debug("generate_cmd_line adding %s value %s. store action found" %
                                (opt_name, opt_value))

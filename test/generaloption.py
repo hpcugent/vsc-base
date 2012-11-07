@@ -69,7 +69,6 @@ class TestOption1(GeneralOption):
         self.level1_options()
         self.ext_options()
 
-
 TestOption1HelpShort = """Usage: optiontest1 [options]
 
 Options:
@@ -206,11 +205,8 @@ class GeneralOptionTest(TestCase):
         """
         ign = r'(^(base|debug)$)|(^ext)'
         topt = TestOption1(go_args=['--enable-level_level', '--disable-longbase'])
-        self.assertEqual(topt.options, {'level_level': True, 'ext_date': None, 'longbase': False,
-                                        'level_longlevel': True, 'base': False, 'ext_optional': None,
-                                        'ext_extend': None, 'debug': False,
-                                        'ext_extenddefault': ['zero'], 'store': None, 'ext_datetime': None})
-
+        self.assertEqual(topt.options.longbase, False)
+        self.assertEqual(topt.options.level_level, True)
 
         self.assertEqual(topt.generate_cmd_line(ignore=ign), ['--level_level', '--disable-longbase'])
 
@@ -237,11 +233,14 @@ class GeneralOptionTest(TestCase):
 
     def test_store_or_None(self):
         """Test store_or_None action"""
+        ign = r'^(?!ext_optional)'
         topt = TestOption1(go_args=[], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, None)
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , [])
 
         topt = TestOption1(go_args=['--ext_optional'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , ['--ext_optional'])
 
         topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
@@ -318,23 +317,27 @@ if __name__ == '__main__':
 #    topt = TestOption1(go_args=['--ext_extenddefault=one,two,three'])
 #    print topt.options.ext_extenddefault.__repr__()
 
-    ## store_or_None
+#    ## store_or_None
+#    ign = r'^(?!ext_optional)'
 #    topt = TestOption1(go_args=[], go_nosystemexit=True,)
 #    print topt.options.ext_optional == None
+#    print topt.generate_cmd_line(add_default=True, ignore=ign) == []
 #
-#    topt = TestOption1(go_args=['--ext_optional'], go_nosystemexit=True,)
+#    topt = TestOption1(go_args=[ '--ext_optional'], go_nosystemexit=True,)
 #    print topt.options.ext_optional == 'DEFAULT'
+#    print topt.generate_cmd_line(add_default=True, ignore=ign) == ['--ext_optional']
+#    print topt.generate_cmd_line(add_default=True, ignore=ign)
+#    print topt.generate_cmd_line(ignore=ign)
 #
 #    topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
 #    print topt.options.ext_optional == 'DEFAULT'
 #
 #    topt = TestOption1(go_args=['--ext_optional', 'REALVALUE'], go_nosystemexit=True,)
 #    print topt.options.ext_optional == 'REALVALUE'
+#    print topt.generate_cmd_line(add_default=True, ignore=ign) == ['--ext_optional=REALVALUE']
 #
 #    topt = TestOption1(go_args=['--ext_optional=REALVALUE'], go_nosystemexit=True,)
 #    print topt.options.ext_optional == 'REALVALUE'
 #
 #    topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
 #    print topt.options.ext_optional == 'REALVALUE'
-
-
