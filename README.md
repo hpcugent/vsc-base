@@ -2,7 +2,7 @@
 
 Common tools used within our organization.
 
-Originally created by the HPC team of the University of Ghent (http://ugent.be/hpc)
+Originally created by the HPC team of Ghent University (http://ugent.be/hpc)
 
 ## vsc
 Common namespace used by all our python modules
@@ -19,6 +19,8 @@ cople of `fancy` features.
 ### utils
 Collection of utilities:
 - __daemon.py__ : Daemon class written by Sander Marechal (http://www.jejik.com) to start a python script as a daemon.
+- __missing.py__: Small functions and tools that are commonly used but not
+  available in the Python (2.x) API.
 
 ## bin
 A collection of python scripts :
