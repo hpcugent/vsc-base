@@ -37,11 +37,9 @@ import time
 
 import vsc.fancylogger as fancylogger
 
-from vsc.gpfs.utils.exceptions import CriticalException
-
 
 class FileCache(object):
-    """Cached information for VSC users.
+    """File cache with a timestamp safety.
 
     Stores data (something that can be pickled) into a dictionary
     indexed by the data.key(). The value stored is a tuple consisting
@@ -50,11 +48,22 @@ class FileCache(object):
     """
 
     def __init__(self, filename):
-        """Initializer."""
+        """Initializer.
+
+        Checks if the file can be accessed and load the data therein if any. If the file does not yet exist, start
+        with an empty shelf. This ensures that old data is readily available when the FileCache instance is created.
+        The file is closed after reading the data.
+
+        @type filename: string
+
+        @param filename: (absolute) path to the cache file.
+        """
+
         self.logger = fancylogger.getLogger(self.__class__.__name__)
         self.filename = filename
+
         if not os.access(self.filename, os.R_OK):
-            self.logger.error('Could not access the file cache at %s' % (self.filename))
+            self.logger.error("Could not access the file cache at %s" % (self.filename))
             self.shelf = {}
         else:
             f = open(self.filename, 'r')
@@ -69,36 +78,39 @@ class FileCache(object):
         self.new_shelf = {}
 
     def update(self, data, threshold):
-        """Update the given data. Will only store the new data if the old data
-        is older than the given threshold.
+        """Update the given data if the existing data is older than the given threshold.
 
         @type data: an instance that implements a key() method. key() returns a
-                    string that uniquely corresponds to a data instance.
-        @type threshold: a time in seconds.
+                    string that uniquely corresponds to this data instance. Note that hash is fubar (see XXX)
+        @type threshold: int
+
+        @param data: whatever needs to be stored
+        @param threshold: time in seconds
         """
-        t = time.time()
-        old = self.load(data.key())
+        now = time.time()
+        key = data.key()
+        old = self.load(key)
         if old:
             (ts, _) = old
-            if t - ts > threshold:
-                self.new_shelf[data.key()] = (t, data)
+            if now - ts > threshold:
+                self.new_shelf[key] = (now, data)
             else:
-                self.new_shelf[data.key()] = old
+                self.new_shelf[key] = old
         else:
-            self.new_shelf[data.key()] = (t, data)
+            self.new_shelf[key] = (now, data)
 
     def load(self, key):
-        """Load the stored data D for the given key along with the timestamp
-        indicating the time the data was stored to the reminderCache.
+        """Load the stored data for the given key along with the timestamp it was stored.
 
-        Returns (timestamp, D) or None if there is no data for userId in
-        the reminderCache.
+        @type key: anything that can serve as a dictionary key
+
+        @returns: (timestamp, data) if there is data foer the given key, None otherwise.
         """
-        v = self.shelf.get(key, None)
-        return v
+        return  self.shelf.get(key, None)
 
     def close(self):
-        """Close the reminderCache."""
+        """Close the cache."""
+
         f = open(self.filename, 'w')
         if not f:
             self.logger.error('cannot open the file cache at %s for writing' % (self.filename))
