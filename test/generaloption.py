@@ -1,4 +1,6 @@
 ##
+#
+# Copyright 2012 Ghent University
 # Copyright 2012 Stijn De Weirdt
 #
 # This file is part of VSC-tools,
@@ -38,7 +40,7 @@ class TestOption1(GeneralOption):
               }
         descr = ["Base", "Base level of options"]
 
-        prefix = None ## base, no prefixes
+        prefix = None  # base, no prefixes
         self.add_group_parser(opts, descr, prefix=prefix)
 
     def level1_options(self):
@@ -223,7 +225,7 @@ class GeneralOptionTest(TestCase):
 
     def test_ext_extend(self):
         """Test extend action"""
-        ## extend to None default
+        # extend to None default
         topt = TestOption1(go_args=['--ext_extend=one,two,three'])
         self.assertEqual(topt.options.ext_extend, ['one', 'two', 'three'])
 
@@ -263,18 +265,18 @@ if __name__ == '__main__':
     """Use this __main__ block to help write and test unittests
         just uncomment the parts you need
     """
-    ## help
-    topt = TestOption1(go_args=['-h'], go_nosystemexit=True, go_columns=100,
-                       help_to_string=True,
-                       prog='optiontest1',
-                       )
-    print topt.parser.help_to_file.getvalue()
-
-    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
-                       help_to_string=True,
-                       prog='optiontest1',
-                       )
-    print topt.parser.help_to_file.getvalue()
+#    # help
+#    topt = TestOption1(go_args=['-h'], go_nosystemexit=True, go_columns=100,
+#                       help_to_string=True,
+#                       prog='optiontest1',
+#                       )
+#    print topt.parser.help_to_file.getvalue()
+#
+#    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
+#                       help_to_string=True,
+#                       prog='optiontest1',
+#                       )
+#    print topt.parser.help_to_file.getvalue()
 
 #    ## test shell_quote/shell_unquote
 #    value = 'value with whitespace'

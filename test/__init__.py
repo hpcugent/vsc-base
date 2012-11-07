@@ -1,4 +1,6 @@
 ##
+#
+# Copyright 2012 Ghent University
 # Copyright 2012 Toon Willems
 #
 # This file is part of EasyBuild,
@@ -22,3 +24,5 @@
 # You should have received a copy of the GNU General Public License
 # along with EasyBuild.  If not, see <http://www.gnu.org/licenses/>.
 ##
+import pkg_resources
+pkg_resources.declare_namespace(__name__)

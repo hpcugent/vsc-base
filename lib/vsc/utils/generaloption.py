@@ -1,4 +1,6 @@
 ##
+#
+# Copyright 2012 Ghent University
 # Copyright 2011-2012 Stijn De Weirdt
 #
 # This file is part of VSC-tools,
@@ -24,23 +26,24 @@
 ##
 
 """
-@author Stijn De Weirdt HPCUgent / VSC
-
 A class that can be used to generated options to python scripts in a general way.
 """
 
 import copy
+import operator
 import os
 import re
 import StringIO
 import sys
 from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT
-from optparse import SUPPRESS_HELP as nohelp ## supported in optparse of python v2.4
+from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
+from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.fancylogger import getLogger, setLogLevelDebug
 
 import shlex
 import subprocess
+
 
 def shell_quote(x):
     """Add quotes so it can be apssed to shell"""
@@ -49,29 +52,34 @@ def shell_quote(x):
     # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
     return subprocess.list2cmdline([str(x)])
 
+
 def shell_unquote(x):
-    """Take a literal string, remove the quotes as if it were passed by shell
-    """
+    """Take a literal string, remove the quotes as if it were passed by shell"""
     # TODO move to vsc/utils/missing
-    ## it expects a string
+    # it expects a string
     return shlex.split(str(x))[0]
 
 
 def set_columns(cols=None):
     """Set os.environ COLUMNS variable
-        if it is not set already
+        - only if it is not set already
     """
+    if 'COLUMNS' in os.environ:
+        # do nothing
+        return
+
     if cols is None:
         stty = '/usr/bin/stty'
         if os.path.exists(stty):
             try:
                 cols = int(os.popen('%s size 2>/dev/null' % stty).read().strip().split(' ')[1])
             except:
-                ## do nothing
+                # do nothing
                 pass
 
-    if cols is not None and 'COLUMNS' not in os.environ:
+    if cols is not None:
         os.environ['COLUMNS'] = "%s" % cols
+
 
 class ExtOption(Option):
     """Extended options class
@@ -92,7 +100,7 @@ class ExtOption(Option):
     EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "datetime",)
     EXTOPTION_STORE_OR = ('store_or_None',) # callback type
 
-    ## shorthelp has no extra arguments
+    # shorthelp has no extra arguments
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + ('shorthelp', 'store_debuglog',)
     STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('store_debuglog', 'store_or_None',)
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
@@ -116,7 +124,7 @@ class ExtOption(Option):
 
                 setattr(parser.values, option.dest, val)
 
-            ## without the following, --x=y doesn't work; only --x y
+            # without the following, --x=y doesn't work; only --x y
             self.nargs = 0 # allow 0 args, will also use 0 args
             if self.type is None:
                 # set to not None, for takes_value to return True
@@ -143,10 +151,10 @@ class ExtOption(Option):
                 action = 'store_true'
 
             if opt.startswith("--%s-" % self.ENABLE):
-                ## keep action
+                # keep action
                 pass
             elif opt.startswith("--%s-" % self.DISABLE):
-                ## reverse action
+                # reverse action
                 if action in ('store_true', 'store_debuglog'):
                     action = 'store_false'
                 elif action in ('store_false',):
@@ -158,7 +166,7 @@ class ExtOption(Option):
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
             if action == "extend":
-                ## comma separated list convert in list
+                # comma separated list convert in list
                 lvalue = value.split(",")
                 values.ensure_value(dest, []).extend(lvalue)
             elif action == "date":
@@ -172,6 +180,7 @@ class ExtOption(Option):
                                 (action, self.EXTOPTION_EXTRA_OPTIONS)))
         else:
             Option.take_action(self, action, dest, opt, value, values, parser)
+
 
 class ExtOptionParser(OptionParser):
     """Make an option parser that
@@ -213,16 +222,12 @@ class ExtOptionParser(OptionParser):
         for opt in self._get_all_options():
             if opt._short_opts is None or len([x for x in opt._short_opts if len(x) > 0]) == 0:
                 opt.help = nohelp
-            opt._long_opts = []            ## remove all long_opts
+            opt._long_opts = []  # remove all long_opts
 
         removeoptgrp = []
         for optgrp in self.option_groups:
-            ## remove all option groups that have only nohelp options
-            remove = True
-            for opt in optgrp.option_list:
-                if not opt.help == nohelp:
-                    remove = False
-            if remove:
+            # remove all option groups that have only nohelp options
+            if reduce(operator.and_, [opt.help == nohelp for opt in optgrp.option_list]):
                 removeoptgrp.append(optgrp)
         for optgrp in removeoptgrp:
             self.option_groups.remove(optgrp)
@@ -250,15 +255,14 @@ class ExtOptionParser(OptionParser):
 
     def _add_help_option(self):
         """Add shorthelp and longhelp"""
-        from optparse import _ # this is gettext normally
         self.add_option("-%s" % self.shorthelp[0],
                         self.shorthelp[1], # *self.shorthelp[1:], syntax error in Python 2.4
                         action="shorthelp",
-                        help=_("show short help message and exit"))
+                        help=_gettext("show short help message and exit"))
         self.add_option("-%s" % self.longhelp[0],
                         self.longhelp[1], # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
-                        help=_("show full help message and exit"))
+                        help=_gettext("show full help message and exit"))
 
     def _get_args(self, args):
         """prepend the options set through the environment"""
@@ -268,7 +272,8 @@ class ExtOptionParser(OptionParser):
 
     def get_env_options_prefix(self):
         """Return the prefix to use for options passed through the environment"""
-        prefix = self.get_prog_name().rsplit('.', 1)[0].upper() # sys.argv[0] or the prog= argument of the optionparser, strip possible extension
+        # sys.argv[0] or the prog= argument of the optionparser, strip possible extension
+        prefix = self.get_prog_name().rsplit('.', 1)[0].upper()
         return prefix
 
     def get_env_options(self):
@@ -297,6 +302,7 @@ class ExtOptionParser(OptionParser):
 
         return env_long_opts
 
+
 class GeneralOption(object):
     """'Used-to-be simple' wrapper class for option parsing
         go_ options are for this class, the remainder is passed to the parser
@@ -308,16 +314,16 @@ class GeneralOption(object):
     """
     OPTIONNAME_SEPARATOR = '_'
 
-    DEBUG_OPTIONS_BUILD = False ## enable debug mode when building the options ?
+    DEBUG_OPTIONS_BUILD = False  # enable debug mode when building the options ?
 
     USAGE = None
     ALLOPTSMANDATORY = True
     PARSER = ExtOptionParser
-    INTERSPERSED = True ## mix args with options
+    INTERSPERSED = True  # mix args with options
 
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
-        self.no_system_exit = kwargs.pop('go_nosystemexit', None) # unit test option
+        self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
 
         set_columns(kwargs.pop('go_columns', None))
 
@@ -372,7 +378,7 @@ class GeneralOption(object):
 
         opt_grp = OptionGroup(self.parser, description[0], description[1])
         keys = opt_dict.keys()
-        keys.sort() ## alphabetical
+        keys.sort() # alphabetical
         for key in keys:
             details = opt_dict[key]
 
@@ -380,7 +386,7 @@ class GeneralOption(object):
             typ = details[1]
             action = details[2]
             default = details[3]
-            ## easy override default with otherdefault
+            # easy override default with otherdefault
             if key in otherdefaults:
                 default = otherdefaults.get(key)
 
@@ -392,7 +398,7 @@ class GeneralOption(object):
 
             if default is not None:
                 if len("%s" % default) == 0:
-                    extra_help.append("def ''") ## empty string
+                    extra_help.append("def ''")  # empty string
                 else:
                     extra_help.append("def %s" % default)
 
@@ -405,7 +411,7 @@ class GeneralOption(object):
             else:
                 dest = "".join([prefix, self.OPTIONNAME_SEPARATOR, key])
 
-            self.processed_options[dest] = [typ, default, action] ## add longopt
+            self.processed_options[dest] = [typ, default, action]  # add longopt
 
             nameds = {'dest':dest, 'help':hlp, 'action':action, 'metavar':key.upper()}
             if default is not None:
@@ -461,7 +467,7 @@ class GeneralOption(object):
         for k in self.options.__dict__.keys():
             levels = k.split(self.OPTIONNAME_SEPARATOR)
             lastlvl = subdict
-            for lvl in levels[:-1]: ## 0 or more
+            for lvl in levels[:-1]:  # 0 or more
                 lastlvl.setdefault(lvl, {})
                 lastlvl = lastlvl[lvl]
             lastlvl[levels[-1]] = self.options.__dict__[k]
@@ -496,8 +502,8 @@ class GeneralOption(object):
             default, action = self.processed_options[opt_name][1:] # skip 0th element type
 
             if opt_value == default:
-                ## do nothing
-                ## except for store_or_None and friends
+                # do nothing
+                # except for store_or_None and friends
                 msg = ''
                 if not (add_default or action in ('store_or_None',)):
                     msg = ' Not adding to args.'
@@ -507,20 +513,22 @@ class GeneralOption(object):
                     continue
 
             if opt_value is None:
-                ## do nothing
+                # do nothing
                 self.log.debug("generate_cmd_line adding %s value %s. None found. not adding to args." %
                                (opt_name, opt_value))
                 continue
 
             if action in ('store_or_None',):
                 if opt_value == default:
-                    self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" % (action, opt_name, opt_value))
+                    self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" %
+                                   (action, opt_name, opt_value))
                     args.append("--%s" % (opt_name))
                 else:
-                    self.log.debug("generate_cmd_line %s adding %s non-default value %s" % (action, opt_name, opt_value))
+                    self.log.debug("generate_cmd_line %s adding %s non-default value %s" %
+                                   (action, opt_name, opt_value))
                     args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
             elif action in ("store_true", "store_false", 'store_debuglog'):
-                ## not default!
+                # not default!
                 self.log.debug("generate_cmd_line adding %s value %s. store action found" %
                                (opt_name, opt_value))
                 if (action in ('store_true', 'store_debuglog',)  and default == True and opt_value == False) or \
@@ -534,7 +542,8 @@ class GeneralOption(object):
                 else:
                     if opt_value == default and ((action in ('store_true', 'store_debuglog',) and default == False) \
                                                  or (action in ('store_false',) and default == True)):
-                        if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
+                        if hasattr(self.parser.option_class, 'ENABLE') and \
+                            hasattr(self.parser.option_class, 'DISABLE'):
                             args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
                         else:
                             self.log.debug(("generate_cmd_line: %s : action %s can only set to inverse of default %s "
@@ -543,12 +552,12 @@ class GeneralOption(object):
                     else:
                         args.append("--%s" % opt_name)
             elif action in ("extend",):
-                ## comma separated
+                # comma separated
                 self.log.debug("generate_cmd_line adding %s value %s. extend action, return as comma-separated list" %
                                (opt_name, opt_value))
 
                 if default is not None:
-                    ## remove these. if default is set, extend extends the default!
+                    # remove these. if default is set, extend extends the default!
                     for def_el in default:
                         opt_value.remove(def_el)
 
@@ -558,7 +567,7 @@ class GeneralOption(object):
 
                 args.append("--%s=%s" % (opt_name, shell_quote(",".join(opt_value))))
             elif action in ("append",):
-                ## add multiple times
+                # add multiple times
                 self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args" %
                                (opt_name, opt_value))
                 args.extend(["--%s=%s" % (opt_name, shell_quote(v)) for v in opt_value])
