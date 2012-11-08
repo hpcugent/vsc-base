@@ -29,8 +29,8 @@ module with various convenience functions and classes to deal with date, time an
 """
 
 import calendar
-import re
 import operator
+import re
 import time as _time
 from datetime import tzinfo, timedelta, datetime, date
 
