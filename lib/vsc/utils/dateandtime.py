@@ -1,4 +1,6 @@
 ##
+#
+# Copyright 2012 Ghent University
 # Copyright 2009-2012 Stijn De Weirdt
 #
 # This file is part of VSC-tools,
@@ -22,21 +24,15 @@
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
-
-
 """
-
-@author Stijn De Weirdt HPCUgent / VSC
-
-a Python module with various convenience functions and classes to deal with date, time and timezone
-
-
+module with various convenience functions and classes to deal with date, time and timezone
 """
 
 import calendar
+import re
+import operator
 import time as _time
 from datetime import tzinfo, timedelta, datetime, date
-import re
 
 class FancyMonth:
     """Convenience class for month math"""
@@ -60,9 +56,9 @@ class FancyMonth:
         self.last = None
         self.nrdays = None
 
-        ## when calculating deltas, include non-full months
-        ##   eg when True, nr of months between last day of month
-        ##   and first day of following month is 2
+        # when calculating deltas, include non-full months
+        #   eg when True, nr of months between last day of month
+        #   and first day of following month is 2
         self.include = True
 
         self.set_details()
@@ -92,7 +88,7 @@ class FancyMonth:
         """
         if self.include == False:
             msg = "number: include=False not implemented"
-            raise(msg)
+            raise(Exception(msg))
         else:
             startdate, enddate = self.get_start_end(otherdate)
 
@@ -110,19 +106,17 @@ class FancyMonth:
 
     def interval(self, otherdate):
         """Return time ordered list of months between date and otherdate"""
-
         if self.include == False:
             msg = "interval: include=False not implemented"
             raise(Exception(msg))
-
         else:
             nr = self.number(otherdate)
             startdate, enddate = self.get_start_end(otherdate)
 
             start = self.__class__(startdate)
-            all = [ start.get_other(m)  for m in range(nr)]
+            all_dates = [ start.get_other(m)  for m in range(nr)]
 
-        return all
+        return all_dates
 
     def parser(self, txt):
         """Based on strings, return date: eg BEGINTHIS returns first day of the current month"""
@@ -160,7 +154,6 @@ class FancyMonth:
 
         return res
 
-
 def date_parser(txt):
     """Parse txt: date YYYY-MM-DD in datetime.date
         also (BEGIN|END)(THIS|LAST|NEXT)MONTH
@@ -173,10 +166,9 @@ def date_parser(txt):
     if txt.endswith('MONTH'):
         m = FancyMonth()
         res = m.parser(txt)
-    elif any(testsupportedmonths):
+    elif reduce(operator.or_, testsupportedmonths):  # TODO replace with any()
         m = FancyMonth(month=testsupportedmonths.index(True) + 1)
         res = m.parser(txt)
-
     elif txt in reserveddate:
         if txt in ('TODAY',):
             m = FancyMonth()
@@ -196,7 +188,9 @@ def date_parser(txt):
     return res
 
 def datetime_parser(txt):
-    """Parse txt: tmpdate YYYY-MM-DD HH:MM:SS.mmmmmm in datetime.datetime"""
+    """Parse txt: tmpdate YYYY-MM-DD HH:MM:SS.mmmmmm in datetime.datetime
+        - date part is parsed with date_parser
+    """
     tmpts = txt.split(" ")
     tmpdate = date_parser(tmpts[0])
 
@@ -205,7 +199,10 @@ def datetime_parser(txt):
         ## add hour and minutes
         datetuple.extend([int(x) for x in tmpts[1].split(':')[:2]])
 
-        sects = tmpts[1].split(':')[2].split('.')
+        try:
+            sects = tmpts[1].split(':')[2].split('.')
+        except:
+            sects = [0]
         ## add seconds
         datetuple.append(int(sects[0]))
         if len(sects) > 1:
@@ -216,10 +213,10 @@ def datetime_parser(txt):
 
     return res
 
-####
-#### example code from http://docs.python.org/library/datetime.html
-#### Implements Local, the local timezone
-####
+#
+# example code from http://docs.python.org/library/datetime.html
+# Implements Local, the local timezone
+#
 
 ZERO = timedelta(0)
 HOUR = timedelta(hours=1)
@@ -246,7 +243,6 @@ utc = UTC()
 
 class FixedOffset(tzinfo):
     """Fixed offset in minutes east from UTC."""
-
     def __init__(self, offset, name):
         self.__offset = timedelta(minutes=offset)
         self.__name = name
@@ -261,7 +257,6 @@ class FixedOffset(tzinfo):
         return ZERO
 
 # A class capturing the platform's idea of local time.
-
 
 STDOFFSET = timedelta(seconds= -_time.timezone)
 if _time.daylight:
