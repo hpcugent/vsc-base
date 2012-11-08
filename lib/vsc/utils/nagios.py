@@ -1,19 +1,28 @@
 #!/usr/bin/env python
 ##
+# Copyright 2012 Ghent University
 # Copyright 2012 Andy Georges
 #
-# This file is part of VSC-tools, originally created by the HPC team of Ghent University (http://ugent.be/hpc).
+# This file is part of VSC-tools,
+# originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
+# with support of Ghent University (http://ugent.be/hpc),
+# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
 # http://github.com/hpcugent/VSC-tools
 #
-# VSC-tools is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation v2.
+# VSC-tools is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation v2.
 #
-# VSC-tools is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# VSC-tools is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License along with VSC-tools. If not, see
-# <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
 """ This module provides functionality to cache and report results of script executions that can readily be
 interpreted by nagios/icinga.
@@ -26,14 +35,18 @@ interpreted by nagios/icinga.
 - NagiosReporter class that provides cache functionality, writing and reading the nagios/icinga result string to a
   pickle file.
 """
-import cPickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
+
 import os
 import pwd
 import stat
 import sys
 import time
 
-import vsc.fancylogger as fancylogger
+from vsc import fancylogger
 
 log = fancylogger.getLogger(__name__)
 
@@ -119,7 +132,7 @@ class NagiosReporter(object):
             self.log.critical("Error opening file %s for reading [%s]" % (self.filename, err))
             unknown_exit("nagios pickled file unavailable (%s)" % (self.header, self.filename))
 
-        (timestamp, nagios_exit_code, nagios_message) = cPickle.load(f)
+        (timestamp, nagios_exit_code, nagios_message) = pickle.load(f)
         f.close()
 
         if self.threshold < 0 or time.time() - timestamp < self.threshold:
