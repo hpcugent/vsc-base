@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 ##
+# Copyright 2011-2012 Ghent University
 # Copyright 2011-2012 Jens Timmerman
 # Copyright 2012 Stijn De Weirdt
 #
