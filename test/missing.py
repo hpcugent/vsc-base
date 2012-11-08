@@ -13,12 +13,13 @@
 """
 Tests for the vsc.utils.missing module.
 """
-import unittest
 from paycheck import with_checker
+from unitest import TestCase, TestLoader
 
 from vsc.utils.missing import nub
 
-class TestNub(unittest.TestCase):
+
+class TestNub(TestCase):
     """Test for the nub function."""
 
     @with_checker([int])
@@ -38,8 +39,6 @@ class TestNub(unittest.TestCase):
         for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
             self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
-
-if __name__ == '__main__':
-    unittest.main()
-
-
+def suite():
+    """ return all the tests"""
+    return TestLoader().loadTestsFromTestCase(TestNub)
