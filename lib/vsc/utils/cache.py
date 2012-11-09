@@ -46,6 +46,10 @@ class FileCache(object):
     indexed by the data.key(). The value stored is a tuple consisting
     of (the time of addition to the dictionary, the complete
     data instance).
+
+    When the cache is updated, we only store the updates; the old entries
+    are discarded unless they were touched by an update. In that case, the
+    timestamp is updated only when the given threshold was exceeded.
     """
 
     def __init__(self, filename):
@@ -63,19 +67,22 @@ class FileCache(object):
         self.log = fancylogger.getLogger(self.__class__.__name__)
         self.filename = filename
 
-        if not os.access(self.filename, os.R_OK):
-            self.log.error("Could not access the file cache at %s" % (self.filename))
-            self.shelf = {}
-        else:
-            f = open(self.filename, 'r')
+        try:
+            f = open(self.filename, 'rb')
             try:
                 self.shelf = pickle.load(f)
-            except Exception, err:
-                self.log.error("Could not load pickle data from %s (%s)" % (self.filename, err))
-                self.shelf = {}
-            f.close()
+            except:
+                self.log.raiseException("Could not load pickle data from %s" % (self.filename))
+            finally:
+                f.close()
+
+        except (OSError, IOError), err:
+            self.log.error("Could not access the file cache at %s [%s]" % (self.filename, err))
+            self.shelf = {}
+
         if not self.shelf:
-            self.log.info("Loaded empty shelf from %s" % (self.filename))
+            self.log.info("Cache in %s starts with an empty shelf" % (self.filename))
+
         self.new_shelf = {}
 
     def update(self, data, threshold):
@@ -105,14 +112,14 @@ class FileCache(object):
 
         @type key: anything that can serve as a dictionary key
 
-        @returns: (timestamp, data) if there is data foer the given key, None otherwise.
+        @returns: (timestamp, data) if there is data for the given key, None otherwise.
         """
         return  self.shelf.get(key, None)
 
     def close(self):
         """Close the cache."""
 
-        f = open(self.filename, 'w')
+        f = open(self.filename, 'wb')
         if not f:
             self.log.error('cannot open the file cache at %s for writing' % (self.filename))
         else:
