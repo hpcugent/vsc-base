@@ -80,6 +80,8 @@ class TestCache(TestCase):
             self.assertTrue(ts <= now)
         new_cache.close()
 
+        os.unlink(filename)
+
 def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestCache)
