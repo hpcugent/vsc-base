@@ -60,22 +60,22 @@ class FileCache(object):
         @param filename: (absolute) path to the cache file.
         """
 
-        self.logger = fancylogger.getLogger(self.__class__.__name__)
+        self.log = fancylogger.getLogger(self.__class__.__name__)
         self.filename = filename
 
         if not os.access(self.filename, os.R_OK):
-            self.logger.error("Could not access the file cache at %s" % (self.filename))
+            self.log.error("Could not access the file cache at %s" % (self.filename))
             self.shelf = {}
         else:
             f = open(self.filename, 'r')
             try:
                 self.shelf = pickle.load(f)
             except Exception, err:
-                self.logger.error("Could not load pickle data from %s (%s)" % (self.filename, err))
+                self.log.error("Could not load pickle data from %s (%s)" % (self.filename, err))
                 self.shelf = {}
             f.close()
         if not self.shelf:
-            self.logger.info("Loaded empty shelf from %s" % (self.filename))
+            self.log.info("Loaded empty shelf from %s" % (self.filename))
         self.new_shelf = {}
 
     def update(self, data, threshold):
@@ -114,8 +114,8 @@ class FileCache(object):
 
         f = open(self.filename, 'w')
         if not f:
-            self.logger.error('cannot open the file cache at %s for writing' % (self.filename))
+            self.log.error('cannot open the file cache at %s for writing' % (self.filename))
         else:
             pickle.dump(self.new_shelf, f)
             f.close()
-            self.logger.info('closing the file cache at %s' % (self.filename))
+            self.log.info('closing the file cache at %s' % (self.filename))
