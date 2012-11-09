@@ -35,10 +35,6 @@ interpreted by nagios/icinga.
 - NagiosReporter class that provides cache functionality, writing and reading the nagios/icinga result string to a
   pickle file.
 """
-try:
-    import cPickle as pickle
-except:
-    import pickle
 
 import os
 import pwd
@@ -47,6 +43,7 @@ import sys
 import time
 
 from vsc import fancylogger
+from vsc.utils.cache import FileCache
 
 log = fancylogger.getLogger(__name__)
 
@@ -127,13 +124,13 @@ class NagiosReporter(object):
         If the cache data is too old (now - cache timestamp > self.threshold), a critical exit is produced.
         """
         try:
-            f = open(self.filename, 'r')
-        except Exception, err:
-            self.log.critical("Error opening file %s for reading [%s]" % (self.filename, err))
+            nagios_cache = FileCache(self.filename)
+        except:
+            self.log.critical("Error opening file %s for reading" % (self.filename))
             unknown_exit("nagios pickled file unavailable (%s)" % (self.header, self.filename))
 
-        (timestamp, nagios_exit_code, nagios_message) = pickle.load(f)
-        f.close()
+        (timestamp, (nagios_exit_code, nagios_message)) = nagios_cache.load(0)
+        nagios_cache.close()
 
         if self.threshold < 0 or time.time() - timestamp < self.threshold:
             self.log.info("Nagios check cache file %s contents delivered: %s" % (self.filename, nagios_message))
@@ -151,19 +148,20 @@ class NagiosReporter(object):
         @param nagios_exit_code: a valid nagios exit code.
         @param nagios_message: the message to print out when the actual check runs.
         """
-        f = open(self.filename, 'w')
-        if not f:
-            self.log.critical("Cannot open the nagios pickled file %s for writing" % (self.filename))
-            return False
-        else:
-            t = time.time()
-            cPickle.dump((t, nagios_exit_code, nagios_message), f)
-            f.close()
-            self.log.info("Wrote nagios check cache file %s at %s" % (self.filename, time.ctime(t)))
-            try:
-                p = pwd.getpwnam(self.nagios_username)
-                os.chmod(self.filename, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP)
-                os.chown(self.filename, p.pw_uid, p.pw_gid)
-            except Exception, err:
-                self.log.error("Cannot chown the nagios check file %s to the nagios user [%s]" % (self.filename, err))
+        try:
+            nagios_cache = FileCache(self.filename)
+            nagios_cache.update(0, (nagios_exit_code, nagios_message), 0)  # always update
+            nagios_cache.close()
+            self.log.info("Wrote nagios check cache file %s at about %s" % (self.filename, time.ctime(time.time())))
+        except:
+            # raising an error is ok, since we usually do this as the very last thing in the script
+            self.log.raiseException("Cannot save to the nagios pickled file (%s)" % (self.filename))
+
+        try:
+            p = pwd.getpwnam(self.nagios_username)
+            os.chmod(self.filename, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP)
+            os.chown(self.filename, p.pw_uid, p.pw_gid)
+        except:
+            self.log.raiseException("Cannot chown the nagios check file %s to the nagios user" % (self.filename))
+
         return True
