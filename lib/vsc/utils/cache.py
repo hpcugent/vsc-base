@@ -33,7 +33,6 @@ try:
 except:
     import pickle
 
-import os
 import time
 
 from vsc import fancylogger
@@ -85,18 +84,18 @@ class FileCache(object):
 
         self.new_shelf = {}
 
-    def update(self, data, threshold):
+    def update(self, key, data, threshold):
         """Update the given data if the existing data is older than the given threshold.
 
-        @type data: an instance that implements a key() method. key() returns a
-                    string that uniquely corresponds to this data instance. Note that hash is fubar (see XXX)
+        @type key: something that can serve as a dictionary key (and thus can be pickled)
+        @type data: something that can be pickled
         @type threshold: int
 
+        @type key: identification of the data item
         @param data: whatever needs to be stored
         @param threshold: time in seconds
         """
         now = time.time()
-        key = data.key()
         old = self.load(key)
         if old:
             (ts, _) = old
