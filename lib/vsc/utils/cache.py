@@ -25,17 +25,18 @@
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
-"""Caching utilities.
-
-Created Mar 15, 2012
-
-@author Andy Georges
 """
-import cPickle
+Caching utilities.
+"""
+try:
+    import cPickle as pickle
+except:
+    import pickle
+
 import os
 import time
 
-import vsc.fancylogger as fancylogger
+from vsc import fancylogger
 
 
 class FileCache(object):
@@ -68,13 +69,13 @@ class FileCache(object):
         else:
             f = open(self.filename, 'r')
             try:
-                self.shelf = cPickle.load(f)
+                self.shelf = pickle.load(f)
             except Exception, err:
                 self.logger.error("Could not load pickle data from %s (%s)" % (self.filename, err))
                 self.shelf = {}
             f.close()
         if not self.shelf:
-            self.logger.error('Could not load the file cache at %s' % (self.filename))
+            self.logger.info("Loaded empty shelf from %s" % (self.filename))
         self.new_shelf = {}
 
     def update(self, data, threshold):
@@ -115,6 +116,6 @@ class FileCache(object):
         if not f:
             self.logger.error('cannot open the file cache at %s for writing' % (self.filename))
         else:
-            cPickle.dump(self.new_shelf, f)
+            pickle.dump(self.new_shelf, f)
             f.close()
             self.logger.info('closing the file cache at %s' % (self.filename))
