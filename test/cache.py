@@ -63,7 +63,7 @@ class TestCache(TestCase):
         """Check if the loaded data is the same as the saved data."""
 
         # create a tempfilename
-        (handle, filename) = tempfile.mkstemp(dir='/tmp')
+        (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
         cache = FileCache(filename)
         for (key, value) in data.items():
