@@ -46,12 +46,17 @@ class FileCache(object):
     of (the time of addition to the dictionary, the complete
     data instance).
 
-    When the cache is updated, we only store the updates; the old entries
-    are discarded unless they were touched by an update. In that case, the
-    timestamp is updated only when the given threshold was exceeded.
+    By default, only updated entries are stored to the file; old
+    entries are discarded. This can be changed by setting a flag
+    during instatiation or at run time. The changed behaviour only
+    has an effect when closing the cache, i.e., storing it to a file.
+
+    Note that the cache is persistent only when it is closed correctly.
+    During a crash of your application ar runtime, the information is
+    _not_ written to the file.
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, retain_old=False):
         """Initializer.
 
         Checks if the file can be accessed and load the data therein if any. If the file does not yet exist, start
@@ -65,6 +70,7 @@ class FileCache(object):
 
         self.log = fancylogger.getLogger(self.__class__.__name__)
         self.filename = filename
+        self.retain_old = retain_old
 
         try:
             f = open(self.filename, 'rb')
@@ -113,7 +119,15 @@ class FileCache(object):
 
         @returns: (timestamp, data) if there is data for the given key, None otherwise.
         """
-        return  self.shelf.get(key, None)
+        return self.shelf.get(key, None) or self.new_shelf.get(key, None)
+
+    def retain(self):
+        """Retain non-updated data on close."""
+        self.retain_old = True
+
+    def discard(self):
+        """Discard non-updated data on close."""
+        self.retain_old = False
 
     def close(self):
         """Close the cache."""
@@ -122,6 +136,10 @@ class FileCache(object):
         if not f:
             self.log.error('cannot open the file cache at %s for writing' % (self.filename))
         else:
+            if self.retain_old:
+                self.shelf.update(self.new_shelf)
+                self.new_shelf = self.shelf
+
             pickle.dump(self.new_shelf, f)
             f.close()
             self.log.info('closing the file cache at %s' % (self.filename))
