@@ -354,6 +354,8 @@ class GeneralOption(object):
 
         self.postprocess()
 
+        self.validate()
+
     def set_debug(self):
         """Check if debug options are on and then set fancylogger to debug"""
         if self.options is None:
@@ -474,6 +476,10 @@ class GeneralOption(object):
 
     def postprocess(self):
         """Some additional processing"""
+        pass
+
+    def validate(self):
+        """Final step, allows for validating the options and/or args"""
         pass
 
     def dict_by_prefix(self):
