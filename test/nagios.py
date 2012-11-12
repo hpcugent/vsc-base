@@ -41,8 +41,38 @@ from vsc.utils.nagios import NagiosReporter, NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING
 class TestNagios(TestCase):
     """Test for the nagios reporter class."""
 
-    @with_checker(irange(0, 3), str, irange(0, 10))
+    @with_checker(irange(0, 3), str, irange(2, 10))
     def test_cache(self, exit_code, message, threshold):
+        """Test the caching mechanism in the reporter."""
+        (handle, filename) = tempfile.mkstemp()
+        os.unlink(filename)
+        reporter = NagiosReporter('test_cache', filename, threshold)
+
+        nagios_exit = [NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_UNKNOWN][exit_code]
+
+        reporter.cache(nagios_exit, message)
+
+        (handle, output_filename) = tempfile.mkstemp()
+        os.close(handle)
+
+        try:
+            old_stdout = sys.stdout
+            sys.stdout = open(output_filename, 'w')
+            reporter_test = NagiosReporter('test_cache', filename, threshold)
+            reporter_test.report_and_exit()
+        except SystemExit, err:
+            sys.stdout.close()
+            sys.stdout = old_stdout
+            output_file = open(output_filename, 'r')
+            line = output_file.read().rstrip()
+            output_file.close()
+            os.unlink(output_filename)
+            self.assertTrue(err.code == nagios_exit[0])
+            self.assertTrue(line == "%s %s" % (nagios_exit[1], message))
+
+
+    @with_checker(irange(0, 3), str, irange(-1, 10))
+    def test_threshold(self, exit_code, message, threshold):
         """Test the caching mechanism in the reporter."""
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
@@ -58,16 +88,18 @@ class TestNagios(TestCase):
         try:
             time.sleep(threshold + 1)
             old_stdout = sys.stdout
-            sys.stdout = os.open(output_filename, 'w')
+            sys.stdout = open(output_filename, 'w')
             reporter_test = NagiosReporter('test_cache', filename, threshold)
             reporter_test.report_and_exit()
         except SystemExit, err:
             sys.stdout.close()
             sys.stdout = old_stdout
-            self.assertTrue(err.code == nagios_exit[0])
-            output_file = os.open(output_filename, 'r')
+            output_file = open(output_filename, 'r')
             line = output_file.read().rstrip()
-            self.assertTrue(line == "%s %s" % (nagios_exit[1], message))
+            output_file.close()
+            os.unlink(output_filename)
+            self.assertTrue(err.code == NAGIOS_EXIT_UNKNOWN[0])
+            self.assertTrue(line.startswith("%s test_cache pickled file too old (timestamp =" % (nagios_exit[1], message)))
 
 
 def suite():
