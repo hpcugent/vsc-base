@@ -32,6 +32,8 @@ import tempfile
 import time
 import sys
 
+import StringIO
+
 from paycheck import with_checker, irange
 from unittest import TestCase, TestLoader, main
 
@@ -44,6 +46,9 @@ class TestNagios(TestCase):
     @with_checker(irange(0, 3), str, irange(2, 10))
     def test_cache(self, exit_code, message, threshold):
         """Test the caching mechanism in the reporter."""
+        if message == '':
+            return
+
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
         reporter = NagiosReporter('test_cache', filename, threshold)
@@ -57,25 +62,25 @@ class TestNagios(TestCase):
 
         try:
             old_stdout = sys.stdout
-            sys.stdout = open(output_filename, 'w')
+            buffer = StringIO.StringIO()
+            sys.stdout = buffer
             reporter_test = NagiosReporter('test_cache', filename, threshold)
             reporter_test.report_and_exit()
         except SystemExit, err:
-            sys.stdout.close()
+            line = buffer.getvalue()
             sys.stdout = old_stdout
-            output_file = open(output_filename, 'r')
-            line = output_file.read().rstrip()
-            output_file.close()
-            os.unlink(output_filename)
+            buffer.close()
             self.assertTrue(err.code == nagios_exit[0])
             self.assertTrue(line == "%s %s" % (nagios_exit[1], message))
 
         os.unlink(filename)
 
-
     @with_checker(irange(0, 3), str, irange(0, 4))
     def test_threshold(self, exit_code, message, threshold):
         """Test the threshold borking mechanism in the reporter."""
+        if message == '':
+            return
+
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
         reporter = NagiosReporter('test_cache', filename, threshold)
