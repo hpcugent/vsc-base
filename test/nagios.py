@@ -70,10 +70,12 @@ class TestNagios(TestCase):
             self.assertTrue(err.code == nagios_exit[0])
             self.assertTrue(line == "%s %s" % (nagios_exit[1], message))
 
+        os.unlink(filename)
 
-    @with_checker(irange(0, 3), str, irange(0, 10))
+
+    @with_checker(irange(0, 3), str, irange(0, 4))
     def test_threshold(self, exit_code, message, threshold):
-        """Test the caching mechanism in the reporter."""
+        """Test the threshold borking mechanism in the reporter."""
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
         reporter = NagiosReporter('test_cache', filename, threshold)
@@ -101,6 +103,7 @@ class TestNagios(TestCase):
             self.assertTrue(err.code == NAGIOS_EXIT_UNKNOWN[0])
             self.assertTrue(line.startswith("%s test_cache pickled file too old (timestamp =" % (NAGIOS_EXIT_UNKNOWN[1])))
 
+        os.unlink(filename)
 
 def suite():
     """ return all the tests"""
