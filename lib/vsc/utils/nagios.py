@@ -53,20 +53,18 @@ NAGIOS_EXIT_CRITICAL = (2, 'CRITICAL')
 NAGIOS_EXIT_UNKNOWN = (3, 'UNKNOWN')
 
 
-def _real_exit(kind, message, code):
-    """Prints the kind and message and exitas accordingly.
+def _real_exit(message, code):
+    """Prints the code and message and exitas accordingly.
 
-    @type kind: string
     @type message: string
     @type exit_code: int
 
-    @param kind: Prefix to the nagios exit message
     @param message: Useful message for nagios
     @param exit_code: the, ah, erm, exit code of the application using the nagios utility
     """
     (exit_code, text) = code
-    print "%s %s" % (kind, message)
-    log.info("Nagios report %s: %s" % (kind, message))
+    print "%s %s" % (text, message)
+    log.info("Nagios report %s: %s" % (text, message))
     sys.exit(exit_code)
 
 
