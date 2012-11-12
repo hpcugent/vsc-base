@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ##
-# Copyright 2011-2012 Ghent University
-# Copyright 2011-2012 Jens Timmerman
+# Copyright 2012 Ghent University
+# Copyright 2012 Andy Georges
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -25,10 +25,28 @@
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-Initialize vsc package.
-the vsc namespace is used in different folders allong the system
-so explicitly declare this is also the vsc namespace
-"""
-import pkg_resources
-pkg_resources.declare_namespace(__name__)
+Module offering the Singleton class.
 
+
+This class can be used as the __metaclass__ class field to ensure only a
+single instance of the class gets used in the run of an application or
+script.
+
+class A(B):
+
+    __metaclass__ = Singleton
+
+"""
+
+
+class Singleton(type):
+    """Serves as  metaclass for classes that should implement the Singleton pattern.
+
+    See http://stackoverflow.com/questions/6760685/creating-a-singleton-in-python
+    """
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
