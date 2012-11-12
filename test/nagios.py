@@ -109,6 +109,7 @@ class TestNagios(TestCase):
 
         os.unlink(filename)
 
+
 def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestNagios)
