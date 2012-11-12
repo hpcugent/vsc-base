@@ -47,13 +47,13 @@ from vsc.utils.cache import FileCache
 
 log = fancylogger.getLogger(__name__)
 
-NAGIOS_EXIT_OK = 0
-NAGIOS_EXIT_WARNING = 1
-NAGIOS_EXIT_CRITICAL = 2
-NAGIOS_EXIT_UNKNOWN = 3
+NAGIOS_EXIT_OK = (0, 'OK')
+NAGIOS_EXIT_WARNING = (1, 'WARNING')
+NAGIOS_EXIT_CRITICAL = (2, 'CRITICAL')
+NAGIOS_EXIT_UNKNOWN = (3, 'UNKNOWN')
 
 
-def _real_exit(kind, message, exit_code):
+def _real_exit(kind, message, code):
     """Prints the kind and message and exitas accordingly.
 
     @type kind: string
@@ -64,6 +64,7 @@ def _real_exit(kind, message, exit_code):
     @param message: Useful message for nagios
     @param exit_code: the, ah, erm, exit code of the application using the nagios utility
     """
+    (exit_code, text) = code
     print "%s %s" % (kind, message)
     log.info("Nagios report %s: %s" % (kind, message))
     sys.exit(exit_code)
@@ -71,22 +72,22 @@ def _real_exit(kind, message, exit_code):
 
 def ok_exit(message):
     """Prints OK message and exits the program with an OK exit code."""
-    _real_exit("OK", message, NAGIOS_EXIT_OK)
+    _real_exit(message, NAGIOS_EXIT_OK)
 
 
 def warning_exit(message):
     """Prints WARNING message and exits the program with an WARNING exit code."""
-    _real_exit("WARNING", message, NAGIOS_EXIT_WARNING)
+    _real_exit(message, NAGIOS_EXIT_WARNING)
 
 
 def unknown_exit(message):
     """Prints UNKNOWN message and exits the program with an UNKNOWN exit code."""
-    _real_exit("UNKNOWN", message, NAGIOS_EXIT_UNKNOWN)
+    _real_exit(message, NAGIOS_EXIT_UNKNOWN)
 
 
 def critical_exit(message):
     """Prints CRITICAL message and exits the program with an CRITICAL exit code."""
-    _real_exit("CRITICAL", message, NAGIOS_EXIT_CRITICAL)
+    _real_exit(message, NAGIOS_EXIT_CRITICAL)
 
 
 class NagiosReporter(object):
@@ -127,22 +128,22 @@ class NagiosReporter(object):
             nagios_cache = FileCache(self.filename)
         except:
             self.log.critical("Error opening file %s for reading" % (self.filename))
-            unknown_exit("nagios pickled file unavailable (%s)" % (self.header, self.filename))
+            unknown_exit("%s nagios pickled file unavailable (%s)" % (self.header, self.filename))
 
-        (timestamp, (nagios_exit_code, nagios_message)) = nagios_cache.load(0)
+        (timestamp, ((nagios_exit_code, nagios_exit_string), nagios_message)) = nagios_cache.load(0)
         nagios_cache.close()
 
         if self.threshold < 0 or time.time() - timestamp < self.threshold:
             self.log.info("Nagios check cache file %s contents delivered: %s" % (self.filename, nagios_message))
-            print "%s" % (nagios_message)
+            print "%s %s" % (nagios_exit_string, nagios_message)
             sys.exit(nagios_exit_code)
         else:
-            unknown_exit("pickled file too old (timestamp = %s)" % (self.header, time.ctime(timestamp)))
+            unknown_exit("%s pickled file too old (timestamp = %s)" % (self.header, time.ctime(timestamp)))
 
-    def cache(self, nagios_exit_code, nagios_message):
+    def cache(self, nagios_exit, nagios_message):
         """Store the result in the cache file with a timestamp.
 
-        @type nagios_exit_code: integer
+        @type nagios_exit: one of NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRTITCAL or NAGIOS_EXIT_UNKNOWN
         @type nagios_message: string
 
         @param nagios_exit_code: a valid nagios exit code.
@@ -150,7 +151,7 @@ class NagiosReporter(object):
         """
         try:
             nagios_cache = FileCache(self.filename)
-            nagios_cache.update(0, (nagios_exit_code, nagios_message), 0)  # always update
+            nagios_cache.update(0, (nagios_exit, nagios_message), 0)  # always update
             nagios_cache.close()
             self.log.info("Wrote nagios check cache file %s at about %s" % (self.filename, time.ctime(time.time())))
         except:
