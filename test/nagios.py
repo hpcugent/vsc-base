@@ -46,6 +46,7 @@ class TestNagios(TestCase):
     @with_checker(irange(0, 3), str, irange(2, 10))
     def test_cache(self, exit_code, message, threshold):
         """Test the caching mechanism in the reporter."""
+        message = message.rstrip()
         if message == '':
             return
 
@@ -67,7 +68,7 @@ class TestNagios(TestCase):
             reporter_test = NagiosReporter('test_cache', filename, threshold)
             reporter_test.report_and_exit()
         except SystemExit, err:
-            line = buffer.getvalue()
+            line = buffer.getvalue().rstrip()
             sys.stdout = old_stdout
             buffer.close()
             self.assertTrue(err.code == nagios_exit[0])
@@ -78,6 +79,7 @@ class TestNagios(TestCase):
     @with_checker(irange(0, 3), str, irange(0, 4))
     def test_threshold(self, exit_code, message, threshold):
         """Test the threshold borking mechanism in the reporter."""
+        message = message.rstrip()
         if message == '':
             return
 
@@ -101,7 +103,7 @@ class TestNagios(TestCase):
             reporter_test = NagiosReporter('test_cache', filename, threshold)
             reporter_test.report_and_exit()
         except SystemExit, err:
-            line = buffer.getvalue()
+            line = buffer.getvalue().rstrip()
             sys.stdout = old_stdout
             buffer.close()
             self.assertTrue(err.code == NAGIOS_EXIT_UNKNOWN[0])
