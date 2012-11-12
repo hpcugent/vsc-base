@@ -95,16 +95,15 @@ class TestNagios(TestCase):
         try:
             time.sleep(threshold + 1)
             old_stdout = sys.stdout
-            sys.stdout = open(output_filename, 'w')
+            buffer = StringIO.StringIO()
+            sys.stdout = buffer
+            old_stdout = sys.stdout
             reporter_test = NagiosReporter('test_cache', filename, threshold)
             reporter_test.report_and_exit()
         except SystemExit, err:
-            sys.stdout.close()
+            line = buffer.getvalue()
             sys.stdout = old_stdout
-            output_file = open(output_filename, 'r')
-            line = output_file.read().rstrip()
-            output_file.close()
-            os.unlink(output_filename)
+            buffer.close()
             self.assertTrue(err.code == NAGIOS_EXIT_UNKNOWN[0])
             self.assertTrue(line.startswith("%s test_cache pickled file too old (timestamp =" % (NAGIOS_EXIT_UNKNOWN[1])))
 
