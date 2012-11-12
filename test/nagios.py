@@ -71,7 +71,7 @@ class TestNagios(TestCase):
             self.assertTrue(line == "%s %s" % (nagios_exit[1], message))
 
 
-    @with_checker(irange(0, 3), str, irange(-1, 10))
+    @with_checker(irange(0, 3), str, irange(0, 10))
     def test_threshold(self, exit_code, message, threshold):
         """Test the caching mechanism in the reporter."""
         (handle, filename) = tempfile.mkstemp()
