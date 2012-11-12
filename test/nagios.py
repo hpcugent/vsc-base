@@ -99,7 +99,7 @@ class TestNagios(TestCase):
             output_file.close()
             os.unlink(output_filename)
             self.assertTrue(err.code == NAGIOS_EXIT_UNKNOWN[0])
-            self.assertTrue(line.startswith("%s test_cache pickled file too old (timestamp =" % (nagios_exit[1], message)))
+            self.assertTrue(line.startswith("%s test_cache pickled file too old (timestamp =" % (NAGIOS_EXIT_UNKNOWN[1])))
 
 
 def suite():
