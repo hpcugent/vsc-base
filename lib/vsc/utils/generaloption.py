@@ -434,10 +434,14 @@ class GeneralOption(object):
 
         self.parser.add_option_group(opt_grp)
 
+    def default_parseoptions(self):
+        """Return default options"""
+        return sys.argv[1:]
+
     def parseoptions(self, options_list=None):
         """parse the options"""
         if options_list is None:
-            options_list = sys.argv[1:]
+            options_list = self.default_parseoptions()
 
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
