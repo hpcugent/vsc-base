@@ -19,22 +19,20 @@ couple of `fancy` features.
  - logging to an UDP server (logdaemon.py f.ex.)
  - easily setting loglevel
 
-### ldap
-Collection of utilities to ease interaction with the LDAP servers.
-Examples of the schema's used can be provided, although we do not include them ny
-default.
+### ldap Collection of utilities to ease interaction with the LDAP servers.
+Examples of the schema's used can be provided, although we do not include them
+ny default.
 - __filter.py__: Construction of LDAP filters that can be combined in intuitive
   ways using well-known operators, such as __and__, __or__, and __not__.
 - __group.py__: A group in LDAP, based on the posixGroup object class --
   extended with several fields. Has one or more members and at least one
   moderator.
-- __ldap_utils.py__: Low-level LDAP utilities, such as making (and maintaining) a
-  bind the the LDAP server.
 - __project.py__: Projects that are run on the HPC infrastructure. These are
   autogroups, meaning their member list is built automagically.
 - __user__.py: A user in LDAP.
-- __utils.py__: Higher level utilities for querying LDAP and the base class for
-  entitites in LDAP.
+- __utils.py__: Low-level LDAP utilities, such as making (and maintaining) a
+  bind the the LDAP server. Higher level utilities for querying LDAP and the
+  base class for entitites in LDAP.
 - __vo.py__: A virtual organisation is a special kind of group.
 
 ### utils
