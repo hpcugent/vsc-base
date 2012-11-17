@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 ##
 # Copyright 2012 Ghent University
-# Copyright 2012 Andy Georges
+# Copyright 2012 Andy Georges, Luis Fernando Muñoz Mejías
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -164,3 +165,88 @@ class NagiosReporter(object):
             self.log.raiseException("Cannot chown the nagios check file %s to the nagios user" % (self.filename))
 
         return True
+
+
+class NagiosResult(object):
+    """Class representing the results of an Icinga/Nagios check.
+
+    It will contain a field with the message to be printed.  And the
+    rest of its fields will be the performance data, including
+    thresholds for each aspect.
+
+    It provides an C{__str__} method, so that when the results are
+    printed, they are rendered correctly and we don't wonder why
+    Icinga is doing weird things with its plots.
+
+    For example:
+
+    >>> n = NagiosResult('msg', a=1)
+    >>> print n
+    msg | a=1;;;
+    >>> n = NagiosResult('msg', a=1, a_critical=2, a_warning=3)
+    >>> print n
+    msg | a=1;3;2;
+    >>> n = NagiosResult('msg')
+    >>> print n
+    msg
+    >>> n.a = 5
+    >>> print n
+    msg | a=5;;;
+    >>> n.b = 5
+    >>> n.b_critical = 7
+    >>> print n
+    msg | a=5;;; b=5;;7;
+
+    For more information about performance data and output strings in
+    Nagios checks, please refer to
+    U{http://docs.icinga.org/latest/en/perfdata.html}
+    """
+
+    def __init__(self, message, **kwargs):
+        """Class constructor.  Takes a message and an optional
+        dictionary with each relevant metric and (perhaps) its
+        critical and warning thresholds
+
+        @type message: string
+        @type kwargs: dict
+
+        @param message: Output of the check.
+        @param kwargs: Each value is a number or a string which is
+        expected to be a number plus a unit.  Each key is the name of
+        a performance datum, optionally with the suffixes "_critical"
+        and "_warning" for marking the respective thresholds.
+        """
+        self.__dict__ = kwargs
+        self.message = message
+
+    def __str__(self):
+        """Turns the result object into a string suitable for being
+        printed by an Icinga check"""
+        s = self.message
+
+        d = dict()
+
+        for key, value in self.__dict__.iteritems():
+            if key == 'message':
+                continue
+            if key.endswith('_critical'):
+                l = key[:-len('_critical')]
+                f = d.get(l, dict())
+                f['critical'] = value
+                d[l] = f
+            elif key.endswith('_warning'):
+                l = key[:-len('_warning')]
+                f = d.get(l, dict())
+                f['warning'] = value
+                d[l] = f
+            else:
+                f = d.get(key, dict())
+                f['value'] = value
+                d[key] = f
+
+        if not d:
+            return self.message
+        perf = ["%s=%s;%s;%s;" % (k, v.get('value', ''), v.get('warning', ''), v.get('critical', ''))
+                for k, v in d.iteritems() ]
+
+        return "%s | %s" % (self.message, ' '.join(perf))
