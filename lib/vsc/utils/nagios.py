@@ -173,7 +173,7 @@ class NagiosResult(object):
     rest of its fields will be the performance data, including
     thresholds for each aspect.
 
-    It provides an __str__ method, so that when the results are
+    It provides an C{__str__} method, so that when the results are
     printed, they are rendered correctly and we don't wonder why
     Icinga is doing weird things with its plots.
 
