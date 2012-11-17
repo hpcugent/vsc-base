@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 ##
 # Copyright 2012 Ghent University
-# Copyright 2012 Andy Georges, Luis Fernando Muñoz Mejías
+# Copyright 2012 Andy Georges, Luis Fernando MuÃ±oz MejÃ­as
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -191,6 +192,10 @@ class NagiosResult(object):
     >>> n.a = 5
     >>> print n
     msg | a=5;;;
+    >>> n.b = 5
+    >>> n.b_critical = 7
+    >>> print n
+    msg | a=5;;; b=5;;7;
 
     For more information about performance data and output strings in
     Nagios checks, please refer to
