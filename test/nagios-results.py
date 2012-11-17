@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ##
 #
-# Copyright 2012 Andy Georges
+# Copyright 2012 Luis Fernando Muñoz Mejías
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -41,14 +41,14 @@ class TestNagiosResult(TestCase):
     """Test for the nagios result class."""
 
     def test_no_perfdata(self):
-        '''Test what is generated when no performance data is given'''
+        """Test what is generated when no performance data is given"""
         n = NagiosResult('hello')
         self.assertEqual(n.message, 'hello', 'Class correctly filled in')
         self.assertEqual(len(n.__dict__.keys()), 1, 'Nothing gets added with no performance data')
         self.assertEqual(n.__str__(), n.message, 'Correct stringification with no performance data')
 
     def test_perfdata_no_thresholds(self):
-        '''Test what is generated when performance data with no thresholds is given'''
+        """Test what is generated when performance data with no thresholds is given"""
         n = NagiosResult('hello', a_metric=1)
         self.assertEqual(n.message, 'hello', 'Class message correctly filled in')
         self.assertEqual(n.a_metric, 1, "Performance data correctly filled in")
@@ -57,7 +57,7 @@ class TestNagiosResult(TestCase):
                          'Performance data with no thresholds correctly stringified')
 
     def test_perfdata_with_thresholds(self):
-        '''Test what is generated when performance AND thresholds are given'''
+        """Test what is generated when performance AND thresholds are given"""
         n = NagiosResult('hello', a_metric=1, a_metric_critical=2)
         self.assertEqual(n.a_metric_critical, 2, "Threshold for a perfdata is a normal key")
         self.assertEqual(len(n.__dict__.keys()), 3, "All keys correctly stored in the object")

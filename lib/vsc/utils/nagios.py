@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ##
 # Copyright 2012 Ghent University
-# Copyright 2012 Andy Georges
+# Copyright 2012 Andy Georges, Luis Fernando Muñoz Mejías
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -167,7 +167,7 @@ class NagiosReporter(object):
 
 
 class NagiosResult(object):
-    '''Class representing the results of an Icinga/Nagios check.
+    """Class representing the results of an Icinga/Nagios check.
 
     It will contain a field with the message to be printed.  And the
     rest of its fields will be the performance data, including
@@ -195,10 +195,10 @@ class NagiosResult(object):
     For more information about performance data and output strings in
     Nagios checks, please refer to
     U{http://docs.icinga.org/latest/en/perfdata.html}
-    '''
+    """
 
     def __init__(self, message, **kwargs):
-        '''Class constructor.  Takes a message and an optional
+        """Class constructor.  Takes a message and an optional
         dictionary with each relevant metric and (perhaps) its
         critical and warning thresholds
 
@@ -210,13 +210,13 @@ class NagiosResult(object):
         expected to be a number plus a unit.  Each key is the name of
         a performance datum, optionally with the suffixes "_critical"
         and "_warning" for marking the respective thresholds.
-        '''
+        """
         self.__dict__ = kwargs
         self.message = message
 
     def __str__(self):
-        '''Turns the result object into a string suitable for being
-        printed by an Icinga check'''
+        """Turns the result object into a string suitable for being
+        printed by an Icinga check"""
         s = self.message
 
         d = dict()
@@ -237,7 +237,6 @@ class NagiosResult(object):
             else:
                 f = d.get(key, dict())
                 f['value'] = value
-                #print "Key is ", key, "f is", f
                 d[key] = f
 
         if not d:
@@ -246,7 +245,3 @@ class NagiosResult(object):
                 for k, v in d.iteritems() ]
 
         return "%s | %s" % (self.message, ' '.join(perf))
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
