@@ -188,10 +188,13 @@ class NagiosResult(object):
     >>> n = NagiosResult('msg')
     >>> print n
     msg
+    >>> n.a = 5
+    >>> print n
+    msg | a=5;;;
 
     For more information about performance data and output strings in
     Nagios checks, please refer to
-    http://docs.icinga.org/latest/en/perfdata.html
+    U{http://docs.icinga.org/latest/en/perfdata.html}
     '''
 
     def __init__(self, message, **kwargs):
@@ -200,9 +203,13 @@ class NagiosResult(object):
         critical and warning thresholds
 
         @type message: string
+        @type kwargs: dict
 
-        @type **kwargs: dict. Each value is a number or a string which
-        is expected to be a number plus a unit.  Each key
+        @param message: Output of the check.
+        @param kwargs: Each value is a number or a string which is
+        expected to be a number plus a unit.  Each key is the name of
+        a performance datum, optionally with the suffixes "_critical"
+        and "_warning" for marking the respective thresholds.
         '''
         self.__dict__ = kwargs
         self.message = message
