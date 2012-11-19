@@ -2,7 +2,8 @@
 # -*- encoding: utf-8 -*-
 ##
 # Copyright 2012 Ghent University
-# Copyright 2012 Andy Georges, Luis Fernando Muñoz Mejías
+# Copyright 2012 Andy Georges
+# Copyright 2012 Luis Fernando Muñoz Mejías
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -247,6 +248,6 @@ class NagiosResult(object):
         if not d:
             return self.message
         perf = ["%s=%s;%s;%s;" % (k, v.get('value', ''), v.get('warning', ''), v.get('critical', ''))
-                for k, v in d.iteritems() ]
+                for k, v in d.iteritems()]
 
         return "%s | %s" % (self.message, ' '.join(perf))
