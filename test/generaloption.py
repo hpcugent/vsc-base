@@ -1,4 +1,4 @@
-##
+# #
 #
 # Copyright 2012 Ghent University
 # Copyright 2012 Ghent University
@@ -24,9 +24,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
-##
+# #
 import datetime
 import os
+from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
 from vsc.utils.generaloption import GeneralOption, shell_quote, shell_unquote
@@ -60,7 +61,7 @@ class TestOption1(GeneralOption):
                 "extenddefault":("Test action extend with default set", None, 'extend', ['zero']),
                 "date":('Test action datetime.date', None, 'date', None),
                 "datetime":('Test action datetime.datetime', None, 'datetime', None),
-                "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'), # type is mandatory
+                "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),  # type is mandatory
                 }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -155,10 +156,10 @@ class GeneralOptionTest(TestCase):
     def test_help_short(self):
         """Generate short help message"""
         topt = TestOption1(go_args=['-h'],
-                           go_nosystemexit=True, # when printing help, optparse ends with sys.exit
-                           go_columns=100, # fix col size for reproducible unittest output
-                           help_to_string=True, # don't print to stdout, but to StingIO fh,
-                           prog='optiontest1', # generate as if called from generaloption.py
+                           go_nosystemexit=True,  # when printing help, optparse ends with sys.exit
+                           go_columns=100,  # fix col size for reproducible unittest output
+                           help_to_string=True,  # don't print to stdout, but to StingIO fh,
+                           prog='optiontest1',  # generate as if called from generaloption.py
                            )
         self.assertEqual(topt.parser.help_to_file.getvalue().find("--level_longlevel"), -1,
                          "Long documentation not expanded in short help")
@@ -259,6 +260,26 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'REALVALUE')
 
+    def test_configfiles(self):
+        """Test configfiles"""
+        CONFIGFILE1 = """
+    [DEFAULT]
+    store=ok
+    longbase=1
+
+    [ext]
+    extend=one,two,three
+    """
+        tmp1 = NamedTemporaryFile()
+        tmp1.write(CONFIGFILE1)
+
+        topt = TestOption1(go_configfiles=[tmp1.name], go_args=[])
+        print topt.options
+
+
+        # remove files
+        tmp1.close()
+
 
 def suite():
     """ returns all the testcases in this module """
@@ -348,3 +369,22 @@ if __name__ == '__main__':
 #
 #    topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
 #    print topt.options.ext_optional == 'REALVALUE'
+
+    CONFIGFILE1 = """
+[MAIN]
+store=ok
+longbase=1
+
+[ext]
+extend=one,two,three
+    """
+    tmp1 = NamedTemporaryFile()
+    tmp1.write(CONFIGFILE1)
+    tmp1.flush()
+
+    topt = TestOption1(go_configfiles=[tmp1.name], go_args=['-d'])
+    print topt.options
+
+
+    # remove files
+    tmp1.close()
