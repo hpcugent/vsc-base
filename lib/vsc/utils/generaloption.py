@@ -83,16 +83,18 @@ def set_columns(cols=None):
 
 class ExtOption(Option):
     """Extended options class
-        enable/disable support
-        actions
-            shorthelp : hook for shortend help messages
-            store_debuglog : turns on fancylogger debugloglevel
-            extend : extend default list (or create new one if is None)
-            date : convert into datetime.date
-            datetime : convert into datetime.datetime
-            store_or_None : set default to None if no option passed,
-                            set to default if option without value passed,
-                            set to value if option with value passed
+        - enable/disable support
+
+       Actions:
+         - shorthelp : hook for shortend help messages
+         - store_debuglog : turns on fancylogger debugloglevel
+         - extend : extend default list (or create new one if is None)
+         - date : convert into datetime.date
+         - datetime : convert into datetime.datetime
+         - store_or_None
+           - set default to None if no option passed,
+           - set to default if option without value passed,
+           - set to value if option with value passed
     """
     ENABLE = 'enable' # do nothing
     DISABLE = 'disable' # inverse action
@@ -183,14 +185,16 @@ class ExtOption(Option):
 
 
 class ExtOptionParser(OptionParser):
-    """Make an option parser that
-        limits the -h / --shorthelp to short opts only, -H / --help for all options
-        pass options through environment
-            eg export PROGNAME_SOMEOPTION = value will generate --someoption=value
-                      PROGNAME_OTHEROPTION = 1 will generate --otheroption
-                      PROGNAME_OTHEROPTION = 0 (or no or false) won't do anything
-            distinction is made based on option.action in TYPED_ACTIONS
-        allow --enable- / --disable- (using eg ExtOption option_class)
+    """Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only, C{-H} / C{--help} for all options
+
+    Pass options through environment. Like:
+
+      - C{export PROGNAME_SOMEOPTION = value} will generate {--someoption=value}
+      - C{export PROGNAME_OTHEROPTION = 1} will generate {--otheroption}
+      - C{export PROGNAME_OTHEROPTION = 0} (or no or false) won't do anything
+
+    distinction is made based on option.action in TYPED_ACTIONS allow
+    C{--enable-} / C{--disable-} (using eg ExtOption option_class)
     """
     shorthelp = ('h', "--shorthelp",)
     longhelp = ('H', "--help",)
@@ -304,13 +308,15 @@ class ExtOptionParser(OptionParser):
 
 
 class GeneralOption(object):
-    """'Used-to-be simple' wrapper class for option parsing
-        go_ options are for this class, the remainder is passed to the parser
-            go_args : use these instead of of sys.argv[1:]
-            go_columns : specify column width (in columns)
+    """
+    'Used-to-be simple' wrapper class for option parsing
 
-        - TODO read from config file:
-            http://stackoverflow.com/questions/1880404/using-a-file-to-store-optparse-arguments
+      - go_ options are for this class, the remainder is passed to the parser
+      - go_args : use these instead of of sys.argv[1:]
+      - go_columns : specify column width (in columns)
+
+      - TODO read from config file:
+      U{http://stackoverflow.com/questions/1880404/using-a-file-to-store-optparse-arguments}
     """
     OPTIONNAME_SEPARATOR = '_'
 
@@ -368,10 +374,15 @@ class GeneralOption(object):
 
     def add_group_parser(self, opt_dict, description, prefix=None, otherdefaults=None):
         """Make a group parser from a dict
-            -key: long opt --prefix_key
-            -value: tuple (help,type,action,default(,optional short option))
-            --help will be extended with type and default
-          Description is a 2 element list (short and long description)
+
+        @type opt_dict: dict
+        @type description: str
+
+        @param opt_dict: options, with the form C{"long_opt" : value}.
+        Value is a C{tuple} containing
+        C{(help,type,action,default(,optional short option))}
+
+        --help will be extended with type and default
         """
         if otherdefaults is None:
             otherdefaults = {}
@@ -481,8 +492,9 @@ class GeneralOption(object):
     def generate_cmd_line(self, ignore=None, add_default=None):
         """Create the commandline options that would create the current self.options
             opt_name is destination
-            - ignore : regex on destination
-            - add_default : print value that are equal to default
+
+            @param ignore : regex on destination
+            @param add_default : print value that are equal to default
         """
         if ignore is not None:
             self.log.debug("generate_cmd_line ignore %s" % ignore)
@@ -581,4 +593,3 @@ class GeneralOption(object):
 
         self.log.debug("commandline args %s" % args)
         return args
-
