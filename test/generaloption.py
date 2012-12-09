@@ -27,7 +27,7 @@
 ##
 import datetime
 import os
-from unittest import TestCase, TestLoader
+from unittest import TestCase, TestLoader, main
 
 from vsc.utils.generaloption import GeneralOption, shell_quote, shell_unquote
 
@@ -160,7 +160,8 @@ class GeneralOptionTest(TestCase):
                            help_to_string=True, # don't print to stdout, but to StingIO fh,
                            prog='optiontest1', # generate as if called from generaloption.py
                            )
-        self.assertEqual(topt.parser.help_to_file.getvalue(), TestOption1HelpShort)
+        self.assertEqual(topt.parser.help_to_file.getvalue().find("--level_longlevel"), -1,
+                         "Long documentation not expanded in short help")
 
     def test_help_long(self):
         """Generate long help message"""
@@ -170,7 +171,8 @@ class GeneralOptionTest(TestCase):
                            help_to_string=True,
                            prog='optiontest1',
                            )
-        self.assertEqual(topt.parser.help_to_file.getvalue(), TestOption1HelpLong)
+        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level_longlevel") > 0,
+                        "Long documetnation expanded in long help")
 
     def test_quote(self):
         """Test quote/unquote"""
@@ -266,6 +268,8 @@ if __name__ == '__main__':
     """Use this __main__ block to help write and test unittests
         just uncomment the parts you need
     """
+    main()
+
 #    # help
 #    topt = TestOption1(go_args=['-h'], go_nosystemexit=True, go_columns=100,
 #                       help_to_string=True,
