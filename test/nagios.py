@@ -80,10 +80,10 @@ class TestNagios(TestCase):
 
         os.unlink(filename)
 
-    @with_checker(irange(0, 3), str, irange(0, 4))
-    def test_threshold(self, exit_code, message, threshold):
+    def test_threshold(self, message="Hello"):
         """Test the threshold borking mechanism in the reporter."""
         message = message.rstrip()
+        threshold = 1
         if message == '':
             return
 
@@ -91,26 +91,32 @@ class TestNagios(TestCase):
         os.unlink(filename)
         reporter = NagiosReporter('test_cache', filename, threshold, self.nagios_user)
 
-        nagios_exit = [NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_UNKNOWN][exit_code]
-
+        nagios_exit = NAGIOS_EXIT_OK
         reporter.cache(nagios_exit, message)
-
-        (handle, output_filename) = tempfile.mkstemp()
         os.close(handle)
 
+        try:
+            reporter_test = NagiosReporter('test_cache', filename, threshold, self.nagios_user)
+            reporter_test.report_and_exit()
+        except SystemExit, err:
+            self.assertEqual(err.code, NAGIOS_EXIT_OK[0],
+                             "Exit with status when the cached data is recent")
+
+        reporter = NagiosReporter('test_cache', filename, threshold, self.nagios_user)
+        reporter.cache(nagios_exit, message)
         try:
             time.sleep(threshold + 1)
             old_stdout = sys.stdout
             buffer = StringIO.StringIO()
             sys.stdout = buffer
-            old_stdout = sys.stdout
             reporter_test = NagiosReporter('test_cache', filename, threshold, self.nagios_user)
             reporter_test.report_and_exit()
         except SystemExit, err:
             line = buffer.getvalue().rstrip()
             sys.stdout = old_stdout
             buffer.close()
-            self.assertTrue(err.code == NAGIOS_EXIT_UNKNOWN[0])
+            self.assertEqual(err.code, NAGIOS_EXIT_UNKNOWN[0],
+                             "Too old caches lead to unknown status")
             self.assertTrue(line.startswith("%s test_cache pickled file too old (timestamp =" % (NAGIOS_EXIT_UNKNOWN[1])))
 
         os.unlink(filename)
