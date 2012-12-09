@@ -38,10 +38,14 @@ from paycheck import with_checker, irange
 from unittest import TestCase, TestLoader, main
 
 from vsc.utils.nagios import NagiosReporter, NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_UNKNOWN
-
+from pwd import getpwuid
 
 class TestNagios(TestCase):
     """Test for the nagios reporter class."""
+
+    def setUp(self):
+        user = getpwuid(os.getuid())
+        self.nagios_user = user.pw_name
 
     @with_checker(irange(0, 3), str, irange(2, 10))
     def test_cache(self, exit_code, message, threshold):
@@ -52,7 +56,7 @@ class TestNagios(TestCase):
 
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
-        reporter = NagiosReporter('test_cache', filename, threshold)
+        reporter = NagiosReporter('test_cache', filename, threshold, self.nagios_user )
 
         nagios_exit = [NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_UNKNOWN][exit_code]
 
@@ -65,7 +69,7 @@ class TestNagios(TestCase):
             old_stdout = sys.stdout
             buffer = StringIO.StringIO()
             sys.stdout = buffer
-            reporter_test = NagiosReporter('test_cache', filename, threshold)
+            reporter_test = NagiosReporter('test_cache', filename, threshold, self.nagios_user)
             reporter_test.report_and_exit()
         except SystemExit, err:
             line = buffer.getvalue().rstrip()
@@ -85,7 +89,7 @@ class TestNagios(TestCase):
 
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
-        reporter = NagiosReporter('test_cache', filename, threshold)
+        reporter = NagiosReporter('test_cache', filename, threshold, self.nagios_user)
 
         nagios_exit = [NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_UNKNOWN][exit_code]
 
@@ -100,7 +104,7 @@ class TestNagios(TestCase):
             buffer = StringIO.StringIO()
             sys.stdout = buffer
             old_stdout = sys.stdout
-            reporter_test = NagiosReporter('test_cache', filename, threshold)
+            reporter_test = NagiosReporter('test_cache', filename, threshold, self.nagios_user)
             reporter_test.report_and_exit()
         except SystemExit, err:
             line = buffer.getvalue().rstrip()
