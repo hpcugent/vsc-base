@@ -155,9 +155,13 @@ class FancyMonth:
         return res
 
 def date_parser(txt):
-    """Parse txt: date YYYY-MM-DD in datetime.date
-        also (BEGIN|END)(THIS|LAST|NEXT)MONTH
-             (BEGIN | END)(JANUARY | FEBRUARY | MARCH | APRIL | MAY | JUNE | JULY | AUGUST | SEPTEMBER | OCTOBER | NOVEMBER | DECEMBER)
+    """Parse txt
+
+    @type txt: string
+
+    @param txt: date to be parsed. Usually in C{YYYY-MM-DD} format,
+    but also C{(BEGIN|END)(THIS|LAST|NEXT)MONTH}, or even
+    C{(BEGIN | END)(JANUARY | FEBRUARY | MARCH | APRIL | MAY | JUNE | JULY | AUGUST | SEPTEMBER | OCTOBER | NOVEMBER | DECEMBER)}
     """
 
     reserveddate = ('TODAY',)
@@ -292,6 +296,3 @@ class LocalTimezone(tzinfo):
         return tt.tm_isdst > 0
 
 Local = LocalTimezone()
-
-
-
