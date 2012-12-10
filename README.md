@@ -1,5 +1,7 @@
 # VSC-tools
 
+[![Build Status](https://jenkins1.ugent.be/job/VSC_tools/badge/icon)](https://jenkins1.ugent.be/job/VSC_tools/)
+
 Common tools used within our organization.
 
 Originally created by the HPC team of Ghent University (http://ugent.be/hpc).
