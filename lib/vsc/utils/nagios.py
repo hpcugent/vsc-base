@@ -96,7 +96,7 @@ class NagiosReporter(object):
     Can cache the result in a pickle file and print the result out at some later point.
     """
 
-    def __init__(self, header, filename, threshold):
+    def __init__(self, header, filename, threshold, nagios_username="nagios"):
         """Initialisation.
 
         @type header: string
@@ -115,7 +115,7 @@ class NagiosReporter(object):
         self.filename = filename
         self.threshold = threshold
 
-        self.nagios_username = "nagios"
+        self.nagios_username = nagios_username
 
         self.log = fancylogger.getLogger(self.__class__.__name__)
 
