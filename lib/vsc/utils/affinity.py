@@ -27,12 +27,12 @@
 
 """
 Linux cpu affinity.
-    Based on sched.h and bits/sched.h
-    see man sched_getaffinity and sched_setaffinity
-    also provides a cpuset class to convert between human readable cpusets and the bit version
+    - Based on C{sched.h} and C{bits/sched.h},
+    - see man pages for  C{sched_getaffinity} and C{sched_setaffinity}
+    - also provides a C{cpuset} class to convert between human readable cpusets and the bit version
 Linux priority
-    Based on sys/resources.h and bits/resources.h
-    see man getpriority and setpriority
+    - Based on sys/resources.h and bits/resources.h see man pages for
+      C{getpriority} and C{setpriority}
 """
 
 import ctypes

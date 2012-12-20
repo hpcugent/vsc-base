@@ -29,36 +29,36 @@ Python module to execute a command
 
 Historical overview of existing equivalent code
 
-EasyBuild filetools module
-    run_cmd(cmd, log_ok=True, log_all=False, simple=False, inp=None, regexp=True, log_output=False, path=None)
-    run_cmd_qa(cmd, qa, no_qa=None, log_ok=True, log_all=False, simple=False, regexp=True, std_qa=None, path=None)
+ - EasyBuild filetools module
+    - C{run_cmd(cmd, log_ok=True, log_all=False, simple=False, inp=None, regexp=True, log_output=False, path=None)}
+    - C{run_cmd_qa(cmd, qa, no_qa=None, log_ok=True, log_all=False, simple=False, regexp=True, std_qa=None, path=None)}
 
-    Executes a command cmd
+ - Executes a command cmd
     - looks for questions and tries to answer based on qa dictionary
     - returns exitcode and stdout+stderr (mixed)
     - no input though stdin
-    - if log_ok or log_all are set -> will log.error if non-zero exit-code
-    - if simple is True -> instead of returning a tuple (output, ec) it will just return True or False signifying succes
-    - regexp -> Regex used to check the output for errors. If True will use default (see parselogForError)
+    - if C{log_ok} or C{log_all} are set -> will C{log.error} if non-zero exit-code
+    - if C{simple} is C{True} -> instead of returning a tuple (output, ec) it will just return C{True} or C{False} signifying succes
+    - C{regexp} -> Regex used to check the output for errors. If C{True} will use default (see C{parselogForError})
     - if log_output is True -> all output of command will be logged to a tempfile
     - path is the path run_cmd should chdir to before doing anything
 
-    Q&A: support reading stdout asynchronous and replying to a question through stdin
+ - Q&A: support reading stdout asynchronous and replying to a question through stdin
 
-Manage managecommands module Command class
-    run method
+ - Manage C{managecommands} module C{Command} class
+    - C{run} method
 
-python-package-vsc-utils run module Command class
-    run method
+ - python-package-vsc-utils run module Command class
+    - C{run} method
 
-mympirun (old)
-    runrun(self, cmd, returnout=False, flush=False, realcmd=False):
-        runrunnormal(self, cmd, returnout=False, flush=False)
-        runrunfile(self, cmd, returnout=False, flush=False)
+ - C{mympirun} (old)
+    - C{runrun(self, cmd, returnout=False, flush=False, realcmd=False)}:
+        - C{runrunnormal(self, cmd, returnout=False, flush=False)}
+        - C{runrunfile(self, cmd, returnout=False, flush=False)}
 
-hanything commands/command module
-    run method
-        fake pty support
+ - C{hanything} commands/command module
+    - C{run} method
+        - fake pty support
 """
 from vsc.fancylogger import getLogger, getAllExistingLoggers
 import pty
@@ -138,47 +138,47 @@ class Run(object):
         """actual method
         Structure
 
-        pre
-            convert command to shell command - DONE
-            chdir before start - DONE
+         - pre
+            - convert command to shell command - DONE
+            - chdir before start - DONE
 
-            start Popen - DONE
-                support async and subprocess - DONE
-                support for
-                    filehandle
-                    PIPE - DONE
-                    pty - DONE
+            - start C{Popen} - DONE
+                - support async and subprocess - DONE
+                - support for
+                    - filehandle
+                    - PIPE - DONE
+                    - pty - DONE
 
-        main
-            should capture exitcode and output
-            features
-                separate stdout and stderr ?
-                simple single run
-                    no timeout/waiting - DONE
-                flush to
-                    stdout
-                    logger - DONE
-                    both stdout and logger
-                process intermediate output
-                    qa
-                input
-                    qa
-                    from file ?
-                    text - DONE
+         - main
+            - should capture exitcode and output
+            - features
+                - separate stdout and stderr ?
+                - simple single run
+                    - no timeout/waiting - DONE
+                - flush to
+                    - stdout
+                    - logger - DONE
+                    - both stdout and logger
+                - process intermediate output
+                    - qa
+                - input
+                    - qa
+                    - from file ?
+                    - text - DONE
 
-        post
-            parse with regexp
-                raise/log error on match
-        return
-            return output
-                log output
-                write to file
-                return in string - DONE
-            on ec > 0
-                error - DONE
-                raiseException
-            simple
-                just return True/False
+         - post
+            - parse with regexp
+                - raise/log error on match
+         - return
+            - return output
+                - log output
+                - write to file
+                - return in string - DONE
+            - on C{ec > 0}
+                - error - DONE
+                - raiseException
+            - simple
+                - just return True/False
 
 """
         self._run_pre()
@@ -588,11 +588,11 @@ class RunQA(RunLoop, RunAsync):
     def _parse_qa(self, init_qa):
         """
         process the QandA dictionary
-            given initial set of Q and A (in dict), return dict of reg. exp. and A
+            - given initial set of Q and A (in dict), return dict of reg. exp. and A
 
-            make regular expression that matches the string with
-            replace whitespace
-            replace newline
+            - make regular expression that matches the string with
+            - replace whitespace
+            - replace newline
         """
 
         def escape_special(string):
