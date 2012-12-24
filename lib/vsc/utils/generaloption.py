@@ -36,7 +36,7 @@ import os
 import re
 import StringIO
 import sys
-from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT
+from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
@@ -80,6 +80,7 @@ def set_columns(cols=None):
 
     if cols is not None:
         os.environ['COLUMNS'] = "%s" % cols
+
 
 
 class ExtOption(Option):
@@ -186,6 +187,11 @@ class ExtOption(Option):
         else:
             Option.take_action(self, action, dest, opt, value, values, parser)
 
+        # set flag to mark as passed by action (ie not by default)
+        # - distinguish from setting default value through option
+        if hasattr(values, '_action_taken'):
+            values._action_taken[dest] = True
+
 
 class ExtOptionParser(OptionParser):
     """Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only, C{-H} / C{--help} for all options
@@ -202,9 +208,14 @@ class ExtOptionParser(OptionParser):
     shorthelp = ('h', "--shorthelp",)
     longhelp = ('H', "--help",)
 
+    VALUES_CLASS = Values
+
     def __init__(self, *args, **kwargs):
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
+
+        if not 'option_class' in kwargs:
+            kwargs['option_class'] = ExtOption
         OptionParser.__init__(self, *args, **kwargs)
 
         if self.epilog is None:
@@ -214,6 +225,19 @@ class ExtOptionParser(OptionParser):
             epilogtxt = 'Boolean options support %(disable)s prefix to do the inverse of the action,'
             epilogtxt += ' e.g. option --someopt also supports --disable-someopt.'
             self.epilog.append(epilogtxt % {'disable': self.option_class.DISABLE})
+
+    def get_default_values(self):
+        """Introduce the ExtValues class with class constant
+            - make it dynamic, otherwise the class constant is shared between multiple instances
+            - class constant is used to avoid _taken_action as option in the __dict__
+        """
+        values = OptionParser.get_default_values(self)
+        class ExtValues(self.VALUES_CLASS):
+            _action_taken = {}
+
+        newvalues = ExtValues()
+        newvalues.__dict__ = values.__dict__.copy()
+        return newvalues
 
     def format_epilog(self, formatter):
         """Allow multiple epilog parts"""
@@ -371,17 +395,19 @@ class GeneralOption(object):
 
         self.set_debug()
 
-        self.make_debug_options()
+        self.make_options()
 
         self.make_init()
 
         self.parseoptions(options_list=go_args)
 
-        self.parseconfigfiles()
+        if not self.options is None:
+            # None for eg usage/help
+            self.parseconfigfiles()
 
-        self.postprocess()
+            self.postprocess()
 
-        self.validate()
+            self.validate()
 
 
     def set_debug(self):
@@ -389,6 +415,10 @@ class GeneralOption(object):
         if self.options is None:
             if self.DEBUG_OPTIONS_BUILD:
                 setLogLevelDebug()
+
+    def make_options(self):
+        self.make_debug_options()
+        self.make_configfiles_options()
 
     def make_debug_options(self):
         """Add debug option"""
@@ -531,8 +561,12 @@ class GeneralOption(object):
         option_ignoreconfigfiles = self.options.__dict__.get('ignoreconfigfiles', self.CONFIGFILES_IGNORE)
 
         self.log.debug("parseconfigfiles: configfiles set through commandline %s" % option_configfiles)
+        self.log.debug("parseconfigfiles: ignoreconfigfiles set through commandline %s" % option_ignoreconfigfiles)
+        if option_configfiles is not None:
+            self.configfiles.extend(option_configfiles)
 
-        self.configfiles.extend(option_configfiles)
+        if option_ignoreconfigfiles is None:
+            option_ignoreconfigfiles = []
 
         # # Configparser fails on broken config files
         # # - if config file doesn't exist, it's no issue
@@ -561,21 +595,28 @@ class GeneralOption(object):
 
         # walk through list of section names
         # - look for options set though config files
-        # TODO: sanity check: what is parsed but ignored?
-        # - set value if not set in options
         configfile_values = {}
         configfile_options_default = {}
         configfile_cmdline = []
         configfile_cmdline_dest = []  # expected destinations
+
+        # # won't parse
+        cfg_sections = self.config_prefix_sectionnames_map.values()  # without DEFAULT
+        for section in cfg_sections:
+            if not section in self.config_prefix_sectionnames_map.values():
+                self.log.warning("parseconfigfiles: found section %s, won't be parsed" % section)
+                continue
+            # options are passed to the commandline option parser
+
         for prefix, section_names in self.config_prefix_sectionnames_map.items():
             for section in section_names:
                 # default section is treated separate in ConfigParser
                 if not (cfg_opts.has_section(section) or section.lower() == 'default'):
-                    self.log.debug('parse_configfiles: no section %s' % section)
+                    self.log.debug('parseconfigfiles: no section %s' % section)
                     continue
 
                 for opt, val in cfg_opts.items(section):
-                    self.log.debug('parse_configfiles: section %s option %s val %s' % (section, opt, val))
+                    self.log.debug('parseconfigfiles: section %s option %s val %s' % (section, opt, val))
 
                     dest = self.make_options_option_name(prefix, opt)
                     actual_option = self.parser.get_option_by_long(dest)
@@ -584,7 +625,7 @@ class GeneralOption(object):
 
                     configfile_options_default[dest] = actual_option.default
 
-                    isbooleanoption = actual_option.action in ('store_true', 'store_false')
+                    isbooleanoption = actual_option.action in ('store_true', 'store_false',)
                     if isbooleanoption:
                         try:
                             newval = cfg_opts.getboolean(section, opt)
@@ -617,11 +658,16 @@ class GeneralOption(object):
 
         for dest, val in configfile_values.items():
             if not hasattr(self.options, dest):
-                self.log.debug('parseconfigfiles: added option %s with value %s' % (dest, val))
+                self.log.debug('parseconfigfiles: added new option %s with value %s' % (dest, val))
                 setattr(self.options, dest, val)
-            self.log.raiseException('TODO allow options without prefix in config files')
-            self.log.raiseException('TODO track actual actions; compare with default values?')
-            # # need extension of take_action and a way to track actual_action in Values (eg manipulate get_default_Values)
+            else:
+                if hasattr(self.options, '_action_taken') and self.options._action_taken.get(dest, None):
+                    # value set through take_action. do not modify by configfile
+                    self.log.debug('parseconfigfiles: option %s found in _action_taken' % (dest))
+                    continue
+                else:
+                    self.log.debug('parseconfigfiles: option %s not found in _action_taken, setting to %s' % (dest, val))
+                    setattr(self.options, dest, val)
 
     def make_options_option_name(self, prefix, key):
         """Make the options option name"""

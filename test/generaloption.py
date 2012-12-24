@@ -113,6 +113,13 @@ Options:
   Debug options:
     -d, --debug         Enable debug log mode (def False)
 
+  Configfile options:
+    --configfiles=CONFIGFILES
+                        Parse (additional) configfiles (comma-separated list) (type comma-
+                        separated list)
+    --ignoreconfigfiles=IGNORECONFIGFILES
+                        Ignore configfiles (comma-separated list) (type comma-separated list)
+
   Base:
     Base level of options
 
@@ -183,15 +190,16 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(str(txt), '--option=value with whitespace')
         self.assertEqual(txt , shell_unquote(shell_quote(txt)))
 
-
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
         ign = r'(^(base|debug)$)|(^ext)'
         topt = TestOption1(go_args=['--level_level', '--longbase', shell_unquote('--store="some whitespace"')])
-        self.assertEqual(topt.options ,
-                         {'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True,
+        self.assertEqual(topt.options.__dict__ ,
+                         {
+                          'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True,
                           'base': False, 'ext_optional': None, 'ext_extend': None, 'debug': False,
-                          'ext_extenddefault': ['zero'], 'store': 'some whitespace', 'ext_datetime': None})
+                          'ext_extenddefault': ['zero'], 'store': 'some whitespace', 'ext_datetime': None,
+                          'ignoreconfigfiles': None, 'configfiles': None, })
 
         self.assertEqual(topt.generate_cmd_line(ignore=ign), ['--level_level', '--store="some whitespace"'])
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
@@ -263,19 +271,25 @@ class GeneralOptionTest(TestCase):
     def test_configfiles(self):
         """Test configfiles"""
         CONFIGFILE1 = """
-    [DEFAULT]
-    store=ok
-    longbase=1
+[MAIN]
+store=ok
+longbase=1
 
-    [ext]
-    extend=one,two,three
-    """
+[ext]
+extend=one,two,three
+"""
         tmp1 = NamedTemporaryFile()
         tmp1.write(CONFIGFILE1)
+        tmp1.flush()  # flush, otherwise empty
 
         topt = TestOption1(go_configfiles=[tmp1.name], go_args=[])
-        print topt.options
 
+        self.assertEqual(topt.options.store, 'ok')
+        self.assertEqual(topt.options.longbase, True)
+        self.assertEqual(topt.options.ext_extend, ['one', 'two', 'three'])
+
+        topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
+        self.assertEqual(topt2.options.store, 'notok')
 
         # remove files
         tmp1.close()
@@ -384,7 +398,11 @@ extend=one,two,three
 
     topt = TestOption1(go_configfiles=[tmp1.name], go_args=['-d'])
     print topt.options
+    print topt.options.store
 
+    topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['-d', '--store=notok'])
+    print topt2.options
+    print topt2.options.store
 
     # remove files
     tmp1.close()
