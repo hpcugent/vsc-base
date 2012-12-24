@@ -58,10 +58,12 @@ class TestOption1(GeneralOption):
     def ext_options(self):
         """Make ExtOption options"""
         opts = {"extend":("Test action extend", None, 'extend', None),
-                "extenddefault":("Test action extend with default set", None, 'extend', ['zero']),
+                "extenddefault":("Test action extend with default set", None, 'extend', ['zero', 'one']),
                 "date":('Test action datetime.date', None, 'date', None),
                 "datetime":('Test action datetime.datetime', None, 'datetime', None),
-                "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),  # type is mandatory
+                "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
+                # default value is not part of choice!
+                "optionalchoice":('Test action optional', 'choice', 'store_or_None', 'CHOICE0', ['CHOICE1', 'CHOICE2']),
                 }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -115,10 +117,9 @@ Options:
 
   Configfile options:
     --configfiles=CONFIGFILES
-                        Parse (additional) configfiles (comma-separated list) (type comma-
-                        separated list)
+                        Parse (additional) configfiles (type comma-separated list)
     --ignoreconfigfiles=IGNORECONFIGFILES
-                        Ignore configfiles (comma-separated list) (type comma-separated list)
+                        Ignore configfiles (type comma-separated list)
 
   Base:
     Base level of options
@@ -143,9 +144,11 @@ Options:
                         Test action extend (type comma-separated list)
     --ext_extenddefault=EXTENDDEFAULT
                         Test action extend with default set (type comma-separated list; def
-                        ['zero'])
+                        zero,one)
     -o OPTIONAL, --ext_optional=OPTIONAL
                         Test action optional (def DEFAULT)
+    --ext_optionalchoice=OPTIONALCHOICE
+                        Test action optional (type choice; def CHOICE0) (choices: CHOICE1,CHOICE2)
 
 Boolean options support disable prefix to do the inverse of the action, e.g. option --someopt also
 supports --disable-someopt.
@@ -198,7 +201,8 @@ class GeneralOptionTest(TestCase):
                          {
                           'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True,
                           'base': False, 'ext_optional': None, 'ext_extend': None, 'debug': False,
-                          'ext_extenddefault': ['zero'], 'store': 'some whitespace', 'ext_datetime': None,
+                          'ext_extenddefault': ['zero', 'one'], 'store': 'some whitespace', 'ext_datetime': None,
+                          'ext_optionalchoice': None,
                           'ignoreconfigfiles': None, 'configfiles': None, })
 
         self.assertEqual(topt.generate_cmd_line(ignore=ign), ['--level_level', '--store="some whitespace"'])
@@ -238,11 +242,11 @@ class GeneralOptionTest(TestCase):
     def test_ext_extend(self):
         """Test extend action"""
         # extend to None default
-        topt = TestOption1(go_args=['--ext_extend=one,two,three'])
-        self.assertEqual(topt.options.ext_extend, ['one', 'two', 'three'])
+        topt = TestOption1(go_args=['--ext_extend=two,three'])
+        self.assertEqual(topt.options.ext_extend, ['two', 'three'])
 
         # default ['zero'], will be extended
-        topt = TestOption1(go_args=['--ext_extenddefault=one,two,three'])
+        topt = TestOption1(go_args=['--ext_extenddefault=two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
 
     def test_store_or_None(self):
@@ -267,6 +271,13 @@ class GeneralOptionTest(TestCase):
 
         topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'REALVALUE')
+
+        topt = TestOption1(go_args=['--ext_optionalchoice'], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optionalchoice, 'CHOICE0')
+
+        topt = TestOption1(go_args=['--ext_optionalchoice', 'CHOICE1'], go_nosystemexit=True,)
+        self.assertEqual(topt.options.ext_optionalchoice, 'CHOICE1')
+
 
     def test_configfiles(self):
         """Test configfiles"""
@@ -312,11 +323,11 @@ if __name__ == '__main__':
 #                       )
 #    print topt.parser.help_to_file.getvalue()
 #
-#    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
-#                       help_to_string=True,
-#                       prog='optiontest1',
-#                       )
-#    print topt.parser.help_to_file.getvalue()
+    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
+                       help_to_string=True,
+                       prog='optiontest1',
+                       )
+    print topt.parser.help_to_file.getvalue()
 
 #    ## test shell_quote/shell_unquote
 #    value = 'value with whitespace'

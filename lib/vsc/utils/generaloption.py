@@ -430,8 +430,8 @@ class GeneralOption(object):
 
     def make_configfiles_options(self):
         """Add configfiles option"""
-        opts = {'configfiles':("Parse (additional) configfiles (comma-separated list)", None, "extend", None),
-                'ignoreconfigfiles':("Ignore configfiles (comma-separated list)", None, "extend", None),  # # eg when set by default
+        opts = {'configfiles':("Parse (additional) configfiles", None, "extend", None),
+                'ignoreconfigfiles':("Ignore configfiles", None, "extend", None),  # # eg when set by default
                 }
         descr = ['Configfile options', '']
         self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
@@ -486,6 +486,8 @@ class GeneralOption(object):
             if default is not None:
                 if len("%s" % default) == 0:
                     extra_help.append("def ''")  # empty string
+                elif action in ("extend",):
+                    extra_help.append("def %s" % ','.join(default))
                 else:
                     extra_help.append("def %s" % default)
 
@@ -496,7 +498,7 @@ class GeneralOption(object):
 
             self.processed_options[dest] = [typ, default, action]  # add longopt
 
-            nameds = {'dest':dest, 'help':hlp, 'action':action, 'metavar':key.upper()}
+            nameds = {'dest':dest, 'action':action, 'metavar':key.upper()}
             if default is not None:
                 nameds['default'] = default
 
@@ -504,11 +506,19 @@ class GeneralOption(object):
                 nameds['type'] = typ
 
             args = ["--%s" % dest]
-            try:
-                shortopt = details[4]
-                args.insert(0, "-%s" % shortopt)
-            except IndexError:
-                shortopt = None
+            if len(details) >= 5:
+                for extra_detail in details[4:]:
+                    if isinstance(extra_detail,(list,tuple,)):
+                        ## choices
+                        nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
+                        hlp += ' (choices: %s)' % ','.join(nameds['choices'])
+                    elif isinstance(extra_detail, (str,)) and len(extra_detail) == 1:
+                        args.insert(0, "-%s" % extra_detail)
+                    else:
+                        self.log.raiseException("add_group_parser: unknown extra detail %s" % extra_detail)
+
+            # # add help
+            nameds['help'] = hlp
 
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                 args.append("--%s-%s" % (self.parser.option_class.ENABLE, dest))
