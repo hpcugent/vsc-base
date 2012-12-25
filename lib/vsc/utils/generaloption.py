@@ -1,4 +1,4 @@
-# #
+#
 #
 # Copyright 2011-2012 Ghent University
 # Copyright 2011-2012 Stijn De Weirdt
@@ -23,7 +23,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 
 """
 A class that can be used to generated options to python scripts in a general way.
@@ -82,7 +82,6 @@ def set_columns(cols=None):
         os.environ['COLUMNS'] = "%s" % cols
 
 
-
 class ExtOption(Option):
     """Extended options class
         - enable/disable support
@@ -98,7 +97,7 @@ class ExtOption(Option):
            - set to default if option without value passed,
            - set to value if option with value passed
     """
-    EXTEND_SEPARATOR = ","
+    EXTEND_SEPARATOR = ','
 
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
@@ -508,8 +507,8 @@ class GeneralOption(object):
             args = ["--%s" % dest]
             if len(details) >= 5:
                 for extra_detail in details[4:]:
-                    if isinstance(extra_detail,(list,tuple,)):
-                        ## choices
+                    if isinstance(extra_detail, (list, tuple,)):
+                        # # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
                         hlp += ' (choices: %s)' % ','.join(nameds['choices'])
                     elif isinstance(extra_detail, (str,)) and len(extra_detail) == 1:
