@@ -353,8 +353,13 @@ class GeneralOption(object):
                 if True, an option --configfiles will be added
             go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
 
-      - TODO read from config file:
-      U{http://stackoverflow.com/questions/1880404/using-a-file-to-store-optparse-arguments}
+        - process order
+            0. default defined with option
+            1. value in (last) configfile (last configfile wins)
+            2. options parsed by option parser
+            In case the Extoption parser is used
+                2.a value set through environment variable
+                2.b value set through commandline option
     """
     OPTIONNAME_SEPARATOR = '_'
 
@@ -634,8 +639,7 @@ class GeneralOption(object):
 
                     configfile_options_default[dest] = actual_option.default
 
-                    isbooleanoption = actual_option.action in ('store_true', 'store_false',)
-                    if isbooleanoption:
+                    if actual_option.action in ('store_true', 'store_false',):
                         try:
                             newval = cfg_opts.getboolean(section, opt)
                             self.log.debug('parseconfigfiles: getboolean for option %s value %s in section %s returned %s' % (opt, val, section, newval))
