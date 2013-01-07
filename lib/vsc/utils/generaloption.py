@@ -345,21 +345,23 @@ class ExtOptionParser(OptionParser):
         return None
 
 class GeneralOption(object):
-    """'Used-to-be simple' wrapper class for option parsing
-        go_ options are for this class, the remainder is passed to the parser
-            go_args : use these instead of of sys.argv[1:]
-            go_columns : specify column width (in columns)
-            go_useconfigfiles : use configfiles or not (default set by CONFIGFILES_USE)
-                if True, an option --configfiles will be added
-            go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
+    """
+    'Used-to-be simple' wrapper class for option parsing
 
-        - process order
-            0. default defined with option
-            1. value in (last) configfile (last configfile wins)
-            2. options parsed by option parser
-            In case the Extoption parser is used
-                2.a value set through environment variable
-                2.b value set through commandline option
+    Options with go_ prefix are for this class, the remainder is passed to the parser
+        - go_args : use these instead of of sys.argv[1:]
+        - go_columns : specify column width (in columns)
+        - go_useconfigfiles : use configfiles or not (default set by CONFIGFILES_USE)
+            if True, an option --configfiles will be added
+        - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
+
+    Options process order (last one wins)
+        0. default defined with option
+        1. value in (last) configfile (last configfile wins)
+        2. options parsed by option parser
+        In case the Extoption parser is used
+            0. value set through environment variable
+            1. value set through commandline option
     """
     OPTIONNAME_SEPARATOR = '_'
 
@@ -447,13 +449,20 @@ class GeneralOption(object):
 
     def add_group_parser(self, opt_dict, description, prefix=None, otherdefaults=None, section_name=None):
         """Make a group parser from a dict
-            -key: long opt --prefix_key
-            -value: tuple (help,type,action,default(,optional short option))
-            --help will be extended with type and default
-          Description is a 2 element list (short and long description)
 
-          section_name is the name of the section group in the config file.
-           - if is None: the prefix will be used. If the prefix is None or '', DEFAULT is used
+
+        @type opt_dict: dict
+        @type description: a 2 element list (short and long description)
+        @section_name: str, the name of the section group in the config file.
+
+        @param opt_dict: options, with the form C{"long_opt" : value}.
+        Value is a C{tuple} containing
+        C{(help,type,action,default(,optional short option))}
+
+        help message passed through opt_dict will be extended with type and default
+
+        If section_name is None, prefix will be used. If prefix is None or '', 'DEFAULT' is used.
+
         """
         if otherdefaults is None:
             otherdefaults = {}
