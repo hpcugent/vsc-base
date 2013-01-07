@@ -546,6 +546,10 @@ class GeneralOption(object):
             prefix_section_names.append(section_name)
             self.log.debug("Added prefix %s to list of sectionnames for %s" % (prefix, section_name))
 
+    def default_parseoptions(self):
+        """Return default options"""
+        return sys.argv[1:]
+
     def parseoptions(self, options_list=None):
         """parse the options"""
         if options_list is None:
