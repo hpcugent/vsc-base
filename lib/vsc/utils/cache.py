@@ -97,7 +97,7 @@ class FileCache(object):
         @type data: something that can be pickled
         @type threshold: int
 
-        @type key: identification of the data item
+        @param key: identification of the data item
         @param data: whatever needs to be stored
         @param threshold: time in seconds
         """

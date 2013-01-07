@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 ##
 #
-# Copyright 2012 Luis Fernando Muñoz Mejías
+# Copyright 2012 Luis Fernando MuÃ±oz MejÃ­as
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),

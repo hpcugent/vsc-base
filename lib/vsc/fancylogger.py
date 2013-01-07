@@ -429,8 +429,7 @@ def setLogLevelError():
 
 def getAllExistingLoggers():
     """
-    Return the existing loggers
-        list of tuples: name and logger
+    @return: the existing loggers, in a list of C{(name, logger)} tuples
     """
     rootlogger = logging.getLogger()
     ## undocumented manager (in 2.4 and later)
@@ -443,7 +442,7 @@ def getAllExistingLoggers():
 
 def getAllNonFancyloggers():
     """
-    Return all loggers that are not fancyloggers (based on naming prefix)
+    @return: all loggers that are not fancyloggers (based on naming prefix)
     """
     return [x for x in getAllExistingLoggers() if not x[0].startswith(LOGGER_NAME)]
 
@@ -501,5 +500,3 @@ def enableDefaultHandlers():
             _default_logTo(enable=True, handler=weakref_handler())
         except:
             pass
-
-

@@ -28,13 +28,12 @@
 Module offering the Singleton class.
 
 
-This class can be used as the __metaclass__ class field to ensure only a
+This class can be used as the C{__metaclass__} class field to ensure only a
 single instance of the class gets used in the run of an application or
 script.
 
-class A(B):
-
-    __metaclass__ = Singleton
+>>> class A(object):
+...     __metaclass__ = Singleton
 
 """
 

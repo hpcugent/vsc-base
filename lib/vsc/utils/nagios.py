@@ -29,12 +29,12 @@
 """ This module provides functionality to cache and report results of script executions that can readily be
 interpreted by nagios/icinga.
 
-- simple exit messages that can directly be picked up by an icingna check
+ - simple exit messages that can directly be picked up by an icingna check
     - ok
     - warning
     - critical
     - unknown
-- NagiosReporter class that provides cache functionality, writing and reading the nagios/icinga result string to a
+ - NagiosReporter class that provides cache functionality, writing and reading the nagios/icinga result string to a
   pickle file.
 """
 
@@ -59,10 +59,10 @@ def _real_exit(message, code):
     """Prints the code and message and exitas accordingly.
 
     @type message: string
-    @type exit_code: int
+    @type code: tuple
 
     @param message: Useful message for nagios
-    @param exit_code: the, ah, erm, exit code of the application using the nagios utility
+    @param code: the, ah, erm, exit code of the application using the nagios utility
     """
     (exit_code, text) = code
     print "%s %s" % (text, message)
@@ -96,7 +96,7 @@ class NagiosReporter(object):
     Can cache the result in a pickle file and print the result out at some later point.
     """
 
-    def __init__(self, header, filename, threshold):
+    def __init__(self, header, filename, threshold, nagios_username="nagios"):
         """Initialisation.
 
         @type header: string
@@ -115,7 +115,7 @@ class NagiosReporter(object):
         self.filename = filename
         self.threshold = threshold
 
-        self.nagios_username = "nagios"
+        self.nagios_username = nagios_username
 
         self.log = fancylogger.getLogger(self.__class__.__name__)
 
@@ -146,7 +146,7 @@ class NagiosReporter(object):
         @type nagios_exit: one of NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRTITCAL or NAGIOS_EXIT_UNKNOWN
         @type nagios_message: string
 
-        @param nagios_exit_code: a valid nagios exit code.
+        @param nagios_exit: a valid nagios exit code.
         @param nagios_message: the message to print out when the actual check runs.
         """
         try:

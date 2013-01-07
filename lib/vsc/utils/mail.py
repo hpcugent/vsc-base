@@ -27,8 +27,8 @@
 """
 Wrapper around the standard Python mail library.
 
-- Send a plain text message
-- Send an HTML message, with a plain text alternative
+  - Send a plain text message
+  - Send an HTML message, with a plain text alternative
 """
 
 import re
@@ -199,14 +199,14 @@ class VscMail(object):
         @type images: list of strings
         @type css: string
 
-        @type mail_to: a valid recipient email addresses.
-        @type mail_from: a valid sender email address.
-        @type reply_to: a valid email address for the (potential) replies.
-        @type html_message: the actual payload, body of the mail
-        @type text_alternative: plain-text version of the mail body
-        @type images: the images that are referenced in the HTML body. These should be available as files on the
+        @param mail_to: a valid recipient email addresses.
+        @param mail_from: a valid sender email address.
+        @param reply_to: a valid email address for the (potential) replies.
+        @param html_message: the actual payload, body of the mail
+        @param text_alternative: plain-text version of the mail body
+        @param images: the images that are referenced in the HTML body. These should be available as files on the
                       filesystem in the directory where the script runs. Caveat: assume jpeg image type.
-        @type css: CSS definitions
+        @param css: CSS definitions
         """
 
         # Create message container - the correct MIME type is multipart/alternative.

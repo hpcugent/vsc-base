@@ -24,23 +24,28 @@
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
-"""Various functions that are missing from the default Python library.
+"""
+Various functions that are missing from the default Python library.
 
-- nub(list): keep the unique elements in the list
-- find_sublist_index(list, sublist): find the index of the first occurence of the sublist in the list
-- Monoid: implementation of the monoid concept
-- MonoidDict: dictionary that combines values upon insertiong according to the given monoid
+  - nub(list): keep the unique elements in the list
+  - find_sublist_index(list, sublist): find the index of the first
+    occurence of the sublist in the list
+  - Monoid: implementation of the monoid concept
+  - MonoidDict: dictionary that combines values upon insertiong
+    according to the given monoid
 """
 
 
 def nub(list_):
-    """Returns the unique items of a list, while preserving order of the original list, i.e. the first unique element
-    encoutered is retained.
+    """Returns the unique items of a list, while preserving order of
+    the original list, i.e. the first unique element encoutered is
+    retained.
 
     Code is taken from
     http://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-in-python-whilst-preserving-order
 
-    Supposedly, this is one of the fastest ways to determine the unique elements of a list.
+    Supposedly, this is one of the fastest ways to determine the
+    unique elements of a list.
 
     @type list_: a list :-)
 
