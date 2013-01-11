@@ -1,8 +1,6 @@
-# #
 #
-# Copyright 2012 Ghent University
-# Copyright 2012 Ghent University
-# Copyright 2012 Stijn De Weirdt
+# Copyright 2012-2013 Ghent University
+# Copyright 2012-2012 Stijn De Weirdt
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -24,7 +22,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 import datetime
 import os
 from tempfile import NamedTemporaryFile
@@ -395,25 +393,25 @@ if __name__ == '__main__':
 #    topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
 #    print topt.options.ext_optional == 'REALVALUE'
 
-    CONFIGFILE1 = """
-[MAIN]
-store=ok
-longbase=1
-
-[ext]
-extend=one,two,three
-    """
-    tmp1 = NamedTemporaryFile()
-    tmp1.write(CONFIGFILE1)
-    tmp1.flush()
-
-    topt = TestOption1(go_configfiles=[tmp1.name], go_args=['-d'])
-    print topt.options
-    print topt.options.store
-
-    topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['-d', '--store=notok'])
-    print topt2.options
-    print topt2.options.store
-
-    # remove files
-    tmp1.close()
+#    CONFIGFILE1 = """
+# [MAIN]
+# store=ok
+# longbase=1
+#
+# [ext]
+# extend=one,two,three
+#    """
+#    tmp1 = NamedTemporaryFile()
+#    tmp1.write(CONFIGFILE1)
+#    tmp1.flush()
+#
+#    topt = TestOption1(go_configfiles=[tmp1.name], go_args=['-d'])
+#    print topt.options
+#    print topt.options.store
+#
+#    topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['-d', '--store=notok'])
+#    print topt2.options
+#    print topt2.options.store
+#
+#    # remove files
+#    tmp1.close()
