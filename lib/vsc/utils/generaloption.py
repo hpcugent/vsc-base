@@ -437,7 +437,7 @@ class GeneralOption(object):
     def make_configfiles_options(self):
         """Add configfiles option"""
         opts = {'configfiles':("Parse (additional) configfiles", None, "extend", None),
-                'ignoreconfigfiles':("Ignore configfiles", None, "extend", None),  # # eg when set by default
+                'ignoreconfigfiles':("Ignore configfiles", None, "extend", None),  # eg when set by default
                 }
         descr = ['Configfile options', '']
         self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
@@ -522,7 +522,7 @@ class GeneralOption(object):
             if len(details) >= 5:
                 for extra_detail in details[4:]:
                     if isinstance(extra_detail, (list, tuple,)):
-                        # # choices
+                        # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
                         hlp += ' (choices: %s)' % ','.join(nameds['choices'])
                     elif isinstance(extra_detail, (str,)) and len(extra_detail) == 1:
@@ -530,7 +530,7 @@ class GeneralOption(object):
                     else:
                         self.log.raiseException("add_group_parser: unknown extra detail %s" % extra_detail)
 
-            # # add help
+            # add help
             nameds['help'] = hlp
 
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
@@ -540,7 +540,7 @@ class GeneralOption(object):
 
         self.parser.add_option_group(opt_grp)
 
-        # # map between prefix and sectionnames
+        # map between prefix and sectionnames
         prefix_section_names = self.config_prefix_sectionnames_map.setdefault(prefix, [])
         if not section_name in prefix_section_names:
             prefix_section_names.append(section_name)
@@ -595,8 +595,8 @@ class GeneralOption(object):
         if option_ignoreconfigfiles is None:
             option_ignoreconfigfiles = []
 
-        # # Configparser fails on broken config files
-        # # - if config file doesn't exist, it's no issue
+        # Configparser fails on broken config files
+        # - if config file doesn't exist, it's no issue
         configfiles = []
         for fn in self.configfiles:
             if not os.path.isfile(fn):
@@ -627,7 +627,7 @@ class GeneralOption(object):
         configfile_cmdline = []
         configfile_cmdline_dest = []  # expected destinations
 
-        # # won't parse
+        # won't parse
         cfg_sections = self.config_prefix_sectionnames_map.values()  # without DEFAULT
         for section in cfg_sections:
             if not section in self.config_prefix_sectionnames_map.values():
