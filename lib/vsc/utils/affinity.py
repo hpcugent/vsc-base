@@ -115,7 +115,7 @@ class cpu_set_t(ctypes.Structure):
         return self.convert_bits_hr()
 
     def convert_hr_bits(self, txt):
-        """Convert human readable text into __bits"""
+        """Convert human readable text into bits"""
         self.cpus = [0] * CPU_SETSIZE
         for rng in txt.split(','):
             indices = [int(x) for x in rng.split('-')] * 2  # always at least 2 elements: twice the same or start,end,start,end
@@ -158,8 +158,22 @@ class cpu_set_t(ctypes.Structure):
                 bitmask >>= 1
         return self.cpus
 
-    def set_bits(self):
+    def set_cpus(self, cpus_list):
+        """Given list, set it as cpus"""
+        nr_cpus = len(cpus_list)
+        if  nr_cpus > CPU_SETSIZE:
+            self.log.error("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
+                           (nr_cpus , CPU_SETSIZE))
+            cpus_list = cpus_list[:CPU_SETSIZE]
+        elif nr_cpus < CPU_SETSIZE:
+            cpus_list.extend([0] * (CPU_SETSIZE - nr_cpus))
+
+        self.cpus = cpus_list
+
+    def set_bits(self, cpus=None):
         """Given self.cpus, set the bits"""
+        if cpus is not None:
+            self.set_cpus(cpus)
         __bits = getattr(self, '__bits')
         prev_cpus = map(long, self.cpus)
         for idx in xrange(NMASKBITS):
