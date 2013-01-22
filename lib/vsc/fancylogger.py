@@ -78,6 +78,7 @@ import os
 import sys
 import threading
 import traceback
+import logging
 
 #constants
 LOGGER_NAME = "fancylogger"
