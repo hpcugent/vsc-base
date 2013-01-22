@@ -64,14 +64,14 @@ PRIO_MAX = 20
 #/* The type of the WHICH argument to `getpriority' and `setpriority',
 #   indicating what flavor of entity the WHO argument specifies.  * /
 #enum __priority_which
-#{
+##{
 #  PRIO_PROCESS = 0, /* WHO is a process ID.  * /
 ##define PRIO_PROCESS PRIO_PROCESS
 #  PRIO_PGRP = 1, /* WHO is a process group ID.  * /
 ##define PRIO_PGRP PRIO_PGRP
 #  PRIO_USER = 2 /* WHO is a user ID.  * /
 ##define PRIO_USER PRIO_USER
-#};
+##};
 PRIO_PROCESS = 0
 PRIO_PGRP = 1
 PRIO_USER = 2
@@ -95,11 +95,11 @@ priority_which_t = ctypes.c_int
 id_t = ctypes.c_uint
 
 
-#/* Data structure to describe CPU mask.  */
-#typedef struct
-#{
-#  __cpu_mask __bits[__NMASKBITS];
-#} cpu_set_t;
+# #/* Data structure to describe CPU mask.  */
+# #typedef struct
+# #{
+# #  __cpu_mask __bits[__NMASKBITS];
+# #} cpu_set_t;
 class cpu_set_t(ctypes.Structure):
     """Class that implements the cpu_set_t struct
         also provides some methods to convert between bit representation and soem human readable format
