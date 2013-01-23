@@ -5,8 +5,7 @@
 #
 # http://code.activestate.com/recipes/440554/
 #
-# Copyright 2005 Ghent University
-# Copyright 2009-2012 Stijn De Weirdt
+# Copyright 2009-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -30,7 +29,11 @@
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-"""Module to allow Asynchronous subprocess use on Windows and Posix platforms
+"""
+@author: Josiah Carlson
+@author: Stijn De Weirdt
+
+Module to allow Asynchronous subprocess use on Windows and Posix platforms
 
 The 'subprocess' module in Python 2.4 has made creating and accessing subprocess
 streams in Python relatively convenient for all supported platforms,

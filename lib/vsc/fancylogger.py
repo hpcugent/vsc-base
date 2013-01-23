@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 ##
-# Copyright 2011-2012 Ghent University
-# Copyright 2011-2012 Jens Timmerman
-# Copyright 2012 Stijn De Weirdt
+# Copyright 2011-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -29,6 +27,8 @@
 Created on Oct 14, 2011
 
 @author: Jens Timmerman
+@author: Stijn De Weirdt
+
 This module implements a fancy logger on top of python logging
 
 It adds:

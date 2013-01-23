@@ -1,6 +1,5 @@
 ##
-# Copyright 2012 Ghent University
-# Copyright 2012 Stijn De Weirdt
+# Copyright 2012-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -23,9 +22,9 @@
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
-
-
 """
+@author: Stijn De Weirdt
+
 Linux cpu affinity.
     - Based on C{sched.h} and C{bits/sched.h},
     - see man pages for  C{sched_getaffinity} and C{sched_setaffinity}

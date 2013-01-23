@@ -1,6 +1,5 @@
 ##
-# Copyright 2011-2012 Ghent University
-# Copyright 2011-2012 Jens Timmerman
+# Copyright 2011-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -23,7 +22,10 @@
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
-# the vsc/utils namespace is used in different folders along the system
-# so explicitly declare this is also the vsc/utils namespace
+"""
+@author: Jens Timmerman
+the vsc/utils namespace is used in different folders along the system
+so explicitly declare this is also the vsc/utils namespace
+"""
 from pkgutil import extend_path
 __path__ = extend_path(__path__, __name__)

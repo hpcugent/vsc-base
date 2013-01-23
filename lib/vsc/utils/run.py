@@ -1,6 +1,5 @@
 ##
-# Copyright 2009-2012 Ghent University
-# Copyright 2009-2012 Stijn De Weirdt
+# Copyright 2009-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -25,6 +24,8 @@
 ##
 
 """
+@author: Stijn De Weirdt
+
 Python module to execute a command
 
 Historical overview of existing equivalent code

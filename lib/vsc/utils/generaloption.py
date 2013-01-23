@@ -1,7 +1,6 @@
 #
 #
 # Copyright 2011-2013 Ghent University
-# Copyright 2011-2013 Stijn De Weirdt
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -26,6 +25,8 @@
 #
 
 """
+@author: Stijn De Weirdt
+
 A class that can be used to generated options to python scripts in a general way.
 """
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 ##
-# Copyright 2012 Ghent University
-# Copyright 2012 Andy Georges
+# Copyright 2012-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -25,6 +24,8 @@
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
+@author: Andy Georges
+
 Various functions that are missing from the default Python library.
 
   - nub(list): keep the unique elements in the list

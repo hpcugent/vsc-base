@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Copyright 2012 Ghent University
-# Copyright 2012 Andy Georges
+# Copyright 2012-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -25,6 +24,7 @@
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
 
+# @author: Andy Georges
 # This script will generate the RPMs for deployment on some system, prefixing the Python package names with python-
 # to indicate their contents in a more appropriate way. We do not do this for the packages when shipped to
 # PyPi, since it is pretty obvious these are Python packages in any case.

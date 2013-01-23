@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 
 ##
+#
 # Copyright 2007 Sander Marechal (http://www.jejik.com)
 # Released as Public Domain
 # Retrieved from:
 # http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 #
 ##
+"""
+@author: Sander Marechal
+"""
+
 import sys, os, time, atexit
 from signal import SIGTERM
 

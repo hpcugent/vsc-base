@@ -1,6 +1,6 @@
 #!/bin/bash
 ##
-# Copyright 2011-2012 Jens Timmerman
+# Copyright 2011-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -23,6 +23,9 @@
 # You should have received a copy of the GNU General Public License
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
+#
+# @author: Jens Timmerman (Ghent University)
+#
 D="['$0',"
 for i in $@; do
  D="$D'$i',";

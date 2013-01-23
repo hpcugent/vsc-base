@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 #
-# Copyright 2009-2012 Ghent University
-# Copyright 2009-2012 Stijn De Weirdt
-# Copyright 2012 Andy Georges
+# Copyright 2009-2013 Ghent University
 #
 # This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -27,6 +25,8 @@
 # along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 #
 """
+@author: Stijn De Weirdt
+@author: Andy Georges
 Shared module for VSC-tools setup
 """
 import glob
