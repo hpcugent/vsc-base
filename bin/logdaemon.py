@@ -1,30 +1,32 @@
 #!/usr/bin/env python
-##
-# Copyright 2011-2012 Ghent University
-# Copyright 2011-2012 Jens Timmerman
 #
-# This file is part of VSC-tools,
+# Copyright 2011-2013 Ghent University
+#
+# This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/VSC-tools
+# http://github.com/hpcugent/vsc-base
 #
-# VSC-tools is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation v2.
+# vsc-base is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Library General Public License as
+# published by the Free Software Foundation, either version 2 of
+# the License, or (at your option) any later version.
 #
-# VSC-tools is distributed in the hope that it will be useful,
+# vsc-base is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
+# GNU Library General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
-##
+# You should have received a copy of the GNU Library General Public License
+# along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
+#
 """
+@author: Jens Timmerman (Ghent University)
+
 This is a logging server,
 it will listen to all interfaces on a system assigned port
 and log to ./log.log by default
@@ -60,10 +62,10 @@ class LogDaemon(Daemon):
         Daemon.__init__(self, pidfile, stdin, stdout, stderr)
         self.hostname = hostname
         self.port = port
-        ##Set up logging
-        #get logger, we will log to file
+        #Set up logging
+        # get logger, we will log to file
         fancylogger.logToScreen(False)
-        #we want to log absolutely everything that's comming at us
+        # we want to log absolutely everything that's comming at us
         fancylogger.setLogLevel(0)
         self.logfile = os.path.join(log_dir, filename)
         fancylogger.logToFile(self.logfile)
@@ -87,7 +89,7 @@ class LogDaemon(Daemon):
             sys.stderr.write(message % self.pidfile)
             sys.exit(1)
 
-        #get socket
+        # get socket
         self.socket_.bind((self.hostname, self.port))
         print "FANCYLOG_SERVER_PID=%s" % self.pidfile
         print "FANCYLOG_SERVER=%s:%d" % (socket.gethostname(), self.socket_.getsockname()[-1])
@@ -120,9 +122,9 @@ def main(args):
     """
     Initiate the daemon
     """
-    #parse options
+    # parse options
     parser = OptionParser(usage="usage: %s start|stop|restart [options]" % args[0])
-    #general options
+    # general options
     parser.add_option("-i", "--ip", dest="host", help="Ip to bind to [default: %default (all)]",
                        default="", type="string")
     parser.add_option("-p", "--port", help="Port to bind to [default: %default]",
@@ -146,12 +148,12 @@ def main(args):
     else:
         pidfile = os.path.expanduser(options.pid)
     logdir = os.path.expanduser(options.logdir)
-    ##start daemon
+    #start daemon
     daemon = LogDaemon(options.host, options.port,
                        logdir, options.file, pidfile)
     if len(args) == 2:
         if 'stop' == args[1]:
-            #save state before stopping?
+            # save state before stopping?
             sys.stderr.write("stopping daemon with pidfile: %s\n" % pidfile)
             daemon.stop()
         elif 'restart' == args[1]:
@@ -164,10 +166,10 @@ def main(args):
             sys.exit(2)
         sys.exit(0)
     else:
-        daemon.start() #blocking call
+        daemon.start()  # blocking call
     return
 
 
-#get things started
+# get things started
 if __name__ == '__main__':
     main(sys.argv)

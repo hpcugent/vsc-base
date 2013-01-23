@@ -1,36 +1,41 @@
 ##
 # Copyright 2005 Josiah Carlson
 # The Asynchronous Python Subprocess recipe was originally created by Josiah Carlson.
-# and released under the GPL v2 on March 14, 2012
+# and released under the GNU Library General Public License v2 or any later version
+# on Jan 23, 2013.
 #
 # http://code.activestate.com/recipes/440554/
 #
-# Copyright 2005 Ghent University
-# Copyright 2009-2012 Stijn De Weirdt
+# Copyright 2009-2013 Ghent University
 #
-# This file is part of VSC-tools,
+# This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/VSC-tools
+# http://github.com/hpcugent/vsc-base
 #
-# VSC-tools is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation v2.
+# vsc-base is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Library General Public License as
+# published by the Free Software Foundation, either version 2 of
+# the License, or (at your option) any later version.
 #
-# VSC-tools is distributed in the hope that it will be useful,
+# vsc-base is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
+# GNU Library General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Library General Public License
+# along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-"""Module to allow Asynchronous subprocess use on Windows and Posix platforms
+"""
+@author: Josiah Carlson
+@author: Stijn De Weirdt (Ghent University)
+
+Module to allow Asynchronous subprocess use on Windows and Posix platforms
 
 The 'subprocess' module in Python 2.4 has made creating and accessing subprocess
 streams in Python relatively convenient for all supported platforms,
