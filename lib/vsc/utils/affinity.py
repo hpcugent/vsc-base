@@ -162,7 +162,7 @@ class cpu_set_t(ctypes.Structure):
         """Given list, set it as cpus"""
         nr_cpus = len(cpus_list)
         if  nr_cpus > CPU_SETSIZE:
-            self.log.error("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
+            self.log.warning("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
                            (nr_cpus , CPU_SETSIZE))
             cpus_list = cpus_list[:CPU_SETSIZE]
         elif nr_cpus < CPU_SETSIZE:
