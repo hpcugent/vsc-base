@@ -1,4 +1,4 @@
-# VSC-tools
+# vsc-base
 
 [![Build Status](https://jenkins1.ugent.be/job/VSC_tools/badge/icon)](https://jenkins1.ugent.be/job/VSC_tools/)
 
@@ -50,10 +50,10 @@ A collection of python scripts :
 - __startlogdaemon.py__ : Script that will start the logdaemon for  you and set environment variables for fancylogger.
 
 # License
-VSC-tools is made available under the GNU General Public License (GPL) version 2.
+vsc-base is made available under the GNU General Public License (GPL) version 2.
 
 # Acknowledgements
-VSC-tools was created with support of [Ghent University](http://www.ugent.be/en),
+vsc-base was created with support of [Ghent University](http://www.ugent.be/en),
 the [Flemish Supercomputer Centre (VSC)](https://vscentrum.be/nl/en),
 the [Hercules foundation and the Department of Economy](http://www.herculesstichting.be/in_English),
 and [the Department of Economy, Science and Innovation (EWI)](http://www.ewi-vlaanderen.be/en).
