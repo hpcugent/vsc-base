@@ -95,11 +95,11 @@ priority_which_t = ctypes.c_int
 id_t = ctypes.c_uint
 
 
-# #/* Data structure to describe CPU mask.  */
-# #typedef struct
-# #{
-# #  __cpu_mask __bits[__NMASKBITS];
-# #} cpu_set_t;
+#/* Data structure to describe CPU mask.  */
+#typedef struct
+#{
+#  __cpu_mask __bits[__NMASKBITS];
+#} cpu_set_t;
 class cpu_set_t(ctypes.Structure):
     """Class that implements the cpu_set_t struct
         also provides some methods to convert between bit representation and soem human readable format

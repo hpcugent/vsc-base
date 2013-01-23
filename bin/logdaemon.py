@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# #
+#
 # Copyright 2011-2013 Ghent University
 #
 # This file is part of vsc-base,
@@ -23,7 +23,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 """
 @author: Jens Timmerman (Ghent University)
 
@@ -62,7 +62,7 @@ class LogDaemon(Daemon):
         Daemon.__init__(self, pidfile, stdin, stdout, stderr)
         self.hostname = hostname
         self.port = port
-        # #Set up logging
+        #Set up logging
         # get logger, we will log to file
         fancylogger.logToScreen(False)
         # we want to log absolutely everything that's comming at us
@@ -148,7 +148,7 @@ def main(args):
     else:
         pidfile = os.path.expanduser(options.pid)
     logdir = os.path.expanduser(options.logdir)
-    # #start daemon
+    #start daemon
     daemon = LogDaemon(options.host, options.port,
                        logdir, options.file, pidfile)
     if len(args) == 2:
