@@ -34,7 +34,7 @@ from shared_setup import action_target
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '0.96',
+    'version': '0.97',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
     'packages': ['vsc', 'vsc.utils'],
