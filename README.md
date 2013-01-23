@@ -50,7 +50,7 @@ A collection of python scripts :
 - __startlogdaemon.py__ : Script that will start the logdaemon for  you and set environment variables for fancylogger.
 
 # License
-vsc-base is made available under the GNU General Public License (GPL) version 2.
+vsc-base is made available under the GNU Library General Public License (LGPL) version 2 or any later version.
 
 # Acknowledgements
 vsc-base was created with support of [Ghent University](http://www.ugent.be/en),
