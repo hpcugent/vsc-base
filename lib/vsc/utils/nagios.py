@@ -125,7 +125,7 @@ class NagiosReporter(object):
         If the cache data is too old (now - cache timestamp > self.threshold), a critical exit is produced.
         """
         try:
-            nagios_cache = FileCache(self.filename)
+            nagios_cache = FileCache(self.filename, True)
         except:
             self.log.critical("Error opening file %s for reading" % (self.filename))
             unknown_exit("%s nagios pickled file unavailable (%s)" % (self.header, self.filename))
