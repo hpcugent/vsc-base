@@ -25,7 +25,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Toon Willems
+@author: Toon Willems (Ghent University)
 
 """
 import pkg_resources

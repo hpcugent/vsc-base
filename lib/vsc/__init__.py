@@ -25,7 +25,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Jens Timmerman
+@author: Jens Timmerman (Ghent University)
 
 Initialize vsc package.
 the vsc namespace is used in different folders allong the system

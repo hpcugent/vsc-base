@@ -26,8 +26,8 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges
-@author: Luis Fernando Muñoz Mejías
+@author: Andy Georges (Ghent University)
+@author: Luis Fernando Muñoz Mejías (Ghent University)
 
 This module provides functionality to cache and report results of script executions that can readily be
 interpreted by nagios/icinga.

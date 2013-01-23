@@ -27,8 +27,8 @@
 """
 Created on Oct 14, 2011
 
-@author: Jens Timmerman
-@author: Stijn De Weirdt
+@author: Jens Timmerman (Ghent University)
+@author: Stijn De Weirdt (Ghent University)
 
 This module implements a fancy logger on top of python logging
 

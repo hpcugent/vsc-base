@@ -24,7 +24,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges
+@author: Andy Georges (Ghent University)
 
 Unit tests for vsc.utils.cache
 """

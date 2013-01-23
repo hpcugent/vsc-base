@@ -24,7 +24,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Jens Timmerman
+@author: Jens Timmerman (Ghent University)
 the vsc/utils namespace is used in different folders along the system
 so explicitly declare this is also the vsc/utils namespace
 """

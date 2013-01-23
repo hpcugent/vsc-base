@@ -33,7 +33,7 @@
 
 """
 @author: Josiah Carlson
-@author: Stijn De Weirdt
+@author: Stijn De Weirdt (Ghent University)
 
 Module to allow Asynchronous subprocess use on Windows and Posix platforms
 

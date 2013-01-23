@@ -25,7 +25,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-# @author: Andy Georges
+# @author: Andy Georges (Ghent University)
 # This script will generate the RPMs for deployment on some system, prefixing the Python package names with python-
 # to indicate their contents in a more appropriate way. We do not do this for the packages when shipped to
 # PyPi, since it is pretty obvious these are Python packages in any case.

@@ -26,8 +26,8 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-@author: Stijn De Weirdt
-@author: Andy Georges
+@author: Stijn De Weirdt (Ghent University)
+@author: Andy Georges (Ghent University)
 vsc-base base distribution setup.py
 """
 from shared_setup import ag, jt, sdw

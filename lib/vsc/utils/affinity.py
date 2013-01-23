@@ -24,7 +24,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Stijn De Weirdt
+@author: Stijn De Weirdt (Ghent University)
 
 Linux cpu affinity.
     - Based on C{sched.h} and C{bits/sched.h},

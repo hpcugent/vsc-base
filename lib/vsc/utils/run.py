@@ -25,7 +25,7 @@
 ##
 
 """
-@author: Stijn De Weirdt
+@author: Stijn De Weirdt (Ghent University)
 
 Python module to execute a command
 

@@ -26,7 +26,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges
+@author: Andy Georges (Ghent University)
 Tests for the vsc.utils.nagios module.
 """
 import os
