@@ -1,31 +1,31 @@
 ##
-# Copyright 2012 Ghent University
-# Copyright 2012 Stijn De Weirdt
+# Copyright 2012-2013 Ghent University
 #
-# This file is part of VSC-tools,
+# This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/VSC-tools
+# http://github.com/hpcugent/vsc-base
 #
-# VSC-tools is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation v2.
+# vsc-base is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Library General Public License as
+# published by the Free Software Foundation, either version 2 of
+# the License, or (at your option) any later version.
 #
-# VSC-tools is distributed in the hope that it will be useful,
+# vsc-base is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
+# GNU Library General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Library General Public License
+# along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
-
-
 """
+@author: Stijn De Weirdt (Ghent University)
+
 Linux cpu affinity.
     - Based on C{sched.h} and C{bits/sched.h},
     - see man pages for  C{sched_getaffinity} and C{sched_setaffinity}
@@ -95,11 +95,11 @@ priority_which_t = ctypes.c_int
 id_t = ctypes.c_uint
 
 
-# #/* Data structure to describe CPU mask.  */
-# #typedef struct
-# #{
-# #  __cpu_mask __bits[__NMASKBITS];
-# #} cpu_set_t;
+#/* Data structure to describe CPU mask.  */
+#typedef struct
+#{
+#  __cpu_mask __bits[__NMASKBITS];
+#} cpu_set_t;
 class cpu_set_t(ctypes.Structure):
     """Class that implements the cpu_set_t struct
         also provides some methods to convert between bit representation and soem human readable format
@@ -162,7 +162,7 @@ class cpu_set_t(ctypes.Structure):
         """Given list, set it as cpus"""
         nr_cpus = len(cpus_list)
         if  nr_cpus > CPU_SETSIZE:
-            self.log.error("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
+            self.log.warning("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
                            (nr_cpus , CPU_SETSIZE))
             cpus_list = cpus_list[:CPU_SETSIZE]
         elif nr_cpus < CPU_SETSIZE:
