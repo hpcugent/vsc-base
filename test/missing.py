@@ -31,7 +31,7 @@
 Tests for the vsc.utils.missing module.
 """
 from paycheck import with_checker
-from unitest import TestCase, TestLoader
+from unittest import TestCase, TestLoader
 
 from vsc.utils.missing import nub
 
