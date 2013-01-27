@@ -38,7 +38,7 @@ PACKAGE = {
     'version': '0.99',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
-    'packages': ['vsc', 'vsc.utils'],
+    'packages': ['vsc', 'vsc.utils', 'vsc.utils.external'],
     'provides': ['python-vsc-packages-common = 0.5',
                  'python-vsc-packages-logging = 0.14',
                  'python-vsc-packages-utils = 0.11'],
