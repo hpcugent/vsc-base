@@ -1,4 +1,4 @@
-##
+#
 # Copyright 2009-2013 Ghent University
 #
 # This file is part of vsc-base,
@@ -22,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-##
+#
 
 """
 @author: Stijn De Weirdt (Ghent University)
@@ -92,11 +92,11 @@ class Run(object):
 
     def __init__(self, cmd=None, **kwargs):
         if kwargs.pop('disable_log', None):
-            self.log = DummyFunction() ## No logging
+            self.log = DummyFunction()  # No logging
         if not hasattr(self, 'log'):
             self.log = getLogger(self._get_log_name())
 
-        self.cmd = cmd  ## actual command
+        self.cmd = cmd  # actual command
         self.input = None
 
         self.startpath = None
@@ -105,7 +105,7 @@ class Run(object):
         self._process_module = None
         self._process = None
 
-        self.readsize = 1024 ## number of bytes to read blocking
+        self.readsize = 1024  # number of bytes to read blocking
 
         self._shellcmd = None
         self._popen_named_args = None
@@ -122,7 +122,7 @@ class Run(object):
         return self.__class__.__name__
 
     def _prep_module(self, modulepath=None, extendfromlist=None):
-        ## these will provide the required Popen, PIPE and STDOUT
+        # these will provide the required Popen, PIPE and STDOUT
         if modulepath is None:
             modulepath = PROCESS_MODULE_SUBPROCESS_PATH
 
@@ -130,11 +130,9 @@ class Run(object):
         if extendfromlist is not None:
             fromlist.extend(extendfromlist)
 
-
         self._process_modulepath = modulepath
 
-        self._process_module = __import__(self._process_modulepath, fromlist=fromlist)
-
+        self._process_module = __import__(self._process_modulepath, globals(), locals(), fromlist)
 
     def _run(self):
         """actual method
@@ -205,7 +203,6 @@ class Run(object):
 
         self._init_input()
 
-
     def _run_post(self):
         self._cleanup_process()
 
@@ -215,7 +212,6 @@ class Run(object):
 
         if self.startpath is not None:
             self._return_to_previous_start_in_path()
-
 
         return self._run_return()
 
@@ -228,7 +224,7 @@ class Run(object):
         if os.path.exists(self.startpath):
             if os.path.isdir(self.startpath):
                 try:
-                    self._cwd_before_startpath = os.getcwd()  ## store it some one can return to it
+                    self._cwd_before_startpath = os.getcwd()  # store it some one can return to it
                     os.chdir(self.startpath)
                 except:
                     self.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
@@ -263,7 +259,6 @@ class Run(object):
             self.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
                                 self._cwd_before_startpath)
 
-
     def _make_popen_named_args(self, others=None):
         """Create the named args for Popen"""
         self._popen_named_args = {'stdout':self._process_module.PIPE,
@@ -277,7 +272,6 @@ class Run(object):
             self._popen_named_args.update(others)
 
         self.log.debug("_popen_named_args %s" % self._popen_named_args)
-
 
     def _make_shell_command(self):
         """Convert cmd into shell command"""
@@ -315,7 +309,7 @@ class Run(object):
         """
         try:
             self._process_exitcode = self._process.wait()
-            self._process_output = self._read_process(-1) ## -1 is read all
+            self._process_output = self._read_process(-1)  # -1 is read all
         except:
             self.log.raiseException("_wait_for_process: problem during wait exitcode %s output %s" %
                                     (self._process_exitcode, self._process_output))
@@ -323,13 +317,12 @@ class Run(object):
     def _cleanup_process(self):
         """Cleanup any leftovers from the process"""
 
-
     def _read_process(self, readsize=None):
         """Read from process, return out"""
         if readsize is None:
             readsize = self.readsize
         if readsize is None:
-            readsize = -1  ## read all
+            readsize = -1  # read all
         self.log.debug("_read_process: going to read with readsize %s" % readsize)
         out = self._process.stdout.read(readsize)
         return out
@@ -368,18 +361,18 @@ class RunLoop(Run):
     def __init__(self, cmd, **kwargs):
         super(RunLoop, self).__init__(cmd, **kwargs)
         self._loop_count = None
-        self._loop_continue = None  ## intial state, change this to break out the loop
+        self._loop_continue = None  # intial state, change this to break out the loop
 
     def _wait_for_process(self):
         """Loop through the process in timesteps
             collected output is run through _loop_process_output
         """
-        ## these are initialised outside the function (cannot be forgotten, but can be overwritten)
-        self._loop_count = 0  ## internal counter
+        # these are initialised outside the function (cannot be forgotten, but can be overwritten)
+        self._loop_count = 0  # internal counter
         self._loop_continue = True
         self._process_output = ''
 
-        ## further initialisation
+        # further initialisation
         self._loop_initialise()
 
         time.sleep(self.LOOP_TIMEOUT_INIT)
@@ -429,7 +422,7 @@ class RunLoopLog(RunLoop):
     LOOP_LOG_LEVEL = logging.INFO
 
     def _wait_for_process(self):
-        ## initialise the info logger
+        # initialise the info logger
         self.log.info("Going to run cmd %s" % self._shellcmd)
         super(RunLoopLog, self)._wait_for_process()
 
@@ -450,13 +443,11 @@ class RunLoopStdout(RunLoop):
         sys.stdout.flush()
 
 
-
-
 class RunAsync(Run):
     """Async process class"""
 
     def _prep_module(self, modulepath=None, extendfromlist=None):
-        ## these will provide the required Popen, PIPE and STDOUT
+        # these will provide the required Popen, PIPE and STDOUT
         if modulepath is None:
             modulepath = PROCESS_MODULE_ASYNCPROCESS_PATH
         if extendfromlist is None:
@@ -469,21 +460,22 @@ class RunAsync(Run):
             readsize = self.readsize
 
         if self._process.stdout is None:
-            ## Nothing yet/anymore
+            # Nothing yet/anymore
             return ''
 
         try:
             if readsize is not None  and readsize < 0:
-                ## read all blocking (it's not why we should use async
+                # read all blocking (it's not why we should use async
                 out = self._process.stdout.read()
             else:
-                ## non-blocking read (readsize is a maximum to return !
+                # non-blocking read (readsize is a maximum to return !
                 out = self._process_module.recv_some(self._process, maxread=readsize)
             return out
         except (IOError, Exception):
             # recv_some may throw Exception
             self.log.exception("_read_process: read failed")
             return ''
+
 
 class RunFile(Run):
     """Popen to filehandle"""
@@ -550,6 +542,7 @@ class RunPty(Run):
                       }
         super(RunPty, self)._make_popen_named_args(others=others)
 
+
 class RunLog(Run):
     """Allow for better logging
         will try to log to other children of the root logger
@@ -563,7 +556,7 @@ class RunLog(Run):
         """
         loggers = self.GET_ALL_LOGGERS()
         if self.GET_LOG_REGEX is None:
-            ## return name of last one
+            # return name of last one
             return loggers[-1][0]
         else:
             reg = re.compile(r'' + self.GET_LOG_REGEX)
@@ -577,14 +570,14 @@ class RunQA(RunLoop, RunAsync):
     def __init__(self, cmd, **kwargs):
         qa = kwargs.pop('qa', None)
         self.qa, self.qa_std, self.no_qa = self._parse_qa(qa)
-        self._loop_miss_count = None ## maximum number of misses
-        self._loop_previous_ouput_length = None ## track length of output through loop
+        self._loop_miss_count = None  # maximum number of misses
+        self._loop_previous_ouput_length = None  # track length of output through loop
 
         super(RunQA, self).__init__(cmd, **kwargs)
 
     def _init_input(self):
         """Handle input, if any in a simple way"""
-        ## do nothing here
+        # do nothing here
         pass
 
     def _parse_qa(self, init_qa):
@@ -606,7 +599,7 @@ class RunQA(RunLoop, RunAsync):
         def process_qa(q, a):
             split_q = [escape_special(x) for x in reg_split.split(q)]
             reg_q_txt = split.join(split_q) + split.rstrip('+') + "*$"
-            ## add optional split at the end
+            # add optional split at the end
             if not a.endswith('\n'):
                 a += '\n'
             reg_q = re.compile(r"" + reg_q_txt)
@@ -649,7 +642,7 @@ class RunQA(RunLoop, RunAsync):
         """
         hit = False
 
-        ## qa first and then qa_std
+        # qa first and then qa_std
         nr_qa = len(self.qa)
         for idx, q, a in enumerate(self.qa.items() + self.qa_std.items()):
             res = q.search(self._process_output)
@@ -664,7 +657,7 @@ class RunQA(RunLoop, RunAsync):
         if not hit:
             curoutlen = len(self._process_output)
             if curoutlen > self._loop_previous_ouput_length:
-                ## still progress in output, just continue (but don't reset miss counter either)
+                # still progress in output, just continue (but don't reset miss counter either)
                 self._loop_previous_ouput_length = curoutlen
             else:
                 noqa = False
@@ -675,8 +668,7 @@ class RunQA(RunLoop, RunAsync):
                 if not noqa:
                     self._loop_miss_count += 1
         else:
-            self._loop_miss_count = 0  ## rreset miss counter on hit
-
+            self._loop_miss_count = 0  # rreset miss counter on hit
 
         if  self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
             # explicitly kill the child process before exiting
@@ -694,15 +686,15 @@ class RunQA(RunLoop, RunAsync):
             self.log.error("_loop_process_output: max misses %s reached: end of output %s" %
                            (self.LOOP_MAX_MISS_COUNT, self._process_output[-500:]))
 
-            ## stop the main loop (although process.poll will also stop it)
+            # stop the main loop (although process.poll will also stop it)
             self._loop_continue = False
-
 
     def _loop_process_output_final(self, output):
         """Process the remaining output that is read
             do nothing
         """
-        ## TODO: do super ?
+        # TODO: do super ?
+
 
 class RunAsyncLoop(RunLoop, RunAsync):
     """Async read in loop"""
@@ -713,12 +705,14 @@ class RunAsyncLoopLog(RunLoopLog, RunAsync):
     """Async read, log to logger"""
     pass
 
+
 class RunAsyncLoopStdout(RunLoopStdout, RunAsync):
     """Async read, flush to stdout"""
     pass
 
-## convenient names
-## eg: from vsc.utils.run import trivial
+
+# convenient names
+# eg: from vsc.utils.run import trivial
 
 run_simple = Run.run
 run_simple_noworries = RunNoWorries.run
