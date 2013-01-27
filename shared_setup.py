@@ -75,7 +75,7 @@ except:
     from distutils.command.build_py import build_py
     from distutils.command.sdist import sdist
 
-    class vsc_egg_info():
+    class vsc_egg_info(object):
         pass  # dummy class for distutils
 
     has_setuptools = False
