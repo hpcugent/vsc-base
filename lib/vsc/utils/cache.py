@@ -75,9 +75,10 @@ class FileCache(object):
         try:
             f = open(self.filename, 'rb')
             try:
-                self.shelf = pickle.load(f)
-            except:
-                self.log.raiseException("Could not load pickle data from %s" % (self.filename))
+                try:
+                    self.shelf = pickle.load(f)
+                except:
+                    self.log.raiseException("Could not load pickle data from %s" % (self.filename))
             finally:
                 f.close()
 
