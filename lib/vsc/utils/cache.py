@@ -75,6 +75,8 @@ class FileCache(object):
         try:
             f = open(self.filename, 'rb')
             try:
+                # FIXME: This double block is due to a workaround for Python 2.4
+                # see http://stackoverflow.com/questions/820778/syntaxerror-in-finally-django
                 try:
                     self.shelf = pickle.load(f)
                 except:
