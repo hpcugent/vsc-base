@@ -428,14 +428,14 @@ def getAllExistingLoggers():
 
 def getAllNonFancyloggers():
     """
-    @return: all loggers that are not fancyloggers (based on naming prefix)
+    @return: all loggers that are not fancyloggers
     """
     return [x for x in getAllExistingLoggers() if not isinstance(x[1], FancyLogger)]
 
 
 def getAllFancyloggers():
     """
-    Return all loggers that are not fancyloggers (based on naming prefix)
+    Return all loggers that are not fancyloggers
     """
     return [x for x in getAllExistingLoggers() if isinstance(x[1], FancyLogger)]
 
