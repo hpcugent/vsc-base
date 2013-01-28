@@ -227,15 +227,7 @@ class ExtOptionParser(OptionParser):
 
         # redefine formatter for py2.4 compat
         if not hasattr(self.formatter, 'format_epilog'):
-            # use f_self to indicate the formatter self
-            def format_epilog(f_self, epilog):
-                """format_epilog from py2.7 / optparse 1.5.3"""
-                if epilog:
-                    return "\n" + f_self._format_text(epilog) + "\n"
-                else:
-                    return ""
-            setattr(self.formatter, 'format_epilog', format_epilog)
-
+            setattr(self.formatter, 'format_epilog', self.formatter.format_description)
 
         if self.epilog is None:
             self.epilog = []
@@ -593,8 +585,13 @@ class GeneralOption(object):
             (self.options, self.args) = self.parser.parse_args(options_list)
         except SystemExit, err:
             if self.no_system_exit:
+                try:
+                    msg = err.message
+                except:
+                    # py2.4
+                    msg = '_nomessage_'
                 self.log.debug("parseoptions: no_system_exit set after parse_args err %s code %s" %
-                               (err.message, err.code))
+                               (msg, err.code))
                 return
             else:
                 sys.exit(err.code)
