@@ -38,9 +38,12 @@ import os
 import re
 import StringIO
 import sys
-from vsc.utils.external.optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
-from vsc.utils.external.optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
-from vsc.utils.external.optparse import _ as _gettext  # this is gettext normally
+from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
+from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
+from optparse import _ as _gettext  # this is gettext normally
+# from vsc.utils.external.optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
+# from vsc.utils.external.optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
+# from vsc.utils.external.optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.fancylogger import getLogger, setLogLevelDebug
 
@@ -215,9 +218,24 @@ class ExtOptionParser(OptionParser):
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
 
+        # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
+        self.epilog = kwargs.pop('epilog', None)
+
         if not 'option_class' in kwargs:
             kwargs['option_class'] = ExtOption
         OptionParser.__init__(self, *args, **kwargs)
+
+        # redefine formatter for py2.4 compat
+        if not hasattr(self.formatter, 'format_epilog'):
+            # use f_self to indicate the formatter self
+            def format_epilog(f_self, epilog):
+                """format_epilog from py2.7 / optparse 1.5.3"""
+                if epilog:
+                    return "\n" + f_self._format_text(epilog) + "\n"
+                else:
+                    return ""
+            setattr(self.formatter, 'format_epilog', format_epilog)
+
 
         if self.epilog is None:
             self.epilog = []
@@ -239,6 +257,20 @@ class ExtOptionParser(OptionParser):
         newvalues = ExtValues()
         newvalues.__dict__ = values.__dict__.copy()
         return newvalues
+
+    def format_help(self, formatter=None):
+        """For py2.4 compatibility reasons (missing epilog). This is the p2.7 / optparse 1.5.3 code"""
+        if formatter is None:
+            formatter = self.formatter
+        result = []
+        if self.usage:
+            result.append(self.get_usage() + "\n")
+        if self.description:
+            result.append(self.format_description(formatter) + "\n")
+        result.append(self.format_option_help(formatter))
+        result.append(self.format_epilog(formatter))
+        return "".join(result)
+
 
     def format_epilog(self, formatter):
         """Allow multiple epilog parts"""
