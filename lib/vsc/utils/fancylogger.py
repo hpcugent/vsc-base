@@ -214,11 +214,12 @@ def getLogger(name=None, fname=True):
     if fname is True, the loggers name will be 'name.functionname'
     where functionname is the name of the function calling this function
     """
-    fullname = name
-    if not name:
-        fullname = getRootLoggerName()
+    nameparts = [getRootLoggerName()]
+    if name:
+        nameparts.append(name)
     if fname:
-        fullname = ".".join([fullname, _getCallingFunctionName()])
+        nameparts.append(_getCallingFunctionName())
+    fullname = ".".join(nameparts)
 
     return logging.getLogger(fullname)
 
