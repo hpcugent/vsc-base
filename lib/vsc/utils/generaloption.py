@@ -215,9 +215,16 @@ class ExtOptionParser(OptionParser):
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
 
+        # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
+        self.epilog = kwargs.pop('epilog', None)
+
         if not 'option_class' in kwargs:
             kwargs['option_class'] = ExtOption
         OptionParser.__init__(self, *args, **kwargs)
+
+        # redefine formatter for py2.4 compat
+        if not hasattr(self.formatter, 'format_epilog'):
+            setattr(self.formatter, 'format_epilog', self.formatter.format_description)
 
         if self.epilog is None:
             self.epilog = []
@@ -239,6 +246,20 @@ class ExtOptionParser(OptionParser):
         newvalues = ExtValues()
         newvalues.__dict__ = values.__dict__.copy()
         return newvalues
+
+    def format_help(self, formatter=None):
+        """For py2.4 compatibility reasons (missing epilog). This is the p2.7 / optparse 1.5.3 code"""
+        if formatter is None:
+            formatter = self.formatter
+        result = []
+        if self.usage:
+            result.append(self.get_usage() + "\n")
+        if self.description:
+            result.append(self.format_description(formatter) + "\n")
+        result.append(self.format_option_help(formatter))
+        result.append(self.format_epilog(formatter))
+        return "".join(result)
+
 
     def format_epilog(self, formatter):
         """Allow multiple epilog parts"""
@@ -561,8 +582,13 @@ class GeneralOption(object):
             (self.options, self.args) = self.parser.parse_args(options_list)
         except SystemExit, err:
             if self.no_system_exit:
+                try:
+                    msg = err.message
+                except:
+                    # py2.4
+                    msg = '_nomessage_'
                 self.log.debug("parseoptions: no_system_exit set after parse_args err %s code %s" %
-                               (err.message, err.code))
+                               (msg, err.code))
                 return
             else:
                 sys.exit(err.code)

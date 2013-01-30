@@ -1,4 +1,4 @@
-##
+# #
 #
 # Copyright 2012-2013 Ghent University
 #
@@ -23,7 +23,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-##
+# #
 """
 @author: Stijn De Weirdt (Ghent University)
 
@@ -67,7 +67,43 @@ class FancyMonth:
 
     def set_details(self):
         """Get first/last day of the month of date"""
-        c = calendar.Calendar()
+        class MyCalendar(object):
+            """Backport minimal calendar.Calendar code from 2.7 to support itermonthdays in 2.4"""
+            def __init__(self, firstweekday=0):
+                self.firstweekday = firstweekday  # 0 = Monday, 6 = Sunday
+
+            def itermonthdates(self, year, month):
+                """
+                Return an iterator for one month. The iterator will yield datetime.date
+                values and will always iterate through complete weeks, so it will yield
+                dates outside the specified month.
+                """
+                _date = date(year, month, 1)
+                # Go back to the beginning of the week
+                days = (_date.weekday() - self.firstweekday) % 7
+                _date -= timedelta(days=days)
+                oneday = timedelta(days=1)
+                while True:
+                    yield _date
+                    _date += oneday
+                    if _date.month != month and _date.weekday() == self.firstweekday:
+                        break
+
+            def itermonthdays(self, year, month):
+                """
+                Like itermonthdates(), but will yield day numbers. For days outside
+                the specified month the day number is 0.
+                """
+                for _date in self.itermonthdates(year, month):
+                    if _date.month != month:
+                        yield 0
+                    else:
+                        yield _date.day
+
+        if 'Calendar' in dir(calendar):  # py2.5+
+            c = calendar.Calendar()
+        else:
+            c = MyCalendar()
         self.nrdays = len([x for x in c.itermonthdays(self.date.year, self.date.month) if x > 0])
 
         self.first = date(self.date.year, self.date.month, 1)
@@ -202,17 +238,17 @@ def datetime_parser(txt):
 
     datetuple = [tmpdate.year, tmpdate.month, tmpdate.day]
     if len(tmpts) > 1:
-        ## add hour and minutes
+        # # add hour and minutes
         datetuple.extend([int(x) for x in tmpts[1].split(':')[:2]])
 
         try:
             sects = tmpts[1].split(':')[2].split('.')
         except:
             sects = [0]
-        ## add seconds
+        # # add seconds
         datetuple.append(int(sects[0]))
         if len(sects) > 1:
-            ## add microseconds
+            # # add microseconds
             datetuple.append(int(float('.%s' % sects[1]) * 10 ** 6))
 
     res = datetime(*datetuple)
