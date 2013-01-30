@@ -381,7 +381,7 @@ def setLogLevel(level):
     """
     set a global log level (for this root logger)
     """
-    getLogger().setLevel(level)
+    getLogger(fname=False).setLevel(level)
 
 
 def setLogLevelDebug():
@@ -416,7 +416,7 @@ def getAllExistingLoggers():
     """
     @return: the existing loggers, in a list of C{(name, logger)} tuples
     """
-    rootlogger = logging.getLogger()
+    rootlogger = logging.getLogger(fname=False)
     ## undocumented manager (in 2.4 and later)
     manager = rootlogger.manager
 
