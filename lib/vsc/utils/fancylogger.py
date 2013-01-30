@@ -320,9 +320,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
 
     if you want to disable logging to the handler, pass the earlier obtained handler
     """
-    if not name:
-        name = ""
-    logger = getLogger(name)
+    logger = getLogger(name, fname=False)
 
     if not hasattr(logger, loggeroption):
         ## not set.
@@ -383,7 +381,7 @@ def setLogLevel(level):
     """
     set a global log level (for this root logger)
     """
-    getLogger().setLevel(level)
+    getLogger(fname=False).setLevel(level)
 
 
 def setLogLevelDebug():
@@ -418,7 +416,7 @@ def getAllExistingLoggers():
     """
     @return: the existing loggers, in a list of C{(name, logger)} tuples
     """
-    rootlogger = logging.getLogger()
+    rootlogger = logging.getLogger(fname=False)
     ## undocumented manager (in 2.4 and later)
     manager = rootlogger.manager
 
