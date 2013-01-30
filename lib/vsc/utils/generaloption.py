@@ -42,7 +42,7 @@ from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
-from vsc.fancylogger import getLogger, setLogLevelDebug
+from vsc.utils.fancylogger import getLogger, setLogLevelDebug
 
 import shlex
 import subprocess

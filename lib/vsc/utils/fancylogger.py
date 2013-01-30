@@ -320,6 +320,8 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
 
     if you want to disable logging to the handler, pass the earlier obtained handler
     """
+    if not name:
+        name = ""
     logger = getLogger(name)
 
     if not hasattr(logger, loggeroption):

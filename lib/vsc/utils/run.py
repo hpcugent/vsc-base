@@ -62,7 +62,7 @@ Historical overview of existing equivalent code
     - C{run} method
         - fake pty support
 """
-from vsc.fancylogger import getLogger, getAllExistingLoggers
+from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
 import pty
 import time
 import logging
