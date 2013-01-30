@@ -41,9 +41,6 @@ import sys
 from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
-# from vsc.utils.external.optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
-# from vsc.utils.external.optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
-# from vsc.utils.external.optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.fancylogger import getLogger, setLogLevelDebug
 
