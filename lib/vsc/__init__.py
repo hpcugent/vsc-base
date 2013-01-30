@@ -35,5 +35,5 @@ import pkg_resources
 pkg_resources.declare_namespace(__name__)
 
 # here for backwards compatibility
-from vsc.utils import fancylogger
-
+from vsc.utils import fancylogger as fl
+fancylogger = fl

@@ -39,7 +39,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
-import vsc.fancylogger as fancylogger
+from vsc import fancylogger
 
 
 class VscMailError(Exception):
