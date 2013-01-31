@@ -234,6 +234,8 @@ class ExtOptionParser(OptionParser):
             epilogtxt += ' e.g. option --someopt also supports --disable-someopt.'
             self.epilog.append(epilogtxt % {'disable': self.option_class.DISABLE})
 
+        self.envvar_prefix = None
+
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
             - make it dynamic, otherwise the class constant is shared between multiple instances
@@ -326,24 +328,25 @@ class ExtOptionParser(OptionParser):
     def get_env_options_prefix(self):
         """Return the prefix to use for options passed through the environment"""
         # sys.argv[0] or the prog= argument of the optionparser, strip possible extension
-        prefix = self.get_prog_name().rsplit('.', 1)[0].upper()
-        return prefix
+        self.envvar_prefix = self.get_prog_name().rsplit('.', 1)[0].upper()
+        return self.envvar_prefix
 
     def get_env_options(self):
         """Retrieve options from the environment: prefix _ longopt.upper()"""
         env_long_opts = []
-        prefix = self.get_env_options_prefix()
+        if self.envvar_prefix is None:
+            self.get_env_options_prefix()
 
         epilogprefixtxt = "All long option names can be passed as environment variables. "
         epilogprefixtxt += "Variable name is %(prefix)s_<LONGNAME> "
         epilogprefixtxt += "eg. --someopt is same as setting %(prefix)s_SOMEOPT in the environment."
-        self.epilog.append(epilogprefixtxt % {'prefix':prefix})
+        self.epilog.append(epilogprefixtxt % {'prefix':self.envvar_prefix})
 
         for opt in self._get_all_options():
             if opt._long_opts is None: continue
             for lo in opt._long_opts:
                 if len(lo) == 0: continue
-                env_opt_name = "%s_%s" % (prefix, lo.lstrip('-').upper())
+                env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').upper())
                 val = os.environ.get(env_opt_name, None)
                 if not val is None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
@@ -377,6 +380,7 @@ class GeneralOption(object):
         - go_useconfigfiles : use configfiles or not (default set by CONFIGFILES_USE)
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
+        - go_loggername : name of logger, default classname
 
     Options process order (last one wins)
         0. default defined with option
@@ -406,6 +410,7 @@ class GeneralOption(object):
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
         self.use_configfiles = kwargs.pop('go_useconfigfiles', self.CONFIGFILES_USE)  # use or ignore config files
         self.configfiles = kwargs.pop('go_configfiles', self.CONFIGFILES_INIT)  # configfiles to parse
+        prefixloggername = kwargs.pop('go_prefixloggername', False)  # name of logger is same as envvar prefix
 
         set_columns(kwargs.pop('go_columns', None))
 
@@ -415,7 +420,13 @@ class GeneralOption(object):
         self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
-        self.log = getLogger(self.__class__.__name__)
+        loggername = self.__class__.__name__
+        if prefixloggername:
+            prefix = self.parser.get_env_options_prefix()
+            if prefix is not None and len(prefix) > 0:
+                loggername = prefix.replace('.', '_')  # . indicate hierarchy in logging land
+
+        self.log = getLogger(loggername)
         self.options = None
         self.args = None
         self.processed_options = {}
@@ -857,3 +868,28 @@ class GeneralOption(object):
 
         self.log.debug("commandline args %s" % args)
         return args
+
+
+def simple_option(go_dict, descr=None, short_descr=None, long_descr=None):
+    """A function that returns a single level GeneralOption option parser
+    go_dict : General Option option dict
+    short_descr : short description of main options
+    long_descr : longer description of main options
+
+    a general options dict has as key the long option name, and is followed by a list/tuple
+        mandatory are 4 elements : option help, type, action, default
+        a 5th element is optional and is the short help name (if any)
+
+    returns instance of trivial subclass of GeneralOption
+    """
+    # TODO is None allowed?
+#    descr = [short_descr if short_descr is not None else '',
+#             long_descr if long_descr is not None else ''
+#             ]
+    descr = [short_descr, long_descr]
+    class SimpleOption(GeneralOption):
+        def make_init(self):
+            prefix = None
+            self.add_group_parser(go_dict, descr, prefix=prefix)
+
+    return SimpleOption(go_prefixloggername=True)
