@@ -33,11 +33,13 @@ A class that can be used to generated options to python scripts in a general way
 
 import ConfigParser
 import copy
+import inspect
 import operator
 import os
 import re
 import StringIO
 import sys
+import textwrap
 from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
@@ -87,9 +89,9 @@ class ExtOption(Option):
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "datetime",)
+    EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
-    EXTOPTION_LOG = ('store_debuglog', 'store_infolog', "store_quietlog",)
+    EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_quietlog',)
 
     # shorthelp has no extra arguments
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + ('shorthelp',)
@@ -146,7 +148,7 @@ class ExtOption(Option):
                 pass
             elif opt.startswith("--%s-" % self.DISABLE):
                 # reverse action
-                if action in ('store_true', 'store_debuglog', 'store_infolog'):
+                if action in ('store_true',) + self.EXTOPTION_LOG:
                     action = 'store_false'
                 elif action in ('store_false',):
                     action = 'store_true'
@@ -225,40 +227,41 @@ class ExtOptionParser(OptionParser):
 
         self.envvar_prefix = None
 
+    def set_usage_docstring(self):
+        """try to find the main docstring and include it in usage"""
+        stack = inspect.stack()[-1]
+        try:
+            docstr = stack[0].f_globals.get('__doc__', None)
+        except:
+            docstr = None
+
+        if docstr is not None:
+            indent = " "
+            # kwargs and ** magic to deal with width
+            kwargs = {'initial_indent':indent * 4,
+                     'subsequent_indent':indent * 5,
+                     'replace_whitespace':False,
+                     }
+            width = os.environ.get('COLUMNS', None)
+            if width is not None:
+                # default textwrap width
+                try:
+                    kwargs['width'] = int(width)
+                except:
+                    pass
+
+            # deal with newlines in docstring
+            final_docstr = ['', '']
+            for line in str(docstr).strip("\n ").split("\n"):
+                final_docstr.append(textwrap.fill(line, **kwargs))
+
+            self.usage += "\n".join(final_docstr)
+
     def set_usage(self, usage):
         OptionParser.set_usage(self, usage)
 
         if self.USAGE_DOCSTRING:
-            # try to find the main docstring and include it
-            import inspect
-            import textwrap
-            stack = inspect.stack()[-1]
-            try:
-                docstr = stack[0].f_globals.get('__doc__', None)
-            except:
-                docstr = None
-
-            if docstr is not None:
-                indent = " "
-                # kwargs and ** magic to deal with width
-                kwargs = {'initial_indent':indent * 4,
-                         'subsequent_indent':indent * 5,
-                         'replace_whitespace':False,
-                         }
-                width = os.environ.get('COLUMNS', None)
-                if width is not None:
-                    # default textwrap width
-                    try:
-                        kwargs['width'] = int(width)
-                    except:
-                        pass
-
-                # deal with newlines in docstring
-                final_docstr = ['', '']
-                for line in str(docstr).strip("\n ").split("\n"):
-                    final_docstr.append(textwrap.fill(line, **kwargs))
-
-                self.usage += "\n".join(final_docstr)
+            self.set_usage_docstring()
 
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
@@ -405,6 +408,7 @@ class GeneralOption(object):
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
         - go_loggername : name of logger, default classname
+        - go_initbeforedefault : set the main options before the default ones
 
     Options process order (last one wins)
         0. default defined with option
@@ -917,8 +921,7 @@ def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=No
 
     returns instance of trivial subclass of GeneralOption
     """
-    # TODO is None allowed?
-    descr = [short_groupdescr if short_groupdescr is not None else 'Main',
+    descr = [short_groupdescr if short_groupdescr is not None else 'Main options',
              long_groupdescr if long_groupdescr is not None else '',
              ]
 
