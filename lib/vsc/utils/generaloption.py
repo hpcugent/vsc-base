@@ -42,25 +42,8 @@ from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
-from vsc.utils.fancylogger import getLogger, setLogLevelDebug, setLogLevelInfo
-
-import shlex
-import subprocess
-
-
-def shell_quote(x):
-    """Add quotes so it can be apssed to shell"""
-    # TODO move to vsc/utils/missing
-    # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
-    # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
-    return subprocess.list2cmdline([str(x)])
-
-
-def shell_unquote(x):
-    """Take a literal string, remove the quotes as if it were passed by shell"""
-    # TODO move to vsc/utils/missing
-    # it expects a string
-    return shlex.split(str(x))[0]
+from vsc.utils.fancylogger import getLogger, setLogLevelDebug, setLogLevelInfo, setLogLevelWarning
+from vsc.utils.missing import shell_quote, shell_unquote
 
 
 def set_columns(cols=None):
@@ -106,7 +89,7 @@ class ExtOption(Option):
 
     EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "datetime",)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
-    EXTOPTION_LOG = ('store_debuglog', 'store_infolog',)
+    EXTOPTION_LOG = ('store_debuglog', 'store_infolog', "store_quietlog",)
 
     # shorthelp has no extra arguments
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + ('shorthelp',)
@@ -172,6 +155,8 @@ class ExtOption(Option):
                 setLogLevelDebug()
             elif orig_action == 'store_infolog' and action == 'store_true':
                 setLogLevelInfo()
+            elif orig_action == 'store_quietlog' and action == 'store_true':
+                setLogLevelWarning()
 
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
@@ -509,7 +494,8 @@ class GeneralOption(object):
     def make_debug_options(self):
         """Add debug/logging options: debug and info"""
         opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd'),
-                'info':("Enable info log mode", None, "store_infolog", False)
+                'info':("Enable info log mode", None, "store_infolog", False),
+                'quiet':("Enable info quiet/warning mode", None, "store_quietlog", False),
                 }
         descr = ['Debug and logging options', '']
         self.log.debug("Add debug and logging options descr %s opts %s (no prefix)" % (descr, opts))

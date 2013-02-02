@@ -76,88 +76,6 @@ class TestOption1(GeneralOption):
         self.level1_options()
         self.ext_options()
 
-TestOption1HelpShort = """Usage: optiontest1 [options]
-
-Options:
-  -h             show short help message and exit
-  -H             show full help message and exit
-
-  Debug options:
-    -d           Enable debug log mode (def False)
-
-  Base:
-    Base level of options
-
-    -b           Long and short base option (def False)
-
-  Level1:
-    1 higher level of options
-
-    -l           Long and short option (def False)
-
-  ExtOption:
-    action from ExtOption
-
-    -o OPTIONAL  Test action optional (def DEFAULT)
-
-Boolean options support disable prefix to do the inverse of the action, e.g. option --someopt also
-supports --disable-someopt.
-
-All long option names can be passed as environment variables. Variable name is
-OPTIONTEST1_<LONGNAME> eg. --someopt is same as setting OPTIONTEST1_SOMEOPT in the environment.
-"""
-
-TestOption1HelpLong = """Usage: optiontest1 [options]
-
-Options:
-  -h, --shorthelp       show short help message and exit
-  -H, --help            show full help message and exit
-
-  Debug options:
-    -d, --debug         Enable debug log mode (def False)
-
-  Configfile options:
-    --configfiles=CONFIGFILES
-                        Parse (additional) configfiles (type comma-separated list)
-    --ignoreconfigfiles=IGNORECONFIGFILES
-                        Ignore configfiles (type comma-separated list)
-
-  Base:
-    Base level of options
-
-    -b, --base          Long and short base option (def False)
-    --longbase          Long-only base option (def True)
-    --store=STORE       Store option
-
-  Level1:
-    1 higher level of options
-
-    -l, --level_level   Long and short option (def False)
-    --level_longlevel   Long-only level option (def True)
-
-  ExtOption:
-    action from ExtOption
-
-    --ext_date=DATE     Test action datetime.date
-    --ext_datetime=DATETIME
-                        Test action datetime.datetime
-    --ext_extend=EXTEND
-                        Test action extend (type comma-separated list)
-    --ext_extenddefault=EXTENDDEFAULT
-                        Test action extend with default set (type comma-separated list; def
-                        zero,one)
-    -o OPTIONAL, --ext_optional=OPTIONAL
-                        Test action optional (def DEFAULT)
-    --ext_optionalchoice=OPTIONALCHOICE
-                        Test action optional (type choice; def CHOICE0) (choices: CHOICE1,CHOICE2)
-
-Boolean options support disable prefix to do the inverse of the action, e.g. option --someopt also
-supports --disable-someopt.
-
-All long option names can be passed as environment variables. Variable name is
-OPTIONTEST1_<LONGNAME> eg. --someopt is same as setting OPTIONTEST1_SOMEOPT in the environment.
-"""
-
 class GeneralOptionTest(TestCase):
     """Tests for general option"""
 
@@ -196,12 +114,13 @@ class GeneralOptionTest(TestCase):
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
-        ign = r'(^(base|debug|info)$)|(^ext)'
+        ign = r'(^(base|debug|info|quiet)$)|(^ext)'
         topt = TestOption1(go_args=['--level_level', '--longbase', shell_unquote('--store="some whitespace"')])
         self.assertEqual(topt.options.__dict__ ,
                          {
                           'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True,
-                          'base': False, 'ext_optional': None, 'ext_extend': None, 'debug': False, 'info':False,
+                          'base': False, 'ext_optional': None, 'ext_extend': None,
+                          'debug': False, 'info':False, 'quiet':False,
                           'ext_extenddefault': ['zero', 'one'], 'store': 'some whitespace', 'ext_datetime': None,
                           'ext_optionalchoice': None,
                           'ignoreconfigfiles': None, 'configfiles': None, })
