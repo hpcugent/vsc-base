@@ -42,7 +42,7 @@ from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
-from vsc.utils.fancylogger import getLogger, setLogLevelDebug
+from vsc.utils.fancylogger import getLogger, setLogLevelDebug, setLogLevelInfo
 
 import shlex
 import subprocess
@@ -106,10 +106,11 @@ class ExtOption(Option):
 
     EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "datetime",)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
+    EXTOPTION_LOG = ('store_debuglog', 'store_infolog',)
 
     # shorthelp has no extra arguments
-    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + ('shorthelp', 'store_debuglog',)
-    STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('store_debuglog', 'store_or_None',)
+    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + ('shorthelp',)
+    STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_LOG + ('store_or_None',)
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
@@ -153,8 +154,8 @@ class ExtOption(Option):
         if action == 'shorthelp':
             parser.print_shorthelp()
             parser.exit()
-        elif action in ('store_true', 'store_false', 'store_debuglog'):
-            if action == 'store_debuglog':
+        elif action in ('store_true', 'store_false',) + self.EXTOPTION_LOG:
+            if action in self.EXTOPTION_LOG:
                 action = 'store_true'
 
             if opt.startswith("--%s-" % self.ENABLE):
@@ -162,13 +163,15 @@ class ExtOption(Option):
                 pass
             elif opt.startswith("--%s-" % self.DISABLE):
                 # reverse action
-                if action in ('store_true', 'store_debuglog'):
+                if action in ('store_true', 'store_debuglog', 'store_infolog'):
                     action = 'store_false'
                 elif action in ('store_false',):
                     action = 'store_true'
 
             if orig_action == 'store_debuglog' and action == 'store_true':
                 setLogLevelDebug()
+            elif orig_action == 'store_infolog' and action == 'store_true':
+                setLogLevelInfo()
 
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
@@ -468,11 +471,12 @@ class GeneralOption(object):
         self.make_configfiles_options()
 
     def make_debug_options(self):
-        """Add debug option"""
-        opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd')
+        """Add debug/logging options: debug and info"""
+        opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd'),
+                'info':("Enable info log mode", None, "store_infolog", False)
                 }
-        descr = ['Debug options', '']
-        self.log.debug("Add debug options descr %s opts %s (no prefix)" % (descr, opts))
+        descr = ['Debug and logging options', '']
+        self.log.debug("Add debug and logging options descr %s opts %s (no prefix)" % (descr, opts))
         self.add_group_parser(opts, descr, prefix=None)
 
     def make_configfiles_options(self):
