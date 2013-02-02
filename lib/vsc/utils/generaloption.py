@@ -33,34 +33,19 @@ A class that can be used to generated options to python scripts in a general way
 
 import ConfigParser
 import copy
+import inspect
 import operator
 import os
 import re
 import StringIO
 import sys
+import textwrap
 from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
-from vsc.utils.fancylogger import getLogger, setLogLevelDebug
-
-import shlex
-import subprocess
-
-
-def shell_quote(x):
-    """Add quotes so it can be apssed to shell"""
-    # TODO move to vsc/utils/missing
-    # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
-    # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
-    return subprocess.list2cmdline([str(x)])
-
-
-def shell_unquote(x):
-    """Take a literal string, remove the quotes as if it were passed by shell"""
-    # TODO move to vsc/utils/missing
-    # it expects a string
-    return shlex.split(str(x))[0]
+from vsc.utils.fancylogger import getLogger, setLogLevelDebug, setLogLevelInfo, setLogLevelWarning
+from vsc.utils.missing import shell_quote, shell_unquote
 
 
 def set_columns(cols=None):
@@ -104,12 +89,13 @@ class ExtOption(Option):
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ("extend", "date", "datetime",)
+    EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
+    EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_quietlog',)
 
     # shorthelp has no extra arguments
-    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + ('shorthelp', 'store_debuglog',)
-    STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + ('store_debuglog', 'store_or_None',)
+    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + ('shorthelp',)
+    STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_LOG + ('store_or_None',)
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
@@ -153,8 +139,8 @@ class ExtOption(Option):
         if action == 'shorthelp':
             parser.print_shorthelp()
             parser.exit()
-        elif action in ('store_true', 'store_false', 'store_debuglog'):
-            if action == 'store_debuglog':
+        elif action in ('store_true', 'store_false',) + self.EXTOPTION_LOG:
+            if action in self.EXTOPTION_LOG:
                 action = 'store_true'
 
             if opt.startswith("--%s-" % self.ENABLE):
@@ -162,13 +148,17 @@ class ExtOption(Option):
                 pass
             elif opt.startswith("--%s-" % self.DISABLE):
                 # reverse action
-                if action in ('store_true', 'store_debuglog'):
+                if action in ('store_true',) + self.EXTOPTION_LOG:
                     action = 'store_false'
                 elif action in ('store_false',):
                     action = 'store_true'
 
             if orig_action == 'store_debuglog' and action == 'store_true':
                 setLogLevelDebug()
+            elif orig_action == 'store_infolog' and action == 'store_true':
+                setLogLevelInfo()
+            elif orig_action == 'store_quietlog' and action == 'store_true':
+                setLogLevelWarning()
 
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
@@ -210,6 +200,7 @@ class ExtOptionParser(OptionParser):
     longhelp = ('H', "--help",)
 
     VALUES_CLASS = Values
+    USAGE_DOCSTRING = False
 
     def __init__(self, *args, **kwargs):
         self.help_to_string = kwargs.pop('help_to_string', None)
@@ -233,6 +224,44 @@ class ExtOptionParser(OptionParser):
             epilogtxt = 'Boolean options support %(disable)s prefix to do the inverse of the action,'
             epilogtxt += ' e.g. option --someopt also supports --disable-someopt.'
             self.epilog.append(epilogtxt % {'disable': self.option_class.DISABLE})
+
+        self.envvar_prefix = None
+
+    def set_usage_docstring(self):
+        """try to find the main docstring and include it in usage"""
+        stack = inspect.stack()[-1]
+        try:
+            docstr = stack[0].f_globals.get('__doc__', None)
+        except:
+            docstr = None
+
+        if docstr is not None:
+            indent = " "
+            # kwargs and ** magic to deal with width
+            kwargs = {'initial_indent':indent * 4,
+                     'subsequent_indent':indent * 5,
+                     'replace_whitespace':False,
+                     }
+            width = os.environ.get('COLUMNS', None)
+            if width is not None:
+                # default textwrap width
+                try:
+                    kwargs['width'] = int(width)
+                except:
+                    pass
+
+            # deal with newlines in docstring
+            final_docstr = ['', '']
+            for line in str(docstr).strip("\n ").split("\n"):
+                final_docstr.append(textwrap.fill(line, **kwargs))
+
+            self.usage += "\n".join(final_docstr)
+
+    def set_usage(self, usage):
+        OptionParser.set_usage(self, usage)
+
+        if self.USAGE_DOCSTRING:
+            self.set_usage_docstring()
 
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
@@ -326,24 +355,25 @@ class ExtOptionParser(OptionParser):
     def get_env_options_prefix(self):
         """Return the prefix to use for options passed through the environment"""
         # sys.argv[0] or the prog= argument of the optionparser, strip possible extension
-        prefix = self.get_prog_name().rsplit('.', 1)[0].upper()
-        return prefix
+        self.envvar_prefix = self.get_prog_name().rsplit('.', 1)[0].upper()
+        return self.envvar_prefix
 
     def get_env_options(self):
         """Retrieve options from the environment: prefix _ longopt.upper()"""
         env_long_opts = []
-        prefix = self.get_env_options_prefix()
+        if self.envvar_prefix is None:
+            self.get_env_options_prefix()
 
         epilogprefixtxt = "All long option names can be passed as environment variables. "
         epilogprefixtxt += "Variable name is %(prefix)s_<LONGNAME> "
         epilogprefixtxt += "eg. --someopt is same as setting %(prefix)s_SOMEOPT in the environment."
-        self.epilog.append(epilogprefixtxt % {'prefix':prefix})
+        self.epilog.append(epilogprefixtxt % {'prefix':self.envvar_prefix})
 
         for opt in self._get_all_options():
             if opt._long_opts is None: continue
             for lo in opt._long_opts:
                 if len(lo) == 0: continue
-                env_opt_name = "%s_%s" % (prefix, lo.lstrip('-').upper())
+                env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').upper())
                 val = os.environ.get(env_opt_name, None)
                 if not val is None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
@@ -377,6 +407,8 @@ class GeneralOption(object):
         - go_useconfigfiles : use configfiles or not (default set by CONFIGFILES_USE)
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
+        - go_loggername : name of logger, default classname
+        - go_initbeforedefault : set the main options before the default ones
 
     Options process order (last one wins)
         0. default defined with option
@@ -406,6 +438,8 @@ class GeneralOption(object):
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
         self.use_configfiles = kwargs.pop('go_useconfigfiles', self.CONFIGFILES_USE)  # use or ignore config files
         self.configfiles = kwargs.pop('go_configfiles', self.CONFIGFILES_INIT)  # configfiles to parse
+        prefixloggername = kwargs.pop('go_prefixloggername', False)  # name of logger is same as envvar prefix
+        initbeforedefault = kwargs.pop('go_initbeforedefault', False)  # Set the main options before the default ones
 
         set_columns(kwargs.pop('go_columns', None))
 
@@ -415,18 +449,27 @@ class GeneralOption(object):
         self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
-        self.log = getLogger(self.__class__.__name__)
+        loggername = self.__class__.__name__
+        if prefixloggername:
+            prefix = self.parser.get_env_options_prefix()
+            if prefix is not None and len(prefix) > 0:
+                loggername = prefix.replace('.', '_')  # . indicate hierarchy in logging land
+
+        self.log = getLogger(loggername)
         self.options = None
         self.args = None
         self.processed_options = {}
 
         self.config_prefix_sectionnames_map = {}
 
-        self.set_debug()
+        self.set_go_debug()
 
-        self.make_options()
-
-        self.make_init()
+        if initbeforedefault:
+            self.make_init()
+            self.make_default_options()
+        else:
+            self.make_default_options()
+            self.make_init()
 
         self.parseoptions(options_list=go_args)
 
@@ -439,22 +482,27 @@ class GeneralOption(object):
             self.validate()
 
 
-    def set_debug(self):
-        """Check if debug options are on and then set fancylogger to debug"""
+    def set_go_debug(self):
+        """Check if debug options are on and then set fancylogger to debug.
+        This is not the default way to set debug, it enables debug logging
+        in an earlier stage to debug generaloption itself.
+        """
         if self.options is None:
             if self.DEBUG_OPTIONS_BUILD:
                 setLogLevelDebug()
 
-    def make_options(self):
+    def make_default_options(self):
         self.make_debug_options()
         self.make_configfiles_options()
 
     def make_debug_options(self):
-        """Add debug option"""
-        opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd')
+        """Add debug/logging options: debug and info"""
+        opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd'),
+                'info':("Enable info log mode", None, "store_infolog", False),
+                'quiet':("Enable info quiet/warning mode", None, "store_quietlog", False),
                 }
-        descr = ['Debug options', '']
-        self.log.debug("Add debug options descr %s opts %s (no prefix)" % (descr, opts))
+        descr = ['Debug and logging options', '']
+        self.log.debug("Add debug and logging options descr %s opts %s (no prefix)" % (descr, opts))
         self.add_group_parser(opts, descr, prefix=None)
 
     def make_configfiles_options(self):
@@ -857,3 +905,35 @@ class GeneralOption(object):
 
         self.log.debug("commandline args %s" % args)
         return args
+
+
+def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=None):
+    """A function that returns a single level GeneralOption option parser
+    go_dict : General Option option dict
+    short_descr : short description of main options
+    long_descr : longer description of main options
+
+    a general options dict has as key the long option name, and is followed by a list/tuple
+        mandatory are 4 elements : option help, type, action, default
+        a 5th element is optional and is the short help name (if any)
+
+    the generated help will include the docstring
+
+    returns instance of trivial subclass of GeneralOption
+    """
+    descr = [short_groupdescr if short_groupdescr is not None else 'Main options',
+             long_groupdescr if long_groupdescr is not None else '',
+             ]
+
+    class SimpleOptionParser(ExtOptionParser):
+        USAGE_DOCSTRING = True
+
+    class SimpleOption(GeneralOption):
+        PARSER = SimpleOptionParser
+        def make_init(self):
+            prefix = None
+            self.add_group_parser(go_dict, descr, prefix=prefix)
+
+    return SimpleOption(go_prefixloggername=True,
+                        go_initbeforedefault=True,
+                        )

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-##
+# #
 # Copyright 2012-2013 Ghent University
 #
 # This file is part of vsc-base,
@@ -23,9 +23,10 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-##
+# #
 """
 @author: Andy Georges (Ghent University)
+@author: Stijn De Weirdt (Ghent University)
 
 Various functions that are missing from the default Python library.
 
@@ -35,7 +36,10 @@ Various functions that are missing from the default Python library.
   - Monoid: implementation of the monoid concept
   - MonoidDict: dictionary that combines values upon insertiong
     according to the given monoid
+  - shell_quote / shell_unquote : convenience functions to quote / unquote strings in shell context
 """
+import shlex
+import subprocess
 
 
 def nub(list_):
@@ -141,3 +145,15 @@ class MonoidDict(dict):
             return self.monoid.null
         else:
             return super(MonoidDict, self).__getitem__(key)
+
+def shell_quote(x):
+    """Add quotes so it can be apssed to shell"""
+    # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
+    # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
+    return subprocess.list2cmdline([str(x)])
+
+def shell_unquote(x):
+    """Take a literal string, remove the quotes as if it were passed by shell"""
+    # it expects a string
+    return shlex.split(str(x))[0]
+
