@@ -213,6 +213,7 @@ class ExtOptionParser(OptionParser):
     longhelp = ('H', "--help",)
 
     VALUES_CLASS = Values
+    USAGE_DOCSTRING = False
 
     def __init__(self, *args, **kwargs):
         self.help_to_string = kwargs.pop('help_to_string', None)
@@ -238,6 +239,41 @@ class ExtOptionParser(OptionParser):
             self.epilog.append(epilogtxt % {'disable': self.option_class.DISABLE})
 
         self.envvar_prefix = None
+
+    def set_usage(self, usage):
+        OptionParser.set_usage(self, usage)
+
+        if self.USAGE_DOCSTRING:
+            # try to find the main docstring and include it
+            import inspect
+            import textwrap
+            stack = inspect.stack()[-1]
+            try:
+                docstr = stack[0].f_globals.get('__doc__', None)
+            except:
+                docstr = None
+
+            if docstr is not None:
+                indent = " "
+                # kwargs and ** magic to deal with width
+                kwargs = {'initial_indent':indent * 4,
+                         'subsequent_indent':indent * 5,
+                         'replace_whitespace':False,
+                         }
+                width = os.environ.get('COLUMNS', None)
+                if width is not None:
+                    # default textwrap width
+                    try:
+                        kwargs['width'] = int(width)
+                    except:
+                        pass
+
+                # deal with newlines in docstring
+                final_docstr = ['', '']
+                for line in str(docstr).strip("\n ").split("\n"):
+                    final_docstr.append(textwrap.fill(line, **kwargs))
+
+                self.usage += "\n".join(final_docstr)
 
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
@@ -897,7 +933,12 @@ def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=No
     descr = [short_groupdescr if short_groupdescr is not None else 'Main',
              long_groupdescr if long_groupdescr is not None else '',
              ]
+
+    class SimpleOptionParser(ExtOptionParser):
+        USAGE_DOCSTRING = True
+
     class SimpleOption(GeneralOption):
+        PARSER = SimpleOptionParser
         def make_init(self):
             prefix = None
             self.add_group_parser(go_dict, descr, prefix=prefix)
