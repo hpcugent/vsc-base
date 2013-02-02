@@ -24,7 +24,6 @@
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
-
 """
 @author: Stijn De Weirdt (Ghent University)
 

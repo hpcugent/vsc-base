@@ -927,6 +927,8 @@ def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=No
         mandatory are 4 elements : option help, type, action, default
         a 5th element is optional and is the short help name (if any)
 
+    the generated help will include the docstring
+
     returns instance of trivial subclass of GeneralOption
     """
     # TODO is None allowed?

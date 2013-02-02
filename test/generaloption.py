@@ -184,7 +184,7 @@ class GeneralOptionTest(TestCase):
                            prog='optiontest1',
                            )
         self.assertTrue(topt.parser.help_to_file.getvalue().find("--level_longlevel") > 0,
-                        "Long documetnation expanded in long help")
+                        "Long documentation expanded in long help")
 
     def test_quote(self):
         """Test quote/unquote"""
@@ -196,12 +196,12 @@ class GeneralOptionTest(TestCase):
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
-        ign = r'(^(base|debug)$)|(^ext)'
+        ign = r'(^(base|debug|info)$)|(^ext)'
         topt = TestOption1(go_args=['--level_level', '--longbase', shell_unquote('--store="some whitespace"')])
         self.assertEqual(topt.options.__dict__ ,
                          {
                           'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True,
-                          'base': False, 'ext_optional': None, 'ext_extend': None, 'debug': False,
+                          'base': False, 'ext_optional': None, 'ext_extend': None, 'debug': False, 'info':False,
                           'ext_extenddefault': ['zero', 'one'], 'store': 'some whitespace', 'ext_datetime': None,
                           'ext_optionalchoice': None,
                           'ignoreconfigfiles': None, 'configfiles': None, })
