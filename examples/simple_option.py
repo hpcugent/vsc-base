@@ -31,7 +31,7 @@ An example how simple_option can do its magic.
 
 Run it with -h and/or -H to see the help functions.
 
-To see it do something use
+To see it do something, try
 python examples/simple_option.py --info -L itjustworks
 """
 
