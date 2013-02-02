@@ -411,6 +411,7 @@ class GeneralOption(object):
         self.use_configfiles = kwargs.pop('go_useconfigfiles', self.CONFIGFILES_USE)  # use or ignore config files
         self.configfiles = kwargs.pop('go_configfiles', self.CONFIGFILES_INIT)  # configfiles to parse
         prefixloggername = kwargs.pop('go_prefixloggername', False)  # name of logger is same as envvar prefix
+        initbeforedefault = kwargs.pop('go_initbeforedefault', False)  # Set the main options before the default ones
 
         set_columns(kwargs.pop('go_columns', None))
 
@@ -433,11 +434,14 @@ class GeneralOption(object):
 
         self.config_prefix_sectionnames_map = {}
 
-        self.set_debug()
+        self.set_go_debug()
 
-        self.make_options()
-
-        self.make_init()
+        if initbeforedefault:
+            self.make_init()
+            self.make_default_options()
+        else:
+            self.make_default_options()
+            self.make_init()
 
         self.parseoptions(options_list=go_args)
 
@@ -450,13 +454,16 @@ class GeneralOption(object):
             self.validate()
 
 
-    def set_debug(self):
-        """Check if debug options are on and then set fancylogger to debug"""
+    def set_go_debug(self):
+        """Check if debug options are on and then set fancylogger to debug.
+        This is not the default way to set debug, it enables debug logging
+        in an earlier stage to debug generaloption itself.
+        """
         if self.options is None:
             if self.DEBUG_OPTIONS_BUILD:
                 setLogLevelDebug()
 
-    def make_options(self):
+    def make_default_options(self):
         self.make_debug_options()
         self.make_configfiles_options()
 
@@ -870,7 +877,7 @@ class GeneralOption(object):
         return args
 
 
-def simple_option(go_dict, descr=None, short_descr=None, long_descr=None):
+def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=None):
     """A function that returns a single level GeneralOption option parser
     go_dict : General Option option dict
     short_descr : short description of main options
@@ -883,13 +890,14 @@ def simple_option(go_dict, descr=None, short_descr=None, long_descr=None):
     returns instance of trivial subclass of GeneralOption
     """
     # TODO is None allowed?
-#    descr = [short_descr if short_descr is not None else '',
-#             long_descr if long_descr is not None else ''
-#             ]
-    descr = [short_descr, long_descr]
+    descr = [short_groupdescr if short_groupdescr is not None else 'Main',
+             long_groupdescr if long_groupdescr is not None else '',
+             ]
     class SimpleOption(GeneralOption):
         def make_init(self):
             prefix = None
             self.add_group_parser(go_dict, descr, prefix=prefix)
 
-    return SimpleOption(go_prefixloggername=True)
+    return SimpleOption(go_prefixloggername=True,
+                        go_initbeforedefault=True,
+                        )
