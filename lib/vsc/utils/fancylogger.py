@@ -43,7 +43,7 @@ It adds:
 f.ex the threadname specifier which will insert the name of the thread
 
 usage:
-import fancylogger
+from vsc.utils import fancylogger
 #will log to screen by default
 fancylogger.logToFile('dir/filename')
 fancylogger.setLogLevelDebug() #set global loglevel to debug
@@ -60,14 +60,14 @@ formatstring = '%(asctime)-15s %(levelname)-10s %(mpirank)-5s %(funcname)-15s %(
 handler.setFormatter(logging.Formatter(formatstring))
 
 #setting a global loglevel will impact all logers:
->>> from vsc import fancylogger
+>>> from vsc.utils import fancylogger
 >>> logger = fancylogger.getLogger("test")
 >>> logger.warning("warning")
-2012-01-05 14:03:18,238 WARNING    <stdin>.test    MainThread  warning
+2012-01-05 14:03:18,238 WARNING    <stdin>.test.<module>    MainThread  warning
 >>> logger.debug("warning")
 >>> fancylogger.setLogLevelDebug()
 >>> logger.debug("warning")
-2012-01-05 14:03:46,222 DEBUG      <stdin>.test    MainThread  warning
+2012-01-05 14:03:46,222 DEBUG      <stdin>.test.<module>    MainThread  warning
 
 ## logging to a udp server:
 # set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
