@@ -9,14 +9,8 @@ Originally created by the HPC team of Ghent University (http://ugent.be/hpc).
 
 # Namespaces and tools
 
-## vsc
-Common namespace used by all our python modules
-
-### lib
-python modules to be used as libraries
-
-#### utils
-Collection of utilities:
+## lib/utils
+python utilities to be used as libraries
 
 - __fancylogger__: an extention of the default python logger designed to be easy to use and have a
 couple of `fancy` features.
@@ -32,7 +26,24 @@ couple of `fancy` features.
 - __cache.py__ : File cache to store pickled data identified by a key accompanied by a timestamp,
 - __generaloption.py__ : A general option parser for python. It will fetch options (in this order) from config files, from environment variables and from the command line and parse them in a way compatible with the default python optionparser. Thus allowing a very flexible way to configure your scripts.
 It also adds a few other usefull extras.
-
+- __affinity.py__ : Linux cpu affinity.
+ - Based on `sched.h` and `bits/sched.h`,
+ - see man pages for `sched_getaffinity` and `sched_setaffinity`
+ - also provides a `cpuset` class to convert between human readable cpusets and the bit version Linux priority
+ - Based on sys/resources.h and bits/resources.h see man pages for `getpriority` and `setpriority`
+- __asyncprocess.py__ : Module to allow Asynchronous subprocess use on Windows and Posix platforms
+ - Based on a [python recipe](http://code.activestate.com/recipes/440554/) by Josiah Carlson 
+ - added STDOUT handle and recv_some
+- __daemon.py__ : [A generic daemon class by Sander Marechal](http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/)
+- __dateandtime.py : A module with various convenience functions and classes to deal with date, time and timezone.
+- __nagios.py__ : This module provides functionality to cache and report results of script executions that can readily be
+interpreted by nagios/icinga.
+- __run.py__ : Python module to execute a command, can make use of asyncprocess, answer questions based on a dictionary
+ - supports a whole lot of ways to input, process and output the command. (filehandles, PIPE, pty, stdout, logging...)
+- __mail.py__ : Wrapper around the standard Python mail library.
+ - Send a plain text message
+ - Send an HTML message, with a plain text alternative
+ 
 ## bin
 A collection of python scripts, these are examples of how you could use fancylogger to log to a daemon, but should not be used directly.
 - __logdaemon.py__: A daemon that listens on a port for udp packets and logs them to file, works toghether with fancylogger.
