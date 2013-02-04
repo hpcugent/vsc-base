@@ -1,6 +1,6 @@
 # vsc-base
 
-[![Build Status](https://jenkins1.ugent.be/job/vsc_base/badge/icon)](https://jenkins1.ugent.be/job/vsc_base/)
+[![Build Status](https://jenkins1.ugent.be/job/vsc-base/badge/icon)](https://jenkins1.ugent.be/job/vsc_base/)
 
 Common tools used within our organization.
 
