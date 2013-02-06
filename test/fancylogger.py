@@ -96,10 +96,17 @@ class FancyLoggerTest(TestCase):
     def test_uft8_decoding(self):
         """Test UTF8 decoding."""
 
-        non_utf8_msg = "Log message with non-UTF8 characters: \x81"
-        logger = fancylogger.getLogger('deprecated_test')
+        non_utf8_msg = "This non-UTF8 character '\x80' should be handled properly."
+        logger = fancylogger.getLogger('utf8_test')
         logger.setLevel(fancylogger.DEBUG)
+        logger.critical(non_utf8_msg)
         logger.debug(non_utf8_msg)
+        logger.error(non_utf8_msg)
+        logger.exception(non_utf8_msg)
+        logger.fatal(non_utf8_msg)
+        logger.info(non_utf8_msg)
+        logger.warning(non_utf8_msg)
+        logger.warn(non_utf8_msg)
 
     def test_deprecated(self):
         """Test deprecated log function."""
@@ -111,15 +118,23 @@ class FancyLoggerTest(TestCase):
         prefix_tpl = r"\d\d\d\d-\d\d-\d\d\s+\d\d:\d\d:\d\d,\d\d\d\s+"
 
         # test whether deprecation works
-        msgre_tpl = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
-        self.assertErrorRegex(Exception, msgre_tpl, logger.deprecated, MSG, "1.1", max_ver)
+        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
+        self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.1", max_ver)
 
         # test whether deprecated warning works
         logger.deprecated(MSG, "0.9", max_ver)
-        msgre_tpl = r"%sWARNING.*DEPRECATED\s*\(since v%s\).*%s" % (prefix_tpl, max_ver, MSG)
-        msgre = re.compile(msgre_tpl)
+        msgre_tpl_warning = r"%sWARNING.*DEPRECATED\s*\(since v%s\).*%s" % (prefix_tpl, max_ver, MSG)
+        msgre_warning = re.compile(msgre_tpl_warning)
         txt = open(self.logfn, 'r').read()
-        self.assertTrue(msgre.search(txt))
+        self.assertTrue(msgre_warning.search(txt))
+
+        # test handling of non-UTF8 chars
+        msg = MSG + "\x81"
+        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, msg)
+        self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
+        logger.deprecated(msg, "0.9", max_ver)
+        txt = open(self.logfn, 'r').read()
+        self.assertTrue(msgre_warning.search(txt))
 
     @classmethod
     def tearDownClass(cls):
