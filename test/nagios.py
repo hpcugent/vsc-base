@@ -58,6 +58,7 @@ class TestNagios(TestCase):
 
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
+        os.close(handle)
         reporter = NagiosReporter('test_cache', filename, threshold, self.nagios_user )
 
         nagios_exit = [NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_UNKNOWN][exit_code]
