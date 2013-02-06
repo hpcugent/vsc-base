@@ -51,6 +51,17 @@ class FancyLoggerTest(TestCase):
         cls.logfn = fn
         fancylogger.logToFile(cls.logfn)
 
+    def assertErrorRegex(self, error, regex, call, *args):
+        """ convenience method to match regex with the error message """
+        try:
+            call(*args)
+            self.assertTrue(False)  # this will fail when no exception is thrown at all
+        except error, err:
+            res = re.search(regex, str(err))
+            if not res:
+                print "err: %s" % err
+            self.assertTrue(res)
+
     def test_log_types(self):
         """Test the several types of logging."""
         logtypes = {
@@ -76,11 +87,39 @@ class FancyLoggerTest(TestCase):
                     logmsgtype = 'ERROR'
                 if logmsgtype == 'FATAL':
                     logmsgtype = 'CRITICAL'
-                
+
                 msgre = re.compile(MSGRE_TPL % logmsgtype)
                 txt = open(self.logfn, 'r').read()
-                
+
                 self.assertTrue(msgre.search(txt))
+
+    def test_uft8_decoding(self):
+        """Test UTF8 decoding."""
+
+        non_utf8_msg = "Log message with non-UTF8 characters: \x81"
+        logger = fancylogger.getLogger('deprecated_test')
+        logger.setLevel(fancylogger.DEBUG)
+        logger.debug(non_utf8_msg)
+
+    def test_deprecated(self):
+        """Test deprecated log function."""
+
+        # log message
+        logger = fancylogger.getLogger('deprecated_test')
+
+        max_ver = "1.0"
+        prefix_tpl = r"\d\d\d\d-\d\d-\d\d\s+\d\d:\d\d:\d\d,\d\d\d\s+"
+
+        # test whether deprecation works
+        msgre_tpl = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
+        self.assertErrorRegex(Exception, msgre_tpl, logger.deprecated, MSG, "1.1", max_ver)
+
+        # test whether deprecated warning works
+        logger.deprecated(MSG, "0.9", max_ver)
+        msgre_tpl = r"%sWARNING.*DEPRECATED\s*\(since v%s\).*%s" % (prefix_tpl, max_ver, MSG)
+        msgre = re.compile(msgre_tpl)
+        txt = open(self.logfn, 'r').read()
+        self.assertTrue(msgre.search(txt))
 
     @classmethod
     def tearDownClass(cls):
