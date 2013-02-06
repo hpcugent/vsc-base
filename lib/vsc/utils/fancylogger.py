@@ -89,6 +89,17 @@ BACKUPCOUNT = 10  # number of rotating log files to save
 
 DEFAULT_UDP_PORT = 5005
 
+# log level constants, in order of severity
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARN = logging.WARN
+WARNING = logging.WARNING
+ERROR = logging.ERROR
+DEPRECATED = (logging.WARNING + logging.ERROR) / 2  # new logging level for fancylogger
+EXCEPTION = logging.ERROR  # exception and error have same logging level, see logging docs
+FATAL = logging.FATAL
+CRITICAL = logging.CRITICAL
+
 # mpi rank support
 try:
     from mpi4py import MPI
@@ -199,6 +210,51 @@ class FancyLogger(logging.getLoggerClass()):
 
     def streamError(self, data):
         self.streamLog(logging.ERROR, data)
+
+    def decode_msg_to_utf8(func):
+        """Decorator to decode log messages to UTF-8."""
+
+        def inner(self, msg, *args, **kwargs):
+            new_msg = msg.decode('utf8')
+            return func(self, new_msg, *args, **kwargs)
+
+        return inner
+
+    @decode_msg_to_utf8
+    def critical(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).critical(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def debug(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).debug(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def info(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).info(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def error(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).error(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def exception(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).exception(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def warning(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).warning(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def warn(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).warn(msg, *args, **kwargs)
+
 
 
 def thread_name():
