@@ -231,6 +231,29 @@ class FancyLogger(logging.getLoggerClass()):
         super(FancyLogger, self).debug(msg, *args, **kwargs)
 
     @decode_msg_to_utf8
+    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
+        """
+        Log deprecation message, throw error if current version is passed given threshold.
+
+        Checks only major/minor version numbers (MAJ.MIN.x) by default, controlled by 'depth' argument.
+        """
+
+        cur_ver_parts = [int(x) for x in str(cur_ver).split('.')]
+        max_ver_parts = [int(x) for x in str(max_ver).split('.')]
+
+        deprecated = True
+        for i in range(0, depth):
+            if cur_ver_parts[i] < max_ver_parts[i]:
+                deprecated = False
+                break
+
+        if deprecated:
+            self.raiseException("DEPRECATED (since v%s) functionality used: %s" % (max_ver, msg), exception=exception)
+        else:
+            deprecation_msg = "Deprecated functionality, will no longer work in v%s: %s" % (max_ver, msg)
+            self.warning(deprecation_msg)
+
+    @decode_msg_to_utf8
     def info(self, msg, *args, **kwargs):
         """Log debug message."""
         super(FancyLogger, self).info(msg, *args, **kwargs)
