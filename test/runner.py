@@ -6,9 +6,11 @@ import test.dateandtime as td
 import test.nagios as tn
 import test.generaloption as tg
 import test.nagios_results as tr
+import test.fancylogger as tf
 import unittest
 
-suite = unittest.TestSuite([x.suite() for  x in (tc, td, tn, tg, tr)])
+
+suite = unittest.TestSuite([x.suite() for  x in (tc, td, tn, tg, tr, tf)])
 
 try:
     import xmlrunner
