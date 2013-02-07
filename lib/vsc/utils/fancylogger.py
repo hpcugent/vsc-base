@@ -95,7 +95,6 @@ INFO = logging.INFO
 WARN = logging.WARN
 WARNING = logging.WARNING
 ERROR = logging.ERROR
-DEPRECATED = (logging.WARNING + logging.ERROR) / 2  # new logging level for fancylogger
 EXCEPTION = logging.ERROR  # exception and error have same logging level, see logging docs
 FATAL = logging.FATAL
 CRITICAL = logging.CRITICAL
