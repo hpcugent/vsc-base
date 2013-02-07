@@ -530,7 +530,7 @@ class GeneralOption(object):
 
         @param opt_dict: options, with the form C{"long_opt" : value}.
         Value is a C{tuple} containing
-        C{(help,type,action,default(,optional short option))}
+        C{(help,type,action,default(,optional string=short option; list/tuple=choices; dict=add_option kwargs))}
 
         help message passed through opt_dict will be extended with type and default
 
@@ -592,6 +592,7 @@ class GeneralOption(object):
                 nameds['type'] = typ
 
             args = ["--%s" % dest]
+            passed_kwargs={}
             if len(details) >= 5:
                 for extra_detail in details[4:]:
                     if isinstance(extra_detail, (list, tuple,)):
@@ -600,6 +601,8 @@ class GeneralOption(object):
                         hlp += ' (choices: %s)' % ','.join(nameds['choices'])
                     elif isinstance(extra_detail, (str,)) and len(extra_detail) == 1:
                         args.insert(0, "-%s" % extra_detail)
+                    elif isinstance(extra_detail, (dict,)):
+                        passed_kwargs.update(extra_detail)
                     else:
                         self.log.raiseException("add_group_parser: unknown extra detail %s" % extra_detail)
 
@@ -609,6 +612,9 @@ class GeneralOption(object):
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                 args.append("--%s-%s" % (self.parser.option_class.ENABLE, dest))
                 args.append("--%s-%s" % (self.parser.option_class.DISABLE, dest))
+
+            # force passed_kwargs as final nameds
+            nameds.update(passed_kwargs)
             opt_grp.add_option(*args, **nameds)
 
         self.parser.add_option_group(opt_grp)
