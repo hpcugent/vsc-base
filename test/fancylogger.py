@@ -107,6 +107,7 @@ class FancyLoggerTest(TestCase):
         logger.info(non_utf8_msg)
         logger.warning(non_utf8_msg)
         logger.warn(non_utf8_msg)
+        self.assertErrorRegex(Exception, non_utf8_msg, logger.raiseException, non_utf8_msg)
 
     def test_deprecated(self):
         """Test deprecated log function."""
