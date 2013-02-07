@@ -262,7 +262,7 @@ class FancyLogger(logging.getLoggerClass()):
         max_ver_parts = [int(x) for x in str(max_ver).split('.')]
 
         deprecated = True
-        for i in range(0, depth):
+        for i in xrange(0, depth):
             if cur_ver_parts[i] < max_ver_parts[i]:
                 deprecated = False
                 break
