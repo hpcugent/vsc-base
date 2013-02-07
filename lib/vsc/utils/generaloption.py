@@ -608,7 +608,7 @@ class GeneralOption(object):
             nameds = {'dest':dest,
                       'action':action,
                       }
-            metavar = self.make_option_metvar(key, details)
+            metavar = self.make_option_metavar(key, details)
             if metavar is not None:
                 nameds['metavar'] = metavar
 

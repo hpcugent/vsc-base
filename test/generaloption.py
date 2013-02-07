@@ -31,7 +31,8 @@ import os
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
-from vsc.utils.generaloption import GeneralOption, shell_quote, shell_unquote
+from vsc.utils.generaloption import GeneralOption
+from vsc.utils.missing import shell_quote, shell_unquote
 
 class TestOption1(GeneralOption):
     """Create simple test class"""
@@ -71,7 +72,7 @@ class TestOption1(GeneralOption):
         prefix = 'ext'
         self.add_group_parser(opts, descr, prefix=prefix)
 
-    def make_init(self):
+    def main_options(self):
         self.base_options()
         self.level1_options()
         self.ext_options()
@@ -135,7 +136,6 @@ class GeneralOptionTest(TestCase):
                          ['--level_level', '--level_longlevel', '--longbase', '--store="some whitespace"'])
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
-
     def test_enable_disable(self):
         """Test the enable/disable prefix
             longbase is a store_true with default True; with --disable one can set it to False
@@ -198,7 +198,6 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext_optionalchoice', 'CHOICE1'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optionalchoice, 'CHOICE1')
 
-
     def test_configfiles(self):
         """Test configfiles"""
         CONFIGFILE1 = """
@@ -243,12 +242,11 @@ if __name__ == '__main__':
 #                       )
 #    print topt.parser.help_to_file.getvalue()
 #
-    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
-                       help_to_string=True,
-                       prog='optiontest1',
-                       )
-    print topt.parser.help_to_file.getvalue()
-
+#    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
+#                       help_to_string=True,
+#                       prog='optiontest1',
+#                       )
+#    print topt.parser.help_to_file.getvalue()
 #    ## test shell_quote/shell_unquote
 #    value = 'value with whitespace'
 #    txt = '--option=%s' % value
