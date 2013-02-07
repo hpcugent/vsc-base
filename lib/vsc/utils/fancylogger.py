@@ -98,6 +98,7 @@ ERROR = logging.ERROR
 EXCEPTION = logging.ERROR  # exception and error have same logging level, see logging docs
 FATAL = logging.FATAL
 CRITICAL = logging.CRITICAL
+APOCALYPTIC = logging.CRITICAL*2 + 1  # when log level is set to this, silence happens
 
 # mpi rank support
 try:
