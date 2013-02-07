@@ -253,6 +253,10 @@ class FancyLogger(logging.getLoggerClass()):
         super(FancyLogger, self).warn(msg, *args, **kwargs)
 
     # note: exception is omitted deliberaly, doesn't need the decorator since it calls error
+    #@decode_msg_to_utf8
+    #def exception(self, msg, *args, **kwargs):
+    #    """Log exception message."""
+    #    super(FancyLogger, self).exception(msg, *args, **kwargs)
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
