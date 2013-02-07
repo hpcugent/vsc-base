@@ -195,9 +195,9 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(topt.options.ext_optionalchoice, 'CHOICE1')
 
     def test_configfiles(self):
-        """Test configfiles"""
+        """Test configfiles (base section for empty prefix from auto_section_name)"""
         CONFIGFILE1 = """
-[MAIN]
+[base]
 store=ok
 longbase=1
 
@@ -324,7 +324,8 @@ if __name__ == '__main__':
 #    topt = TestOption1(go_configfiles=[tmp1.name], go_args=['-d'])
 #    print topt.options
 #    print topt.options.store
-#
+#    print topt.options.ext_extend
+
 #    topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['-d', '--store=notok'])
 #    print topt2.options
 #    print topt2.options.store
