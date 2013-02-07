@@ -438,6 +438,8 @@ class GeneralOption(object):
     METAVAR_DEFAULT = True  # generate a default metavar
     METAVAR_MAP = None  # metvar, list of longopts map
 
+    OPTIONGROUP_SORTED_OPTIONS = True
+
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
@@ -463,6 +465,10 @@ class GeneralOption(object):
         self.log = getLogger(loggername)
         self.options = None
         self.args = None
+
+        self.auto_prefix = None
+        self.auto_section_name = None
+
         self.processed_options = {}
 
         self.config_prefix_sectionnames_map = {}
@@ -536,11 +542,9 @@ class GeneralOption(object):
                     fn = getattr(self, name)
                     if callable(fn):  # inspect.isfunction fails beacuse this is a boundmethod
                         self.log.debug('main_options: adding options from %s' % name)
-                        try:
-                            fn()
-                        except:
-                            self.log.raiseException("main_options: failed to add options from name %s (%s)" %
-                                                    (name, fn))
+                        self.auto_section_name = name
+                        fn()
+                        self.auto_section_name = None  # reset it
 
     def make_option_metavar(self, longopt, details):
         """Generate the metavar for option longopt
@@ -576,17 +580,23 @@ class GeneralOption(object):
             otherdefaults = {}
 
         if prefix is None:
-            prefix = ''
+            if self.auto_prefix is None:
+                prefix = ''
+            else:
+                prefix = self.auto_prefix
 
         if section_name is None:
-            if prefix is None or prefix == '':
+            if self.auto_section_name is not None:
+                section_name = self.auto_section_name
+            elif prefix is None or prefix == '':
                 section_name = self.CONFIGFILES_MAIN_SECTION
             else:
                 section_name = prefix
 
         opt_grp = OptionGroup(self.parser, description[0], description[1])
         keys = opt_dict.keys()
-        keys.sort()  # alphabetical
+        if self.OPTIONGROUP_SORTED_OPTIONS:
+            keys.sort()  # alphabetical
         for key in keys:
             details = opt_dict[key]
 
@@ -639,7 +649,7 @@ class GeneralOption(object):
                     if isinstance(extra_detail, (list, tuple,)):
                         # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
-                        hlp += ' (choices: %s)' % ','.join(nameds['choices'])
+                        hlp += ' (choices: %s)' % ', '.join(nameds['choices'])
                     elif isinstance(extra_detail, (str,)) and len(extra_detail) == 1:
                         args.insert(0, "-%s" % extra_detail)
                     elif isinstance(extra_detail, (dict,)):
