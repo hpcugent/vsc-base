@@ -24,6 +24,8 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
+Unit tests for fancylogger.
+
 @author: Kenneth Hoste (Ghent University)
 """
 import logging

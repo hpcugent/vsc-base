@@ -25,11 +25,6 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-Created on Oct 14, 2011
-
-@author: Jens Timmerman (Ghent University)
-@author: Stijn De Weirdt (Ghent University)
-
 This module implements a fancy logger on top of python logging
 
 It adds:
@@ -72,7 +67,14 @@ handler.setFormatter(logging.Formatter(formatstring))
 ## logging to a udp server:
 # set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
 # this will make fancylogger log to that that server and port instead of the screen.
+
+@author: Jens Timmerman (Ghent University)
+@author: Stijn De Weirdt (Ghent University)
+@author: Kenneth Hoste (Ghent University)
+
+Created on Oct 14, 2011
 """
+
 import inspect
 import logging.handlers
 import os

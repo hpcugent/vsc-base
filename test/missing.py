@@ -26,9 +26,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
-
 Tests for the vsc.utils.missing module.
+
+@author: Andy Georges (Ghent University)
 """
 from paycheck import with_checker
 from unittest import TestCase, TestLoader

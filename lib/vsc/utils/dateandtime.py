@@ -25,9 +25,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 # #
 """
-@author: Stijn De Weirdt (Ghent University)
-
 module with various convenience functions and classes to deal with date, time and timezone
+
+@author: Stijn De Weirdt (Ghent University)
 """
 
 import calendar
