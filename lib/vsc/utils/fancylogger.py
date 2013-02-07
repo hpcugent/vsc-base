@@ -415,7 +415,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
             # it will be re-added if only one handler is present
             # so we will just make it quiet by setting the loglevel extremely high
             zerohandler = logger.handlers[0]
-            zerohandler.setLevel(101)  # 50 is critical, so 101 should be nothing
+            zerohandler.setLevel(APOCALYPTIC)  # no logging should be done with APOCALYPTIC, so silence happens
         else:
             logger.removeHandler(handler)
         setattr(logger, loggeroption, False)
