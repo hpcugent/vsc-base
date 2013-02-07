@@ -435,13 +435,16 @@ class GeneralOption(object):
     CONFIGFILES_IGNORE = []
     CONFIGFILES_MAIN_SECTION = 'MAIN'  # sectionname that contains the non-grouped/non-prefixed options
 
+    METAVAR_DEFAULT = True  # generate a default metavar
+    METAVAR_MAP = None  # metvar, list of longopts map
+
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
         self.use_configfiles = kwargs.pop('go_useconfigfiles', self.CONFIGFILES_USE)  # use or ignore config files
         self.configfiles = kwargs.pop('go_configfiles', self.CONFIGFILES_INIT)  # configfiles to parse
         prefixloggername = kwargs.pop('go_prefixloggername', False)  # name of logger is same as envvar prefix
-        initbeforedefault = kwargs.pop('go_initbeforedefault', False)  # Set the main options before the default ones
+        mainbeforedefault = kwargs.pop('go_mainbeforedefault', False)  # Set the main options before the default ones
 
         set_columns(kwargs.pop('go_columns', None))
 
@@ -466,12 +469,12 @@ class GeneralOption(object):
 
         self.set_go_debug()
 
-        if initbeforedefault:
-            self.make_init()
-            self.make_default_options()
+        if mainbeforedefault:
+            self.main_options()
+            self.default_options()
         else:
-            self.make_default_options()
-            self.make_init()
+            self.default_options()
+            self.main_options()
 
         self.parseoptions(options_list=go_args)
 
@@ -483,7 +486,6 @@ class GeneralOption(object):
 
             self.validate()
 
-
     def set_go_debug(self):
         """Check if debug options are on and then set fancylogger to debug.
         This is not the default way to set debug, it enables debug logging
@@ -493,7 +495,8 @@ class GeneralOption(object):
             if self.DEBUG_OPTIONS_BUILD:
                 setLogLevelDebug()
 
-    def make_default_options(self):
+    def default_options(self):
+        """Generate default options: debug/log and configfile"""
         self.make_debug_options()
         self.make_configfiles_options()
 
@@ -516,9 +519,27 @@ class GeneralOption(object):
         self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
         self.add_group_parser(opts, descr, prefix=None)
 
-    def make_init(self):
-        """Trigger all inits"""
-        self.log.error("Not implemented")
+    def main_options(self):
+        """Create the main options"""
+        # make_init is deprecated
+        if hasattr(self, 'make_init'):
+            self.log.debug('main_options: make_init is deprecated. Rename function to main_options.')
+            getattr(self, 'make_init')()
+        else:
+            self.log.error("main_options: not implemented")
+
+    def make_option_metavar(self, longopt, details):
+        """Generate the metavar for option longopt
+        @type longopt: str
+        @type details: tuple
+        """
+        if self.METAVAR_MAP is not None:
+            for metavar, longopts in self.METAVAR_MAP.items():
+                if longopt in longopts:
+                    return metavar
+
+        if self.METAVAR_DEFAULT:
+            return longopt.upper()
 
     def add_group_parser(self, opt_dict, description, prefix=None, otherdefaults=None, section_name=None):
         """Make a group parser from a dict
@@ -584,7 +605,13 @@ class GeneralOption(object):
 
             self.processed_options[dest] = [typ, default, action]  # add longopt
 
-            nameds = {'dest':dest, 'action':action, 'metavar':key.upper()}
+            nameds = {'dest':dest,
+                      'action':action,
+                      }
+            metavar = self.make_option_metvar(key, details)
+            if metavar is not None:
+                nameds['metavar'] = metavar
+
             if default is not None:
                 nameds['default'] = default
 
@@ -592,7 +619,7 @@ class GeneralOption(object):
                 nameds['type'] = typ
 
             args = ["--%s" % dest]
-            passed_kwargs={}
+            passed_kwargs = {}
             if len(details) >= 5:
                 for extra_detail in details[4:]:
                     if isinstance(extra_detail, (list, tuple,)):
@@ -938,10 +965,10 @@ def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=No
 
     class SimpleOption(GeneralOption):
         PARSER = SimpleOptionParser
-        def make_init(self):
+        def main_options(self):
             prefix = None
             self.add_group_parser(go_dict, descr, prefix=prefix)
 
     return SimpleOption(go_prefixloggername=True,
-                        go_initbeforedefault=True,
+                        go_mainbeforedefault=True,
                         )
