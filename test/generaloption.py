@@ -72,10 +72,6 @@ class TestOption1(GeneralOption):
         prefix = 'ext'
         self.add_group_parser(opts, descr, prefix=prefix)
 
-    def main_options(self):
-        self.base_options()
-        self.level1_options()
-        self.ext_options()
 
 class GeneralOptionTest(TestCase):
     """Tests for general option"""

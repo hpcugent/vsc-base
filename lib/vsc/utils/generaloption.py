@@ -471,9 +471,9 @@ class GeneralOption(object):
 
         if mainbeforedefault:
             self.main_options()
-            self.default_options()
+            self._default_options()
         else:
-            self.default_options()
+            self._default_options()
             self.main_options()
 
         self.parseoptions(options_list=go_args)
@@ -495,12 +495,12 @@ class GeneralOption(object):
             if self.DEBUG_OPTIONS_BUILD:
                 setLogLevelDebug()
 
-    def default_options(self):
+    def _default_options(self):
         """Generate default options: debug/log and configfile"""
-        self.make_debug_options()
-        self.make_configfiles_options()
+        self._make_debug_options()
+        self._make_configfiles_options()
 
-    def make_debug_options(self):
+    def _make_debug_options(self):
         """Add debug/logging options: debug and info"""
         opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd'),
                 'info':("Enable info log mode", None, "store_infolog", False),
@@ -510,7 +510,7 @@ class GeneralOption(object):
         self.log.debug("Add debug and logging options descr %s opts %s (no prefix)" % (descr, opts))
         self.add_group_parser(opts, descr, prefix=None)
 
-    def make_configfiles_options(self):
+    def _make_configfiles_options(self):
         """Add configfiles option"""
         opts = {'configfiles':("Parse (additional) configfiles", None, "extend", None),
                 'ignoreconfigfiles':("Ignore configfiles", None, "extend", None),  # eg when set by default
@@ -520,13 +520,27 @@ class GeneralOption(object):
         self.add_group_parser(opts, descr, prefix=None)
 
     def main_options(self):
-        """Create the main options"""
+        """Create the main options automatically"""
         # make_init is deprecated
         if hasattr(self, 'make_init'):
             self.log.debug('main_options: make_init is deprecated. Rename function to main_options.')
             getattr(self, 'make_init')()
         else:
-            self.log.error("main_options: not implemented")
+            # function names which end with _options and do not start with main or _
+            reg_main_options = re.compile("^(?!_|main).*_options$")
+            names = [x for x in dir(self) if reg_main_options.search(x)]
+            if len(names) == 0:
+                self.log.error("main_options: no options functions implemented")
+            else:
+                for name in names:
+                    fn = getattr(self, name)
+                    if callable(fn):  # inspect.isfunction fails beacuse this is a boundmethod
+                        self.log.debug('main_options: adding options from %s' % name)
+                        try:
+                            fn()
+                        except:
+                            self.log.raiseException("main_options: failed to add options from name %s (%s)" %
+                                                    (name, fn))
 
     def make_option_metavar(self, longopt, details):
         """Generate the metavar for option longopt
