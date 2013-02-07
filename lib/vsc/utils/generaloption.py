@@ -200,7 +200,7 @@ class ExtOptionParser(OptionParser):
     longhelp = ('H', "--help",)
 
     VALUES_CLASS = Values
-    USAGE_DOCSTRING = False
+    DESCRIPTION_DOCSTRING = False
 
     def __init__(self, *args, **kwargs):
         self.help_to_string = kwargs.pop('help_to_string', None)
@@ -227,8 +227,8 @@ class ExtOptionParser(OptionParser):
 
         self.envvar_prefix = None
 
-    def set_usage_docstring(self):
-        """try to find the main docstring and include it in usage"""
+    def set_description_docstring(self):
+        """try to find the main docstring and add it is description is not None"""
         stack = inspect.stack()[-1]
         try:
             docstr = stack[0].f_globals.get('__doc__', None)
@@ -238,8 +238,8 @@ class ExtOptionParser(OptionParser):
         if docstr is not None:
             indent = " "
             # kwargs and ** magic to deal with width
-            kwargs = {'initial_indent':indent * 4,
-                     'subsequent_indent':indent * 5,
+            kwargs = {'initial_indent':indent * 2,
+                     'subsequent_indent':indent * 2,
                      'replace_whitespace':False,
                      }
             width = os.environ.get('COLUMNS', None)
@@ -255,13 +255,15 @@ class ExtOptionParser(OptionParser):
             for line in str(docstr).strip("\n ").split("\n"):
                 final_docstr.append(textwrap.fill(line, **kwargs))
 
-            self.usage += "\n".join(final_docstr)
+            if self.description is None:
+                self.description = ''
+            self.description += "\n".join(final_docstr)
 
     def set_usage(self, usage):
         OptionParser.set_usage(self, usage)
 
-        if self.USAGE_DOCSTRING:
-            self.set_usage_docstring()
+        if self.DESCRIPTION_DOCSTRING:
+            self.set_description_docstring()
 
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
@@ -926,7 +928,7 @@ def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=No
              ]
 
     class SimpleOptionParser(ExtOptionParser):
-        USAGE_DOCSTRING = True
+        DESCRIPTION_DOCSTRING = True
 
     class SimpleOption(GeneralOption):
         PARSER = SimpleOptionParser
