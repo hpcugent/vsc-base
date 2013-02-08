@@ -25,8 +25,6 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-@author: Jens Timmerman (Ghent University)
-
 This is a logging server,
 it will listen to all interfaces on a system assigned port
 and log to ./log.log by default
@@ -35,6 +33,8 @@ with it's pidfile written to $TMPDIR/logdaemon.pid
 For an example of how to use this, see startlogdaemon.sh
 
 then use mpi to get these environment variables to the clients.
+
+@author: Jens Timmerman (Ghent University)
 """
 from optparse import OptionParser
 from vsc import fancylogger

@@ -25,9 +25,6 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 # #
 """
-@author: Andy Georges (Ghent University)
-@author: Stijn De Weirdt (Ghent University)
-
 Various functions that are missing from the default Python library.
 
   - nub(list): keep the unique elements in the list
@@ -37,6 +34,9 @@ Various functions that are missing from the default Python library.
   - MonoidDict: dictionary that combines values upon insertiong
     according to the given monoid
   - shell_quote / shell_unquote : convenience functions to quote / unquote strings in shell context
+
+@author: Andy Georges (Ghent University)
+@author: Stijn De Weirdt (Ghent University)
 """
 import shlex
 import subprocess

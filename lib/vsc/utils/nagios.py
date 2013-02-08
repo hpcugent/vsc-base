@@ -26,9 +26,6 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
-@author: Luis Fernando Muñoz Mejías (Ghent University)
-
 This module provides functionality to cache and report results of script executions that can readily be
 interpreted by nagios/icinga.
 
@@ -39,6 +36,9 @@ interpreted by nagios/icinga.
     - unknown
  - NagiosReporter class that provides cache functionality, writing and reading the nagios/icinga result string to a
   pickle file.
+
+@author: Andy Georges (Ghent University)
+@author: Luis Fernando Muñoz Mejías (Ghent University)
 """
 
 import os
