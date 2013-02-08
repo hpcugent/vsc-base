@@ -25,8 +25,6 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
-
 Module offering the Singleton class.
 
 
@@ -37,6 +35,7 @@ script.
 >>> class A(object):
 ...     __metaclass__ = Singleton
 
+@author: Andy Georges (Ghent University)
 """
 
 
