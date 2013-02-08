@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright 2013 Ghent University
 #
@@ -98,18 +99,23 @@ class FancyLoggerTest(TestCase):
     def test_uft8_decoding(self):
         """Test UTF8 decoding."""
 
-        non_utf8_msg = "This non-UTF8 character '\x80' should be handled properly."
         logger = fancylogger.getLogger('utf8_test')
         logger.setLevel(fancylogger.DEBUG)
-        logger.critical(non_utf8_msg)
-        logger.debug(non_utf8_msg)
-        logger.error(non_utf8_msg)
-        logger.exception(non_utf8_msg)
-        logger.fatal(non_utf8_msg)
-        logger.info(non_utf8_msg)
-        logger.warning(non_utf8_msg)
-        logger.warn(non_utf8_msg)
-        self.assertErrorRegex(Exception, non_utf8_msg, logger.raiseException, non_utf8_msg)
+
+        for msg in [
+                    "This is a pure ASCII text.",  # pure ASCII
+                    "Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
+                    "This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
+                   ]:
+            logger.critical(msg)
+            logger.debug(msg)
+            logger.error(msg)
+            logger.exception(msg)
+            logger.fatal(msg)
+            logger.info(msg)
+            logger.warning(msg)
+            logger.warn(msg)
+            self.assertErrorRegex(Exception, msg, logger.raiseException, msg)
 
     def test_deprecated(self):
         """Test deprecated log function."""
