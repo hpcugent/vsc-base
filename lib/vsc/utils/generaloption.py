@@ -26,9 +26,9 @@
 #
 
 """
-@author: Stijn De Weirdt (Ghent University)
-
 A class that can be used to generated options to python scripts in a general way.
+
+@author: Stijn De Weirdt (Ghent University)
 """
 
 import ConfigParser

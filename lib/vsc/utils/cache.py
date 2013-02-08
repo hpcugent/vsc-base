@@ -26,9 +26,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
-
 Caching utilities.
+
+@author: Andy Georges (Ghent University)
 """
 try:
     import cPickle as pickle

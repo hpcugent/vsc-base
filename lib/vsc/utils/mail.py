@@ -25,12 +25,12 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
-
 Wrapper around the standard Python mail library.
 
   - Send a plain text message
   - Send an HTML message, with a plain text alternative
+
+@author: Andy Georges (Ghent University)
 """
 
 import re

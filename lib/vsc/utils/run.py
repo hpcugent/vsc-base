@@ -25,8 +25,6 @@
 #
 
 """
-@author: Stijn De Weirdt (Ghent University)
-
 Python module to execute a command
 
 Historical overview of existing equivalent code
@@ -61,6 +59,8 @@ Historical overview of existing equivalent code
  - C{hanything} commands/command module
     - C{run} method
         - fake pty support
+
+@author: Stijn De Weirdt (Ghent University)
 """
 from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
 import pty
