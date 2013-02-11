@@ -25,7 +25,7 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 # #
 """
-module with various convenience functions and classes to deal with date, time and timezone
+Module with various convenience functions and classes to deal with date, time and timezone
 
 @author: Stijn De Weirdt (Ghent University)
 """
