@@ -62,6 +62,7 @@ Historical overview of existing equivalent code
 
 @author: Stijn De Weirdt (Ghent University)
 """
+
 from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
 import pty
 import time

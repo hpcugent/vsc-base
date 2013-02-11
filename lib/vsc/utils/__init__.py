@@ -1,4 +1,4 @@
-##
+# #
 # Copyright 2011-2013 Ghent University
 #
 # This file is part of vsc-base,
@@ -22,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-##
+# #
 """
 The vsc/utils namespace is used in different folders along the system
 so explicitly declare this is also the vsc/utils namespace.

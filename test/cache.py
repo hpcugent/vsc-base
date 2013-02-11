@@ -24,9 +24,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
-
 Unit tests for vsc.utils.cache
+
+@author: Andy Georges (Ghent University)
 """
 
 import os
@@ -47,6 +47,7 @@ class TestCache(TestCase):
         # create a tempfilename
         (handle, filename) = tempfile.mkstemp(dir='/tmp')
         os.unlink(filename)
+        os.close(handle)
         cache = FileCache(filename)
         for (key, value) in data.items():
             cache.update(key, value, threshold)
@@ -67,6 +68,7 @@ class TestCache(TestCase):
         # create a tempfilename
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
+        os.close(handle)
         cache = FileCache(filename)
         for (key, value) in data.items():
             cache.update(key, value, threshold)

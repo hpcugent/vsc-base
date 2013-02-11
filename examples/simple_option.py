@@ -25,14 +25,14 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-@author: Stijn De Weirdt (Ghent University)
-
 An example how simple_option can do its magic.
 
 Run it with -h and/or -H to see the help functions.
 
 To see it do something, try
 python examples/simple_option.py --info -L itjustworks
+
+@author: Stijn De Weirdt (Ghent University)
 """
 
 from vsc.utils.generaloption import simple_option

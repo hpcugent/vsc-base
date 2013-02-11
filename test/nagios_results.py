@@ -27,8 +27,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Luis Fernando Muñoz Mejías (Ghent University)
 Tests for the NagiosResult class in the vsc.utils.nagios module
+
+@author: Luis Fernando Muñoz Mejías (Ghent University)
 """
 import os
 import tempfile
