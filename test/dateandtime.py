@@ -25,8 +25,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Stijn De Weirdt (Ghent University)
+Python module for handling data and time strings.
 
+@author: Stijn De Weirdt (Ghent University)
 """
 import datetime
 import os

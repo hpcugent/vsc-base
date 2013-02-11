@@ -24,6 +24,8 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
+Unit tests for generaloption
+
 @author: Stijn De Weirdt (Ghent University)
 """
 import datetime
