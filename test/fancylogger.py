@@ -42,13 +42,15 @@ MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
 MSGRE_TPL = r"\d\d\d\d-\d\d-\d\d+\s+\d\d:\d\d:\d\d,\d\d\d\s+%%s.*%s" % MSG
 
-# this log file is cleaned up by the main script, i.e. test/runner.py
-(handle, fn) = tempfile.mkstemp()
-logfn = fn
-fancylogger.logToFile(logfn)
-
 class FancyLoggerTest(TestCase):
     """Tests for fancylogger"""
+
+    logfn = None
+
+    def setUp(self):
+        # this log file is cleaned up by the main script, i.e. test/runner.py
+        (self.handle, self.logfn) = tempfile.mkstemp()
+        fancylogger.logToFile(self.logfn)
 
     def assertErrorRegex(self, error, regex, call, *args):
         """ convenience method to match regex with the error message """
@@ -88,7 +90,7 @@ class FancyLoggerTest(TestCase):
                     logmsgtype = 'CRITICAL'
 
                 msgre = re.compile(MSGRE_TPL % logmsgtype)
-                txt = open(logfn, 'r').read()
+                txt = open(self.logfn, 'r').read()
 
                 self.assertTrue(msgre.search(txt))
 
@@ -130,7 +132,7 @@ class FancyLoggerTest(TestCase):
         logger.deprecated(MSG, "0.9", max_ver)
         msgre_tpl_warning = r"%sWARNING.*DEPRECATED\s*\(since v%s\).*%s" % (prefix_tpl, max_ver, MSG)
         msgre_warning = re.compile(msgre_tpl_warning)
-        txt = open(logfn, 'r').read()
+        txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
 
         # test handling of non-UTF8 chars
@@ -138,9 +140,13 @@ class FancyLoggerTest(TestCase):
         msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, msg)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
         logger.deprecated(msg, "0.9", max_ver)
-        txt = open(logfn, 'r').read()
+        txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
 
+    def tearDown(self):
+        os.close(self.handle)
+        fancylogger.logToFile(self.logfn, enable=False)
+        os.remove(self.logfn)
 
 def suite():
     """ returns all the testcases in this module """
