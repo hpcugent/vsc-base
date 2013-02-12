@@ -125,7 +125,6 @@ class FancyLogRecord(logging.LogRecord):
         self.threadname = thread_name()  # actually threadName already exists?
         self.mpirank = _MPIRANK
 
-
 # Custom logger that uses our log record
 class FancyLogger(logging.getLoggerClass()):
     """
@@ -225,38 +224,38 @@ class FancyLogger(logging.getLoggerClass()):
     @decode_msg_to_utf8
     def critical(self, msg, *args, **kwargs):
         """Log critical message."""
-        super(FancyLogger, self).critical(msg, *args, **kwargs)
+        logging.Logger.critical(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def debug(self, msg, *args, **kwargs):
         """Log debug message."""
-        super(FancyLogger, self).debug(msg, *args, **kwargs)
+        logging.Logger.debug(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def info(self, msg, *args, **kwargs):
         """Log info message."""
-        super(FancyLogger, self).info(msg, *args, **kwargs)
+        logging.Logger.info(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def error(self, msg, *args, **kwargs):
         """Log error message."""
-        super(FancyLogger, self).error(msg, *args, **kwargs)
+        logging.Logger.error(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def warning(self, msg, *args, **kwargs):
         """Log warning message."""
-        super(FancyLogger, self).warning(msg, *args, **kwargs)
+        logging.Logger.warning(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def warn(self, msg, *args, **kwargs):
         """Log warn message."""
-        super(FancyLogger, self).warn(msg, *args, **kwargs)
+        logging.Logger.warn(self, msg, *args, **kwargs)
 
     # note: exception is omitted deliberaly, doesn't need the decorator since it calls error
     # @decode_msg_to_utf8
     # def exception(self, msg, *args, **kwargs):
     #    """Log exception message."""
-    #    super(FancyLogger, self).exception(msg, *args, **kwargs)
+    #    logging.Logger.exception(self, msg, *args, **kwargs)
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
