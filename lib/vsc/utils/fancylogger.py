@@ -333,15 +333,19 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
             handler = handlerclass(**handleropts)
             handler.setFormatter(formatter)
         logger.addHandler(handler)
-        setattr(logger, loggeroption, True)
+        setattr(logger, loggeroption, handler)
     elif not enable:
-        # stop logging to X (needs the handler, so fail if it's not specified)
-        if handler is None and len(logger.handlers) == 1:
-            # removing the last logger doesn't work
-            # it will be re-added if only one handler is present
-            # so we will just make it quiet by setting the loglevel extremely high
-            zerohandler = logger.handlers[0]
-            zerohandler.setLevel(101)  # 50 is critical, so 101 should be nothing
+        # stop logging to X
+        if handler is None:
+            if len(logger.handlers) == 1:
+                # removing the last logger doesn't work
+                # it will be re-added if only one handler is present
+                # so we will just make it quiet by setting the loglevel extremely high
+                zerohandler = logger.handlers[0]
+                zerohandler.setLevel(101)  # 50 is critical, so 101 should be nothing
+            else: # remove the handler set with this loggeroption
+                handler = getattr(logger, loggeroption)
+                logger.removeHandler(handler)
         else:
             logger.removeHandler(handler)
         setattr(logger, loggeroption, False)
