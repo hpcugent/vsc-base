@@ -20,5 +20,11 @@ try:
 except ImportError, err:
     rs = unittest.TextTestRunner().run(suite)
 
+try:
+    os.remove(tf.logfn)
+except OSError, err:
+    print "ERROR: Clean of %s (tf.logfn) failed." % tf.logfn
+    sys.exit(1)
+
 if not rs.wasSuccessful():
     sys.exit(1)

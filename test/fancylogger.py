@@ -42,7 +42,7 @@ MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
 MSGRE_TPL = r"\d\d\d\d-\d\d-\d\d+\s+\d\d:\d\d:\d\d,\d\d\d\s+%%s.*%s" % MSG
 
-#FIXME: clean up this log file?
+# this log file is cleaned up by the main script, i.e. test/runner.py
 (handle, fn) = tempfile.mkstemp()
 logfn = fn
 fancylogger.logToFile(logfn)
