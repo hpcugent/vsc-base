@@ -140,7 +140,8 @@ class FancyLogger(logging.getLoggerClass()):
         """
         overwrite make record to use a fancy record (with more options)
         """
-        return FancyLogRecord(name, level, pathname, lineno, msg, args, excinfo)
+        new_msg = msg.decode('utf8', 'replace')
+        return FancyLogRecord(name, level, pathname, lineno, new_msg, args, excinfo)
 
     def raiseException(self, message, exception=None, catch=False):
         """
@@ -212,51 +213,6 @@ class FancyLogger(logging.getLoggerClass()):
 
     def streamError(self, data):
         self.streamLog(logging.ERROR, data)
-
-    def decode_msg_to_utf8(func):
-        """Decorator to decode log messages to UTF-8."""
-
-        def inner(self, msg, *args, **kwargs):
-            new_msg = msg.decode('utf8', 'replace')
-            return func(self, new_msg, *args, **kwargs)
-
-        return inner
-
-    @decode_msg_to_utf8
-    def critical(self, msg, *args, **kwargs):
-        """Log critical message."""
-        super(FancyLogger, self).critical(msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def debug(self, msg, *args, **kwargs):
-        """Log debug message."""
-        super(FancyLogger, self).debug(msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def info(self, msg, *args, **kwargs):
-        """Log info message."""
-        super(FancyLogger, self).info(msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def error(self, msg, *args, **kwargs):
-        """Log error message."""
-        super(FancyLogger, self).error(msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def warning(self, msg, *args, **kwargs):
-        """Log warning message."""
-        super(FancyLogger, self).warning(msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def warn(self, msg, *args, **kwargs):
-        """Log warn message."""
-        super(FancyLogger, self).warn(msg, *args, **kwargs)
-
-    # note: exception is omitted deliberaly, doesn't need the decorator since it calls error
-    #@decode_msg_to_utf8
-    #def exception(self, msg, *args, **kwargs):
-    #    """Log exception message."""
-    #    super(FancyLogger, self).exception(msg, *args, **kwargs)
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
@@ -423,7 +379,6 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
                 # so we will just make it quiet by setting the loglevel extremely high
                 zerohandler = logger.handlers[0]
                 zerohandler.setLevel(APOCALYPTIC)  # no logging should be done with APOCALYPTIC, so silence happens
-                zerohandler.setLevel(101)  # 50 is critical, so 101 should be nothing
             else: # remove the handler set with this loggeroption
                 handler = getattr(logger, loggeroption)
                 logger.removeHandler(handler)
