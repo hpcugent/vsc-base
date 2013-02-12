@@ -26,8 +26,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
 Tests for the vsc.utils.nagios module.
+
+@author: Andy Georges (Ghent University)
 """
 import os
 import tempfile
@@ -58,6 +59,7 @@ class TestNagios(TestCase):
 
         (handle, filename) = tempfile.mkstemp()
         os.unlink(filename)
+        os.close(handle)
         reporter = NagiosReporter('test_cache', filename, threshold, self.nagios_user )
 
         nagios_exit = [NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_UNKNOWN][exit_code]

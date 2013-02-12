@@ -1,11 +1,13 @@
 # vsc-base
 
-[![Build Status](https://jenkins1.ugent.be/job/vsc-base/badge/icon)](https://jenkins1.ugent.be/job/vsc_base/)
+[![Build Status](https://jenkins1.ugent.be/job/vsc-base/badge/icon)](https://jenkins1.ugent.be/job/vsc-base/)
 
 Common tools used within our organization.
 
 Originally created by the HPC team of Ghent University (http://ugent.be/hpc).
 
+# Documentation
+https://jenkins1.ugent.be/job/vsc-base/Documentation/
 
 # Namespaces and tools
 

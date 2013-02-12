@@ -26,9 +26,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Andy Georges (Ghent University)
-
 Caching utilities.
+
+@author: Andy Georges (Ghent University)
 """
 try:
     import cPickle as pickle
@@ -87,7 +87,7 @@ class FileCache(object):
                 f.close()
 
         except (OSError, IOError), err:
-            self.log.error("Could not access the file cache at %s [%s]" % (self.filename, err))
+            self.log.warning("Could not access the file cache at %s [%s]" % (self.filename, err))
             self.shelf = {}
 
         if not self.shelf:

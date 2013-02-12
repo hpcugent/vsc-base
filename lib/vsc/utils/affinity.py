@@ -24,8 +24,6 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-@author: Stijn De Weirdt (Ghent University)
-
 Linux cpu affinity.
     - Based on C{sched.h} and C{bits/sched.h},
     - see man pages for  C{sched_getaffinity} and C{sched_setaffinity}
@@ -33,6 +31,8 @@ Linux cpu affinity.
 Linux priority
     - Based on sys/resources.h and bits/resources.h see man pages for
       C{getpriority} and C{setpriority}
+
+@author: Stijn De Weirdt (Ghent University)
 """
 
 import ctypes

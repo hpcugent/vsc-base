@@ -32,9 +32,6 @@
 ##
 
 """
-@author: Josiah Carlson
-@author: Stijn De Weirdt (Ghent University)
-
 Module to allow Asynchronous subprocess use on Windows and Posix platforms
 
 The 'subprocess' module in Python 2.4 has made creating and accessing subprocess
@@ -63,6 +60,9 @@ and the methods will return None.
   - modified
     - added STDOUT handle
     - added maxread to recv_some (2012-08-30)
+
+@author: Josiah Carlson
+@author: Stijn De Weirdt (Ghent University)
 """
 
 import errno

@@ -25,11 +25,6 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-Created on Oct 14, 2011
-
-@author: Jens Timmerman (Ghent University)
-@author: Stijn De Weirdt (Ghent University)
-
 This module implements a fancy logger on top of python logging
 
 It adds:
@@ -72,7 +67,14 @@ handler.setFormatter(logging.Formatter(formatstring))
 ## logging to a udp server:
 # set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
 # this will make fancylogger log to that that server and port instead of the screen.
+
+@author: Jens Timmerman (Ghent University)
+@author: Stijn De Weirdt (Ghent University)
+@author: Kenneth Hoste (Ghent University)
+
+Created on Oct 14, 2011
 """
+
 import inspect
 import logging.handlers
 import os
@@ -88,6 +90,17 @@ MAX_BYTES = 100 * 1024 * 1024  # max bytes in a file with rotating file handler
 BACKUPCOUNT = 10  # number of rotating log files to save
 
 DEFAULT_UDP_PORT = 5005
+
+# log level constants, in order of severity
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARN = logging.WARN
+WARNING = logging.WARNING
+ERROR = logging.ERROR
+EXCEPTION = logging.ERROR  # exception and error have same logging level, see logging docs
+FATAL = logging.FATAL
+CRITICAL = logging.CRITICAL
+APOCALYPTIC = logging.CRITICAL*2 + 1  # when log level is set to this, silence happens
 
 # mpi rank support
 try:
@@ -199,6 +212,73 @@ class FancyLogger(logging.getLoggerClass()):
 
     def streamError(self, data):
         self.streamLog(logging.ERROR, data)
+
+    def decode_msg_to_utf8(func):
+        """Decorator to decode log messages to UTF-8."""
+
+        def inner(self, msg, *args, **kwargs):
+            new_msg = msg.decode('utf8', 'replace')
+            return func(self, new_msg, *args, **kwargs)
+
+        return inner
+
+    @decode_msg_to_utf8
+    def critical(self, msg, *args, **kwargs):
+        """Log critical message."""
+        super(FancyLogger, self).critical(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def debug(self, msg, *args, **kwargs):
+        """Log debug message."""
+        super(FancyLogger, self).debug(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def info(self, msg, *args, **kwargs):
+        """Log info message."""
+        super(FancyLogger, self).info(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def error(self, msg, *args, **kwargs):
+        """Log error message."""
+        super(FancyLogger, self).error(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def warning(self, msg, *args, **kwargs):
+        """Log warning message."""
+        super(FancyLogger, self).warning(msg, *args, **kwargs)
+
+    @decode_msg_to_utf8
+    def warn(self, msg, *args, **kwargs):
+        """Log warn message."""
+        super(FancyLogger, self).warn(msg, *args, **kwargs)
+
+    # note: exception is omitted deliberaly, doesn't need the decorator since it calls error
+    #@decode_msg_to_utf8
+    #def exception(self, msg, *args, **kwargs):
+    #    """Log exception message."""
+    #    super(FancyLogger, self).exception(msg, *args, **kwargs)
+
+    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
+        """
+        Log deprecation message, throw error if current version is passed given threshold.
+
+        Checks only major/minor version numbers (MAJ.MIN.x) by default, controlled by 'depth' argument.
+        """
+
+        cur_ver_parts = [int(x) for x in str(cur_ver).split('.')]
+        max_ver_parts = [int(x) for x in str(max_ver).split('.')]
+
+        deprecated = True
+        for i in xrange(0, depth):
+            if cur_ver_parts[i] < max_ver_parts[i]:
+                deprecated = False
+                break
+
+        if deprecated:
+            self.raiseException("DEPRECATED (since v%s) functionality used: %s" % (max_ver, msg), exception=exception)
+        else:
+            deprecation_msg = "Deprecated functionality, will no longer work in v%s: %s" % (max_ver, msg)
+            self.warning(deprecation_msg)
 
 
 def thread_name():
@@ -342,6 +422,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
                 # it will be re-added if only one handler is present
                 # so we will just make it quiet by setting the loglevel extremely high
                 zerohandler = logger.handlers[0]
+                zerohandler.setLevel(APOCALYPTIC)  # no logging should be done with APOCALYPTIC, so silence happens
                 zerohandler.setLevel(101)  # 50 is critical, so 101 should be nothing
             else: # remove the handler set with this loggeroption
                 handler = getattr(logger, loggeroption)

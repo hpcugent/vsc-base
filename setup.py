@@ -26,9 +26,10 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
+vsc-base base distribution setup.py
+
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
-vsc-base base distribution setup.py
 """
 from shared_setup import ag, jt, sdw
 from shared_setup import action_target
