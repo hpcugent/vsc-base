@@ -42,17 +42,13 @@ MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
 MSGRE_TPL = r"\d\d\d\d-\d\d-\d\d+\s+\d\d:\d\d:\d\d,\d\d\d\s+%%s.*%s" % MSG
 
+#FIXME: clean up this log file?
+(handle, fn) = tempfile.mkstemp()
+logfn = fn
+fancylogger.logToFile(logfn)
+
 class FancyLoggerTest(TestCase):
     """Tests for fancylogger"""
-
-    logfn = None
-
-    @classmethod
-    def setUpClass(cls):
-        """Set up log file for tests."""
-        (handle, fn) = tempfile.mkstemp()
-        cls.logfn = fn
-        fancylogger.logToFile(cls.logfn)
 
     def assertErrorRegex(self, error, regex, call, *args):
         """ convenience method to match regex with the error message """
@@ -92,7 +88,7 @@ class FancyLoggerTest(TestCase):
                     logmsgtype = 'CRITICAL'
 
                 msgre = re.compile(MSGRE_TPL % logmsgtype)
-                txt = open(self.logfn, 'r').read()
+                txt = open(logfn, 'r').read()
 
                 self.assertTrue(msgre.search(txt))
 
@@ -134,7 +130,7 @@ class FancyLoggerTest(TestCase):
         logger.deprecated(MSG, "0.9", max_ver)
         msgre_tpl_warning = r"%sWARNING.*DEPRECATED\s*\(since v%s\).*%s" % (prefix_tpl, max_ver, MSG)
         msgre_warning = re.compile(msgre_tpl_warning)
-        txt = open(self.logfn, 'r').read()
+        txt = open(logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
 
         # test handling of non-UTF8 chars
@@ -142,15 +138,8 @@ class FancyLoggerTest(TestCase):
         msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, msg)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
         logger.deprecated(msg, "0.9", max_ver)
-        txt = open(self.logfn, 'r').read()
+        txt = open(logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
-
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up the mess."""
-        print "contents of log file:"
-        print open(cls.logfn, 'r').read().split('\n')
-        os.remove(cls.logfn)
 
 
 def suite():
