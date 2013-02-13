@@ -423,7 +423,7 @@ class GeneralOption(object):
             0. value set through environment variable
             1. value set through commandline option
     """
-    OPTIONNAME_SEPARATOR = '_'
+    OPTIONNAME_PREFIX_SEPARATOR = '-'
 
     DEBUG_OPTIONS_BUILD = False  # enable debug mode when building the options ?
 
@@ -853,7 +853,7 @@ class GeneralOption(object):
         if prefix == '':
             name = key
         else:
-            name = "".join([prefix, self.OPTIONNAME_SEPARATOR, key])
+            name = "".join([prefix, self.OPTIONNAME_PREFIX_SEPARATOR, key])
 
         # dest : replace '-' with '_'
         dest = name.replace('-', '_')
@@ -872,7 +872,7 @@ class GeneralOption(object):
         """Break the options dict by prefix in sub-dict"""
         subdict = {}
         for k in self.options.__dict__.keys():
-            levels = k.split(self.OPTIONNAME_SEPARATOR)
+            levels = k.split(self.OPTIONNAME_PREFIX_SEPARATOR)
             lastlvl = subdict
             for lvl in levels[:-1]:  # 0 or more
                 lastlvl.setdefault(lvl, {})
