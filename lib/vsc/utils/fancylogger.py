@@ -286,6 +286,9 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
 
     you can also pass the name of the logger for which to log to the screen
     otherwise you'll get all logs on the screen
+
+    by default, logToScreen will log to stderr; logging to stderr instead can be done
+    by setting the 'stdout' parameter to True
     """
     handleropts = {}
 
