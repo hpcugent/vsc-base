@@ -28,33 +28,28 @@
 This module implements a fancy logger on top of python logging
 
 It adds:
-- custom specifiers for mpi loggin (the mpirank) with autodetection of mpi
-- custom specifier for always showing the calling function's name
-- rotating file handler
-- a default formatter.
-- logging to an UDP server (vsc.logging.logdaemon.py f.ex.)
-- easily setting loglevel
-
-f.ex the threadname specifier which will insert the name of the thread
+ - custom specifiers for mpi logging (the mpirank) with autodetection of mpi
+ - custom specifier for always showing the calling function's name
+ - rotating file handler
+ - a default formatter.
+ - logging to an UDP server (vsc.logging.logdaemon.py f.ex.)
+ - easily setting loglevel
+ - easily add extra specifiers in the log record
 
 usage:
-from vsc.utils import fancylogger
-#will log to screen by default
-fancylogger.logToFile('dir/filename')
-fancylogger.setLogLevelDebug() #set global loglevel to debug
-logger = fancylogger.getLogger(name) #get a logger with a specific name
-logger.setLevel(level) #set local debugging level
-
-#if you want the logger to be showing modulename.functionname as the name, use
-fancylogger.getLogger(fname=True)
-#creating a logger like this will use the name of the function calling the getLogger function, to be the loggers name.
-
-#you can now even use the handler to set a different formatter by using
-handler = fancylogger.logToFile('dir/filename')
-formatstring = '%(asctime)-15s %(levelname)-10s %(mpirank)-5s %(funcname)-15s %(threadname)-10s %(message)s'
-handler.setFormatter(logging.Formatter(formatstring))
-
-#setting a global loglevel will impact all logers:
+>>> from vsc.utils import fancylogger
+>>> # will log to screen by default
+>>> fancylogger.logToFile('dir/filename')
+>>> fancylogger.setLogLevelDebug()  # set global loglevel to debug
+>>> logger = fancylogger.getLogger(name)  # get a logger with a specific name
+>>> logger.setLevel(level)  # set local debugging level
+>>> # If you want the logger to be showing modulename.functionname as the name, use
+>>> fancylogger.getLogger(fname=True)
+>>> # you can use the handler to set a different formatter by using
+>>> handler = fancylogger.logToFile('dir/filename')
+>>> formatstring = '%(asctime)-15s %(levelname)-10s %(mpirank)-5s %(funcname)-15s %(threadname)-10s %(message)s'
+>>> handler.setFormatter(logging.Formatter(formatstring))
+>>> # setting a global loglevel will impact all logers:
 >>> from vsc.utils import fancylogger
 >>> logger = fancylogger.getLogger("test")
 >>> logger.warning("warning")
@@ -64,15 +59,14 @@ handler.setFormatter(logging.Formatter(formatstring))
 >>> logger.debug("warning")
 2012-01-05 14:03:46,222 DEBUG      <stdin>.test.<module>    MainThread  warning
 
-## logging to a udp server:
-# set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
-# this will make fancylogger log to that that server and port instead of the screen.
+Logging to a udp server:
+ - set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
+ - this will make fancylogger log to that that server and port instead of the screen.
 
+@date: Oct 14, 2011
 @author: Jens Timmerman (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
-
-Created on Oct 14, 2011
 """
 
 import inspect
@@ -125,6 +119,7 @@ class FancyLogRecord(logging.LogRecord):
         self.threadname = thread_name()  # actually threadName already exists?
         self.mpirank = _MPIRANK
 
+
 # Custom logger that uses our log record
 class FancyLogger(logging.getLoggerClass()):
     """
@@ -139,7 +134,8 @@ class FancyLogger(logging.getLoggerClass()):
         """
         overwrite make record to use a fancy record (with more options)
         """
-        return FancyLogRecord(name, level, pathname, lineno, msg, args, excinfo)
+        new_msg = msg.decode('utf8', 'replace')
+        return FancyLogRecord(name, level, pathname, lineno, new_msg, args, excinfo)
 
     def raiseException(self, message, exception=None, catch=False):
         """
@@ -211,51 +207,6 @@ class FancyLogger(logging.getLoggerClass()):
 
     def streamError(self, data):
         self.streamLog(logging.ERROR, data)
-
-    def decode_msg_to_utf8(func):
-        """Decorator to decode log messages to UTF-8."""
-
-        def inner(self, msg, *args, **kwargs):
-            new_msg = msg.decode('utf8', 'replace')
-            return func(self, new_msg, *args, **kwargs)
-
-        return inner
-
-    @decode_msg_to_utf8
-    def critical(self, msg, *args, **kwargs):
-        """Log critical message."""
-        logging.Logger.critical(self, msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def debug(self, msg, *args, **kwargs):
-        """Log debug message."""
-        logging.Logger.debug(self, msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def info(self, msg, *args, **kwargs):
-        """Log info message."""
-        logging.Logger.info(self, msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def error(self, msg, *args, **kwargs):
-        """Log error message."""
-        logging.Logger.error(self, msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def warning(self, msg, *args, **kwargs):
-        """Log warning message."""
-        logging.Logger.warning(self, msg, *args, **kwargs)
-
-    @decode_msg_to_utf8
-    def warn(self, msg, *args, **kwargs):
-        """Log warn message."""
-        logging.Logger.warn(self, msg, *args, **kwargs)
-
-    # note: exception is omitted deliberaly, doesn't need the decorator since it calls error
-    # @decode_msg_to_utf8
-    # def exception(self, msg, *args, **kwargs):
-    #    """Log exception message."""
-    #    logging.Logger.exception(self, msg, *args, **kwargs)
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
@@ -412,15 +363,19 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
             handler = handlerclass(**handleropts)
             handler.setFormatter(formatter)
         logger.addHandler(handler)
-        setattr(logger, loggeroption, True)
+        setattr(logger, loggeroption, handler)
     elif not enable:
-        # stop logging to X (needs the handler, so fail if it's not specified)
-        if handler is None and len(logger.handlers) == 1:
-            # removing the last logger doesn't work
-            # it will be re-added if only one handler is present
-            # so we will just make it quiet by setting the loglevel extremely high
-            zerohandler = logger.handlers[0]
-            zerohandler.setLevel(APOCALYPTIC)  # no logging should be done with APOCALYPTIC, so silence happens
+        # stop logging to X
+        if handler is None:
+            if len(logger.handlers) == 1:
+                # removing the last logger doesn't work
+                # it will be re-added if only one handler is present
+                # so we will just make it quiet by setting the loglevel extremely high
+                zerohandler = logger.handlers[0]
+                zerohandler.setLevel(APOCALYPTIC)  # no logging should be done with APOCALYPTIC, so silence happens
+            else:  # remove the handler set with this loggeroption
+                handler = getattr(logger, loggeroption)
+                logger.removeHandler(handler)
         else:
             logger.removeHandler(handler)
         setattr(logger, loggeroption, False)
