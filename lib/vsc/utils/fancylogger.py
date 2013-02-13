@@ -25,12 +25,10 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-Created on Oct 14, 2011
-
 This module implements a fancy logger on top of python logging
 
 It adds:
- - custom specifiers for mpi loggin (the mpirank) with autodetection of mpi
+ - custom specifiers for mpi logging (the mpirank) with autodetection of mpi
  - custom specifier for always showing the calling function's name
  - rotating file handler
  - a default formatter.
@@ -65,6 +63,7 @@ Logging to a udp server:
  - set an environment variable FANCYLOG_SERVER and FANCYLOG_SERVER_PORT (optionally)
  - this will make fancylogger log to that that server and port instead of the screen.
 
+@date: Oct 14, 2011
 @author: Jens Timmerman (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
