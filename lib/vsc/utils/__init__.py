@@ -24,8 +24,8 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 ##
 """
-the vsc/utils namespace is used in different folders along the system
-so explicitly declare this is also the vsc/utils namespace
+The vsc/utils namespace is used in different folders along the system
+so explicitly declare this is also the vsc/utils namespace.
 
 @author: Jens Timmerman (Ghent University)
 """

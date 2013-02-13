@@ -47,12 +47,10 @@ class FancyLoggerTest(TestCase):
 
     logfn = None
 
-    @classmethod
-    def setUpClass(cls):
-        """Set up log file for tests."""
-        (handle, fn) = tempfile.mkstemp()
-        cls.logfn = fn
-        fancylogger.logToFile(cls.logfn)
+    def setUp(self):
+        # this log file is cleaned up by the main script, i.e. test/runner.py
+        (self.handle, self.logfn) = tempfile.mkstemp()
+        fancylogger.logToFile(self.logfn)
 
     def assertErrorRegex(self, error, regex, call, *args):
         """ convenience method to match regex with the error message """
@@ -145,13 +143,10 @@ class FancyLoggerTest(TestCase):
         txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up the mess."""
-        print "contents of log file:"
-        print open(cls.logfn, 'r').read().split('\n')
-        os.remove(cls.logfn)
-
+    def tearDown(self):
+        os.close(self.handle)
+        fancylogger.logToFile(self.logfn, enable=False)
+        os.remove(self.logfn)
 
 def suite():
     """ returns all the testcases in this module """

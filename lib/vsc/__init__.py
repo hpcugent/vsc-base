@@ -26,7 +26,7 @@
 ##
 """
 Initialize vsc package.
-the vsc namespace is used in different folders allong the system
+The vsc namespace is used in different folders allong the system
 so explicitly declare this is also the vsc namespace
 
 @author: Jens Timmerman (Ghent University)

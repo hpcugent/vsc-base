@@ -100,7 +100,7 @@ ERROR = logging.ERROR
 EXCEPTION = logging.ERROR  # exception and error have same logging level, see logging docs
 FATAL = logging.FATAL
 CRITICAL = logging.CRITICAL
-APOCALYPTIC = logging.CRITICAL*2 + 1  # when log level is set to this, silence happens
+APOCALYPTIC = logging.CRITICAL * 2 + 1  # when log level is set to this, silence happens
 
 # mpi rank support
 try:
@@ -121,10 +121,9 @@ class FancyLogRecord(logging.LogRecord):
     """
     def __init__(self, *args, **kwargs):
         logging.LogRecord.__init__(self, *args, **kwargs)
-        #modify custom specifiers here
+        # modify custom specifiers here
         self.threadname = thread_name()  # actually threadName already exists?
         self.mpirank = _MPIRANK
-
 
 # Custom logger that uses our log record
 class FancyLogger(logging.getLoggerClass()):
@@ -132,7 +131,7 @@ class FancyLogger(logging.getLoggerClass()):
     This is a custom Logger class that uses the FancyLogRecord
     and has an extra method raiseException
     """
-    #this attribute can be checked to know if the logger is thread aware
+    # this attribute can be checked to know if the logger is thread aware
     _thread_aware = True
 
     # method definition as it is in logging, can't change this
@@ -194,13 +193,13 @@ class FancyLogger(logging.getLoggerClass()):
         def write_and_flush_stream(hdlr, data=None):
             """Write to stream and flush the handler"""
             if (not hasattr(hdlr, 'stream')) or hdlr.stream is None:
-                ## no stream or not initialised.
+                # no stream or not initialised.
                 raise("write_and_flush_stream failed. No active stream attribute.")
             if data is not None:
                 hdlr.stream.write(data)
                 hdlr.flush()
 
-        ## only log when appropriate (see logging.Logger.log())
+        # only log when appropriate (see logging.Logger.log())
         if self.isEnabledFor(levelno):
             self._handleFunction(write_and_flush_stream, levelno, data=data)
 
@@ -225,38 +224,38 @@ class FancyLogger(logging.getLoggerClass()):
     @decode_msg_to_utf8
     def critical(self, msg, *args, **kwargs):
         """Log critical message."""
-        super(FancyLogger, self).critical(msg, *args, **kwargs)
+        logging.Logger.critical(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def debug(self, msg, *args, **kwargs):
         """Log debug message."""
-        super(FancyLogger, self).debug(msg, *args, **kwargs)
+        logging.Logger.debug(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def info(self, msg, *args, **kwargs):
         """Log info message."""
-        super(FancyLogger, self).info(msg, *args, **kwargs)
+        logging.Logger.info(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def error(self, msg, *args, **kwargs):
         """Log error message."""
-        super(FancyLogger, self).error(msg, *args, **kwargs)
+        logging.Logger.error(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def warning(self, msg, *args, **kwargs):
         """Log warning message."""
-        super(FancyLogger, self).warning(msg, *args, **kwargs)
+        logging.Logger.warning(self, msg, *args, **kwargs)
 
     @decode_msg_to_utf8
     def warn(self, msg, *args, **kwargs):
         """Log warn message."""
-        super(FancyLogger, self).warn(msg, *args, **kwargs)
+        logging.Logger.warn(self, msg, *args, **kwargs)
 
     # note: exception is omitted deliberaly, doesn't need the decorator since it calls error
-    #@decode_msg_to_utf8
-    #def exception(self, msg, *args, **kwargs):
+    # @decode_msg_to_utf8
+    # def exception(self, msg, *args, **kwargs):
     #    """Log exception message."""
-    #    super(FancyLogger, self).exception(msg, *args, **kwargs)
+    #    logging.Logger.exception(self, msg, *args, **kwargs)
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
@@ -404,7 +403,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
     logger = getLogger(name, fname=False)
 
     if not hasattr(logger, loggeroption):
-        ## not set.
+        # not set.
         setattr(logger, loggeroption, False)  # set default to False
 
     if enable and not getattr(logger, loggeroption):
@@ -457,7 +456,7 @@ def logToDevLog(enable=True, name=None, handler=None):
                            syslogoptions, 'logtodevlog', enable=enable, name=name, handler=handler)
 
 
-##  Change loglevel
+#  Change loglevel
 def setLogLevel(level):
     """
     set a global log level (for this root logger)
@@ -498,12 +497,12 @@ def getAllExistingLoggers():
     @return: the existing loggers, in a list of C{(name, logger)} tuples
     """
     rootlogger = logging.getLogger(fname=False)
-    ## undocumented manager (in 2.4 and later)
+    # undocumented manager (in 2.4 and later)
     manager = rootlogger.manager
 
     loggerdict = getattr(manager, 'loggerDict')
 
-    ## return list of (name,logger) tuple
+    # return list of (name,logger) tuple
     return [x for x in loggerdict.items()]
 
 
@@ -524,7 +523,7 @@ def getAllFancyloggers():
 # Register our logger
 logging.setLoggerClass(FancyLogger)
 
-#log to a server if FANCYLOG_SERVER is set.
+# log to a server if FANCYLOG_SERVER is set.
 _default_logTo = None
 if 'FANCYLOG_SERVER' in os.environ:
     server = os.environ['FANCYLOG_SERVER']
@@ -532,7 +531,7 @@ if 'FANCYLOG_SERVER' in os.environ:
     if ':' in server:
         server, port = server.split(':')
 
-    #maybe the port was specified in the FANCYLOG_SERVER_PORT env var. this takes precedence
+    # maybe the port was specified in the FANCYLOG_SERVER_PORT env var. this takes precedence
     if 'FANCYLOG_SERVER_PORT' in os.environ:
         port = int(os.environ['FANCYLOG_SERVER_PORT'])
     port = int(port)
@@ -540,7 +539,7 @@ if 'FANCYLOG_SERVER' in os.environ:
     logToUDP(server, port)
     _default_logTo = logToUDP
 else:
-    #log to screen by default
+    # log to screen by default
     logToScreen(enable=True)
     _default_logTo = logToScreen
 
