@@ -9,6 +9,8 @@
 #
 ##
 """
+Module to make python scripts run in background.
+
 @author: Sander Marechal
 """
 
