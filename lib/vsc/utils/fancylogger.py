@@ -37,6 +37,7 @@ It adds:
  - easily add extra specifiers in the log record
 
 usage:
+
 >>> from vsc.utils import fancylogger
 >>> # will log to screen by default
 >>> fancylogger.logToFile('dir/filename')
