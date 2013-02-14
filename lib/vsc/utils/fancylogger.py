@@ -110,16 +110,15 @@ except ImportError:
 
 class FancyStreamHandler(logging.StreamHandler):
     """The logging StreamHandler with uniform named arg in __init__ for selecting the stream."""
-    def __init__(self, stream=None):
-        """stream can be equal to
-            - None or False: log to sys.stderr (the default)
-            - True: log to sys.stdout
-            - a proper stream
+    def __init__(self, stream=None, stdout=None):
+        """Initialize the stream (default is sys.stderr)
+            - stream : a stream
+            - stdout: if True, set stream to sys.stdout (False log to stderr)
         """
         logging.StreamHandler.__init__(self)
-        if stream is None or stream == False:
+        if stdout == False or (stream is None and stdout is None):
             stream = sys.stderr
-        elif stream == True:
+        elif stdout == True:
             stream = sys.stdout
 
         self.stream = stream
@@ -293,7 +292,7 @@ def getRootLoggerName():
         return None
 
 
-def logToScreen(enable=True, handler=None, name=None, stream=None):
+def logToScreen(enable=True, handler=None, name=None, stdout=False):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -306,7 +305,7 @@ def logToScreen(enable=True, handler=None, name=None, stream=None):
     by default, logToScreen will log to stderr; logging to stderr instead can be done
     by setting the 'stdout' parameter to True
     """
-    handleropts = {'stream':stream}
+    handleropts = {'stdout':stdout}
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
