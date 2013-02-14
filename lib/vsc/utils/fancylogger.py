@@ -472,7 +472,7 @@ def getAllExistingLoggers():
     """
     @return: the existing loggers, in a list of C{(name, logger)} tuples
     """
-    rootlogger = logging.getLogger(fname=False)
+    rootlogger = logging.getLogger(name=False)
     # undocumented manager (in 2.4 and later)
     manager = rootlogger.manager
 
