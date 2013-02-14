@@ -116,7 +116,9 @@ class FancyStreamHandler(logging.StreamHandler):
             - stdout: if True, set stream to sys.stdout (False log to stderr)
         """
         logging.StreamHandler.__init__(self)
-        if stdout == False or (stream is None and stdout is None):
+        if stream is not None:
+            pass
+        elif stdout == False or stdout is None:
             stream = sys.stderr
         elif stdout == True:
             stream = sys.stdout
