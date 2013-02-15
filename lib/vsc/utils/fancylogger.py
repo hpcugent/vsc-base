@@ -112,8 +112,8 @@ class FancyStreamHandler(logging.StreamHandler):
     """The logging StreamHandler with uniform named arg in __init__ for selecting the stream."""
     def __init__(self, stream=None, stdout=None):
         """Initialize the stream (default is sys.stderr)
-            - stream : a stream
-            - stdout: if True, set stream to sys.stdout (False log to stderr)
+            - stream : a specific stream to use
+            - stdout: if True and no stream specified, set stream to sys.stdout (False log to stderr)
         """
         logging.StreamHandler.__init__(self)
         if stream is not None:
