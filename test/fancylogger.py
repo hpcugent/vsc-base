@@ -32,24 +32,35 @@ Unit tests for fancylogger.
 import logging
 import os
 import re
+import sys
 import tempfile
-from unittest import TestCase, TestLoader
+from unittest import TestCase, TestLoader, main
 
-import vsc.utils.fancylogger as fancylogger
-from vsc.utils.fancylogger import FancyLogger
+from vsc import fancylogger
 
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
-MSGRE_TPL = r"\d\d\d\d-\d\d-\d\d+\s+\d\d:\d\d:\d\d,\d\d\d\s+%%s.*%s" % MSG
+MSGRE_TPL = r"%%s.*%s" % MSG
 
 class FancyLoggerTest(TestCase):
     """Tests for fancylogger"""
 
     logfn = None
+    handle = None
+    fd = None
 
     def setUp(self):
-        (self.handle, self.logfn) = tempfile.mkstemp()
+        (self.fd, self.logfn) = tempfile.mkstemp()
+        self.handle = os.fdopen(self.fd)
+
+        # set the test log format
+        fancylogger.setTestLogFormat()
+
+        # make new logger
         fancylogger.logToFile(self.logfn)
+
+        # disable default ones (with default format)
+        fancylogger.disableDefaultHandlers()
 
     def assertErrorRegex(self, error, regex, call, *args):
         """ convenience method to match regex with the error message """
@@ -64,15 +75,18 @@ class FancyLoggerTest(TestCase):
 
     def test_log_types(self):
         """Test the several types of logging."""
+        # truncate the logfile
+        open(self.logfn, 'w')
+
         logtypes = {
-                    'critical': (fancylogger.CRITICAL, (lambda l,m: l.critical(m))),
-                    'debug': (fancylogger.DEBUG, (lambda l,m: l.debug(m))),
-                    'error': (fancylogger.ERROR, (lambda l,m: l.error(m))),
-                    'exception': (fancylogger.EXCEPTION, (lambda l,m: l.exception(m))),
-                    'fatal': (fancylogger.FATAL, (lambda l,m: l.fatal(m))),
-                    'info': (fancylogger.INFO, (lambda l,m: l.info(m))),
-                    'warning': (fancylogger.WARNING, (lambda l,m: l.warning(m))),
-                    'warn': (fancylogger.WARN, (lambda l,m: l.warn(m))),
+                    'critical': (fancylogger.CRITICAL, (lambda l, m: l.critical(m))),
+                    'debug': (fancylogger.DEBUG, (lambda l, m: l.debug(m))),
+                    'error': (fancylogger.ERROR, (lambda l, m: l.error(m))),
+                    'exception': (fancylogger.EXCEPTION, (lambda l, m: l.exception(m))),
+                    'fatal': (fancylogger.FATAL, (lambda l, m: l.fatal(m))),
+                    'info': (fancylogger.INFO, (lambda l, m: l.info(m))),
+                    'warning': (fancylogger.WARNING, (lambda l, m: l.warning(m))),
+                    'warn': (fancylogger.WARN, (lambda l, m: l.warn(m))),
                    }
         for logtype, (loglevel, logf) in sorted(logtypes.items()):
 
@@ -95,6 +109,8 @@ class FancyLoggerTest(TestCase):
 
     def test_uft8_decoding(self):
         """Test UTF8 decoding."""
+        # truncate the logfile
+        open(self.logfn, 'w')
 
         logger = fancylogger.getLogger('utf8_test')
         logger.setLevel(fancylogger.DEBUG)
@@ -116,12 +132,13 @@ class FancyLoggerTest(TestCase):
 
     def test_deprecated(self):
         """Test deprecated log function."""
+        # truncate the logfile
+        open(self.logfn, 'w')
 
         # log message
         logger = fancylogger.getLogger('deprecated_test')
 
         max_ver = "1.0"
-        prefix_tpl = r"\d\d\d\d-\d\d-\d\d\s+\d\d:\d\d:\d\d,\d\d\d\s+"
 
         # test whether deprecation works
         msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
@@ -129,7 +146,7 @@ class FancyLoggerTest(TestCase):
 
         # test whether deprecated warning works
         logger.deprecated(MSG, "0.9", max_ver)
-        msgre_tpl_warning = r"%sWARNING.*DEPRECATED\s*\(since v%s\).*%s" % (prefix_tpl, max_ver, MSG)
+        msgre_tpl_warning = r"WARNING.*DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
         msgre_warning = re.compile(msgre_tpl_warning)
         txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
@@ -142,11 +159,70 @@ class FancyLoggerTest(TestCase):
         txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
 
+    def _stream_stdouterr(self, isstdout=True, expect_match=True):
+        fd, logfn = tempfile.mkstemp()
+        # fh will be checked
+        fh = os.fdopen(fd, 'w')
+
+        _stdout = sys.stdout
+        _stderr = sys.stderr
+
+        if isstdout == expect_match:
+            sys.stdout = fh
+            sys.stderr = open(os.devnull, 'w')
+        else:
+            sys.stdout = open(os.devnull, 'w')
+            sys.stderr = fh
+
+        fancylogger.setLogLevelInfo()
+        name = 'test_stream_stdout'
+        lh = fancylogger.logToScreen(stdout=isstdout)
+        logger = fancylogger.getLogger(name)
+        # logfn makes it unique
+        msg = 'TEST isstdout %s expect_match %s logfn %s' % (isstdout, expect_match, logfn)
+        logger.info(msg)
+
+        # restore
+        fancylogger.logToScreen(enable=False, handler=lh)
+        sys.stdout = _stdout
+        sys.stderr = _stderr
+
+        fh2 = open(logfn)
+        txt = fh2.read().strip()
+        fh2.close()
+
+        reg_exp = re.compile(r"INFO\s+fancylogger.%s.%s\s+\S+\s+%s" % (name, '_stream_stdouterr', msg))
+        match = reg_exp.search(txt) is not None
+        self.assertEqual(match, expect_match)
+
+        try:
+            fh.close()
+            os.remove(logfn)
+        except:
+            pass
+
+    def test_stream_stdout_stderr(self):
+        # log to stdout, check stdout
+        self._stream_stdouterr(isstdout=True, expect_match=True)
+        # log to stderr, check stderr
+        self._stream_stdouterr(isstdout=False, expect_match=True)
+
+        # log to stdout, check stderr
+        self._stream_stdouterr(isstdout=True, expect_match=False)
+        # log to stderr, check stdout
+        self._stream_stdouterr(isstdout=False, expect_match=False)
+
+
     def tearDown(self):
-        os.close(self.handle)
         fancylogger.logToFile(self.logfn, enable=False)
+        self.handle.close()
         os.remove(self.logfn)
+
 
 def suite():
     """ returns all the testcases in this module """
     return TestLoader().loadTestsFromTestCase(FancyLoggerTest)
+
+if __name__ == '__main__':
+    """Use this __main__ block to help write and test unittests"""
+    main()
