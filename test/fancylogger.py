@@ -48,7 +48,6 @@ class FancyLoggerTest(TestCase):
     logfn = None
 
     def setUp(self):
-        # this log file is cleaned up by the main script, i.e. test/runner.py
         (self.handle, self.logfn) = tempfile.mkstemp()
         fancylogger.logToFile(self.logfn)
 
