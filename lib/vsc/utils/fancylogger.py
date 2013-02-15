@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-##
+# #
 # Copyright 2011-2013 Ghent University
 #
 # This file is part of vsc-base,
@@ -23,7 +23,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-##
+# #
 """
 This module implements a fancy logger on top of python logging
 
@@ -107,6 +107,23 @@ try:
                                  " mpi: %(mpirank)s %(threadname)-10s  %(message)s"
 except ImportError:
     _MPIRANK = "N/A"
+
+class FancyStreamHandler(logging.StreamHandler):
+    """The logging StreamHandler with uniform named arg in __init__ for selecting the stream."""
+    def __init__(self, stream=None, stdout=None):
+        """Initialize the stream (default is sys.stderr)
+            - stream : a specific stream to use
+            - stdout: if True and no stream specified, set stream to sys.stdout (False log to stderr)
+        """
+        logging.StreamHandler.__init__(self)
+        if stream is not None:
+            pass
+        elif stdout == False or stdout is None:
+            stream = sys.stderr
+        elif stdout == True:
+            stream = sys.stdout
+
+        self.stream = stream
 
 
 class FancyLogRecord(logging.LogRecord):
@@ -290,14 +307,9 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
     by default, logToScreen will log to stderr; logging to stderr instead can be done
     by setting the 'stdout' parameter to True
     """
-    handleropts = {}
+    handleropts = {'stdout':stdout}
 
-    if stdout:
-        handleropts.update({'stream': sys.stdout})
-    else:
-        handleropts.update({'stream': sys.stderr})
-
-    return _logToSomething(logging.StreamHandler,
+    return _logToSomething(FancyStreamHandler,
                            handleropts,
                            loggeroption='logtoscreen',
                            name=name,
@@ -461,7 +473,7 @@ def getAllExistingLoggers():
     """
     @return: the existing loggers, in a list of C{(name, logger)} tuples
     """
-    rootlogger = logging.getLogger(fname=False)
+    rootlogger = logging.getLogger(name=False)
     # undocumented manager (in 2.4 and later)
     manager = rootlogger.manager
 
