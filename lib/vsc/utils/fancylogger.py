@@ -71,15 +71,18 @@ Logging to a udp server:
 """
 
 import inspect
+import logging
 import logging.handlers
 import os
 import sys
 import threading
 import traceback
-import logging
+from distutils.version import LooseVersion
 
 # constants
-DEFAULT_LOGGING_FORMAT = '%(asctime)-15s %(levelname)-10s %(name)-15s %(threadname)-10s  %(message)s'
+TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadname)-10s  %(message)s'
+DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
+FANCYLOG_LOGGING_FORMAT = None
 # DEFAULT_LOGGING_FORMAT= '%(asctime)-15s %(levelname)-10s %(module)-15s %(threadname)-10s %(message)s'
 MAX_BYTES = 100 * 1024 * 1024  # max bytes in a file with rotating file handler
 BACKUPCOUNT = 10  # number of rotating log files to save
@@ -107,6 +110,7 @@ try:
                                  " mpi: %(mpirank)s %(threadname)-10s  %(message)s"
 except ImportError:
     _MPIRANK = "N/A"
+
 
 class FancyStreamHandler(logging.StreamHandler):
     """The logging StreamHandler with uniform named arg in __init__ for selecting the stream."""
@@ -142,7 +146,8 @@ class FancyLogRecord(logging.LogRecord):
 class FancyLogger(logging.getLoggerClass()):
     """
     This is a custom Logger class that uses the FancyLogRecord
-    and has an extra method raiseException
+    and has extra log methods raiseException and deprecated and
+    streaming versions for debug,info,warning and error.
     """
     # this attribute can be checked to know if the logger is thread aware
     _thread_aware = True
@@ -182,6 +187,24 @@ class FancyLogger(logging.getLoggerClass()):
 
         self.warning(fullmessage)
         raise exception(message)
+
+    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
+        """
+        Log deprecation message, throw error if current version is passed given threshold.
+
+        Checks only major/minor version numbers (MAJ.MIN.x) by default, controlled by 'depth' argument.
+        """
+        loose_cv = LooseVersion(cur_ver)
+        loose_mv = LooseVersion(max_ver)
+
+        loose_cv.version = loose_cv.version[:depth]
+        loose_mv.version = loose_mv.version[:depth]
+
+        if loose_cv > loose_mv:
+            self.raiseException("DEPRECATED (since v%s) functionality used: %s" % (max_ver, msg), exception=exception)
+        else:
+            deprecation_msg = "Deprecated functionality, will no longer work in v%s: %s" % (max_ver, msg)
+            self.warning(deprecation_msg)
 
     def _handleFunction(self, function, levelno, **kwargs):
         """
@@ -225,28 +248,6 @@ class FancyLogger(logging.getLoggerClass()):
 
     def streamError(self, data):
         self.streamLog(logging.ERROR, data)
-
-    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
-        """
-        Log deprecation message, throw error if current version is passed given threshold.
-
-        Checks only major/minor version numbers (MAJ.MIN.x) by default, controlled by 'depth' argument.
-        """
-
-        cur_ver_parts = [int(x) for x in str(cur_ver).split('.')]
-        max_ver_parts = [int(x) for x in str(max_ver).split('.')]
-
-        deprecated = True
-        for i in xrange(0, depth):
-            if cur_ver_parts[i] < max_ver_parts[i]:
-                deprecated = False
-                break
-
-        if deprecated:
-            self.raiseException("DEPRECATED (since v%s) functionality used: %s" % (max_ver, msg), exception=exception)
-        else:
-            deprecation_msg = "Deprecated functionality, will no longer work in v%s: %s" % (max_ver, msg)
-            self.warning(deprecation_msg)
 
 
 def thread_name():
@@ -381,7 +382,11 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
 
     if enable and not getattr(logger, loggeroption):
         if handler is None:
-            formatter = logging.Formatter(DEFAULT_LOGGING_FORMAT)
+            if FANCYLOG_LOGGING_FORMAT is None:
+                f_format = DEFAULT_LOGGING_FORMAT
+            else:
+                f_format = FANCYLOG_LOGGING_FORMAT
+            formatter = logging.Formatter(f_format)
             handler = handlerclass(**handleropts)
             handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -495,6 +500,17 @@ def getAllFancyloggers():
     Return all loggers that are not fancyloggers
     """
     return [x for x in getAllExistingLoggers() if isinstance(x[1], FancyLogger)]
+
+
+def setLogFormat(f_format):
+    """Set the log format. (Has to be set before logToSomething is called)."""
+    global FANCYLOG_LOGGING_FORMAT
+    FANCYLOG_LOGGING_FORMAT = f_format
+
+
+def setTestLogFormat():
+    """Set the log format to the test format (i.e. without timestamp)."""
+    setLogFormat(TEST_LOGGING_FORMAT)
 
 
 # Register our logger
