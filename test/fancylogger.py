@@ -107,6 +107,43 @@ class FancyLoggerTest(TestCase):
 
                 self.assertTrue(msgre.search(txt))
 
+    def test_getlevelint(self):
+        """Test the getLevelInt"""
+        DEBUG = fancylogger.getLevelInt('DEBUG')
+        INFO = fancylogger.getLevelInt('INFO')
+        WARNING = fancylogger.getLevelInt('WARNING')
+        ERROR = fancylogger.getLevelInt('ERROR')
+        CRITICAL = fancylogger.getLevelInt('CRITICAL')
+        APOCALYPTIC = fancylogger.getLevelInt('APOCALYPTIC')
+        self.assertTrue(INFO > DEBUG)
+        self.assertTrue(WARNING > INFO)
+        self.assertTrue(ERROR > WARNING)
+        self.assertTrue(CRITICAL > ERROR)
+        self.assertTrue(APOCALYPTIC > CRITICAL)
+
+    def test_parentinfo(self):
+        """Test the collection of parentinfo"""
+        log_fr = fancylogger.getLogger()  # rootfancylogger
+        pi_fr = log_fr.get_parent_info()
+        print pi_fr
+        self.assertEqual(len(pi_fr), 2)
+
+        log_l1 = fancylogger.getLogger('level1')
+        pi_l1 = log_l1.get_parent_info()
+        print pi_l1
+        self.assertEqual(len(pi_l1), 2)
+
+        log_l2a = log_l1.getChild('level2a')
+        pi_l2a = log_l2a.get_parent_info()
+        print pi_l2a
+        self.assertEqual(len(pi_l2a), 3)
+
+        # this should be identical to getChild
+        log_l2b = fancylogger.getLogger('level1.level2b')
+        pi_l2b = log_l2b.get_parent_info()
+        print pi_l2b
+        self.assertEqual(len(pi_l2b), 3)
+
     def test_uft8_decoding(self):
         """Test UTF8 decoding."""
         # truncate the logfile
