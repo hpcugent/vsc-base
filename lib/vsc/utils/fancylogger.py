@@ -77,6 +77,7 @@ import os
 import sys
 import threading
 import traceback
+import weakref
 from distutils.version import LooseVersion
 
 # constants
@@ -414,17 +415,20 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
         # not set.
         setattr(logger, loggeroption, False)  # set default to False
 
-    if enable and not getattr(logger, loggeroption):
-        if handler is None:
-            if FANCYLOG_LOGGING_FORMAT is None:
-                f_format = DEFAULT_LOGGING_FORMAT
-            else:
-                f_format = FANCYLOG_LOGGING_FORMAT
-            formatter = logging.Formatter(f_format)
-            handler = handlerclass(**handleropts)
-            handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        setattr(logger, loggeroption, handler)
+    if enable:
+        if not getattr(logger, loggeroption):
+            if handler is None:
+                if FANCYLOG_LOGGING_FORMAT is None:
+                    f_format = DEFAULT_LOGGING_FORMAT
+                else:
+                    f_format = FANCYLOG_LOGGING_FORMAT
+                formatter = logging.Formatter(f_format)
+                handler = handlerclass(**handleropts)
+                handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            setattr(logger, loggeroption, handler)
+        else:
+            handler = getattr(logger, loggeroption)
     elif not enable:
         # stop logging to X
         if handler is None:
@@ -578,25 +582,30 @@ else:
 _default_handlers = logging._handlerList[:]  # There's always one
 
 
-def disableDefaultHandlers():
-    """Disable the default handlers on all fancyloggers
-        DANGEROUS: if not other handler is available, logging will fail (and raise IOError [Errno 32] Broken pipe)
-    """
+def _enable_disable_default_handlers(enable):
+    """Interact with the default handlers to enable or disable them"""
     if _default_logTo is None:
         return
-    for weakref_handler in _default_handlers:
+    for hndlr in _default_handlers:
+        # py2.7 are weakrefs, 2.6 not
+        if isinstance(hndlr,weakref.ref):
+            handler=hndlr()
+        else:
+            handler=hndlr
+
         try:
-            _default_logTo(enable=False, handler=weakref_handler())
+            _default_logTo(enable=enable, handler=handler)
         except:
             pass
+
+
+def disableDefaultHandlers():
+    """Disable the default handlers on all fancyloggers
+        - if this is the last logger, it will just set the logLevel very high
+    """
+    _enable_disable_default_handlers(False)
 
 
 def enableDefaultHandlers():
     """(re)Enable the default handlers on all fancyloggers"""
-    if _default_logTo is None:
-        return
-    for weakref_handler in _default_handlers:
-        try:
-            _default_logTo(enable=True, handler=weakref_handler())
-        except:
-            pass
+    _enable_disable_default_handlers(True)
