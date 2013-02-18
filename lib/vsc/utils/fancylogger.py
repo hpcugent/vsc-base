@@ -97,12 +97,6 @@ logging.addLevelName(logging.CRITICAL * 2 + 1, 'APOCALYPTIC')
 logging._levelNames['EXCEPTION'] = logging.ERROR
 logging._levelNames['FATAL'] = logging.CRITICAL
 
-# local copies of log level constants
-# TODO modifiying globals is evil, but why would you use this anyway?
-# use getLevelInt instead
-for k, v in logging._levelNames.items():
-    if isinstance(k, str):
-        globals()[k] = v
 
 # mpi rank support
 try:
@@ -246,8 +240,8 @@ class FancyLogger(logging.getLoggerClass()):
         """
         Add (continuous) data to an existing message stream (eg a stream after a logging.info()
         """
-        if isinstance(levelno,str):
-            levelno=getLevelInt(levelno)
+        if isinstance(levelno, str):
+            levelno = getLevelInt(levelno)
 
         def write_and_flush_stream(hdlr, data=None):
             """Write to stream and flush the handler"""
@@ -278,7 +272,7 @@ class FancyLogger(logging.getLoggerClass()):
         """Return some logger parent related information"""
         def info(x):
             return (x, x.name, x.getEffectiveLevel(), x.level, x.disabled)
-        parentinfo=[]
+        parentinfo = []
         logger = self
         while logger.parent is not None:
             logger = logger.parent
@@ -588,10 +582,10 @@ def _enable_disable_default_handlers(enable):
         return
     for hndlr in _default_handlers:
         # py2.7 are weakrefs, 2.6 not
-        if isinstance(hndlr,weakref.ref):
-            handler=hndlr()
+        if isinstance(hndlr, weakref.ref):
+            handler = hndlr()
         else:
-            handler=hndlr
+            handler = hndlr
 
         try:
             _default_logTo(enable=enable, handler=handler)

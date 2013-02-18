@@ -28,8 +28,8 @@
 Unit tests for fancylogger.
 
 @author: Kenneth Hoste (Ghent University)
+@author: Stijn De Weirdt (Ghent University)
 """
-import logging
 import os
 import re
 import sys
@@ -79,24 +79,24 @@ class FancyLoggerTest(TestCase):
         open(self.logfn, 'w')
 
         logtypes = {
-                    'critical': (fancylogger.CRITICAL, (lambda l, m: l.critical(m))),
-                    'debug': (fancylogger.DEBUG, (lambda l, m: l.debug(m))),
-                    'error': (fancylogger.ERROR, (lambda l, m: l.error(m))),
-                    'exception': (fancylogger.EXCEPTION, (lambda l, m: l.exception(m))),
-                    'fatal': (fancylogger.FATAL, (lambda l, m: l.fatal(m))),
-                    'info': (fancylogger.INFO, (lambda l, m: l.info(m))),
-                    'warning': (fancylogger.WARNING, (lambda l, m: l.warning(m))),
-                    'warn': (fancylogger.WARN, (lambda l, m: l.warn(m))),
+                    'critical': lambda l, m: l.critical(m),
+                    'debug': lambda l, m: l.debug(m),
+                    'error': lambda l, m: l.error(m),
+                    'exception': lambda l, m: l.exception(m),
+                    'fatal': lambda l, m: l.fatal(m),
+                    'info': lambda l, m: l.info(m),
+                    'warning': lambda l, m: l.warning(m),
+                    'warn': lambda l, m: l.warn(m),
                    }
-        for logtype, (loglevel, logf) in sorted(logtypes.items()):
-
+        for logtype, logf in sorted(logtypes.items()):
                 # log message
                 logger = fancylogger.getLogger('%s_test' % logtype)
-                logger.setLevel(loglevel)
+                log_up = logtype.upper()
+                logger.setLevel(log_up)
                 logf(logger, MSG)
 
                 # check whether expected message got logged with expected format
-                logmsgtype = logtype.upper()
+                logmsgtype = log_up
                 if logmsgtype == 'EXCEPTION':
                     logmsgtype = 'ERROR'
                 if logmsgtype == 'FATAL':
@@ -158,7 +158,7 @@ class FancyLoggerTest(TestCase):
         open(self.logfn, 'w')
 
         logger = fancylogger.getLogger('utf8_test')
-        logger.setLevel(fancylogger.DEBUG)
+        logger.setLevel('DEBUG')
 
         for msg in [
                     "This is a pure ASCII text.",  # pure ASCII
