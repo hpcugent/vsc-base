@@ -28,8 +28,8 @@
 Unit tests for fancylogger.
 
 @author: Kenneth Hoste (Ghent University)
+@author: Stijn De Weirdt (Ghent University)
 """
-import logging
 import os
 import re
 import sys
@@ -79,24 +79,24 @@ class FancyLoggerTest(TestCase):
         open(self.logfn, 'w')
 
         logtypes = {
-                    'critical': (fancylogger.CRITICAL, (lambda l, m: l.critical(m))),
-                    'debug': (fancylogger.DEBUG, (lambda l, m: l.debug(m))),
-                    'error': (fancylogger.ERROR, (lambda l, m: l.error(m))),
-                    'exception': (fancylogger.EXCEPTION, (lambda l, m: l.exception(m))),
-                    'fatal': (fancylogger.FATAL, (lambda l, m: l.fatal(m))),
-                    'info': (fancylogger.INFO, (lambda l, m: l.info(m))),
-                    'warning': (fancylogger.WARNING, (lambda l, m: l.warning(m))),
-                    'warn': (fancylogger.WARN, (lambda l, m: l.warn(m))),
+                    'critical': lambda l, m: l.critical(m),
+                    'debug': lambda l, m: l.debug(m),
+                    'error': lambda l, m: l.error(m),
+                    'exception': lambda l, m: l.exception(m),
+                    'fatal': lambda l, m: l.fatal(m),
+                    'info': lambda l, m: l.info(m),
+                    'warning': lambda l, m: l.warning(m),
+                    'warn': lambda l, m: l.warn(m),
                    }
-        for logtype, (loglevel, logf) in sorted(logtypes.items()):
-
+        for logtype, logf in sorted(logtypes.items()):
                 # log message
                 logger = fancylogger.getLogger('%s_test' % logtype)
-                logger.setLevel(loglevel)
+                log_up = logtype.upper()
+                logger.setLevel(log_up)
                 logf(logger, MSG)
 
                 # check whether expected message got logged with expected format
-                logmsgtype = logtype.upper()
+                logmsgtype = log_up
                 if logmsgtype == 'EXCEPTION':
                     logmsgtype = 'ERROR'
                 if logmsgtype == 'FATAL':
@@ -107,13 +107,58 @@ class FancyLoggerTest(TestCase):
 
                 self.assertTrue(msgre.search(txt))
 
+    def test_getlevelint(self):
+        """Test the getLevelInt"""
+        DEBUG = fancylogger.getLevelInt('DEBUG')
+        INFO = fancylogger.getLevelInt('INFO')
+        WARNING = fancylogger.getLevelInt('WARNING')
+        ERROR = fancylogger.getLevelInt('ERROR')
+        CRITICAL = fancylogger.getLevelInt('CRITICAL')
+        APOCALYPTIC = fancylogger.getLevelInt('APOCALYPTIC')
+        self.assertTrue(INFO > DEBUG)
+        self.assertTrue(WARNING > INFO)
+        self.assertTrue(ERROR > WARNING)
+        self.assertTrue(CRITICAL > ERROR)
+        self.assertTrue(APOCALYPTIC > CRITICAL)
+
+    def test_parentinfo(self):
+        """Test the collection of parentinfo"""
+        log_fr = fancylogger.getLogger()  # rootfancylogger
+        pi_fr = log_fr._get_parent_info()
+        self.assertEqual(len(pi_fr), 2)
+
+        log_l1 = fancylogger.getLogger('level1', fname=False)
+        # fname=False is required to have the naming similar for child relations
+        pi_l1 = log_l1._get_parent_info()
+        self.assertEqual(len(pi_l1), 2)
+
+        log_l2a = log_l1.getChild('level2a')
+        pi_l2a = log_l2a._get_parent_info()
+        self.assertEqual(len(pi_l2a), 3)
+
+        # this should be identical to getChild
+        log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
+        # fname=False is required to have the name similar
+        # cutoff last letter (a vs b)
+        self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
+        pi_l2b = log_l2b._get_parent_info()
+        # yes, this broken on several levels (incl in logging itself)
+        # adding '.' in the name does not automatically create the parent/child relations
+        # if the parent with the name exists, this works
+        self.assertEqual(len(pi_l2b), 3)
+
+        log_l2c = fancylogger.getLogger('level1a.level2c', fname=False)
+        pi_l2c = log_l2c._get_parent_info()
+        self.assertEqual(len(pi_l2c), 2)  # level1a as parent does not exist
+
+
     def test_uft8_decoding(self):
         """Test UTF8 decoding."""
         # truncate the logfile
         open(self.logfn, 'w')
 
         logger = fancylogger.getLogger('utf8_test')
-        logger.setLevel(fancylogger.DEBUG)
+        logger.setLevel('DEBUG')
 
         for msg in [
                     "This is a pure ASCII text.",  # pure ASCII
@@ -190,7 +235,6 @@ class FancyLoggerTest(TestCase):
         fh2 = open(logfn)
         txt = fh2.read().strip()
         fh2.close()
-
         reg_exp = re.compile(r"INFO\s+\S+.%s.%s\s+\S+\s+%s" % (name, '_stream_stdouterr', msg))
         match = reg_exp.search(txt) is not None
         self.assertEqual(match, expect_match)
