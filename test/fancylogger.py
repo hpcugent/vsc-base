@@ -132,15 +132,18 @@ class FancyLoggerTest(TestCase):
         pi_l1 = log_l1._get_parent_info()
         self.assertEqual(len(pi_l1), 2)
 
-        log_l2a = log_l1.getChild('level2a')
-        pi_l2a = log_l2a._get_parent_info()
-        self.assertEqual(len(pi_l2a), 3)
+        py_v_27 = sys.version_info >= (2, 7, 0)
+        if py_v_27:
+            log_l2a = log_l1.getChild('level2a')
+            pi_l2a = log_l2a._get_parent_info()
+            self.assertEqual(len(pi_l2a), 3)
 
         # this should be identical to getChild
         log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
         # fname=False is required to have the name similar
         # cutoff last letter (a vs b)
-        self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
+        if py_v_27:
+            self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
         pi_l2b = log_l2b._get_parent_info()
         # yes, this broken on several levels (incl in logging itself)
         # adding '.' in the name does not automatically create the parent/child relations
