@@ -191,7 +191,7 @@ class FancyLoggerTest(TestCase):
         txt = fh2.read().strip()
         fh2.close()
 
-        reg_exp = re.compile(r"INFO\s+fancylogger.%s.%s\s+\S+\s+%s" % (name, '_stream_stdouterr', msg))
+        reg_exp = re.compile(r"INFO\s+\S+.%s.%s\s+\S+\s+%s" % (name, '_stream_stdouterr', msg))
         match = reg_exp.search(txt) is not None
         self.assertEqual(match, expect_match)
 
