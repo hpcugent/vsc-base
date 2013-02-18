@@ -380,17 +380,20 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
         # not set.
         setattr(logger, loggeroption, False)  # set default to False
 
-    if enable and not getattr(logger, loggeroption):
-        if handler is None:
-            if FANCYLOG_LOGGING_FORMAT is None:
-                f_format = DEFAULT_LOGGING_FORMAT
-            else:
-                f_format = FANCYLOG_LOGGING_FORMAT
-            formatter = logging.Formatter(f_format)
-            handler = handlerclass(**handleropts)
-            handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        setattr(logger, loggeroption, handler)
+    if enable:
+        if not getattr(logger, loggeroption):
+            if handler is None:
+                if FANCYLOG_LOGGING_FORMAT is None:
+                    f_format = DEFAULT_LOGGING_FORMAT
+                else:
+                    f_format = FANCYLOG_LOGGING_FORMAT
+                formatter = logging.Formatter(f_format)
+                handler = handlerclass(**handleropts)
+                handler.setFormatter(formatter)
+            logger.addHandler(handler)
+            setattr(logger, loggeroption, handler)
+        else:
+            handler = getattr(logger, loggeroption)
     elif not enable:
         # stop logging to X
         if handler is None:
