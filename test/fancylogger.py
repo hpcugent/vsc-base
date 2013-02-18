@@ -124,25 +124,33 @@ class FancyLoggerTest(TestCase):
     def test_parentinfo(self):
         """Test the collection of parentinfo"""
         log_fr = fancylogger.getLogger()  # rootfancylogger
-        pi_fr = log_fr.get_parent_info()
-        print pi_fr
+        pi_fr = log_fr._get_parent_info()
         self.assertEqual(len(pi_fr), 2)
 
-        log_l1 = fancylogger.getLogger('level1')
-        pi_l1 = log_l1.get_parent_info()
-        print pi_l1
+        log_l1 = fancylogger.getLogger('level1', fname=False)
+        # fname=False is required to have the naming similar for child relations
+        pi_l1 = log_l1._get_parent_info()
         self.assertEqual(len(pi_l1), 2)
 
         log_l2a = log_l1.getChild('level2a')
-        pi_l2a = log_l2a.get_parent_info()
-        print pi_l2a
+        pi_l2a = log_l2a._get_parent_info()
         self.assertEqual(len(pi_l2a), 3)
 
         # this should be identical to getChild
-        log_l2b = fancylogger.getLogger('level1.level2b')
-        pi_l2b = log_l2b.get_parent_info()
-        print pi_l2b
+        log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
+        # fname=False is required to have the name similar
+        # cutoff last letter (a vs b)
+        self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
+        pi_l2b = log_l2b._get_parent_info()
+        # yes, this broken on several levels (incl in logging itself)
+        # adding '.' in the name does not automatically create the parent/child relations
+        # if the parent with the name exists, this works
         self.assertEqual(len(pi_l2b), 3)
+
+        log_l2c = fancylogger.getLogger('level1a.level2c', fname=False)
+        pi_l2c = log_l2c._get_parent_info()
+        self.assertEqual(len(pi_l2c), 2)  # level1a as parent does not exist
+
 
     def test_uft8_decoding(self):
         """Test UTF8 decoding."""
@@ -227,7 +235,7 @@ class FancyLoggerTest(TestCase):
         fh2 = open(logfn)
         txt = fh2.read().strip()
         fh2.close()
-
+        print txt
         reg_exp = re.compile(r"INFO\s+fancylogger.%s.%s\s+\S+\s+%s" % (name, '_stream_stdouterr', msg))
         match = reg_exp.search(txt) is not None
         self.assertEqual(match, expect_match)

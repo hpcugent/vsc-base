@@ -121,11 +121,11 @@ class MissingLevelName(KeyError):
 
 def getLevelInt(level_name):
     """Given a level name, return the int value"""
-    if not isinstance(level_name, str):
+    if not isinstance(level_name, basestring):
         raise TypeError('Provided name %s is not a string (type %s)' % (level_name, type(level_name)))
 
     level = logging.getLevelName(level_name)
-    if isinstance(level, str):
+    if isinstance(level, basestring):
         raise MissingLevelName('Unknown loglevel name %s' % level_name)
 
     return level
@@ -273,7 +273,7 @@ class FancyLogger(logging.getLoggerClass()):
         """Get a ERROR loglevel streamLog"""
         self.streamLog('ERROR', data)
 
-    def get_parent_info(self):
+    def _get_parent_info(self):
         """Return some logger parent related information"""
         def info(x):
             return (x, x.name, x.getEffectiveLevel(), x.level, x.disabled)
@@ -479,7 +479,7 @@ def setLogLevel(level):
     """
     set a global log level (for this root logger)
     """
-    if isinstance(level, str):
+    if isinstance(level, basestring):
         level = getLevelInt(level)
     getLogger(fname=False).setLevel(level)
 
