@@ -274,6 +274,7 @@ class FancyLogger(logging.getLoggerClass()):
             return (x, x.name, x.getEffectiveLevel(), x.level, x.disabled)
         parentinfo = []
         logger = self
+        parentinfo.append(info(logger))
         while logger.parent is not None:
             logger = logger.parent
             parentinfo.append(info(logger))
