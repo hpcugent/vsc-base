@@ -443,6 +443,8 @@ class GeneralOption(object):
 
     OPTIONGROUP_SORTED_OPTIONS = True
 
+    PROCESSED_OPTIONS_PROPERTIES = ['type', 'default', 'action', 'opt_name', 'prefix', 'section_name']
+
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
@@ -639,7 +641,10 @@ class GeneralOption(object):
 
             args = ["--%s" % opt_name]
 
-            self.processed_options[opt_dest] = [typ, default, action, opt_name]  # add longopt
+            # this has to match PROCESSED_OPTIONS_PROPERTIES
+            self.processed_options[opt_dest] = [typ, default, action, opt_name, prefix, section_name]  # add longopt
+            if not len(self.processed_options[opt_dest]) == len(self.PROCESSED_OPTIONS_PROPERTIES):
+                self.log.raiseException("PROCESSED_OPTIONS_PROPERTIES length mismatch")
 
             nameds = {'dest':opt_dest,
                       'action':action,
@@ -860,6 +865,23 @@ class GeneralOption(object):
 
         return name, dest
 
+    def _get_options_by_property(self, prop_type, prop_value):
+        """Return all options with property type equal to value"""
+        if not prop_type in self.PROCESSED_OPTIONS_PROPERTIES:
+            self.log.raiseException('Invalid prop_type %s for PROCESSED_OPTIONS_PROPERTIES %s' %
+                                    (prop_type, self.PROCESSED_OPTIONS_PROPERTIES))
+        prop_idx = self.PROCESSED_OPTIONS_PROPERTIES.index(prop_type)
+        # get all options with prop_type
+        options={}
+        for key in [dest for dest, props in self.processed_options.items() if props[prop_idx] == prop_value]:
+            options[key] = getattr(self.options, key, None)  # None? isn't there always a default
+
+        return options
+
+    def get_options_by_prefix(self, prefix):
+        """Get all options that set with prefix. The keys are stripped of the prefix itself"""
+        prefix_dixt = self._get_options_by_property('prefix', prefix)
+
     def postprocess(self):
         """Some additional processing"""
         pass
@@ -870,6 +892,7 @@ class GeneralOption(object):
 
     def dict_by_prefix(self):
         """Break the options dict by prefix in sub-dict"""
+        remove
         subdict = {}
         for k in self.options.__dict__.keys():
             levels = k.split(self.OPTIONNAME_PREFIX_SEPARATOR)
