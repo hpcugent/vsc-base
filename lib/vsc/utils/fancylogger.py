@@ -340,7 +340,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
-                           loggeroption='logtoscreen' + stdout,
+                           loggeroption='logtoscreen_stdout_%s' % str(stdout),
                            name=name,
                            enable=enable,
                            handler=handler,
@@ -366,7 +366,7 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
                    }
     return _logToSomething(logging.handlers.RotatingFileHandler,
                            handleropts,
-                           loggeroption='logtofile'+filename,
+                           loggeroption='logtofile_%s' % filename,
                            name=name,
                            enable=enable,
                            handler=filehandler,
@@ -386,7 +386,7 @@ def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):
     handleropts = {'hostname': hostname, 'port': port}
     return _logToSomething(logging.handlers.DatagramHandler,
                            handleropts,
-                           loggeroption='logtoudp' + hostname + port,
+                           loggeroption='logtoudp_%s:%s' %( hostname,str(port)),
                            name=name,
                            enable=enable,
                            handler=datagramhandler,
