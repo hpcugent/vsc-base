@@ -587,6 +587,11 @@ class GeneralOption(object):
         If section_name is None, prefix will be used. If prefix is None or '', 'DEFAULT' is used.
 
         """
+        if opt_dict is None:
+            self.log.debug("Skipping empty opt_dict with description %s prefix %s" %
+                           (opt_dict, description, prefix))
+            return
+
         if otherdefaults is None:
             otherdefaults = {}
 
