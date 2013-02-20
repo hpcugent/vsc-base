@@ -42,4 +42,5 @@ options = {'long1':('1st long option', None, 'store', 'excellent', 'L')}
 go = simple_option(options)
 
 go.log.info("1st option %s" % go.options.long1)
+go.log.debug("DEBUG 1st option %s" % go.options.long1)
 
