@@ -884,8 +884,12 @@ class GeneralOption(object):
         return options
 
     def get_options_by_prefix(self, prefix):
-        """Get all options that set with prefix. The keys are stripped of the prefix itself"""
-        prefix_dixt = self._get_options_by_property('prefix', prefix)
+        """Get all options that set with prefix. Return a dict. The keys are stripped of the prefix."""
+        prefix_dict = {}
+        for dest, value in self._get_options_by_property('prefix', prefix).items():
+            new_dest = dest[len(prefix) + len(self.OPTIONNAME_PREFIX_SEPARATOR):]
+            prefix_dict[new_dest] = value
+        return prefix_dict
 
     def postprocess(self):
         """Some additional processing"""
@@ -897,7 +901,7 @@ class GeneralOption(object):
 
     def dict_by_prefix(self):
         """Break the options dict by prefix in sub-dict"""
-        remove
+        # TODO replace by _get_options_by_property code
         subdict = {}
         for k in self.options.__dict__.keys():
             levels = k.split(self.OPTIONNAME_PREFIX_SEPARATOR)
@@ -928,16 +932,16 @@ class GeneralOption(object):
 
         for opt_dest in opt_dests:
             opt_value = self.options.__dict__[opt_dest]
-
             # this is the action as parsed by the class, not the actual action set in option
             # (eg action store_or_None is shown here as store_or_None, not as callback)
-            default, action, opt_name = self.processed_options[opt_dest][1:]  # skip 0th element type
+            default = self.processed_options[opt_dest][self.PROCESSED_OPTIONS_PROPERTIES.index('default')]
+            action = self.processed_options[opt_dest][self.PROCESSED_OPTIONS_PROPERTIES.index('action')]
+            opt_name = self.processed_options[opt_dest][self.PROCESSED_OPTIONS_PROPERTIES.index('opt_name')]
 
             if ignore is not None and ignore.search(opt_dest):
                 self.log.debug("generate_cmd_line adding %s value %s matches ignore. Not adding to args." %
                                (opt_name, opt_value))
                 continue
-
 
             if opt_value == default:
                 # do nothing

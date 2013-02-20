@@ -40,41 +40,41 @@ class TestOption1(GeneralOption):
     """Create simple test class"""
     def base_options(self):
         """Make base options"""
-        opts = {"base":("Long and short base option", None, "store_true", False, 'b'),
-                "longbase":("Long-only base option", None, "store_true", True),
-                "store":("Store option", None, "store", None),
-                "store-with-dash":("Store option with dash in name", None, "store", None),
-              }
+        self._opts_base = {"base":("Long and short base option", None, "store_true", False, 'b'),
+                           "longbase":("Long-only base option", None, "store_true", True),
+                           "store":("Store option", None, "store", None),
+                           "store-with-dash":("Store option with dash in name", None, "store", None),
+                           }
         descr = ["Base", "Base level of options"]
 
         prefix = None  # base, no prefixes
-        self.add_group_parser(opts, descr, prefix=prefix)
+        self.add_group_parser(self._opts_base, descr, prefix=prefix)
 
     def level1_options(self):
         """Make the level1 related options"""
-        opts = {"level":("Long and short option", None, "store_true", False, 'l'),
-                "longlevel":("Long-only level option", None, "store_true", True),
-                "prefix-and-dash":("Test combination of prefix and dash", None, "store", True),
-              }
+        self._opts_level1 = {"level":("Long and short option", None, "store_true", False, 'l'),
+                             "longlevel"  :("Long-only level option", None, "store_true", True),
+                             "prefix-and-dash":("Test combination of prefix and dash", None, "store", True),
+                             }
         descr = ["Level1", "1 higher level of options"]
 
         prefix = 'level'
-        self.add_group_parser(opts, descr, prefix=prefix)
+        self.add_group_parser(self._opts_level1, descr, prefix=prefix)
 
     def ext_options(self):
         """Make ExtOption options"""
-        opts = {"extend":("Test action extend", None, 'extend', None),
-                "extenddefault":("Test action extend with default set", None, 'extend', ['zero', 'one']),
-                "date":('Test action datetime.date', None, 'date', None),
-                "datetime":('Test action datetime.datetime', None, 'datetime', None),
-                "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
-                # default value is not part of choice!
-                "optionalchoice":('Test action optional', 'choice', 'store_or_None', 'CHOICE0', ['CHOICE1', 'CHOICE2']),
-                }
+        self._opts_ext = {"extend":("Test action extend", None, 'extend', None),
+                          "extenddefault":("Test action extend with default set", None, 'extend', ['zero', 'one']),
+                          "date":('Test action datetime.date', None, 'date', None),
+                          "datetime":('Test action datetime.datetime', None, 'datetime', None),
+                          "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
+                          # default value is not part of choice!
+                          "optionalchoice":('Test action optional', 'choice', 'store_or_None', 'CHOICE0', ['CHOICE1', 'CHOICE2']),
+                          }
         descr = ["ExtOption", "action from ExtOption"]
 
         prefix = 'ext'
-        self.add_group_parser(opts, descr, prefix=prefix)
+        self.add_group_parser(self._opts_ext, descr, prefix=prefix)
 
 
 class GeneralOptionTest(TestCase):
@@ -243,6 +243,14 @@ extend=one,two,three
 
         # remove files
         tmp1.close()
+
+    def test_get_options_by_property(self):
+        """Test get_options_by_property and firends like get_options_by_prefix"""
+        topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
+
+        self.assertTrue(len(topt._opts_ext) > 0)
+        self.assertEqual(len(topt.get_options_by_prefix('ext')), len(topt._opts_ext))
+        self.assertEqual(topt.get_options_by_prefix('ext')['optional'], 'REALVALUE')
 
 
 def suite():
