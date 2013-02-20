@@ -33,11 +33,13 @@ import os
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
+from vsc import fancylogger
 from vsc.utils.generaloption import GeneralOption
 from vsc.utils.missing import shell_quote, shell_unquote
 
 class TestOption1(GeneralOption):
     """Create simple test class"""
+    DEFAULT_LOGLEVEL = 'INFO'
     def base_options(self):
         """Make base options"""
         self._opts_base = {"base":("Long and short base option", None, "store_true", False, 'b'),
@@ -252,6 +254,10 @@ extend=one,two,three
         self.assertEqual(len(topt.get_options_by_prefix('ext')), len(topt._opts_ext))
         self.assertEqual(topt.get_options_by_prefix('ext')['optional'], 'REALVALUE')
 
+    def test_loglevel(self):
+        """Test the loglevel default setting"""
+        topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
+        self.assertEqual(topt.log.getEffectiveLevel(), fancylogger.getLevelInt(topt.DEFAULT_LOGLEVEL.upper()))
 
 def suite():
     """ returns all the testcases in this module """

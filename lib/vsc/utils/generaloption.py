@@ -44,7 +44,7 @@ from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
-from vsc.utils.fancylogger import getLogger, setLogLevelDebug, setLogLevelInfo, setLogLevelWarning
+from vsc.utils.fancylogger import getLogger, setLogLevel
 from vsc.utils.missing import shell_quote, shell_unquote
 
 
@@ -91,7 +91,7 @@ class ExtOption(Option):
 
     EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
-    EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_quietlog',)
+    EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
 
     # shorthelp has no extra arguments
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + ('shorthelp',)
@@ -153,12 +153,8 @@ class ExtOption(Option):
                 elif action in ('store_false',):
                     action = 'store_true'
 
-            if orig_action == 'store_debuglog' and action == 'store_true':
-                setLogLevelDebug()
-            elif orig_action == 'store_infolog' and action == 'store_true':
-                setLogLevelInfo()
-            elif orig_action == 'store_quietlog' and action == 'store_true':
-                setLogLevelWarning()
+            if orig_action in('store_debuglog', 'store_infolog', 'store_warninglog') and action == 'store_true':
+                setLogLevel(orig_action.split('_')[1][:-3].upper())
 
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
@@ -447,6 +443,10 @@ class GeneralOption(object):
 
     VERSION = None  # set the version (will add --version)
 
+    DEFAULT_LOGLEVEL = None
+    DEFAULT_CONFIGFILES = None
+    DEFAULT_IGNORECONFIGFILES = None
+
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
@@ -496,6 +496,8 @@ class GeneralOption(object):
             # None for eg usage/help
             self.parseconfigfiles()
 
+            self._set_default_loglevel()
+
             self.postprocess()
 
             self.validate()
@@ -507,29 +509,34 @@ class GeneralOption(object):
         """
         if self.options is None:
             if self.DEBUG_OPTIONS_BUILD:
-                setLogLevelDebug()
+                setLogLevel('DEBUG')
 
     def _default_options(self):
         """Generate default options: debug/log and configfile"""
-        if self.VERSION is not None:
-            self._make_version_options()
         self._make_debug_options()
         self._make_configfiles_options()
 
     def _make_debug_options(self):
         """Add debug/logging options: debug and info"""
-        opts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd'),
-                'info':("Enable info log mode", None, "store_infolog", False),
-                'quiet':("Enable info quiet/warning mode", None, "store_quietlog", False),
-                }
+        self._logopts = {'debug':("Enable debug log mode", None, "store_debuglog", False, 'd'),
+                         'info':("Enable info log mode", None, "store_infolog", False),
+                         'quiet':("Enable info quiet/warning mode", None, "store_warninglog", False),
+                         }
+
         descr = ['Debug and logging options', '']
-        self.log.debug("Add debug and logging options descr %s opts %s (no prefix)" % (descr, opts))
-        self.add_group_parser(opts, descr, prefix=None)
+        self.log.debug("Add debug and logging options descr %s opts %s (no prefix)" % (descr, self._logopts))
+        self.add_group_parser(self._logopts, descr, prefix=None)
+
+    def _set_default_loglevel(self):
+        """Set the default loglevel is no logging options are set"""
+        loglevel_set = sum([getattr(self.options, name, False) for name in self._logopts])
+        if not loglevel_set and self.DEFAULT_LOGLEVEL is not None:
+            setLogLevel(self.DEFAULT_LOGLEVEL)
 
     def _make_configfiles_options(self):
         """Add configfiles option"""
-        opts = {'configfiles':("Parse (additional) configfiles", None, "extend", None),
-                'ignoreconfigfiles':("Ignore configfiles", None, "extend", None),  # eg when set by default
+        opts = {'configfiles':("Parse (additional) configfiles", self.DEFAULT_CONFIGFILES, "extend", None),
+                'ignoreconfigfiles':("Ignore configfiles", self.DEFAULT_IGNORECONFIGFILES, "extend", None),
                 }
         descr = ['Configfile options', '']
         self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
@@ -590,7 +597,7 @@ class GeneralOption(object):
         if opt_dict is None:
             # skip opt_dict None
             # if opt_dict is empty dict {}, the eg the descritionis added to the help
-            self.log.debug("Skipping opt_dict None with description %s prefix %s" %
+            self.log.debug("Skipping opt_dict %s with description %s prefix %s" %
                            (opt_dict, description, prefix))
             return
 
