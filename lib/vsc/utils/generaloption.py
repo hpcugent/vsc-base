@@ -445,6 +445,8 @@ class GeneralOption(object):
 
     PROCESSED_OPTIONS_PROPERTIES = ['type', 'default', 'action', 'opt_name', 'prefix', 'section_name']
 
+    VERSION = None  # set the version (will add --version)
+
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
@@ -457,6 +459,7 @@ class GeneralOption(object):
 
         kwargs.update({'option_class':ExtOption,
                        'usage':kwargs.get('usage', self.USAGE),
+                       'version':self.VERSION,
                        })
         self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
@@ -508,6 +511,8 @@ class GeneralOption(object):
 
     def _default_options(self):
         """Generate default options: debug/log and configfile"""
+        if self.VERSION is not None:
+            self._make_version_options()
         self._make_debug_options()
         self._make_configfiles_options()
 
@@ -872,7 +877,7 @@ class GeneralOption(object):
                                     (prop_type, self.PROCESSED_OPTIONS_PROPERTIES))
         prop_idx = self.PROCESSED_OPTIONS_PROPERTIES.index(prop_type)
         # get all options with prop_type
-        options={}
+        options = {}
         for key in [dest for dest, props in self.processed_options.items() if props[prop_idx] == prop_value]:
             options[key] = getattr(self.options, key, None)  # None? isn't there always a default
 
