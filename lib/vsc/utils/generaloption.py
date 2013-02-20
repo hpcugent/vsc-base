@@ -528,8 +528,8 @@ class GeneralOption(object):
         self.add_group_parser(self._logopts, descr, prefix=None)
 
     def _set_default_loglevel(self):
-        """Set the default loglevel is no logging options are set"""
-        loglevel_set = sum([getattr(self.options, name, False) for name in self._logopts])
+        """Set the default loglevel if no logging options are set"""
+        loglevel_set = sum([getattr(self.options, name, False) for name in self._logopts.keys()])
         if not loglevel_set and self.DEFAULT_LOGLEVEL is not None:
             setLogLevel(self.DEFAULT_LOGLEVEL)
 
