@@ -588,7 +588,9 @@ class GeneralOption(object):
 
         """
         if opt_dict is None:
-            self.log.debug("Skipping empty opt_dict with description %s prefix %s" %
+            # skip opt_dict None
+            # if opt_dict is empty dict {}, the eg the descritionis added to the help
+            self.log.debug("Skipping opt_dict None with description %s prefix %s" %
                            (opt_dict, description, prefix))
             return
 
