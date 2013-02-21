@@ -123,20 +123,20 @@ class FancyLoggerTest(TestCase):
 
     def test_parentinfo(self):
         """Test the collection of parentinfo"""
-        log_fr = fancylogger.getLogger()  # rootfancylogger
+        log_fr = fancylogger.getLogger(fname=False)  # rootfancylogger
         pi_fr = log_fr._get_parent_info()
         self.assertEqual(len(pi_fr), 2)
 
         log_l1 = fancylogger.getLogger('level1', fname=False)
         # fname=False is required to have the naming similar for child relations
         pi_l1 = log_l1._get_parent_info()
-        self.assertEqual(len(pi_l1), 2)
+        self.assertEqual(len(pi_l1), 3)
 
         py_v_27 = sys.version_info >= (2, 7, 0)
         if py_v_27:
             log_l2a = log_l1.getChild('level2a')
             pi_l2a = log_l2a._get_parent_info()
-            self.assertEqual(len(pi_l2a), 3)
+            self.assertEqual(len(pi_l2a), 4)
 
         # this should be identical to getChild
         log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
@@ -148,11 +148,11 @@ class FancyLoggerTest(TestCase):
         # yes, this broken on several levels (incl in logging itself)
         # adding '.' in the name does not automatically create the parent/child relations
         # if the parent with the name exists, this works
-        self.assertEqual(len(pi_l2b), 3)
+        self.assertEqual(len(pi_l2b), 4)
 
         log_l2c = fancylogger.getLogger('level1a.level2c', fname=False)
         pi_l2c = log_l2c._get_parent_info()
-        self.assertEqual(len(pi_l2c), 2)  # level1a as parent does not exist
+        self.assertEqual(len(pi_l2c), 3)  # level1a as parent does not exist
 
 
     def test_uft8_decoding(self):
