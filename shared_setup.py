@@ -1,30 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
-#
+##
 # Copyright 2009-2013 Ghent University
 #
-# This file is part of vsc-base,
+# This file is part of vsc-config,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# All rights reserved.
 #
-# vsc-base is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Library General Public License as
-# published by the Free Software Foundation, either version 2 of
-# the License, or (at your option) any later version.
-#
-# vsc-base is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Library General Public License for more details.
-#
-# You should have received a copy of the GNU Library General Public License
-# along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-#
+##
 """
 Shared module for vsc-base setup
 
@@ -43,58 +31,106 @@ log.set_verbosity(2)
 
 has_setuptools = None
 
+
+# We do need all setup files to be included in the source dir if we ever want to install
+# the package elsewhere.
 EXTRA_SDIST_FILES = ['shared_setup.py', 'setup.py']
 
+
 def find_extra_sdist_files():
+    """Looks for files to append to the FileList that is used by the egg_info."""
+    print "looking for extra dist files"
     filelist = []
     for fn in EXTRA_SDIST_FILES:
         if os.path.isfile(fn):
             filelist.append(fn)
         else:
             print "sdist add_defaults Failed to find %s" % fn
+            print "exiting."
             sys.exit(1)
-    log.info("find_extra_sdist_files: %s" % filelist)
     return filelist
 
+
+def remove_extra_bdist_rpm_files():
+    """Provides a list of files that should be removed from the source file list when making an RPM.
+
+    This function should be overridden if necessary in the setup.py
+
+    @returns: empty list
+    """
+    return []
+
+# The following aims to import from setuptools, but if this is not available, we import the basic functionality from
+# distutils instead. Note that setuptools make copies of the scripts, it does _not_ preserve symbolic links.
 try:
-    # setuptools makes copies of the scripts, does not preserve symlinks
     # raise("no setuptools")  # to try distutils, uncomment
     from setuptools import setup
-    from setuptools.command.install_scripts import install_scripts
+    from setuptools.command.bdist_rpm import bdist_rpm, _bdist_rpm
     from setuptools.command.build_py import build_py
+    from setuptools.command.install_scripts import install_scripts
     from setuptools.command.sdist import sdist
+
     # egg_info uses sdist directly through manifest_maker
     from setuptools.command.egg_info import egg_info
+
     class vsc_egg_info(egg_info):
+        """Class to determine the set of files that should be included.
+
+        This amounts to including the default files, as determined by setuptools, extended with the
+        few extra files we need to add for installation purposes.
+        """
+
         def find_sources(self):
+            """Default lookup."""
             egg_info.find_sources(self)
             self.filelist.extend(find_extra_sdist_files())
+
+    # TODO: this should be in the setup.py, here we should have a placeholder, so we need not change this for every
+    # package we deploy
+    class vsc_bdist_rpm_egg_info(vsc_egg_info):
+        """Class to determine the source files that should be present in an (S)RPM.
+
+        All __init__.py files that augment namespace packages should be installed by the
+        dependent package, so we need not install it here.
+        """
+
+        def find_sources(self):
+            """Fins the sources as default and then drop the cruft."""
+            vsc_egg_info.find_sources(self)
+            for f in remove_extra_bdist_rpm_files():
+                print "DEBUG: removing %s from source list" % (f)
+                self.filelist.files.remove(f)
+
     has_setuptools = True
 except:
     from distutils.core import setup
     from distutils.command.install_scripts import install_scripts
     from distutils.command.build_py import build_py
     from distutils.command.sdist import sdist
+    from distutile.command.bdist_rpm import bdist_rpm, _bdist_rpm
 
     class vsc_egg_info(object):
+        pass  # dummy class for distutils
+
+    class vsc_bdist_rpm_egg_info(vsc_egg_info):
         pass  # dummy class for distutils
 
     has_setuptools = False
 
 
-# authors
+# available authors
 ag = ('Andy Georges', 'andy.georges@ugent.be')
 jt = ('Jens Timmermans', 'jens.timmermans@ugent.be')
 kh = ('Kenneth Hoste', 'kenneth.hoste@ugent.be')
-lm = ('Luis Fernando Munoz Meji­as', 'luis.munoz@ugent.be')
+lm = ('Luis Fernando Munoz Meji?as', 'luis.munoz@ugent.be')
 sdw = ('Stijn De Weirdt', 'stijn.deweirdt@ugent.be')
 wdp = ('Wouter Depypere', 'wouter.depypere@ugent.be')
 
 
+# FIXME: do we need this here? it won;t hurt, but still ...
 class vsc_install_scripts(install_scripts):
-    """Create the (fake) links for mympirun
-        also remove .sh and .py extensions from the scripts
-    """
+    """Create the (fake) links for mympirun also remove .sh and .py extensions from the scripts."""
+
     def __init__(self, *args):
         install_scripts.__init__(self, *args)
         self.original_outfiles = None
@@ -112,33 +148,39 @@ class vsc_install_scripts(install_scripts):
                 script = script[:-3]
             self.outfiles.append(script)
 
+
 class vsc_build_py(build_py):
     def find_package_modules (self, package, package_dir):
         """Extend build_by (not used for now)"""
         result = build_py.find_package_modules(self, package, package_dir)
         return result
 
-class vsc_sdist(sdist):
-    def add_defaults(self):
-        """Add shared_setup.py"""
-        sdist.add_defaults()
-        self.filelist.extend(find_extra_sdist_files())
+
+class vsc_bdist_rpm(bdist_rpm):
+    """ Custom class to build the RPM, since the __inti__.py cannot be included for the packages that have namespace spread across all of the machine."""
+    def run(self):
+        log.error("vsc_bdist_rpm = %s" % (self.__dict__))
+        SHARED_TARGET['cmdclass']['egg_info'] = vsc_bdist_rpm_egg_info  # changed to allow removal of files
+        self.run_command('egg_info')    # ensure distro name is up-to-date
+        _bdist_rpm.run(self)
+
 
 # shared target config
 SHARED_TARGET = {
-    'url': 'http://hpcugent.github.com/vsc-base',
-    'download_url': 'https://github.com/hpcugent/vsc-base',
+    'url': '',
+    'download_url': '',
     'package_dir': {'': 'lib'},
     'cmdclass': {
         "install_scripts": vsc_install_scripts,
-        # "build_py":vsc_build_py,
-        "sdist":vsc_sdist,
-        "egg_info":vsc_egg_info,
+        "egg_info": vsc_egg_info,
+        "bdist_rpm": vsc_bdist_rpm,
     },
 }
 
+
 def cleanup(prefix=''):
-    dirs=[prefix+'build']+glob.glob(prefix + 'lib/*.egg-info')
+    """Remove all build cruft."""
+    dirs=[prefix+'build'] + glob.glob(prefix + 'lib/*.egg-info')
     for d in dirs:
         if os.path.isdir(d):
             log.warn("cleanup %s" % d)
@@ -152,16 +194,6 @@ def cleanup(prefix=''):
         if os.path.isfile(ffn):
             os.remove(ffn)
 
-def make_setup(name='base',prefix=''):
-    """Create the setup.py
-        - default is base
-    """
-    fn = '%ssetup_%s.py' % (prefix, name)
-    if os.path.isfile(fn):
-        shutil.copyfile(fn, 'setup.py')
-    else:
-        log.error("setup file %s for name %s not found" % (fn, name))
-
 def sanitize(v):
     """Transforms v into a sensible string for use in setup.cfg."""
     if isinstance(v, str):
@@ -169,6 +201,7 @@ def sanitize(v):
 
     if isinstance(v, list):
         return ",".join(v)
+
 
 def parse_target(target):
     """Add some fields"""
@@ -190,7 +223,10 @@ def parse_target(target):
             else:
                 new_target[k] = type(v)()
                 new_target[k] += v
+
+    log.debug("New target = %s" % (new_target))
     return new_target
+
 
 def build_setup_cfg_for_bdist_rpm(target):
     """Generates a setup.cfg on a per-target basis.
@@ -221,13 +257,13 @@ def build_setup_cfg_for_bdist_rpm(target):
 
 
 def action_target(target, setupfn=setup, extra_sdist=[]):
-    EXTRA_SDIST_FILES.extend(extra_sdist)
-    name = '_'.join(target['name'].split('-')[1:])
+    #EXTRA_SDIST_FILES.extend(extra_sdist)
 
     cleanup()
 
     build_setup_cfg_for_bdist_rpm(target)
     x = parse_target(target)
+
     setupfn(**x)
     cleanup()
 
