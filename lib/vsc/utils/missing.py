@@ -66,6 +66,9 @@ def nub(list_):
 def nub_by(list_, predicate):
     """Returns the elements of a list that fullfil the predicate.
 
+    For any pair of elements in the resulting list, the predicate does not hold. For example, the nub above
+    can be expressed as nub_by(list, lambda x, y: x == y).
+
     @type list_: a list of items of some type t
     @type predicate: a function that takes two elements of type t and returns a bool
 
