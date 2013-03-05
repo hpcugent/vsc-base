@@ -79,5 +79,5 @@ rpmrebuild --define "_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"
     --change-spec-provides="sed -e 's/${package}/python-${package}/g'" \
     --change-spec-requires="sed -r 's/^Requires:(\s\s*)(${requirements})/Requires:\1python-\2/'" \
     --change-spec-preamble="sed -e 's/^\(Release:\s\s*\)\(.*\)\s*$/\1${release}.ug/'" \
-    --directory=./dist/
+    --directory=./dist/ \
     ${edit} -n -p ${rpm_target}
