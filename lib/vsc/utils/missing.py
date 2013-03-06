@@ -28,6 +28,7 @@
 Various functions that are missing from the default Python library.
 
   - nub(list): keep the unique elements in the list
+  - nub_by(list, predicate): keep the unique elements (first come, first served) that do not satisfy a given predicate
   - find_sublist_index(list, sublist): find the index of the first
     occurence of the sublist in the list
   - Monoid: implementation of the monoid concept
@@ -60,6 +61,22 @@ def nub(list_):
     seen = set()
     seen_add = seen.add
     return [x for x in list_ if x not in seen and not seen_add(x)]
+
+
+def nub_by(list_, predicate):
+    """Returns the elements of a list that fullfil the predicate.
+
+    For any pair of elements in the resulting list, the predicate does not hold. For example, the nub above
+    can be expressed as nub_by(list, lambda x, y: x == y).
+
+    @type list_: a list of items of some type t
+    @type predicate: a function that takes two elements of type t and returns a bool
+
+    @returns: the nubbed list
+    """
+    seen = set()
+    seen_add = seen.add
+    return [x for x in list_ if not any([predicate(x, y) for y in seen]) and not seen_add(x)]
 
 
 def find_sublist_index(ls, sub_ls):
