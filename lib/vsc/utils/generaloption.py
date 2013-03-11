@@ -443,6 +443,7 @@ class GeneralOption(object):
     CONFIGFILES_INIT = []  # initial list of defaults, overwritten by go_configfiles options
     CONFIGFILES_IGNORE = []
     CONFIGFILES_MAIN_SECTION = 'MAIN'  # sectionname that contains the non-grouped/non-prefixed options
+    CONFIGFILE_PARSER = ConfigParser.ConfigParser
 
     METAVAR_DEFAULT = True  # generate a default metavar
     METAVAR_MAP = None  # metvar, list of longopts map
@@ -473,6 +474,8 @@ class GeneralOption(object):
                        })
         self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
+
+        self.configfile_parser = self.CONFIGFILE_PARSER()
 
         loggername = self.__class__.__name__
         if prefixloggername:
@@ -790,25 +793,24 @@ class GeneralOption(object):
         for fn in self.configfiles:
             if not os.path.isfile(fn):
                 if self.CONFIGFILES_RAISE_MISSING:
-                    self.log.raiseException("parseconfigfiles: configfile %s not found.")
+                    self.log.raiseException("parseconfigfiles: configfile %s not found." % fn)
                 else:
-                    self.log.debug("parseconfigfiles: configfile %s not found, will be skipped")
+                    self.log.debug("parseconfigfiles: configfile %s not found, will be skipped" % fn)
 
             if fn in option_ignoreconfigfiles:
                 self.log.debug("parseconfigfiles: configfile %s will be ignored %s" % fn)
             else:
                 configfiles.append(fn)
 
-        cfg_opts = ConfigParser.ConfigParser()
         try:
-            parsed_files = cfg_opts.read(configfiles)
+            parsed_files = self.configfile_parser.read(configfiles)
         except:
             self.log.raiseException("parseconfigfiles: problem during read")
 
         self.log.debug("parseconfigfiles: following files were parsed %s" % parsed_files)
         self.log.debug("parseconfigfiles: following files were NOT parsed %s" %
                        [x for x in configfiles if not x in parsed_files])
-        self.log.debug("parseconfigfiles: sections (w/o DEFAULT) %s" % cfg_opts.sections())
+        self.log.debug("parseconfigfiles: sections (w/o DEFAULT) %s" % self.configfile_parser.sections())
 
         # walk through list of section names
         # - look for options set though config files
@@ -828,11 +830,11 @@ class GeneralOption(object):
         for prefix, section_names in self.config_prefix_sectionnames_map.items():
             for section in section_names:
                 # default section is treated separate in ConfigParser
-                if not (cfg_opts.has_section(section) or section.lower() == 'default'):
+                if not (self.configfile_parser.has_section(section) or section.lower() == 'default'):
                     self.log.debug('parseconfigfiles: no section %s' % section)
                     continue
 
-                for opt, val in cfg_opts.items(section):
+                for opt, val in self.configfile_parser.items(section):
                     self.log.debug('parseconfigfiles: section %s option %s val %s' % (section, opt, val))
 
                     opt_name, opt_dest = self.make_options_option_name_and_destination(prefix, opt)
@@ -845,7 +847,7 @@ class GeneralOption(object):
 
                     if actual_option.action in ('store_true', 'store_false',):
                         try:
-                            newval = cfg_opts.getboolean(section, opt)
+                            newval = self.configfile_parser.getboolean(section, opt)
                             self.log.debug(('parseconfigfiles: getboolean for option %s value %s '
                                             'in section %s returned %s') % (opt, val, section, newval))
                         except:
@@ -1079,6 +1081,7 @@ def simple_option(go_dict, descr=None, short_groupdescr=None, long_groupdescr=No
 
     class SimpleOption(GeneralOption):
         PARSER = SimpleOptionParser
+
         def main_options(self):
             prefix = None
             self.add_group_parser(go_dict, descr, prefix=prefix)
