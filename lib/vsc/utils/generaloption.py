@@ -193,13 +193,14 @@ class PassThroughOptionParser(OptionParser):
         OptionParser.__init__(self, add_help_option=False, usage=SUPPRESS_USAGE)
 
     def _process_long_opt(self, rargs, values):
-
+        """Extend optparse code with catch of unknown long options error"""
         try:
             OptionParser._process_long_opt(self, rargs, values)
         except BadOptionError, err:
             self.largs.append(err.opt_str)
 
     def _process_short_opts(self, rargs, values):
+        """Process the short options, pass unknown to largs"""
         # implementation from recent optparser
         arg = rargs.pop(0)
         stop = False
@@ -210,8 +211,8 @@ class PassThroughOptionParser(OptionParser):
             i += 1  # we have consumed a character
 
             if not option:
-                # Changed by Jens: don't fail here, just append to largs
-                #                raise BadOptionError(opt)
+                # don't fail here, just append to largs
+                # raise BadOptionError(opt)
                 self.largs.append(opt)
                 return
             if option.takes_value():
@@ -319,6 +320,7 @@ class ExtOptionParser(OptionParser):
             return "\n".join(final_docstr)
 
     def format_description(self, formatter):
+        """Extend to allow docstring as description"""
         description = ''
         if self.description == 'NONE_AND_NOT_NONE':
             if self.DESCRIPTION_DOCSTRING:
