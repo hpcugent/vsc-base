@@ -29,6 +29,7 @@
 A class that can be used to generated options to python scripts in a general way.
 
 @author: Stijn De Weirdt (Ghent University)
+@author: Jens Timmerman (Ghent University)
 """
 
 import ConfigParser
@@ -40,7 +41,7 @@ import re
 import StringIO
 import sys
 import textwrap
-from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values
+from optparse import OptionParser, OptionGroup, Option, NO_DEFAULT, Values, BadOptionError, SUPPRESS_USAGE
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
@@ -178,6 +179,68 @@ class ExtOption(Option):
         # - distinguish from setting default value through option
         if hasattr(values, '_action_taken'):
             values._action_taken[dest] = True
+
+
+class PassThroughOptionParser(OptionParser):
+    """
+    "Pass-through" option parsing -- an OptionParser that ignores
+    unknown options and lets them pile up in the leftover argument
+    list.  Useful for programs that pass unknown options through
+    to a sub-program.
+    from http://www.koders.com/python/fid9DFF5006AF4F52BA6483C4F654E26E6A20DBC73C.aspx?s=add+one#L27
+    """
+    def __init__(self):
+        OptionParser.__init__(self, add_help_option=False, usage=SUPPRESS_USAGE)
+
+    def _process_long_opt(self, rargs, values):
+
+        try:
+            OptionParser._process_long_opt(self, rargs, values)
+        except BadOptionError, err:
+            self.largs.append(err.opt_str)
+
+    def _process_short_opts(self, rargs, values):
+        # implementation from recent optparser
+        arg = rargs.pop(0)
+        stop = False
+        i = 1
+        for ch in arg[1:]:
+            opt = "-" + ch
+            option = self._short_opt.get(opt)
+            i += 1  # we have consumed a character
+
+            if not option:
+                # Changed by Jens: don't fail here, just append to largs
+                #                raise BadOptionError(opt)
+                self.largs.append(opt)
+                return
+            if option.takes_value():
+                # Any characters left in arg?  Pretend they're the
+                # next arg, and stop consuming characters of arg.
+                if i < len(arg):
+                    rargs.insert(0, arg[i:])
+                    stop = True
+
+                nargs = option.nargs
+                if len(rargs) < nargs:
+                    if nargs == 1:
+                        self.error(_("%s option requires an argument") % opt)
+                    else:
+                        self.error(_("%s option requires %d arguments")
+                                   % (opt, nargs))
+                elif nargs == 1:
+                    value = rargs.pop(0)
+                else:
+                    value = tuple(rargs[0:nargs])
+                    del rargs[0:nargs]
+
+            else:  # option doesn't take a value
+                value = None
+
+            option.process(opt, value, values, self)
+
+            if stop:
+                break
 
 
 class ExtOptionParser(OptionParser):
