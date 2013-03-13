@@ -43,6 +43,18 @@ import shlex
 import subprocess
 
 
+def any(ls):
+    """Reimplementation of 'any' function, which is not available in Python 2.4 yet."""
+
+    return sum([bool(x) for x in ls]) != 0
+
+
+def all(ls):
+    """Reimplementation of 'all' function, which is not available in Python 2.4 yet."""
+
+    return sum([bool(x) for x in ls]) == len(ls)
+
+
 def nub(list_):
     """Returns the unique items of a list, while preserving order of
     the original list, i.e. the first unique element encoutered is
