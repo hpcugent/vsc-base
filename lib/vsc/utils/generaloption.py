@@ -77,9 +77,11 @@ class ExtOption(Option):
        Actions:
          - shorthelp : hook for shortend help messages
          - store_debuglog : turns on fancylogger debugloglevel
+            - also: 'store_infolog', 'store_warninglog'
          - extend : extend default list (or create new one if is None)
          - date : convert into datetime.date
          - datetime : convert into datetime.datetime
+         - regex: compile str in regexp
          - store_or_None
            - set default to None if no option passed,
            - set to default if option without value passed,
