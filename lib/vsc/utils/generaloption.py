@@ -90,7 +90,7 @@ class ExtOption(Option):
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime',)
+    EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime', 'regex',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
 
@@ -168,6 +168,9 @@ class ExtOption(Option):
                 setattr(values, dest, lvalue)
             elif action == "datetime":
                 lvalue = datetime_parser(value)
+                setattr(values, dest, lvalue)
+            elif action == "regex":
+                lvalue = re.compile(r'' + value)
                 setattr(values, dest, lvalue)
             else:
                 raise(Exception("Unknown extended option action %s (known: %s)" %
