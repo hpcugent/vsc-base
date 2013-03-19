@@ -132,38 +132,6 @@ class Monoid(object):
         return Monoid(self.null, self.mappend)
 
 
-class MDict(dict):
-
-    def __init__(self, *args, **kw):
-        super(MDict, self).__init__(*args, **kw)
-
-    def update(self, E=None, **F):
-        if E is not None:
-            if 'keys' in dir(E) and callable(getattr(E, 'keys')):
-                for k in E:
-                    if k in self:  # existing ...must recurse into both sides
-                        self.r_update(k, E)
-                    else: # doesn't currently exist, just update
-                        self[k] = E[k]
-            else:
-                for (k, v) in E:
-                    self.r_update(k, {k:v})
-
-        for k in F:
-            self.r_update(k, {k:F[k]})
-
-    def r_update(self, key, other_dict):
-        if isinstance(self[key], dict) and isinstance(other_dict[key], dict):
-            od = MDict(self[key])
-            nd = other_dict[key]
-            od.update(nd)
-            self[key] = od
-        elif isinstance(self[key], Monoid):
-            self[key] = self[key](other_dict[key])
-        else:
-            self[key] = other_dict[key]
-
-
 class MonoidDict(dict):
     """A dictionary with a monoid operation, that allows combining values in the dictionary according to the mappend
     operation in the monoid.
