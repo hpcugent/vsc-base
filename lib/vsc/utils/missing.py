@@ -236,7 +236,6 @@ class RUDict(dict):
             self[key] = other_dict[key]
 
 
-
 def shell_quote(x):
     """Add quotes so it can be apssed to shell"""
     # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
