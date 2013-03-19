@@ -196,7 +196,13 @@ class MonoidDict(dict):
 
 
 class RUDict(dict):
-    """Code taken from http://stackoverflow.com/questions/6256183/combine-two-dictionaries-of-dictionaries-python."""
+    """Recursively updatable dictionary.
+
+    When merging with another dictionary (of the same structure), it will keep
+    updating the values as well if they are dicts or lists.
+
+    Code taken from http://stackoverflow.com/questions/6256183/combine-two-dictionaries-of-dictionaries-python.
+    """
 
     def update(self, E=None, **F):
         if E is not None:
