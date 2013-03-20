@@ -88,6 +88,13 @@ class FancyLoggerTest(TestCase):
                     'warning': lambda l, m: l.warning(m),
                     'warn': lambda l, m: l.warn(m),
                    }
+        logfile = open(self.logfn, 'r')
+
+        # we raise an exception here so the logger will be able to print a stacktrace later on
+        try:
+            raise Exception
+        except:
+            pass
         for logtype, logf in sorted(logtypes.items()):
                 # log message
                 logger = fancylogger.getLogger('%s_test' % logtype)
@@ -98,14 +105,15 @@ class FancyLoggerTest(TestCase):
                 # check whether expected message got logged with expected format
                 logmsgtype = log_up
                 if logmsgtype == 'EXCEPTION':
-                    logmsgtype = 'ERROR'
-                if logmsgtype == 'FATAL':
-                    logmsgtype = 'CRITICAL'
-
-                msgre = re.compile(MSGRE_TPL % logmsgtype)
-                txt = open(self.logfn, 'r').read()
+                    msgre = re.compile(".*".join(['ERROR', MSG, '\nTraceback']))
+                elif logmsgtype == 'FATAL':
+                    msgre = re.compile(MSGRE_TPL % 'CRITICAL')
+                else:
+                    msgre = re.compile(MSGRE_TPL % logmsgtype)
+                txt = logfile.read()
 
                 self.assertTrue(msgre.search(txt))
+        logfile.close()
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
