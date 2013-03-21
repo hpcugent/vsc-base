@@ -72,9 +72,9 @@ def set_columns(cols=None):
 
 def check_str_list_tuple(option, opt, value):
     """
-    check function for list type
+    check function for strlist and strtuple type
         assumes value is comma-separated list
-        returns list of strings
+        returns list or tuple of strings
     """
     split = value.split(',')
     if option.type == 'strlist':
