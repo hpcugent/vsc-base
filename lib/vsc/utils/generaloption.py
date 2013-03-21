@@ -565,7 +565,8 @@ class GeneralOption(object):
 
         set_columns(kwargs.pop('go_columns', None))
 
-        kwargs.update({'option_class': ExtOption,
+        kwargs.update({
+                       'option_class': ExtOption,
                        'usage': kwargs.get('usage', self.USAGE),
                        'version': self.VERSION,
                        })
