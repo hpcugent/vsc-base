@@ -126,10 +126,14 @@ class GeneralOptionTest(TestCase):
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
-        ign = r'(^(base|debug|info|quiet)$)|(^ext)'
-        topt = TestOption1(go_args=['--level-level', '--longbase', '--level-prefix-and-dash=YY',
-                                    shell_unquote('--store="some whitespace"')])
-        self.assertEqual(topt.options.__dict__ ,
+        ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_strlist))'
+        topt = TestOption1(go_args=['--level-level',
+                                    '--longbase',
+                                    '--level-prefix-and-dash=YY',
+                                    shell_unquote('--store="some whitespace"'),
+                                    '--ext-strlist=x,y',
+                                    ])
+        self.assertEqual(topt.options.__dict__,
                          {
                           'store': 'some whitespace',
                           'debug': False,
@@ -149,24 +153,39 @@ class GeneralOptionTest(TestCase):
                           'ext_extenddefault': ['zero', 'one'],
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
-                          'ext_strlist': ['x'],
+                          'ext_strlist': ['x', 'y'],
                           'ext_strtuple': ('x',),
                           })
 
         # cmdline is ordered alphabetically
         self.assertEqual(topt.generate_cmd_line(ignore=ign),
-                         ['--level-level', '--level-prefix-and-dash=YY', '--store="some whitespace"'])
+                         [
+                          '--ext-strlist=x,y',
+                          '--level-level',
+                          '--level-prefix-and-dash=YY',
+                          '--store="some whitespace"',
+                          ])
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
         self.assertEqual([shell_unquote(x) for x in all_args],
-                         ['--level-level', '--level-longlevel',
+                         [
+                          '--ext-strlist=x,y',
+                          '--level-level',
+                          '--level-longlevel',
                           '--level-prefix-and-dash=YY',
-                          '--longbase', '--store=some whitespace'])
+                          '--longbase',
+                          '--store=some whitespace',
+                          ])
 
         topt = TestOption1(go_args=[shell_unquote(x) for x in all_args], go_nosystemexit=True)
         self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign),
-                         ['--level-level', '--level-longlevel',
+                         [
+                          '--ext-strlist=x,y',
+                          '--level-level',
+                          '--level-longlevel',
                           '--level-prefix-and-dash=YY',
-                          '--longbase', '--store="some whitespace"'])
+                          '--longbase',
+                          '--store="some whitespace"',
+                          ])
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
     def test_enable_disable(self):
