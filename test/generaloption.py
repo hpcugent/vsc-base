@@ -72,6 +72,9 @@ class TestOption1(GeneralOption):
                           "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
                           # default value is not part of choice!
                           "optionalchoice":('Test action optional', 'choice', 'store_or_None', 'CHOICE0', ['CHOICE1', 'CHOICE2']),
+                          # list type
+                          "strlist":('Test strlist type', 'strlist', 'store', ['x']),
+                          "strtuple":('Test strtuple type', 'strtuple', 'store', ('x',)),
                           }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -132,7 +135,7 @@ class GeneralOptionTest(TestCase):
                           'base': False, 'ext_optional': None, 'ext_extend': None,
                           'debug': False, 'info':False, 'quiet':False,
                           'ext_extenddefault': ['zero', 'one'], 'store': 'some whitespace', 'ext_datetime': None,
-                          'ext_optionalchoice': None,
+                          'ext_optionalchoice': None, 'ext_strlist': ['x'], 'ext_strtuple': ('x',),
                           'store_with_dash':None, 'level_prefix_and_dash':'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None, 'configfiles': None, })
 
@@ -185,6 +188,13 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext-extenddefault=two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
 
+    def test_str_list_tuple(self):
+        """Test strlist / strtuple type"""
+        # extend to None default
+        topt = TestOption1(go_args=['--ext-strlist=two,three', '--ext-strtuple=two,three'])
+        self.assertEqual(topt.options.ext_strlist, ['two', 'three'])
+        self.assertEqual(topt.options.ext_strtuple, ('two', 'three',))
+
     def test_store_or_None(self):
         """Test store_or_None action"""
         ign = r'^(?!ext_optional)'
@@ -227,6 +237,8 @@ prefix-and-dash=YY
 
 [ext]
 extend=one,two,three
+strtuple=a,b
+strlist=x,y
 """
         tmp1 = NamedTemporaryFile()
         tmp1.write(CONFIGFILE1)
@@ -239,6 +251,8 @@ extend=one,two,three
         self.assertEqual(topt.options.store_with_dash, 'XX')
         self.assertEqual(topt.options.level_prefix_and_dash, 'YY')
         self.assertEqual(topt.options.ext_extend, ['one', 'two', 'three'])
+        self.assertEqual(topt.options.ext_strtuple, ('a', 'b'))
+        self.assertEqual(topt.options.ext_strlist, ['x', 'y'])
 
         topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
         self.assertEqual(topt2.options.store, 'notok')
