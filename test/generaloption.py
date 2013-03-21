@@ -131,13 +131,27 @@ class GeneralOptionTest(TestCase):
                                     shell_unquote('--store="some whitespace"')])
         self.assertEqual(topt.options.__dict__ ,
                          {
-                          'level_level': True, 'ext_date': None, 'longbase': True, 'level_longlevel': True,
-                          'base': False, 'ext_optional': None, 'ext_extend': None,
-                          'debug': False, 'info':False, 'quiet':False,
-                          'ext_extenddefault': ['zero', 'one'], 'store': 'some whitespace', 'ext_datetime': None,
-                          'ext_optionalchoice': None, 'ext_strlist': ['x'], 'ext_strtuple': ('x',),
-                          'store_with_dash':None, 'level_prefix_and_dash':'YY',  # this dict is about destinations
-                          'ignoreconfigfiles': None, 'configfiles': None, })
+                          'store': 'some whitespace',
+                          'debug': False,
+                          'info':False,
+                          'quiet':False,
+                          'level_level': True,
+                          'longbase': True,
+                          'level_longlevel': True,
+                          'store_with_dash':None,
+                          'level_prefix_and_dash':'YY',  # this dict is about destinations
+                          'ignoreconfigfiles': None,
+                          'configfiles': None,
+                          'base': False,
+                          'ext_optional': None,
+                          'ext_extend': None,
+                          'ext_date': None,
+                          'ext_extenddefault': ['zero', 'one'],
+                          'ext_datetime': None,
+                          'ext_optionalchoice': None,
+                          'ext_strlist': ['x'],
+                          'ext_strtuple': ('x',),
+                          })
 
         # cmdline is ordered alphabetically
         self.assertEqual(topt.generate_cmd_line(ignore=ign),
