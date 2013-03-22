@@ -32,11 +32,11 @@ def lock_or_bork(lockfile, nagios_reporter):
         lockfile.acquire()
     except LockFailed, err:
         logger.critical('Unable to obtain lock: lock failed')
-        nagios_reporter.cache(NAGIOS_EXIT_CRITICAL, NagiosResult("script failed taking lock %s" % (DSHOWQ_LOCK_FILE)))
+        nagios_reporter.cache(NAGIOS_EXIT_CRITICAL, NagiosResult("script failed taking lock %s" % (lockfile.path)))
         sys.exit(1)
     except LockFileReadError, err:
-        logger.critical("Unable to obtain lock: could not read previous lock file %s" % (DSHOWQ_LOCK_FILE))
-        nagios_reporter.cache(NAGIOS_EXIT_CRITICAL, NagiosResult("script failed reading lockfile %s" % (DSHOWQ_LOCK_FILE)))
+        logger.critical("Unable to obtain lock: could not read previous lock file %s" % (lockfile.path))
+        nagios_reporter.cache(NAGIOS_EXIT_CRITICAL, NagiosResult("script failed reading lockfile %s" % (lockfile.path)))
         sys.exit(1)
 
 
