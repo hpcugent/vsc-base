@@ -14,10 +14,10 @@
 import sys
 
 from lockfile import LockFailed, NotLocked, NotMyLock
-from vsc.fancylogger import getLogger
+from vsc.utils.fancylogger import getLogger
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_WARNING, NagiosResult
 
-logger = getLogger('vsc.jobs.moab.checkjob')
+logger = getLogger('vsc.utils.lock')
 
 
 def lock_or_bork(lockfile, nagios_reporter):
