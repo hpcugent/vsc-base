@@ -229,7 +229,6 @@ def action_target(target, setupfn=setup, extra_sdist=[]):
     build_setup_cfg_for_bdist_rpm(target)
     x = parse_target(target)
     setupfn(**x)
-    cleanup()
 
 if __name__ == '__main__':
     # print all supported packages
