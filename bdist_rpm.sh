@@ -1,45 +1,37 @@
 #!/bin/bash
 
-# Copyright 2012-2013 Ghent University
+# Copyright 2012 Ghent University
+# Copyright 2012 Andy Georges
 #
-# This file is part of vsc-base,
+# This file is part of VSC-tools,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# http://github.com/hpcugent/VSC-tools
 #
-# vsc-base is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Library General Public License as
-# published by the Free Software Foundation, either version 2 of
-# the License, or (at your option) any later version.
+# VSC-tools is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation v2.
 #
-# vsc-base is distributed in the hope that it will be useful,
+# VSC-tools is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Library General Public License for more details.
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Library General Public License
-# along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with VSC-tools. If not, see <http://www.gnu.org/licenses/>.
 ##
 
-# @author: Andy Georges (Ghent University)
 # This script will generate the RPMs for deployment on some system, prefixing the Python package names with python-
 # to indicate their contents in a more appropriate way. We do not do this for the packages when shipped to
 # PyPi, since it is pretty obvious these are Python packages in any case.
 
-all_packages=vsc-base
+all_packages=
 edit=
 release=
-
-which rpmrebuild >& /dev/null
-if [ $? -gt 0 ]
-then
-    echo "Missing rpmrebuild"
-    exit 1
-fi
 
 while getopts er:p:h name
 do
@@ -56,17 +48,21 @@ do
   esac
 done
 
-ALL_PACKAGES=$all_packages
+if [ -z "$all_packages" ]; then
+  ALL_PACKAGES=`python ./setup.py --name 2>/dev/null | grep -v "removing 'build'" | tr "\n" " "`
+else
+  ALL_PACKAGES=$all_packages
+fi
 
 for package in $ALL_PACKAGES; do
-  echo "Building RPM for $package"
-  python ./setup.py  bdist_rpm
-  # get latest one (name-version syntax)
-  rpm_target=`ls -t dist/${package}-[0-9]*noarch.rpm | head -1`
+
+  echo $package
+  python ./setup.py bdist_rpm
+  rpm_target=`ls dist/${package}*noarch.rpm`
   rpm_target_name=`basename ${rpm_target}`
 
   # user specified requirements can be found in setup.cfg
-  requirements=`grep "requires" setup.cfg | cut -d" " -f3- | tr "," "\n" | grep -v "^python-" | tr "\n" "|" | sed -e 's/|$//'`
+  requirements=`grep "requires" setup.cfg | cut -d" " -f3- | tr "," "|"`
   if [ -z "$requirements" ]; then
     requirements="no-match-etc-etc-etc"
   fi
@@ -82,5 +78,4 @@ for package in $ALL_PACKAGES; do
              --change-spec-preamble="sed -e 's/^\(Release:\s\s*\)\(.*\)\s*$/\1${release}.ug/'" \
              --directory=./dist/ \
              ${edit} -n -p ${rpm_target}
-   echo "Finished building RPM for $package"
 done
