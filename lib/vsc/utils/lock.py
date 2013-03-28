@@ -1,7 +1,7 @@
 #!/usr/bin/python
 ##
 #
-# Copyright 2009-2012 Ghent University
+# Copyright 2009-2011 Ghent University
 #
 # This file is part of the tools originally by the HPC team of
 # Ghent University (http://ugent.be/hpc).
