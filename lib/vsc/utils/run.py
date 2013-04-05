@@ -63,23 +63,31 @@ Historical overview of existing equivalent code
 @author: Stijn De Weirdt (Ghent University)
 """
 
-from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
-import pty
-import time
+import errno
 import logging
+import os
+import pty
 import re
 import signal
-import os
 import sys
+import time
+
+from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
+
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
+
+RUNRUN_TIMEOUT_OUTPUT = ''
+RUNRUN_TIMEOUT_EXITCODE = 123
+
 
 class DummyFunction(object):
     def __getattr__(self, name):
         def dummy(*args, **kwargs):
             pass
         return dummy
+
 
 class Run(object):
     """Base class for static run method"""
@@ -262,12 +270,13 @@ class Run(object):
 
     def _make_popen_named_args(self, others=None):
         """Create the named args for Popen"""
-        self._popen_named_args = {'stdout':self._process_module.PIPE,
-                                  'stderr':self._process_module.STDOUT,
-                                  'stdin':self._process_module.PIPE,
-                                  'close_fds':True,
-                                  'shell':True,
-                                  'executable':"/bin/bash",
+        self._popen_named_args = {
+                                  'stdout': self._process_module.PIPE,
+                                  'stderr': self._process_module.STDOUT,
+                                  'stdin': self._process_module.PIPE,
+                                  'close_fds': True,
+                                  'shell': True,
+                                  'executable': "/bin/bash",
                                   }
         if others is not None:
             self._popen_named_args.update(others)
@@ -344,11 +353,58 @@ class Run(object):
         """What to return"""
         return self._process_exitcode, self._process_output
 
+    def _killtasks(self, tasks=None, sig=signal.SIGKILL, kill_pgid=False):
+        """
+        Kill all tasks
+            @param: tasks list of processids
+            @param: sig, signal to use to kill
+            @apram: kill_pgid, send kill to group
+        """
+        if tasks is None:
+            self.log.error("killtasks no tasks passed")
+        elif isinstance(tasks, basestring):
+            try:
+                tasks = [int(tasks)]
+            except:
+                self.log.error("killtasks failed to convert tasks string %s to int" % tasks)
+
+        for pid in tasks:
+            pgid = os.getpgid(pid)
+            try:
+                os.kill(int(pid), sig)
+                if kill_pgid:
+                    os.killpg(pgid, sig)
+                self.log.debug("Killed %s with signal %s" % (pid, sig))
+            except OSError, err:
+                # ERSCH is no such process, so no issue
+                if not err.errno == errno.ESRCH:
+                    self.log.error("Failed to kill %s: %s" % (pid, err))
+            except Exception, err:
+                self.log.error("Failed to kill %s: %s" % (pid, err))
+
+    def stop_tasks(self):
+        """Cleanup current run"""
+        self._killtasks(tasks=[self._process.pid])
+        try:
+            os.waitpid(-1, os.WNOHANG)
+        except:
+            pass
+
+
 class RunNoWorries(Run):
     """When the exitcode is >0, log.debug instead of log.error"""
     def __init__(self, cmd, **kwargs):
         super(RunNoWorries, self).__init__(cmd, **kwargs)
         self._post_exitcode_log_failure = self.log.debug
+
+
+class RunLoopException(Exception):
+    def __init__(self, code, output):
+        self.code = code
+        self.output = output
+
+    def __str__(self):
+        return "%s code %s output %s" % (self.__class__.__name__, self.code, self.output)
 
 
 class RunLoop(Run):
@@ -378,29 +434,32 @@ class RunLoop(Run):
 
         time.sleep(self.LOOP_TIMEOUT_INIT)
         ec = self._process.poll()
-        while self._loop_continue and ec < 0:
-            output = self._read_process()
-            self._loop_process_output(output)
+        try:
+            while self._loop_continue and ec < 0:
+                output = self._read_process()
+                self._loop_process_output(output)
+
+                self._process_output += output
+
+                if len(output) == 0:
+                    time.sleep(self.LOOP_TIMEOUT_MAIN)
+                ec = self._process.poll()
+
+                self._loop_count += 1
+
+            self.log.debug("_wait_for_process: loop stopped after %s iterations (ec %s loop_continue %s)" %
+                           (self._loop_count, ec, self._loop_continue))
+
+            # read remaining data (all of it)
+            output = self._read_process(-1)
+            self._loop_process_output_final(output)
 
             self._process_output += output
-
-            if len(output) == 0:
-                time.sleep(self.LOOP_TIMEOUT_MAIN)
-            ec = self._process.poll()
-
-            self._loop_count += 1
-
-
-        self.log.debug("_wait_for_process: loop stopped after %s iterations (ec %s loop_continue %s)" %
-                       (self._loop_count, ec, self._loop_continue))
-
-        # read remaining data (all of it)
-        output = self._read_process(-1)
-        self._loop_process_output_final(output)
-
-        self._process_output += output
-        self._process_exitcode = ec
-
+            self._process_exitcode = ec
+        except RunLoopException, err:
+            self.log.debug('RunLoopException %s' % err)
+            self._process_output = err.output
+            self._process_exitcode = err.code
 
     def _loop_initialise(self):
         """Initialisation before the loop starts"""
@@ -510,9 +569,9 @@ class RunFile(Run):
             except:
                 self.log.raiseException("_make_popen_named_args: failed to open filehandle for file %s" % self.filename)
 
-            others = {'stdout':self.filehandle,
+            others = {
+                      'stdout': self.filehandle,
                       }
-
 
         super(RunFile, self)._make_popen_named_args(others=others)
 
@@ -562,6 +621,25 @@ class RunLog(Run):
         else:
             reg = re.compile(r'' + self.GET_LOG_REGEX)
             foundloggers = [x for x in loggers.keys() if reg.search(x)]
+
+
+class RunTimeout(RunLoop, RunAsync):
+    """Question/Answer processing"""
+
+    def __init__(self, cmd, **kwargs):
+        self.timeout = float(kwargs.pop('timeout', None))
+        self.start = time.time()
+        super(RunTimeout, self).__init__(cmd, **kwargs)
+
+    def _loop_process_output(self, output):
+        """"""
+        time_passed = time.time() - self.start
+        if self.timeout is not None and  time_passed > self.timeout:
+            self.log.debug("Time passed %s > timeout %s. ")
+            self.stop_tasks()
+
+            # go out of loop
+            raise RunLoopException(RUNRUN_TIMEOUT_EXITCODE, RUNRUN_TIMEOUT_OUTPUT)
 
 
 class RunQA(RunLoop, RunAsync):
@@ -719,9 +797,12 @@ run_simple = Run.run
 run_simple_noworries = RunNoWorries.run
 
 run_async = RunAsync.run
+run_asyncloop = RunAsyncLoop.run
+run_timeout = RunTimeout.run
 
 run_to_file = RunFile.run
 run_async_to_stdout = RunAsyncLoopStdout.run
+
 
 if __name__ == "__main__":
     run_simple('echo ok')
