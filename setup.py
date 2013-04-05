@@ -31,12 +31,23 @@ vsc-base base distribution setup.py
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
 """
-from shared_setup import ag, jt, sdw
-from shared_setup import action_target
+import vsc.install.shared_setup as shared_setup
+from vsc.install.shared_setup import ag, jt, sdw
+
+def remove_bdist_rpm_source_file():
+    """List of files to remove from the (source) RPM."""
+    pass
+
+shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
+shared_setup.SHARED_TARGET.update({
+    'url': 'https://github.ugent.be/hpcugent/vsc-jobs',
+    'download_url': 'https://github.ugent.be/hpcugent/vsc-jobs'
+})
+
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '1.3',
+    'version': '1.4',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
     'packages': ['vsc', 'vsc.utils'],
@@ -48,4 +59,4 @@ PACKAGE = {
 }
 
 if __name__ == '__main__':
-    action_target(PACKAGE)
+    shared_setup.action_target(PACKAGE)
