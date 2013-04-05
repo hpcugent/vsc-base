@@ -43,7 +43,7 @@ PACKAGE = {
     'provides': ['python-vsc-packages-common = 0.5',
                  'python-vsc-packages-logging = 0.14',
                  'python-vsc-packages-utils = 0.11'],
-    'install_requires': ['lockfile >= 0.9.1'],
+    'install_requires': ['vsc-packages-lockfile >= 0.9.1'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh'],
 }
 
