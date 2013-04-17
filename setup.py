@@ -39,7 +39,7 @@ import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, jt, sdw
 
 def remove_bdist_rpm_source_file():
-    """List of files to remove from the (source) RPM."""
+    """List of files to remove from thrm e (source) RPM."""
     return []
 
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
@@ -59,7 +59,7 @@ PACKAGE = {
                  'python-vsc-packages-logging = 0.14',
                  'python-vsc-packages-utils = 0.11'],
     'install_requires': ['lockfile >= 0.9.1'],
-    'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh'],
+    'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh'],
 }
 
 if __name__ == '__main__':
