@@ -31,6 +31,13 @@ vsc-base base distribution setup.py
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
 """
+import os
+from distutils.core import setup
+import glob
+import sys
+
+sys.path.append("./lib")
+
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, jt, sdw
 
@@ -50,13 +57,32 @@ PACKAGE = {
     'version': '1.4',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
-    'packages': ['vsc', 'vsc.utils'],
+    'packages': ['vsc', 'vsc.utils', 'vsc.install'],
     'provides': ['python-vsc-packages-common = 0.5',
                  'python-vsc-packages-logging = 0.14',
                  'python-vsc-packages-utils = 0.11'],
-    'install_requires': ['vsc-packages-lockfile >= 0.9.1'],
+    'install_requires': ['lockfile >= 0.9.1'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh'],
 }
+
+
+setup(name="shared_setup",
+      version="0.2",
+      description="A common setup tool for building RPMs for our systems.",
+      long_description="""All our python tools are built in the same fashion.
+- we like to have a single place to maintain the code
+- we like to deploy everything in the same manner
+- we like to build RPMs someplace centrally
+""",
+      license="GPL",
+      author="HPC UGent",
+      author_email="hpc-admin@lists.ugent.be",
+      scripts=glob.glob(os.path.join("bin", "*")),
+      package_dir={'vsc': 'lib/vsc'},
+      packages=['vsc', 'vsc.install'],
+      namespace_packages=['vsc'],
+      url="http://www.ugent.be/hpc",
+)
 
 if __name__ == '__main__':
     shared_setup.action_target(PACKAGE)
