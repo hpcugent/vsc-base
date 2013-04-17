@@ -39,7 +39,7 @@ import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, jt, sdw
 
 def remove_bdist_rpm_source_file():
-    """List of files to remove from thrm e (source) RPM."""
+    """List of files to remove from the (source) RPM."""
     return []
 
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
