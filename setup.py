@@ -31,9 +31,6 @@ vsc-base base distribution setup.py
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
 """
-import os
-from distutils.core import setup
-import glob
 import sys
 
 sys.path.append("./lib")
@@ -64,25 +61,6 @@ PACKAGE = {
     'install_requires': ['lockfile >= 0.9.1'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh'],
 }
-
-
-setup(name="shared_setup",
-      version="0.2",
-      description="A common setup tool for building RPMs for our systems.",
-      long_description="""All our python tools are built in the same fashion.
-- we like to have a single place to maintain the code
-- we like to deploy everything in the same manner
-- we like to build RPMs someplace centrally
-""",
-      license="GPL",
-      author="HPC UGent",
-      author_email="hpc-admin@lists.ugent.be",
-      scripts=glob.glob(os.path.join("bin", "*")),
-      package_dir={'vsc': 'lib/vsc'},
-      packages=['vsc', 'vsc.install'],
-      namespace_packages=['vsc'],
-      url="http://www.ugent.be/hpc",
-)
 
 if __name__ == '__main__':
     shared_setup.action_target(PACKAGE)
