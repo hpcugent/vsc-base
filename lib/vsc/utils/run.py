@@ -288,7 +288,7 @@ class Run(object):
         if self.cmd is None:
             self.log.raiseExcpetion("_make_shell_command: no cmd set.")
 
-        if isinstance(self.cmd, str):
+        if isinstance(self.cmd, basestring ):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = " ".join(self.cmd)
