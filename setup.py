@@ -31,6 +31,10 @@ vsc-base base distribution setup.py
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
 """
+import sys
+
+sys.path.append("./lib")
+
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, jt, sdw
 
@@ -50,12 +54,12 @@ PACKAGE = {
     'version': '1.4',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
-    'packages': ['vsc', 'vsc.utils'],
+    'packages': ['vsc', 'vsc.utils', 'vsc.install'],
     'provides': ['python-vsc-packages-common = 0.5',
                  'python-vsc-packages-logging = 0.14',
                  'python-vsc-packages-utils = 0.11'],
-    'install_requires': ['vsc-packages-lockfile >= 0.9.1'],
-    'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh'],
+    'install_requires': ['lockfile >= 0.9.1'],
+    'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh'],
 }
 
 if __name__ == '__main__':
