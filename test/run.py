@@ -34,11 +34,12 @@ import os
 import time
 from unittest import TestCase, TestLoader
 
-from vsc.utils.run import run_simple, run_asyncloop, run_timeout
+from vsc.utils.run import run_simple, run_asyncloop, run_timeout, run_qa
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE
 
 SCRIPT_DIR = os.path.join(os.path.dirname(__file__), 'runtests')
 SCRIPT_SIMPLE = os.path.join(SCRIPT_DIR, 'simple.py')
+SCRIPT_QA = os.path.join(SCRIPT_DIR, 'qa.py')
 
 
 class TestRun(TestCase):
@@ -62,6 +63,16 @@ class TestRun(TestCase):
         self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE)
         self.assertTrue(RUNRUN_TIMEOUT_OUTPUT == output)
         self.assertTrue(stop - start < timeout + 1)  # give 1 sec margin
+
+    def test_qa(self):
+        ec, output = run_qa([SCRIPT_QA, 'noquestion'])
+        self.assertEqual(ec, 0)
+
+        qa_dict = {
+                   'Simple question:': 'simple answer',
+                   }
+        ec, output = run_qa([SCRIPT_QA, 'simple'], qa=qa_dict)
+        self.assertEqual(ec, 0)
 
 
 def suite():

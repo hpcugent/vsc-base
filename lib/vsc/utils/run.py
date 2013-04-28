@@ -80,6 +80,7 @@ PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
 
 RUNRUN_TIMEOUT_OUTPUT = ''
 RUNRUN_TIMEOUT_EXITCODE = 123
+RUNRUN_QA_MAX_MISS_EXITCODE = 124
 
 
 class DummyFunction(object):
@@ -288,7 +289,7 @@ class Run(object):
         if self.cmd is None:
             self.log.raiseExcpetion("_make_shell_command: no cmd set.")
 
-        if isinstance(self.cmd, basestring ):
+        if isinstance(self.cmd, basestring):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = " ".join(self.cmd)
@@ -437,9 +438,9 @@ class RunLoop(Run):
         try:
             while self._loop_continue and ec < 0:
                 output = self._read_process()
-                self._loop_process_output(output)
-
                 self._process_output += output
+                # process after updating the self._process_ vars
+                self._loop_process_output(output)
 
                 if len(output) == 0:
                     time.sleep(self.LOOP_TIMEOUT_MAIN)
@@ -452,10 +453,12 @@ class RunLoop(Run):
 
             # read remaining data (all of it)
             output = self._read_process(-1)
-            self._loop_process_output_final(output)
 
             self._process_output += output
             self._process_exitcode = ec
+
+            # process after updating the self._process_ vars
+            self._loop_process_output_final(output)
         except RunLoopException, err:
             self.log.debug('RunLoopException %s' % err)
             self._process_output = err.output
@@ -491,6 +494,7 @@ class RunLoopLog(RunLoop):
             send it to the logger. The logger need to be stream-like
         """
         self.log.streamLog(self.LOOP_LOG_LEVEL, output)
+        super(RunLoopLog, self)._loop_process_output(output)
 
 
 class RunLoopStdout(RunLoop):
@@ -501,6 +505,7 @@ class RunLoopStdout(RunLoop):
         """
         sys.stdout.write(output)
         sys.stdout.flush()
+        super(RunLoopStdout, self)._loop_process_output(output)
 
 
 class RunAsync(Run):
@@ -596,31 +601,12 @@ class RunPty(Run):
     def _make_popen_named_args(self, others=None):
         if others is None:
             (master, slave) = pty.openpty()
-            others = {'stdin':slave,
-                      'stdout':slave,
-                      'stderr':slave
-                      }
+            others = {
+                'stdin': slave,
+                'stdout': slave,
+                'stderr': slave
+                }
         super(RunPty, self)._make_popen_named_args(others=others)
-
-
-class RunLog(Run):
-    """Allow for better logging
-        will try to log to other children of the root logger
-    """
-    GET_ALL_LOGGERS = getAllExistingLoggers
-    GET_LOG_REGEX = None
-
-    def  _get_log_name(self):
-        """Set the log name
-            The idea here is to somehow figure out which logger of the root logger to use
-        """
-        loggers = self.GET_ALL_LOGGERS()
-        if self.GET_LOG_REGEX is None:
-            # return name of last one
-            return loggers[-1][0]
-        else:
-            reg = re.compile(r'' + self.GET_LOG_REGEX)
-            foundloggers = [x for x in loggers.keys() if reg.search(x)]
 
 
 class RunTimeout(RunLoop, RunAsync):
@@ -635,11 +621,12 @@ class RunTimeout(RunLoop, RunAsync):
         """"""
         time_passed = time.time() - self.start
         if self.timeout is not None and  time_passed > self.timeout:
-            self.log.debug("Time passed %s > timeout %s. ")
+            self.log.debug("Time passed %s > timeout %s." % (time_passed, self.timeout))
             self.stop_tasks()
 
             # go out of loop
             raise RunLoopException(RUNRUN_TIMEOUT_EXITCODE, RUNRUN_TIMEOUT_OUTPUT)
+        super(RunTimeout, self)._loop_process_output(output)
 
 
 class RunQA(RunLoop, RunAsync):
@@ -647,19 +634,22 @@ class RunQA(RunLoop, RunAsync):
     LOOP_MAX_MISS_COUNT = 20
 
     def __init__(self, cmd, **kwargs):
-        qa = kwargs.pop('qa', None)
-        self.qa, self.qa_std, self.no_qa = self._parse_qa(qa)
+        qa = kwargs.pop('qa', {})
+        qa_std = kwargs.pop('qa_std', {})
+        no_qa = kwargs.pop('no_qa', [])
         self._loop_miss_count = None  # maximum number of misses
         self._loop_previous_ouput_length = None  # track length of output through loop
 
         super(RunQA, self).__init__(cmd, **kwargs)
+
+        self.qa, self.qa_std, self.no_qa = self._parse_qa(qa, qa_std, no_qa)
 
     def _init_input(self):
         """Handle input, if any in a simple way"""
         # do nothing here
         pass
 
-    def _parse_qa(self, init_qa):
+    def _parse_qa(self, qa, qa_std, no_qa):
         """
         process the QandA dictionary
             - given initial set of Q and A (in dict), return dict of reg. exp. and A
@@ -670,7 +660,7 @@ class RunQA(RunLoop, RunAsync):
         """
 
         def escape_special(string):
-            return re.sub(r"([\+\?\(\)\[\]\*\.\\])" , r"\\\1", string)
+            return re.sub(r"([\+\?\(\)\[\]\*\.\\])", r"\\\1", string)
 
         split = '[\s\n]+'
         reg_split = re.compile(r"" + split)
@@ -690,23 +680,23 @@ class RunQA(RunLoop, RunAsync):
 
         new_qa = {}
         self.log.debug("new_qa: ")
-        for question, answer in init_qa.get('qa').items():
+        for question, answer in qa.items():
             (a, reg_q) = process_qa(question, answer)
             new_qa[reg_q] = a
-            self.log.debug("new_qa[%s]: %s" % (reg_q.pattern, a))
+            self.log.debug("new_qa[%s]: %s" % (reg_q.pattern.__repr__(), a))
 
         new_qa_std = {}
         self.log.debug("new_qa_std: ")
-        for question, answer in init_qa.get('qa_std', {}).items():
+        for question, answer in qa_std.items():
             reg_q = re.compile(r"" + question + r"[\s\n]*$")
             if not answer.endswith('\n'):
                 answer += '\n'
             new_qa_std[reg_q] = answer
-            self.log.debug("new_qa_std[%s]: %s" % (reg_q.pattern, answer))
+            self.log.debug("new_qa_std[%s]: %s" % (reg_q.pattern.__repr__(), answer))
 
         # simple statements, can contain wildcards
-        new_no_qa = [re.compile(r"" + x + r"[\s\n]*$") for x in init_qa.get('no_qa', [])]
-        self.log.debug("new_no_qa: %s" % [x.pattern for x in new_no_qa])
+        new_no_qa = [re.compile(r"" + x + r"[\s\n]*$") for x in no_qa]
+        self.log.debug("new_no_qa: %s" % [x.pattern.__repr__() for x in new_no_qa])
 
         return new_qa, new_qa_std, new_no_qa
 
@@ -717,13 +707,15 @@ class RunQA(RunLoop, RunAsync):
 
     def _loop_process_output(self, output):
         """Process the output that is read in blocks
-            simplest form: do nothing
+            check the output passed to questions available
         """
         hit = False
 
+        self.log.debug('output %s all_output %s' % (output, self._process_output))
+
         # qa first and then qa_std
         nr_qa = len(self.qa)
-        for idx, q, a in enumerate(self.qa.items() + self.qa_std.items()):
+        for idx, (q, a) in enumerate(self.qa.items() + self.qa_std.items()):
             res = q.search(self._process_output)
             if output and res:
                 fa = a % res.groupdict()
@@ -742,7 +734,7 @@ class RunQA(RunLoop, RunAsync):
                 noqa = False
                 for r in self.no_qa:
                     if r.search(self._process_output):
-                        self.log.debug("_loop_porcess_output: no_qa found for out %s" % self._process_output[-50:])
+                        self.log.debug("_loop_process_output: no_qa found for out %s" % self._process_output[-50:])
                         noqa = True
                 if not noqa:
                     self._loop_miss_count += 1
@@ -750,29 +742,13 @@ class RunQA(RunLoop, RunAsync):
             self._loop_miss_count = 0  # rreset miss counter on hit
 
         if  self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
-            # explicitly kill the child process before exiting
-            pid = None
-            pgid = None
-            try:
-                pid = self._process.pid
-                pgid = os.getpgid(pid)
-                os.killpg(pgid, signal.SIGKILL)
-                os.kill(pid, signal.SIGKILL)
-            except OSError, err:
-                self.log.debug("_loop_process_output exception caught when killing child process (pid %s pgid %s): %s" %
-                               (pid, pgid, err))
-
-            self.log.error("_loop_process_output: max misses %s reached: end of output %s" %
+            self.log.debug("loop_process_output: max misses LOOP_MAX_MISS_COUNT %s reached. End of output: %s" %
                            (self.LOOP_MAX_MISS_COUNT, self._process_output[-500:]))
+            self.stop_tasks()
 
-            # stop the main loop (although process.poll will also stop it)
-            self._loop_continue = False
-
-    def _loop_process_output_final(self, output):
-        """Process the remaining output that is read
-            do nothing
-        """
-        # TODO: do super ?
+            # go out of loop
+            raise RunLoopException(RUNRUN_QA_MAX_MISS_EXITCODE, self._process_output)
+        super(RunQA, self)._loop_process_output(output)
 
 
 class RunAsyncLoop(RunLoop, RunAsync):
@@ -782,6 +758,16 @@ class RunAsyncLoop(RunLoop, RunAsync):
 
 class RunAsyncLoopLog(RunLoopLog, RunAsync):
     """Async read, log to logger"""
+    pass
+
+
+class RunQALog(RunLoopLog, RunQA):
+    """Async loop QA with LoopLog"""
+    pass
+
+
+class RunQAStdout(RunLoopStdout, RunQA):
+    """Async loop QA with LoopLogStdout"""
     pass
 
 
@@ -803,6 +789,9 @@ run_timeout = RunTimeout.run
 run_to_file = RunFile.run
 run_async_to_stdout = RunAsyncLoopStdout.run
 
+run_qa = RunQA.run
+run_qalog = RunQALog.run
+run_qastdout = RunQAStdout.run
 
 if __name__ == "__main__":
     run_simple('echo ok')
