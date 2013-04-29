@@ -30,11 +30,9 @@ Caching utilities.
 
 @author: Andy Georges (Ghent University)
 """
-try:
-    import cPickle as pickle
-except:
-    import pickle
-
+import cPickle
+import gzip
+import json
 import time
 
 from vsc import fancylogger
@@ -77,15 +75,15 @@ class FileCache(object):
         try:
             f = open(self.filename, 'rb')
             try:
-                # FIXME: This double block is due to a workaround for Python 2.4
-                # see http://stackoverflow.com/questions/820778/syntaxerror-in-finally-django
+                f = gzip.GzipFile(mode='rb', fileobj=f)
+                self.shelf = json.load(f)
+            except IOError, err:
                 try:
-                    self.shelf = pickle.load(f)
-                except:
+                    self.shelf = cPickle.load(f)
+                except (OSError, IOError):
                     self.log.raiseException("Could not load pickle data from %s" % (self.filename))
             finally:
                 f.close()
-
         except (OSError, IOError), err:
             self.log.warning("Could not access the file cache at %s [%s]" % (self.filename, err))
             self.shelf = {}
