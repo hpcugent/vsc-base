@@ -30,7 +30,10 @@ Caching utilities.
 
 @author: Andy Georges (Ghent University)
 """
-import cPickle
+try:
+    import cPickle as pickle
+except:
+    import pickl
 import gzip
 import json
 import time
@@ -79,7 +82,7 @@ class FileCache(object):
                 self.shelf = json.load(f)
             except IOError, err:
                 try:
-                    self.shelf = cPickle.load(f)
+                    self.shelf = pickle.load(f)
                 except (OSError, IOError):
                     self.log.raiseException("Could not load pickle data from %s" % (self.filename))
             finally:
