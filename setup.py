@@ -59,6 +59,7 @@ PACKAGE = {
                  'python-vsc-packages-logging = 0.14',
                  'python-vsc-packages-utils = 0.11'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh'],
+    'install_requires' : ['python-setuptools']
 }
 
 if __name__ == '__main__':
