@@ -35,7 +35,7 @@ interpreted by nagios/icinga.
     - critical
     - unknown
  - NagiosReporter class that provides cache functionality, writing and reading the nagios/icinga result string to a
-  pickle file.
+  gzipped JSON file.
 
 @author: Andy Georges (Ghent University)
 @author: Luis Fernando Muñoz Mejías (Ghent University)
@@ -96,7 +96,7 @@ def critical_exit(message):
 class NagiosReporter(object):
     """Reporting class for Nagios/Icinga reports.
 
-    Can cache the result in a pickle file and print the result out at some later point.
+    Can cache the result in a gzipped JSON file and print the result out at some later point.
     """
 
     def __init__(self, header, filename, threshold, nagios_username="nagios"):
@@ -108,8 +108,8 @@ class NagiosReporter(object):
 
         @param header: application specific part of the message, used to denote what program/script is using the
                        reporter.
-        @param filename: the filename of the pickle cache file
-        @param threshold: Seconds to determines how old the pickle data may be
+        @param filename: the filename of the gzipped JSON cache file
+        @param threshold: Seconds to determines how old the gzipped JSON data may be
                          before reporting an unknown result. This can be used to check if the script that uses the
                          reporter has run the last time and succeeded in writing the cache data. If the threshold <= 0,
                          this feature is not used.
@@ -123,7 +123,7 @@ class NagiosReporter(object):
         self.log = fancylogger.getLogger(self.__class__.__name__)
 
     def report_and_exit(self):
-        """Unpickles the cache file, prints the data and exits accordingly.
+        """Unzips the cache file and reads the JSON data back in, prints the data and exits accordingly.
 
         If the cache data is too old (now - cache timestamp > self.threshold), a critical exit is produced.
         """
@@ -131,7 +131,7 @@ class NagiosReporter(object):
             nagios_cache = FileCache(self.filename, True)
         except:
             self.log.critical("Error opening file %s for reading" % (self.filename))
-            unknown_exit("%s nagios pickled file unavailable (%s)" % (self.header, self.filename))
+            unknown_exit("%s nagios gzipped JSON file unavailable (%s)" % (self.header, self.filename))
 
         (timestamp, ((nagios_exit_code, nagios_exit_string), nagios_message)) = nagios_cache.load(0)
         nagios_cache.close()
@@ -141,7 +141,7 @@ class NagiosReporter(object):
             print "%s %s" % (nagios_exit_string, nagios_message)
             sys.exit(nagios_exit_code)
         else:
-            unknown_exit("%s pickled file too old (timestamp = %s)" % (self.header, time.ctime(timestamp)))
+            unknown_exit("%s gzipped JSON file too old (timestamp = %s)" % (self.header, time.ctime(timestamp)))
 
     def cache(self, nagios_exit, nagios_message):
         """Store the result in the cache file with a timestamp.
@@ -159,7 +159,7 @@ class NagiosReporter(object):
             self.log.info("Wrote nagios check cache file %s at about %s" % (self.filename, time.ctime(time.time())))
         except:
             # raising an error is ok, since we usually do this as the very last thing in the script
-            self.log.raiseException("Cannot save to the nagios pickled file (%s)" % (self.filename))
+            self.log.raiseException("Cannot save to the nagios gzipped JSON file (%s)" % (self.filename))
 
         try:
             p = pwd.getpwnam(self.nagios_username)
