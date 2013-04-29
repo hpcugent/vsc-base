@@ -33,7 +33,7 @@ Caching utilities.
 try:
     import cPickle as pickle
 except:
-    import pickl
+    import pickle
 import gzip
 import json
 import time
