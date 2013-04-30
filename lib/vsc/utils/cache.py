@@ -35,7 +35,7 @@ try:
 except:
     import pickle
 import gzip
-import json
+import jsonpickle
 import time
 
 from vsc import fancylogger
@@ -79,7 +79,8 @@ class FileCache(object):
             f = open(self.filename, 'rb')
             try:
                 f = gzip.GzipFile(mode='rb', fileobj=f)
-                self.shelf = json.load(f)
+                s = f.read()
+                self.shelf = jsonpickle.decode(s)
             except IOError, err:
                 try:
                     self.shelf = pickle.load(f)
