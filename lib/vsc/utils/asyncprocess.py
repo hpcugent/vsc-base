@@ -1,4 +1,4 @@
-##
+# #
 # Copyright 2005 Josiah Carlson
 # The Asynchronous Python Subprocess recipe was originally created by Josiah Carlson.
 # and released under the GNU Library General Public License v2 or any later version
@@ -29,7 +29,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-##
+# #
 
 """
 Module to allow Asynchronous subprocess use on Windows and Posix platforms
@@ -66,15 +66,16 @@ and the methods will return None.
 """
 
 import errno
+import fcntl  # @UnresolvedImport
 import os
+import select  # @UnresolvedImport
 import subprocess
 import time
 
+
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
-
-import select  #@UnresolvedImport
-import fcntl  #@UnresolvedImport
+MESSAGE = "Other end disconnected!"
 
 
 class Popen(subprocess.Popen):
@@ -90,7 +91,7 @@ class Popen(subprocess.Popen):
     def get_conn_maxsize(self, which, maxsize):
         if maxsize is None:
             maxsize = 1024
-        elif maxsize == 0:  ## SDW: < 1: -1 means all
+        elif maxsize == 0:  # # SDW: < 1: -1 means all
             maxsize = 1
         return getattr(self, which), maxsize
 
@@ -108,7 +109,7 @@ class Popen(subprocess.Popen):
         try:
             written = os.write(self.stdin.fileno(), inp)
         except OSError, why:
-            if why[0] == errno.EPIPE: #broken pipe
+            if why[0] == errno.EPIPE:  # broken pipe
                 return self._close('stdin')
             raise
 
@@ -129,7 +130,7 @@ class Popen(subprocess.Popen):
 
             r = conn.read(maxsize)
             if not r:
-                return self._close(which)  ## SDW: close when nothing left to read
+                return self._close(which)  # # SDW: close when nothing left to read
 
             if self.universal_newlines:
                 r = self._translate_newlines(r)
@@ -138,13 +139,19 @@ class Popen(subprocess.Popen):
             if not conn.closed:
                 fcntl.fcntl(conn, fcntl.F_SETFL, flags)
 
-message = "Other end disconnected!"
 
 def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread= -1):
     """
-    Changes made:
+    @param p: process
+    @param t: max time to wait without any output before returning
+    @param e: boolean, raise exception is process stopped
+    @param tr: time resolution used for intermediate sleep
+    @param stderr: boolean, read from stderr
+    @param maxread: stop when max read bytes have been read (before timeout t kicks in) (-1: read all)
+
+    Changes made SDW:
       - add maxread here
-      - set e to False
+      - set e to False by default
     """
     if tr < 1:
         tr = 1
@@ -159,7 +166,7 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread= -1):
         r = pr(maxread)
         if r is None:
             if e:
-                raise Exception(message)
+                raise Exception(MESSAGE)
             else:
                 break
         elif r:
@@ -169,9 +176,13 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread= -1):
             time.sleep(max((x - time.time()) / tr, 0))
     return ''.join(y)
 
+
 def send_all(p, data):
+    """
+    Send data to process p
+    """
     while len(data):
         sent = p.send(data)
         if sent is None:
-            raise Exception(message)
+            raise Exception(MESSAGE)
         data = buffer(data, sent)

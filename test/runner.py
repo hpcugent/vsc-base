@@ -4,6 +4,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+import test.asyncprocess as a
 import test.cache as tc
 import test.dateandtime as td
 import test.nagios as tn
@@ -17,7 +18,7 @@ import unittest
 from vsc.utils import fancylogger
 fancylogger.logToScreen(enable=False)
 
-suite = unittest.TestSuite([x.suite() for  x in (tc, td, tn, tg, tr, tf, trun)])
+suite = unittest.TestSuite([x.suite() for  x in (a, tc, td, tn, tg, tr, tf, trun)])
 
 try:
     import xmlrunner
