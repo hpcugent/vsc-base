@@ -65,6 +65,14 @@ def test_qastdout():
     return ec, output
 
 
+def test_std_regex():
+    qa_dict = {
+               r'\s(?P<time>\d+(?:\.\d+)?)\..*?What time is it\?': '%(time)s',
+               }
+    ec, output = run_qastdout([SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
+    return ec, output
+
+
 def test_qanoquestion():
     ec, output = run_qalog([SCRIPT_QA, 'noquestion'])
     return ec, output
@@ -74,3 +82,4 @@ if __name__ == '__main__':
     test_qastdout()
     test_qa()
     test_qalog()
+    test_std_regex()

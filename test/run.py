@@ -34,12 +34,18 @@ import os
 import time
 from unittest import TestCase, TestLoader
 
-from vsc.utils.run import run_simple, run_asyncloop, run_timeout, run_qa
-from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE
+from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA
+from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 
 SCRIPT_DIR = os.path.join(os.path.dirname(__file__), 'runtests')
 SCRIPT_SIMPLE = os.path.join(SCRIPT_DIR, 'simple.py')
 SCRIPT_QA = os.path.join(SCRIPT_DIR, 'qa.py')
+
+
+class RunQAShort(RunQA):
+    LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
+
+run_qas = RunQAShort.run
 
 
 class TestRun(TestCase):
@@ -64,14 +70,37 @@ class TestRun(TestCase):
         self.assertTrue(RUNRUN_TIMEOUT_OUTPUT == output)
         self.assertTrue(stop - start < timeout + 1)  # give 1 sec margin
 
-    def test_qa(self):
-        ec, output = run_qa([SCRIPT_QA, 'noquestion'])
+    def test_qa_simple(self):
+        """Simple testing"""
+        ec, output = run_qas([SCRIPT_QA, 'noquestion'])
         self.assertEqual(ec, 0)
 
         qa_dict = {
                    'Simple question:': 'simple answer',
                    }
-        ec, output = run_qa([SCRIPT_QA, 'simple'], qa=qa_dict)
+        ec, output = run_qas([SCRIPT_QA, 'simple'], qa=qa_dict)
+        self.assertEqual(ec, 0)
+
+    def test_qa_regex(self):
+        """Test regex based q and a (works only for qa_reg)"""
+        qa_dict = {
+                   '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
+                   }
+        ec, output = run_qas([SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
+        self.assertEqual(ec, 0)
+
+    def test_qa_noqa(self):
+        """Test noqa"""
+        # this has to fail
+        qa_dict = {
+                   'Now is the time.': 'OK',
+                   }
+        ec, output = run_qas([SCRIPT_QA, 'waitforit'], qa=qa_dict)
+        self.assertEqual(ec, RUNRUN_QA_MAX_MISS_EXITCODE)
+
+        # this has to work
+        no_qa = ['Wait for it \(\d+ seconds\)']
+        ec, output = run_qas([SCRIPT_QA, 'waitforit'], qa=qa_dict, no_qa=no_qa)
         self.assertEqual(ec, 0)
 
 

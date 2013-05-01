@@ -634,29 +634,38 @@ class RunQA(RunLoop, RunAsync):
     LOOP_MAX_MISS_COUNT = 20
 
     def __init__(self, cmd, **kwargs):
+        """
+        Add  question and answer style running
+            @param qa: dict with exact questions and answers
+            @param qa_reg: dict with (named) regex-questions and answers (answers can contain named string templates)
+            @param no_qa: list of regex that can block the output, but is not seen as a question.
+
+        Regular expressions are compiled, just pass the (raw) text.
+        """
         qa = kwargs.pop('qa', {})
-        qa_std = kwargs.pop('qa_std', {})
+        qa_reg = kwargs.pop('qa_reg', {})
         no_qa = kwargs.pop('no_qa', [])
         self._loop_miss_count = None  # maximum number of misses
         self._loop_previous_ouput_length = None  # track length of output through loop
 
         super(RunQA, self).__init__(cmd, **kwargs)
 
-        self.qa, self.qa_std, self.no_qa = self._parse_qa(qa, qa_std, no_qa)
+        self.qa, self.qa_reg, self.no_qa = self._parse_qa(qa, qa_reg, no_qa)
 
     def _init_input(self):
         """Handle input, if any in a simple way"""
         # do nothing here
         pass
 
-    def _parse_qa(self, qa, qa_std, no_qa):
+    def _parse_qa(self, qa, qa_reg, no_qa):
         """
         process the QandA dictionary
             - given initial set of Q and A (in dict), return dict of reg. exp. and A
 
-            - make regular expression that matches the string with
+        - make regular expression that matches the string with
             - replace whitespace
             - replace newline
+        - qa_reg: question is compiled as is, and whitespace+ending is added
         """
 
         def escape_special(string):
@@ -685,20 +694,20 @@ class RunQA(RunLoop, RunAsync):
             new_qa[reg_q] = a
             self.log.debug("new_qa[%s]: %s" % (reg_q.pattern.__repr__(), a))
 
-        new_qa_std = {}
-        self.log.debug("new_qa_std: ")
-        for question, answer in qa_std.items():
+        new_qa_reg = {}
+        self.log.debug("new_qa_reg: ")
+        for question, answer in qa_reg.items():
             reg_q = re.compile(r"" + question + r"[\s\n]*$")
             if not answer.endswith('\n'):
                 answer += '\n'
-            new_qa_std[reg_q] = answer
-            self.log.debug("new_qa_std[%s]: %s" % (reg_q.pattern.__repr__(), answer))
+            new_qa_reg[reg_q] = answer
+            self.log.debug("new_qa_reg[%s]: %s" % (reg_q.pattern.__repr__(), answer))
 
         # simple statements, can contain wildcards
         new_no_qa = [re.compile(r"" + x + r"[\s\n]*$") for x in no_qa]
         self.log.debug("new_no_qa: %s" % [x.pattern.__repr__() for x in new_no_qa])
 
-        return new_qa, new_qa_std, new_no_qa
+        return new_qa, new_qa_reg, new_no_qa
 
     def _loop_initialise(self):
         """Initialisation before the loop starts"""
@@ -713,9 +722,9 @@ class RunQA(RunLoop, RunAsync):
 
         self.log.debug('output %s all_output %s' % (output, self._process_output))
 
-        # qa first and then qa_std
+        # qa first and then qa_reg
         nr_qa = len(self.qa)
-        for idx, (q, a) in enumerate(self.qa.items() + self.qa_std.items()):
+        for idx, (q, a) in enumerate(self.qa.items() + self.qa_reg.items()):
             res = q.search(self._process_output)
             if output and res:
                 fa = a % res.groupdict()

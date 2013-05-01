@@ -6,11 +6,16 @@ import time
 import os
 import sys
 
+TIMEOUT = 5  # should be enough
+now = time.time()
+
 res = {}
 
 qa = {
       'noquestion': [None, None],
       'simple': ['Simple question: ', 'simple answer'],
+      'whattime':['Now it is %s. What time is it? ' % now, "%s" % now],
+      'waitforit':['Now is the time.' , 'OK'],
       }
 
 for k, v in qa.items():
@@ -18,6 +23,10 @@ for k, v in qa.items():
         if v[0] is None:
             res[k] = [True, None]
         else:
+            if 'wait' in k:
+                print 'Wait for it (%d seconds)' % TIMEOUT,
+                sys.stdout.flush()
+                time.sleep(TIMEOUT)
             print v[0],
             sys.stdout.flush()
             a = sys.stdin.readline().rstrip('\n')
