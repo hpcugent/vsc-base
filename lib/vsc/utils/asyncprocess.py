@@ -91,7 +91,7 @@ class Popen(subprocess.Popen):
     def get_conn_maxsize(self, which, maxsize):
         if maxsize is None:
             maxsize = 1024
-        elif maxsize == 0:  # # SDW: < 1: -1 means all
+        elif maxsize == 0:  # do not use < 1: -1 means all
             maxsize = 1
         return getattr(self, which), maxsize
 
@@ -130,7 +130,7 @@ class Popen(subprocess.Popen):
 
             r = conn.read(maxsize)
             if not r:
-                return self._close(which)  # # SDW: close when nothing left to read
+                return self._close(which)  # close when nothing left to read
 
             if self.universal_newlines:
                 r = self._translate_newlines(r)
@@ -140,7 +140,7 @@ class Popen(subprocess.Popen):
                 fcntl.fcntl(conn, fcntl.F_SETFL, flags)
 
 
-def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread= -1):
+def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
     """
     @param p: process
     @param t: max time to wait without any output before returning
@@ -149,10 +149,13 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread= -1):
     @param stderr: boolean, read from stderr
     @param maxread: stop when max read bytes have been read (before timeout t kicks in) (-1: read all)
 
-    Changes made SDW:
+    Changes made wrt original:
       - add maxread here
       - set e to False by default
     """
+    if maxread is None:
+        maxread = -1
+
     if tr < 1:
         tr = 1
     x = time.time() + t
