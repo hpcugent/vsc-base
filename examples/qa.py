@@ -73,6 +73,15 @@ def test_std_regex():
     return ec, output
 
 
+def test_qa_noqa():
+    qa_dict = {
+               'Now is the time.': 'OK',
+               }
+    no_qa = ['Wait for it \(\d+ seconds\)']
+    ec, output = run_qastdout([SCRIPT_QA, 'waitforit'], qa=qa_dict, no_qa=no_qa)
+    return ec, output
+
+
 def test_qanoquestion():
     ec, output = run_qalog([SCRIPT_QA, 'noquestion'])
     return ec, output
@@ -83,3 +92,4 @@ if __name__ == '__main__':
     test_qa()
     test_qalog()
     test_std_regex()
+    test_qa_noqa()
