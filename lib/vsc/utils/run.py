@@ -107,9 +107,11 @@ class Run(object):
         Handle initiliastion
             @param cmd: command to run
             @input: set "simple" input
+            @startpath: directory to change to before executing command
             @disable_log: use fake logger (won't log anything)
         """
         self.input = kwargs.pop('input', None)
+        self.startpath = kwargs.pop('startpath', None)
         if kwargs.pop('disable_log', None):
             self.log = DummyFunction()  # No logging
         if not hasattr(self, 'log'):
@@ -117,7 +119,6 @@ class Run(object):
 
         self.cmd = cmd  # actual command
 
-        self.startpath = None
         self._cwd_before_startpath = None
 
         self._process_module = None
