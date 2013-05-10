@@ -92,6 +92,8 @@ class DummyFunction(object):
 
 class Run(object):
     """Base class for static run method"""
+    INIT_INPUT_CLOSE = True
+
     @classmethod
     def run(cls, cmd, **kwargs):
         """static method
@@ -101,13 +103,19 @@ class Run(object):
         return r._run()
 
     def __init__(self, cmd=None, **kwargs):
+        """
+        Handle initiliastion
+            @param cmd: command to run
+            @input: set "simple" input
+            @disable_log: use fake logger (won't log anything)
+        """
+        self.input = kwargs.pop('input', None)
         if kwargs.pop('disable_log', None):
             self.log = DummyFunction()  # No logging
         if not hasattr(self, 'log'):
             self.log = getLogger(self._get_log_name())
 
         self.cmd = cmd  # actual command
-        self.input = None
 
         self.startpath = None
         self._cwd_before_startpath = None
@@ -305,14 +313,17 @@ class Run(object):
 
     def _init_input(self):
         """Handle input, if any in a simple way"""
-        if self.input is not None:
+        if self.input is not None:  # allow empty string (whatever it may mean)
             try:
                 self._process.stdin.write(self.input)
             except:
                 self.log.raiseException("_init_input: Failed write input %s to process" % self.input)
 
-        self._process.stdin.close()
-        self.log.debug("_init_input: stdin closed")
+        if self.INIT_INPUT_CLOSE:
+            self._process.stdin.close()
+            self.log.debug("_init_input: stdin closed")
+        else:
+            self.log.debug("_init_input: stdin NOT closed")
 
     def _wait_for_process(self):
         """The main loop
@@ -632,6 +643,7 @@ class RunTimeout(RunLoop, RunAsync):
 class RunQA(RunLoop, RunAsync):
     """Question/Answer processing"""
     LOOP_MAX_MISS_COUNT = 20
+    INIT_INPUT_CLOSE = False
 
     def __init__(self, cmd, **kwargs):
         """
@@ -651,11 +663,6 @@ class RunQA(RunLoop, RunAsync):
         super(RunQA, self).__init__(cmd, **kwargs)
 
         self.qa, self.qa_reg, self.no_qa = self._parse_qa(qa, qa_reg, no_qa)
-
-    def _init_input(self):
-        """Handle input, if any in a simple way"""
-        # do nothing here
-        pass
 
     def _parse_qa(self, qa, qa_reg, no_qa):
         """
