@@ -112,7 +112,7 @@ class FancyLoggerTest(TestCase):
                     msgre = re.compile(MSGRE_TPL % logmsgtype)
                 txt = logfile.read()
 
-                self.assertTrue(msgre.search(txt))
+                self.assertTrue(msgre.search(txt), "expected %s to be in %s" % ( msgre, txt))
         logfile.close()
 
     def test_getlevelint(self):
