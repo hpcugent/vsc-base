@@ -93,6 +93,7 @@ class DummyFunction(object):
 class Run(object):
     """Base class for static run method"""
     INIT_INPUT_CLOSE = True
+    USE_SHELL = True
 
     @classmethod
     def run(cls, cmd, **kwargs):
@@ -106,9 +107,9 @@ class Run(object):
         """
         Handle initiliastion
             @param cmd: command to run
-            @input: set "simple" input
-            @startpath: directory to change to before executing command
-            @disable_log: use fake logger (won't log anything)
+            @param input: set "simple" input
+            @param startpath: directory to change to before executing command
+            @param disable_log: use fake logger (won't log anything)
         """
         self.input = kwargs.pop('input', None)
         self.startpath = kwargs.pop('startpath', None)
@@ -285,7 +286,7 @@ class Run(object):
                                   'stderr': self._process_module.STDOUT,
                                   'stdin': self._process_module.PIPE,
                                   'close_fds': True,
-                                  'shell': True,
+                                  'shell': self.USE_SHELL,
                                   'executable': "/bin/bash",
                                   }
         if others is not None:
@@ -322,9 +323,9 @@ class Run(object):
 
         if self.INIT_INPUT_CLOSE:
             self._process.stdin.close()
-            self.log.debug("_init_input: stdin closed")
+            self.log.debug("_init_input: process stdin closed")
         else:
-            self.log.debug("_init_input: stdin NOT closed")
+            self.log.debug("_init_input: process stdin NOT closed")
 
     def _wait_for_process(self):
         """The main loop
