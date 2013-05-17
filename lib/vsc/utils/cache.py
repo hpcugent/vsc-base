@@ -78,9 +78,10 @@ class FileCache(object):
         try:
             f = open(self.filename, 'rb')
             try:
-                f = gzip.GzipFile(mode='rb', fileobj=f)
-                s = f.read()
+                g = gzip.GzipFile(mode='rb', fileobj=f)
+                s = g.read()
                 self.shelf = jsonpickle.decode(s)
+                g.close()
             except IOError, err:
                 try:
                     self.shelf = pickle.load(f)
