@@ -84,7 +84,10 @@ class FileCache(object):
                 g.close()
             except IOError, err:
                 try:
+                    f.seek(0)
                     self.shelf = pickle.load(f)
+                except pickle.UnpicklingError, err:
+                    self.log.raiseException("Problem loading pickle data from %s" % (self.filename))
                 except (OSError, IOError):
                     self.log.raiseException("Could not load pickle data from %s" % (self.filename))
             finally:
@@ -148,6 +151,10 @@ class FileCache(object):
                 self.shelf.update(self.new_shelf)
                 self.new_shelf = self.shelf
 
-            pickle.dump(self.new_shelf, f)
+            g = gzip.GzipFile(mode='wb', fileobj=f)
+            pickled = jsonpickle.encode(self.new_shelf)
+            g.write(pickled)
+            g.close()
             f.close()
+
             self.log.info('closing the file cache at %s' % (self.filename))
