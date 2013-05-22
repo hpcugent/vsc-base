@@ -133,7 +133,7 @@ class NagiosReporter(object):
             self.log.critical("Error opening file %s for reading" % (self.filename))
             unknown_exit("%s nagios gzipped JSON file unavailable (%s)" % (self.header, self.filename))
 
-        (timestamp, ((nagios_exit_code, nagios_exit_string), nagios_message)) = nagios_cache.load(0)
+        (timestamp, ((nagios_exit_code, nagios_exit_string), nagios_message)) = nagios_cache.load('nagios')
         nagios_cache.close()
 
         if self.threshold < 0 or time.time() - timestamp < self.threshold:
@@ -154,7 +154,7 @@ class NagiosReporter(object):
         """
         try:
             nagios_cache = FileCache(self.filename)
-            nagios_cache.update(0, (nagios_exit, nagios_message), 0)  # always update
+            nagios_cache.update('nagios', (nagios_exit, nagios_message), 0)  # always update
             nagios_cache.close()
             self.log.info("Wrote nagios check cache file %s at about %s" % (self.filename, time.ctime(time.time())))
         except:
