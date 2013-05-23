@@ -89,7 +89,8 @@ running this script with the -H option will give::
     All long option names can be passed as environment variables. Variable name is SCRIPT_<LONGNAME> eg. --someopt is same as setting SCRIPT_SOMEOPT in the environment.
 
 
-GeneralOption will now use a configfile (in /etc/myconfig.cfg or ~/.myconfig.cfg) to look up options.
+GeneralOption will now use a configfile (in /etc/myconfig.cfg or ~/.myconfig.cfg) to look up options. It uses pythons' :py:class:`ConfigParser` class to parse the config files.
+If multiple configfiles can be found, the last one will be used.
 The options in the config file can be overwritten when you set an environment variable (e.g., SCRIPT_DEBUG).
 You can then furhter overwrite these options on the command line.
 
@@ -98,8 +99,6 @@ You will automatically have a short and long help, get the docstring in the help
 
 Advanced option parsing
 ^^^^^^^^^^^^^^^^^^^^^^^
-
-
-
-Config file format
-^^^^^^^^^^^^^^^^^^
+You can easily extend GeneralOption and GeneralOptionParser to create very complicated option parsers, wich perform postprocessing sanity checks, have multiple optiongroups,
+print out extended help, set custom environment variable prefixes etc...
+For a real world example, see the EasyBuildOptions in `easybuild/tools/options.py <https://github.com/hpcugent/easybuild-framework/blob/master/easybuild/tools/options.py>`_
