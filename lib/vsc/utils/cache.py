@@ -118,10 +118,13 @@ class FileCache(object):
             (ts, _) = old
             if now - ts > threshold:
                 self.new_shelf[key] = (now, data)
+                return True
             else:
                 self.new_shelf[key] = old
+                return False
         else:
             self.new_shelf[key] = (now, data)
+            return True
 
     def load(self, key):
         """Load the stored data for the given key along with the timestamp it was stored.
@@ -130,7 +133,7 @@ class FileCache(object):
 
         @returns: (timestamp, data) if there is data for the given key, None otherwise.
         """
-        return self.shelf.get(key, None) or self.new_shelf.get(key, None)
+        return self.new_shelf.get(key, None) or self.shelf.get(key, None)
 
     def retain(self):
         """Retain non-updated data on close."""
