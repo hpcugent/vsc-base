@@ -76,7 +76,8 @@ class FancyLoggerTest(TestCase):
     def test_log_types(self):
         """Test the several types of logging."""
         # truncate the logfile
-        open(self.logfn, 'w')
+        logfile = open(self.logfn, 'w')
+        logfile.close()
 
         logtypes = {
                     'critical': lambda l, m: l.critical(m),
@@ -112,7 +113,7 @@ class FancyLoggerTest(TestCase):
                     msgre = re.compile(MSGRE_TPL % logmsgtype)
                 txt = logfile.read()
 
-                self.assertTrue(msgre.search(txt), "expected %s to be in %s" % ( msgre, txt))
+                self.assertTrue(msgre.search(txt), "expected '%s' to be in '%s'" % (msgre.pattern, txt))
         logfile.close()
 
     def test_getlevelint(self):
