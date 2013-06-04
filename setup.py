@@ -51,13 +51,10 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '1.4.2',
+    'version': '1.5.0',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
     'packages': ['vsc', 'vsc.utils', 'vsc.install'],
-    'provides': ['python-vsc-packages-common = 0.5',
-                 'python-vsc-packages-logging = 0.14',
-                 'python-vsc-packages-utils = 0.11'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh'],
     'install_requires' : ['setuptools'],
 }
