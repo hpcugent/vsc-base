@@ -469,7 +469,7 @@ class ExtOptionParser(OptionParser):
 
         epilogprefixtxt = "All long option names can be passed as environment variables. "
         epilogprefixtxt += "Variable name is %(prefix)s_<LONGNAME> "
-        epilogprefixtxt += "eg. --someopt is same as setting %(prefix)s_SOMEOPT in the environment."
+        epilogprefixtxt += "eg. --some-opt is same as setting %(prefix)s_SOME_OPT in the environment."
         self.epilog.append(epilogprefixtxt % {'prefix': self.envvar_prefix})
 
         for opt in self._get_all_options():
@@ -478,7 +478,7 @@ class ExtOptionParser(OptionParser):
             for lo in opt._long_opts:
                 if len(lo) == 0:
                     continue
-                env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').upper())
+                env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').replace('-', '_').upper())
                 val = os.environ.get(env_opt_name, None)
                 if not val is None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
@@ -487,7 +487,10 @@ class ExtOptionParser(OptionParser):
                         # interpretation of values: 0/no/false means: don't set it
                         if not ("%s" % val).lower() in ("0", "no", "false",):
                             env_long_opts.append("%s" % lo)
+                else:
+                    self.log.debug("Environment variable %s is not set" % env_opt_name)
 
+        self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, env_long_opts))
         return env_long_opts
 
     def get_option_by_long_name(self, name):
