@@ -488,9 +488,9 @@ class ExtOptionParser(OptionParser):
                         if not ("%s" % val).lower() in ("0", "no", "false",):
                             env_long_opts.append("%s" % lo)
                 else:
-                    self.log.debug("$%s is not set" % env_opt_name)
+                    self.log.debug("Environment variable %s is not set" % env_opt_name)
 
-        self.log.debug("Environment options with prefix %s: %s" % (self.envvar_prefix, env_long_opts))
+        self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, env_long_opts))
         return env_long_opts
 
     def get_option_by_long_name(self, name):
