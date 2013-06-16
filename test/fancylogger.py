@@ -209,7 +209,6 @@ class FancyLoggerTest(TestCase):
         self.assertEqual(match, expect_match)
 
         try:
-            fh.close()
             os.remove(logfn)
         except:
             pass
