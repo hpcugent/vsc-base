@@ -354,7 +354,7 @@ def getRootLoggerName():
     try:
         return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
     except Exception:
-        return None
+        return "?"
 
 
 def logToScreen(enable=True, handler=None, name=None, stdout=False):
