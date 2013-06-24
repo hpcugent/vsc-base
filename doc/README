@@ -1,0 +1,10 @@
+This directory contains the documentation for vsc-base
+
+It should be created with sphinx.
+
+The baseconf.py file contains base configuration for vsc-base and all other vsc-* packages.
+This can be extended, as seen in conf.py
+
+
+run make api to generate the .rst files for all vsc- packages
+run make html to create the documentation from these .rst packages
