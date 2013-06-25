@@ -343,7 +343,7 @@ def _getCallingFunctionName():
     try:
         return inspect.stack()[2][3]
     except Exception:
-        return None
+        return "?"
 
 
 def getRootLoggerName():
