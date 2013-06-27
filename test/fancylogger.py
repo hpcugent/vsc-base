@@ -73,49 +73,6 @@ class FancyLoggerTest(TestCase):
                 print "err: %s" % err
             self.assertTrue(res)
 
-    def test_log_types(self):
-        """Test the several types of logging."""
-        # truncate the logfile
-        logfile = open(self.logfn, 'w')
-        logfile.close()
-
-        logtypes = {
-                    'critical': lambda l, m: l.critical(m),
-                    'debug': lambda l, m: l.debug(m),
-                    'error': lambda l, m: l.error(m),
-                    'exception': lambda l, m: l.exception(m),
-                    'fatal': lambda l, m: l.fatal(m),
-                    'info': lambda l, m: l.info(m),
-                    'warning': lambda l, m: l.warning(m),
-                    'warn': lambda l, m: l.warn(m),
-                   }
-        logfile = open(self.logfn, 'r')
-
-        # we raise an exception here so the logger will be able to print a stacktrace later on
-        try:
-            raise Exception
-        except:
-            pass
-        for logtype, logf in sorted(logtypes.items()):
-                # log message
-                logger = fancylogger.getLogger('%s_test' % logtype)
-                log_up = logtype.upper()
-                logger.setLevel(log_up)
-                logf(logger, MSG)
-
-                # check whether expected message got logged with expected format
-                logmsgtype = log_up
-                if logmsgtype == 'EXCEPTION':
-                    msgre = re.compile(".*".join(['ERROR', MSG, '\nTraceback']))
-                elif logmsgtype == 'FATAL':
-                    msgre = re.compile(MSGRE_TPL % 'CRITICAL')
-                else:
-                    msgre = re.compile(MSGRE_TPL % logmsgtype)
-                txt = logfile.read()
-
-                self.assertTrue(msgre.search(txt), "expected '%s' to be in '%s'" % (msgre.pattern, txt))
-        logfile.close()
-
     def test_getlevelint(self):
         """Test the getLevelInt"""
         DEBUG = fancylogger.getLevelInt('DEBUG')
@@ -252,7 +209,6 @@ class FancyLoggerTest(TestCase):
         self.assertEqual(match, expect_match)
 
         try:
-            fh.close()
             os.remove(logfn)
         except:
             pass
