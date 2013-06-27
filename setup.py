@@ -31,9 +31,10 @@ vsc-base base distribution setup.py
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
 """
+import os
 import sys
 
-sys.path.append("./lib")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
 
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, jt, sdw
@@ -51,7 +52,7 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '1.6',
+    'version': '1.6.1',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
     'packages': ['vsc', 'vsc.utils', 'vsc.install'],
