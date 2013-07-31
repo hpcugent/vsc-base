@@ -34,10 +34,10 @@ It also adds a few other usefull extras.
  - also provides a `cpuset` class to convert between human readable cpusets and the bit version Linux priority
  - Based on sys/resources.h and bits/resources.h see man pages for `getpriority` and `setpriority`
 - __asyncprocess.py__ : Module to allow Asynchronous subprocess use on Windows and Posix platforms
- - Based on a [python recipe](http://code.activestate.com/recipes/440554/) by Josiah Carlson 
+ - Based on a [python recipe](http://code.activestate.com/recipes/440554/) by Josiah Carlson
  - added STDOUT handle and recv_some
 - __daemon.py__ : [A generic daemon class by Sander Marechal](http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/)
-- __dateandtime.py : A module with various convenience functions and classes to deal with date, time and timezone.
+- __dateandtime.py__ : A module with various convenience functions and classes to deal with date, time and timezone.
 - __nagios.py__ : This module provides functionality to cache and report results of script executions that can readily be
 interpreted by nagios/icinga.
 - __run.py__ : Python module to execute a command, can make use of asyncprocess, answer questions based on a dictionary
@@ -45,7 +45,7 @@ interpreted by nagios/icinga.
 - __mail.py__ : Wrapper around the standard Python mail library.
  - Send a plain text message
  - Send an HTML message, with a plain text alternative
- 
+
 ## bin
 A collection of python scripts, these are examples of how you could use fancylogger to log to a daemon, but should not be used directly.
 - __logdaemon.py__: A daemon that listens on a port for udp packets and logs them to file, works toghether with fancylogger.
