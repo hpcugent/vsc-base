@@ -255,7 +255,7 @@ def datetime_parser(txt):
 
     return res
 
-def parse_timestamp(timestamp):
+def timestamp_parser(timestamp):
     """Parse timestamp to datetime
     """
 
