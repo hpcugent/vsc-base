@@ -255,6 +255,12 @@ def datetime_parser(txt):
 
     return res
 
+def parse_timestamp(timestamp):
+    """Parse timestamp to datetime
+    """
+
+    return datetime.fromtimestamp(int(timestamp))
+
 #
 # example code from http://docs.python.org/library/datetime.html
 # Implements Local, the local timezone
