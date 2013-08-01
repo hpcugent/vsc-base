@@ -257,7 +257,7 @@ def datetime_parser(txt):
 
 def timestamp_parser(timestamp):
     """Parse timestamp to datetime"""
-    return datetime.fromtimestamp(int(timestamp))
+    return datetime.fromtimestamp(float(timestamp))
 
 #
 # example code from http://docs.python.org/library/datetime.html
