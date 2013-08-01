@@ -256,9 +256,7 @@ def datetime_parser(txt):
     return res
 
 def timestamp_parser(timestamp):
-    """Parse timestamp to datetime
-    """
-
+    """Parse timestamp to datetime"""
     return datetime.fromtimestamp(int(timestamp))
 
 #
