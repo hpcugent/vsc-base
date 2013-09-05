@@ -1167,6 +1167,20 @@ class GeneralOption(object):
         return args
 
 
+class SimpleOptionParser(ExtOptionParser):
+    DESCRIPTION_DOCSTRING = True
+
+
+class SimpleOption(GeneralOption):
+    PARSER = SimpleOptionParser
+
+    def main_options(self):
+        if go_dict is not None:
+            prefix = None
+            self.add_group_parser(go_dict, descr, prefix=prefix)
+
+
+
 def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdescr=None, config_files=None):
     """A function that returns a single level GeneralOption option parser
         @param go_dict : General Option option dict
@@ -1188,17 +1202,6 @@ def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdes
         long_groupdescr = ''
     descr = [short_groupdescr, long_groupdescr]
 
-    class SimpleOptionParser(ExtOptionParser):
-        DESCRIPTION_DOCSTRING = True
-
-    class SimpleOption(GeneralOption):
-        PARSER = SimpleOptionParser
-
-        def main_options(self):
-            if go_dict is not None:
-                prefix = None
-                self.add_group_parser(go_dict, descr, prefix=prefix)
-
     kwargs = {
               'go_prefixloggername': True,
               'go_mainbeforedefault': True,
@@ -1206,4 +1209,4 @@ def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdes
     if config_files is not None:
         kwargs['go_configfiles'] = config_files
 
-    return SimpleOption(**kwargs)
+    return iimpleOption(**kwargs)
