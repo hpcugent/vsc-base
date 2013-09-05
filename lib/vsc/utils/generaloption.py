@@ -1209,4 +1209,4 @@ def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdes
     if config_files is not None:
         kwargs['go_configfiles'] = config_files
 
-    return iimpleOption(**kwargs)
+    return SimpleOption(**kwargs)
