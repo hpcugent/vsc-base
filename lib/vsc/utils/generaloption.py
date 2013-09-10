@@ -1174,10 +1174,17 @@ class SimpleOptionParser(ExtOptionParser):
 class SimpleOption(GeneralOption):
     PARSER = SimpleOptionParser
 
+    def __init__(self, go_dict=None, descr=None, **kwargs):
+        """Initialisation"""
+
+        self.go_dict = go_dict
+        self.descr = descr
+        super(SimpleOption, self).__init__(**kwargs)
+
     def main_options(self):
-        if go_dict is not None:
+        if self.go_dict is not None:
             prefix = None
-            self.add_group_parser(go_dict, descr, prefix=prefix)
+            self.add_group_parser(self.go_dict, self.descr, prefix=prefix)
 
 
 def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdescr=None, config_files=None):
@@ -1202,9 +1209,11 @@ def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdes
     descr = [short_groupdescr, long_groupdescr]
 
     kwargs = {
-              'go_prefixloggername': True,
-              'go_mainbeforedefault': True,
-              }
+        'go_prefixloggername': True,
+        'go_mainbeforedefault': True,
+        'go_dict': go_dict,
+        'descr': descr,
+    }
     if config_files is not None:
         kwargs['go_configfiles'] = config_files
 
