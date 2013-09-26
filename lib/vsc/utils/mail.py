@@ -92,7 +92,7 @@ class VscMail(object):
                 s = smtplib.SMTP(self.mail_host)
             else:
                 s = smtplib.SMTP()
-            s.connect()
+                s.connect()
             try:
                 s.sendmail(mail_from, mail_to, msg.as_string())
             except smtplib.SMTPHeloError, err:
