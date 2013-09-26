@@ -89,10 +89,12 @@ class VscMail(object):
 
         try:
             if self.mail_host:
+                self.log.debug("Using %s as the mail host" % (self.mail_host,))
                 s = smtplib.SMTP(self.mail_host)
             else:
+                self.log.debug("Using the default mail host")
                 s = smtplib.SMTP()
-            s.connect()
+                s.connect()
             try:
                 s.sendmail(mail_from, mail_to, msg.as_string())
             except smtplib.SMTPHeloError, err:
@@ -112,14 +114,14 @@ class VscMail(object):
             except smtplib.SMTPDataError, err:
                 raise
         except smtplib.SMTPConnectError, err:
-            self.log.error("Cannot connect to the SMTP host" + (self.mail_host and " %s" % (self.mail_host) or ""))
+            self.log.exception("Cannot connect to the SMTP host" + (self.mail_host and " %s" % (self.mail_host) or ""))
             raise VscMailError(mail_host=self.mail_host,
                                mail_to=mail_to,
                                mail_from=mail_from,
                                mail_subject=mail_subject,
                                err=err)
         except Exception, err:
-            self.log.error("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
+            self.log.exception("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
             raise VscMailError(mail_host=self.mail_host,
                                mail_to=mail_to,
                                mail_from=mail_from,
