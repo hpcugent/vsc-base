@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
-##
+# #
 # Copyright 2009-2013 Ghent University
 #
 # This file is part of vsc-utils,
@@ -12,7 +12,7 @@
 #
 # All rights reserved.
 #
-##
+# #
 """
 Shared module for vsc-base setup
 
@@ -125,7 +125,7 @@ kh = ('Kenneth Hoste', 'kenneth.hoste@ugent.be')
 lm = ('Luis Fernando Munoz Meji?as', 'luis.munoz@ugent.be')
 sdw = ('Stijn De Weirdt', 'stijn.deweirdt@ugent.be')
 wdp = ('Wouter Depypere', 'wouter.depypere@ugent.be')
-
+kw = ('Kenneth Waegeman', 'Kenneth.Waegeman@UGent.be')
 
 # FIXME: do we need this here? it won;t hurt, but still ...
 class vsc_install_scripts(install_scripts):
@@ -161,7 +161,7 @@ class vsc_bdist_rpm(bdist_rpm):
     def run(self):
         log.error("vsc_bdist_rpm = %s" % (self.__dict__))
         SHARED_TARGET['cmdclass']['egg_info'] = vsc_bdist_rpm_egg_info  # changed to allow removal of files
-        self.run_command('egg_info')    # ensure distro name is up-to-date
+        self.run_command('egg_info')  # ensure distro name is up-to-date
         _bdist_rpm.run(self)
 
 
@@ -180,7 +180,7 @@ SHARED_TARGET = {
 
 def cleanup(prefix=''):
     """Remove all build cruft."""
-    dirs=[prefix+'build'] + glob.glob(prefix + 'lib/*.egg-info')
+    dirs = [prefix + 'build'] + glob.glob(prefix + 'lib/*.egg-info')
     for d in dirs:
         if os.path.isdir(d):
             log.warn("cleanup %s" % d)
@@ -257,7 +257,7 @@ def build_setup_cfg_for_bdist_rpm(target):
 
 
 def action_target(target, setupfn=setup, extra_sdist=[]):
-    #EXTRA_SDIST_FILES.extend(extra_sdist)
+    # EXTRA_SDIST_FILES.extend(extra_sdist)
 
     cleanup()
 

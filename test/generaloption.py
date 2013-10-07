@@ -272,6 +272,10 @@ prefix-and-dash=YY
 extend=one,two,three
 strtuple=a,b
 strlist=x,y
+
+[remainder]
+opt1=value1
+
 """
         tmp1 = NamedTemporaryFile()
         tmp1.write(CONFIGFILE1)
@@ -286,6 +290,10 @@ strlist=x,y
         self.assertEqual(topt.options.ext_extend, ['one', 'two', 'three'])
         self.assertEqual(topt.options.ext_strtuple, ('a', 'b'))
         self.assertEqual(topt.options.ext_strlist, ['x', 'y'])
+
+        self.assertTrue('remainder' in topt.configfile_remainder)
+        self.assertFalse('base' in topt.configfile_remainder)
+        self.assertEqual(topt.configfile_remainder['remainder'], {'opt1': 'value1'})
 
         topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
         self.assertEqual(topt2.options.store, 'notok')
