@@ -932,7 +932,7 @@ class GeneralOption(object):
                 continue
 
         # add any non-option related configfile data to configfile_remainder dict
-        cfg_sections_flat = [y for x in cfg_sections for y in x]
+        cfg_sections_flat = [name for section_names in cfg_sections for name in section_names]
         for section in self.configfile_parser.sections():
             if not section in cfg_sections_flat:
                 self.log.debug("parseconfigfiles: found section %s, adding to remainder" % section)
