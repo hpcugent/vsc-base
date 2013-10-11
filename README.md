@@ -27,7 +27,7 @@ couple of `fancy` features.
   available in the Python (2.x) API.
 - __cache.py__ : File cache to store pickled data identified by a key accompanied by a timestamp,
 - __generaloption.py__ : A general option parser for python. It will fetch options (in this order) from config files, from environment variables and from the command line and parse them in a way compatible with the default python optionparser. Thus allowing a very flexible way to configure your scripts.
-It also adds a few other usefull extras.
+It also adds a few other useful extras.
 - __affinity.py__ : Linux cpu affinity.
  - Based on `sched.h` and `bits/sched.h`,
  - see man pages for `sched_getaffinity` and `sched_setaffinity`
