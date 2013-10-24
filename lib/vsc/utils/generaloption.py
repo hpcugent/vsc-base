@@ -522,7 +522,7 @@ class GeneralOption(object):
         - go_loggername : name of logger, default classname
         - go_initbeforedefault : set the main options before the default ones
 
-    Sections with the string 'raw' in the sectionname will be parsed as raw sections,
+    Sections starting with the string 'raw_' in the sectionname will be parsed as raw sections,
     meaning there will be no interpolation of the strings. This comes in handy if you want to configure strings
     with templates in them.
 
@@ -942,8 +942,8 @@ class GeneralOption(object):
             if not section in cfg_sections_flat:
                 self.log.debug("parseconfigfiles: found section %s, adding to remainder" % section)
                 remainder = self.configfile_remainder.setdefault(section, {})
-                # parse te remaining options, sections which have 'raw' in their name will be considered raw sections
-                for opt, val in self.configfile_parser.items(section, raw=('raw' in section)):
+                # parse te remaining options, sections starting with 'raw_' as their name will be considered raw sections
+                for opt, val in self.configfile_parser.items(section, raw=(section.startswith('raw_')):
                     remainder[opt] = val
 
         # options are passed to the commandline option parser
