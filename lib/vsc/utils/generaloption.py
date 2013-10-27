@@ -939,11 +939,12 @@ class GeneralOption(object):
         # add any non-option related configfile data to configfile_remainder dict
         cfg_sections_flat = [name for section_names in cfg_sections for name in section_names]
         for section in self.configfile_parser.sections():
-            if not section in cfg_sections_flat:
+            if section not in cfg_sections_flat:
                 self.log.debug("parseconfigfiles: found section %s, adding to remainder" % section)
                 remainder = self.configfile_remainder.setdefault(section, {})
                 # parse te remaining options, sections starting with 'raw_' as their name will be considered raw sections
-                for opt, val in self.configfile_parser.items(section, raw=(section.startswith('raw_')):
+
+                for opt, val in self.configfile_parser.items(section, raw=(section.startswith('raw_'))):
                     remainder[opt] = val
 
         # options are passed to the commandline option parser
