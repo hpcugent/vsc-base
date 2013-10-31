@@ -102,7 +102,7 @@ try:
                 self.filelist.files.remove(f)
 
     has_setuptools = True
-except:
+except ImportError:
     from distutils.core import setup
     from distutils.command.install_scripts import install_scripts
     from distutils.command.build_py import build_py

@@ -1,6 +1,9 @@
 # vsc-base
 
-[![Build Status](https://jenkins1.ugent.be/job/vsc-base/badge/icon)](https://jenkins1.ugent.be/job/vsc-base/)
+### Build Status
+- Python 2.4 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python24/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python24/)
+- Python 2.6 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python26/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python26/)
+- Python 2.7 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python27/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python27/)
 
 Common tools used within our organization.
 
