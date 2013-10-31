@@ -10,7 +10,7 @@ Common tools used within our organization.
 Originally created by the HPC team of Ghent University (http://ugent.be/hpc).
 
 # Documentation
-https://jenkins1.ugent.be/job/vsc-base/Documentation/
+https://jenkins1.ugent.be/job/vsc-base-python26/Documentation/
 
 # Namespaces and tools
 
