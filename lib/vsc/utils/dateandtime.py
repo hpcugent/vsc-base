@@ -31,10 +31,15 @@ Module with various convenience functions and classes to deal with date, time an
 """
 
 import calendar
-import operator
 import re
 import time as _time
 from datetime import tzinfo, timedelta, datetime, date
+
+try:
+    any([0,1])
+except:
+    from vsc.utils.missing import any
+
 
 class FancyMonth:
     """Convenience class for month math"""
@@ -208,8 +213,10 @@ def date_parser(txt):
     if txt.endswith('MONTH'):
         m = FancyMonth()
         res = m.parser(txt)
-    elif reduce(operator.or_, testsupportedmonths):  # TODO replace with any()
-        m = FancyMonth(month=testsupportedmonths.index(True) + 1)
+    elif any(testsupportedmonths):
+        # set day=1 or this will fail on day's with an index more then the count of days then the month you want to parse
+        # e.g. will fail on 31'st when trying to parse april
+        m = FancyMonth(month=testsupportedmonths.index(True) + 1, day=1)
         res = m.parser(txt)
     elif txt in reserveddate:
         if txt in ('TODAY',):
