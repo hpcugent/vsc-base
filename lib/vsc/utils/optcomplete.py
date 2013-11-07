@@ -110,6 +110,16 @@ DEFAULT_SHELL = BASH
 
 SHELL = DEFAULT_SHELL
 
+OPTION_CLASS = Option
+OPTIONPARSER_CLASS = OptionParser
+
+def set_optionparser(option_class, optionparser_class):
+    """Set the default Option and OptionParser class"""
+    global OPTION_CLASS
+    global OPTIONPARSER_CLASS
+    OPTION_CLASS = option_class
+    OPTIONPARSER_CLASS = optionparser_class
+
 def get_shell():
     """Determine the shell, update class constant SHELL and return the shell
     Idea is to call it just once
@@ -289,11 +299,11 @@ class RegexCompleter(Completer):
         return ofiles
 
 
-class CompleterOption(Option):
+class CompleterOption(OPTION_CLASS):
     """optparse Option class with completer attribute"""
     def __init__(self, *args, **kwargs):
         completer = kwargs.pop('completer', None)
-        Option.__init__(self, *args, **kwargs)
+        OPTION_CLASS.__init__(self, *args, **kwargs)
         if completer is not None:
             self.completer = completer
 
@@ -353,15 +363,15 @@ def guess_first_nonoption(gparser, subcmds_map):
     # save original error_func so we can put it back after the hack
     error_func = gparser.error
     try:
-        instancemethod = type(OptionParser.error)
+        instancemethod = type(OPTIONPARSER_CLASS.error)
         # hack to keep OptionParser from writing to sys.stderr
-        gparser.error = instancemethod(error_override, gparser, OptionParser)
+        gparser.error = instancemethod(error_override, gparser, OPTIONPARSER_CLASS)
         _, args = gparser.parse_args(cwords[1:])
     except SystemExit:
         return None
     finally:
         # undo the hack and restore original OptionParser error function
-        gparser.error = instancemethod(error_func, gparser, OptionParser)
+        gparser.error = instancemethod(error_func, gparser, OPTIONPARSER_CLASS)
 
     value = None
     if args:
@@ -585,7 +595,7 @@ class CmdComplete(object):
     have it here."""
 
     def autocomplete(self, completer=None):
-        parser = OptionParser(self.__doc__.strip())
+        parser = OPTIONPARSER_CLASS(self.__doc__.strip())
         if hasattr(self, 'addopts'):
             fnc = getattr(self, 'addopts')
             fnc(parser)
