@@ -47,7 +47,7 @@ from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.fancylogger import getLogger, setLogLevel
 from vsc.utils.missing import shell_quote
-
+from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 def set_columns(cols=None):
     """Set os.environ COLUMNS variable
@@ -86,7 +86,7 @@ def check_str_list_tuple(option, opt, value):
         raise OptionValueError(err)
 
 
-class ExtOption(Option):
+class ExtOption(CompleterOption):
     """Extended options class
         - enable/disable support
 
@@ -520,7 +520,9 @@ class GeneralOption(object):
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
         - go_loggername : name of logger, default classname
-        - go_initbeforedefault : set the main options before the default ones
+        - go_mainbeforedefault : set the main options before the default ones
+        - go_autocompleter : dict with named options to pass to the autocomplete call (eg arg_completer)
+            if is None: disable autocompletion; default is {} (ie no extra args passed)
 
     Sections starting with the string 'raw_' in the sectionname will be parsed as raw sections,
     meaning there will be no interpolation of the strings. This comes in handy if you want to configure strings
@@ -570,6 +572,7 @@ class GeneralOption(object):
         self.configfiles = kwargs.pop('go_configfiles', self.CONFIGFILES_INIT)  # configfiles to parse
         prefixloggername = kwargs.pop('go_prefixloggername', False)  # name of logger is same as envvar prefix
         mainbeforedefault = kwargs.pop('go_mainbeforedefault', False)  # Set the main options before the default ones
+        autocompleter = kwargs.pop('go_autocompleter', {})  # Pass these options to the autocomplete call
 
         set_columns(kwargs.pop('go_columns', None))
 
@@ -593,6 +596,8 @@ class GeneralOption(object):
         self.log = getLogger(loggername)
         self.options = None
         self.args = None
+
+        self.autocompleter = autocompleter
 
         self.auto_prefix = None
         self.auto_section_name = None
@@ -817,9 +822,13 @@ class GeneralOption(object):
                         # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
                         hlp += ' (choices: %s)' % ', '.join(nameds['choices'])
-                    elif isinstance(extra_detail, (str,)) and len(extra_detail) == 1:
+                    elif isinstance(extra_detail, basestring) and len(extra_detail) == 1:
                         args.insert(0, "-%s" % extra_detail)
                     elif isinstance(extra_detail, (dict,)):
+                        # extract any optcomplete completer hints
+                        completer = extra_detail.pop('completer', None)
+
+                        # add remainder
                         passed_kwargs.update(extra_detail)
                     else:
                         self.log.raiseException("add_group_parser: unknown extra detail %s" % extra_detail)
@@ -833,7 +842,10 @@ class GeneralOption(object):
 
             # force passed_kwargs as final nameds
             nameds.update(passed_kwargs)
-            opt_grp.add_option(*args, **nameds)
+            opt = opt_grp.add_option(*args, **nameds)
+
+            if completer is not None:
+                opt.completer = completer
 
         self.parser.add_option_group(opt_grp)
 
@@ -847,10 +859,21 @@ class GeneralOption(object):
         """Return default options"""
         return sys.argv[1:]
 
+    def autocomplete(self):
+        """Set the autocompletion magic via optcomplete"""
+        # very basic for now, no special options
+        if self.autocompleter is None:
+            self.log.debug('self.autocompleter is None, disabling autocompleter')
+        else:
+            self.log.debug('setting autocomplete with args %s' % self.autocompleter)
+            autocomplete(self.parser, **self.autocompleter)
+
     def parseoptions(self, options_list=None):
         """Parse the options"""
         if options_list is None:
             options_list = self.default_parseoptions()
+
+        self.autocomplete()
 
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
