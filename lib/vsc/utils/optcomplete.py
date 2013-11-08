@@ -94,6 +94,7 @@ Modification by stdweird:
 
 import copy
 import glob
+import logging
 import os
 import re
 import sys
@@ -149,11 +150,10 @@ class Completer(object):
         all_args = []
         if self.CALL_ARGS is not None:
             for arg in self.CALL_ARGS:
+                all_args.append(arg)
                 if not arg in kwargs:
                     msg = "%s __call__ missing mandatory arg %s" % (self.__class__.__name__, arg)
                     raise CompleterMissingCallArgument(msg)
-        else:
-            all_args.extend(self.CALL_ARGS)
 
         if self.CALL_ARGS_OPTIONAL is not None:
             all_args.extend(self.CALL_ARGS_OPTIONAL)
@@ -576,9 +576,12 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
             'Suffix %s', suffix,
             'completions %s' % completions,
             ])
-        f = open(debugfn, 'a')
-        f.write(txt)
-        f.close()
+        if isinstance(debugfn, logging.Logger):
+            debugfn.debug(txt)
+        else:
+            f = open(debugfn, 'a')
+            f.write(txt)
+            f.close()
 
     # Exit with error code (we do not let the caller continue on purpose, this
     # is a run for completions only.)
