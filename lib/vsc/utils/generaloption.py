@@ -765,6 +765,8 @@ class GeneralOption(object):
         if self.OPTIONGROUP_SORTED_OPTIONS:
             keys.sort()  # alphabetical
         for key in keys:
+            completer = None
+
             details = opt_dict[key]
 
             hlp = details[0]
