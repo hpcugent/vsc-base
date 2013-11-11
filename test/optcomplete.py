@@ -37,7 +37,7 @@ from vsc.utils import optcomplete
 from vsc.utils.optcomplete import Completer, CompleterMissingCallArgument
 from vsc.utils.optcomplete import NoneCompleter, ListCompleter, AllCompleter, KnownHostsCompleter
 from vsc.utils.optcomplete import FileCompleter, DirCompleter, RegexCompleter
-
+from vsc.utils.optcomplete import extract_word
 
 class TestOptcomplete(TestCase):
     """Tests for optcomplete."""
@@ -127,12 +127,47 @@ class TestOptcomplete(TestCase):
     def test_file_completer(self):
         """Test FileCompleter"""
         # test bash
+        optcomplete.SHELL = optcomplete.BASH
+        fc = FileCompleter()
+        self.assertEqual(fc(), '_filedir')
+
+        fc = FileCompleter(['.a'])
+        self.assertEqual(fc(), "_filedir '@(.a)'")
 
     def test_dir_completer(self):
         """Test DirCompleter"""
+        # test bash
+        optcomplete.SHELL = optcomplete.BASH
+        dc = DirCompleter()
+        self.assertEqual(dc(), '_filedir -d')
 
     def test_regex_completer(self):
         """Test RegexCompleter"""
+        rc = RegexCompleter(['^tmp'])
+        expected_res = self.tempfiles + self.tempdirs + ["%s%s" % (p, os.path.sep) for p in self.tempdirs]
+        self.assertEqual(sorted(rc(prefix=os.path.join(self.basetemp, 'tmp'))), sorted(expected_res))
+
+    def test_extract_word(self):
+        """Test the extract_word function"""
+        testlines = {
+            "extraire un mot d'une phrase": {
+                    11: ('un', ''),
+                    12: ('', 'mot'),
+                    13: ('m', 'ot'),
+                    14: ('mo', 't'),
+                    0: ('', 'extraire'),
+                    28: ('phrase', ''),
+                    29: ('', ''),
+                    - 2: ('', ''),
+                },
+            "optcomplete-test do": {
+                    19: ('do', ''),
+                }
+            }
+
+        for line, totest in testlines.items():
+            for pointer, res in totest.items():
+                self.assertEqual(extract_word(line, pointer), res)
 
 
 def suite():

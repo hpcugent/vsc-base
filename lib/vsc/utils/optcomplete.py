@@ -105,6 +105,8 @@ from pprint import pformat
 
 debugfn = None  # for debugging only
 
+OPTCOMPLETE_ENVIRONMENT = 'OPTPARSE_AUTO_COMPLETE'
+
 BASH = "bash"
 
 DEFAULT_SHELL = BASH
@@ -203,7 +205,7 @@ class FileCompleter(Completer):
             endings = [endings]
         elif endings is None:
             endings = []
-        self.endings = tuple(map(str, self.endings))
+        self.endings = tuple(map(str, endings))
 
     def _call(self, **kwargs):
         # TODO : what does prefix do in bash?
@@ -415,7 +417,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
     # If we are not requested for complete, simply return silently, let the code
     # caller complete. This is the normal path of execution.
-    if not os.environ.has_key('OPTPARSE_AUTO_COMPLETE'):
+    if not os.environ.has_key(OPTCOMPLETE_ENVIRONMENT):
         return
     # After this point we should never return, only sys.exit(1)
 
@@ -607,17 +609,3 @@ class CmdComplete(object):
             completer = getattr(self, 'completer')
 
         return autocomplete(parser, completer)
-
-
-if __name__ == '__main__':
-    def test():
-        print extract_word("extraire un mot d'une phrase", 11)
-        print extract_word("extraire un mot d'une phrase", 12)
-        print extract_word("extraire un mot d'une phrase", 13)
-        print extract_word("extraire un mot d'une phrase", 14)
-        print extract_word("extraire un mot d'une phrase", 0)
-        print extract_word("extraire un mot d'une phrase", 28)
-        print extract_word("extraire un mot d'une phrase", 29)
-        print extract_word("extraire un mot d'une phrase", -2)
-        print extract_word("optcomplete-test do", 19)
-    test()
