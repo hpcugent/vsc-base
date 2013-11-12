@@ -37,7 +37,7 @@ from vsc.utils import optcomplete
 from vsc.utils.optcomplete import Completer, CompleterMissingCallArgument
 from vsc.utils.optcomplete import NoneCompleter, ListCompleter, AllCompleter, KnownHostsCompleter
 from vsc.utils.optcomplete import FileCompleter, DirCompleter, RegexCompleter
-from vsc.utils.optcomplete import extract_word
+from vsc.utils.optcomplete import extract_word, gen_cmdline, OPTCOMPLETE_ENVIRONMENT
 
 class TestOptcomplete(TestCase):
     """Tests for optcomplete."""
@@ -168,6 +168,14 @@ class TestOptcomplete(TestCase):
         for line, totest in testlines.items():
             for pointer, res in totest.items():
                 self.assertEqual(extract_word(line, pointer), res)
+
+    def test_gen_cmdline(self):
+        """Test generation of commndline"""
+        partial = 'z'
+        cmd_list = ['x', 'y', partial]
+        cmdline = gen_cmdline(cmd_list, partial)
+        for word in [OPTCOMPLETE_ENVIRONMENT, 'COMP_LINE', 'COMP_WORDS', 'COMP_CWORD', 'COMP_POINT']:
+            self.assertTrue("%s=" % word in cmdline)
 
 
 def suite():

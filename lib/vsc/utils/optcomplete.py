@@ -453,7 +453,6 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     # Extract word enclosed word.
     prefix, suffix = extract_word(cline, cpoint)
 
-
     # If requested, try subcommand syntax to find an options parser for that
     # subcommand.
     if subcommands:
@@ -609,3 +608,21 @@ class CmdComplete(object):
             completer = getattr(self, 'completer')
 
         return autocomplete(parser, completer)
+
+
+def gen_cmdline(cmd_list, partial):
+    """Create the commandline to generate simulated tabcompletion output
+    @param cmd_list: command to execute as list of strings
+    @param partial: the string to autocomplete (typically, partial is an element of the cmd_list)
+    """
+    cmdline = " ".join(cmd_list)
+
+    env = []
+    env.append("%s=1" % OPTCOMPLETE_ENVIRONMENT)
+    env.append('COMP_LINE="%s"' % cmdline)
+    env.append('COMP_WORDS=(%s)' % cmdline)
+    env.append('COMP_POINT=%s' % len(cmdline))
+    env.append('COMP_CWORD=%s' % cmd_list.index(partial))
+
+    return "%s %s" % (" ".join(env), cmd_list[0])
+
