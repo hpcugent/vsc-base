@@ -342,7 +342,7 @@ opt1=value1
         for opt in basic_opts:
             self.assertTrue(opt in compl_opts)
 
-        # # test --deb autocompletion
+        # test --deb autocompletion
         partial = '--deb'
         cmd_list = [script_simple, partial]
 
