@@ -34,6 +34,7 @@ from paycheck import with_checker
 from unittest import TestCase, TestLoader
 
 from vsc.utils.missing import nub
+from vsc.utils.missing import TryOrFail
 
 
 class TestNub(TestCase):
@@ -56,6 +57,28 @@ class TestNub(TestCase):
         for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
             self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
+
+class TestTryOrFail(TestCase):
+    """Test for the try_or_fail decorator."""
+
+    def test_retry(self):
+        """test for a retry that succeeds."""
+        @TryOrFail(3, (Exception,), 0)
+        def f(i):
+            if i < 10:
+                raise Exception
+            else:
+                return i
+
+        for n in xrange(0,20):
+            try:
+                v = f(n)
+                self.assertTrue(n >= 10)
+                self.assertTrue(v == n)
+            except:
+                self.assertTrue(n < 10)
+
+
 def suite():
     """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestNub)
+    return TestLoader().loadTestsFromTestCasestsFromTestCase(TestNub)
