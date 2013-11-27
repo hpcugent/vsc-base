@@ -9,13 +9,14 @@ import test.dateandtime as td
 import test.generaloption as tg
 import test.fancylogger as tf
 import test.run as trun
+import test.optcomplete as topt
 import unittest
 
 
 from vsc.utils import fancylogger
 fancylogger.logToScreen(enable=False)
 
-suite = unittest.TestSuite([x.suite() for  x in (a, td, tg, tf, trun)])
+suite = unittest.TestSuite([x.suite() for  x in (a, td, tg, tf, trun, topt)])
 
 try:
     import xmlrunner

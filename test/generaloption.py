@@ -30,12 +30,16 @@ Unit tests for generaloption
 """
 import datetime
 import os
+import re
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
 from vsc import fancylogger
 from vsc.utils.generaloption import GeneralOption
 from vsc.utils.missing import shell_quote, shell_unquote
+from vsc.utils.optcomplete import gen_cmdline
+from vsc.utils.run import run_simple
+
 
 class TestOption1(GeneralOption):
     """Create simple test class"""
@@ -314,115 +318,50 @@ opt1=value1
         topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
         self.assertEqual(topt.log.getEffectiveLevel(), fancylogger.getLevelInt(topt.DEFAULT_LOGLEVEL.upper()))
 
+    def test_optcomplete(self):
+        """Test optcomplete support"""
+
+        reg_reply = re.compile(r'^COMPREPLY=\((.*)\)$')
+
+        script_name = 'simple_option.py'
+        script_simple = os.path.join(os.path.dirname(__file__), 'runtests', script_name)
+
+        partial = '-'
+        cmd_list = [script_simple, partial]
+
+        ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
+        # tabcompletion ends with exit 1!; test returns this to 0
+        # avoids run.log.error message
+        self.assertEqual(ec, 0)
+
+        compl_opts = reg_reply.search(out).group(1).split()
+        basic_opts = ['--debug', '--enable-debug', '--disable-debug', '-d',
+                      '--help', '-h', '-H', '--shorthelp',
+                      '--configfiles', '--info',
+                      ]
+        for opt in basic_opts:
+            self.assertTrue(opt in compl_opts)
+
+        # test --deb autocompletion
+        partial = '--deb'
+        cmd_list = [script_simple, partial]
+
+        ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
+        # tabcompletion ends with exit 1!; test returns this to 0
+        # avoids run.log.error message
+        self.assertEqual(ec, 0)
+
+        compl_opts = reg_reply.search(out).group(1).split()
+        self.assertEqual(compl_opts, ['--debug'])
+
+
 def suite():
     """ returns all the testcases in this module """
     return TestLoader().loadTestsFromTestCase(GeneralOptionTest)
+
 
 if __name__ == '__main__':
     """Use this __main__ block to help write and test unittests
         just uncomment the parts you need
     """
     main()
-
-#    # help
-#    topt = TestOption1(go_args=['-h'], go_nosystemexit=True, go_columns=100,
-#                       help_to_string=True,
-#                       prog='optiontest1',
-#                       )
-#    print topt.parser.help_to_file.getvalue()
-#
-#    topt = TestOption1(go_args=['-H'], go_nosystemexit=True, go_columns=100,
-#                       help_to_string=True,
-#                       prog='optiontest1',
-#                       )
-#    print topt.parser.help_to_file.getvalue()
-#    ## test shell_quote/shell_unquote
-#    value = 'value with whitespace'
-#    txt = '--option=%s' % value
-#    print txt # this looks strange, but is correct
-#    print txt == shell_unquote(shell_quote(txt))
-
-#    ## cmd_line /enable/disable
-#    ign = r'(^(base|debug)$)|(^ext)'
-#    topt = TestOption1(go_args=['--level_level', '--longbase', shell_unquote('--store="some whitespace"')])
-#    print topt.options
-#    print topt.generate_cmd_line(ignore=ign)
-#    all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
-#    print all_args
-#    print [shell_unquote(x) for x in all_args]
-#
-#    topt = TestOption1(go_args=[shell_unquote(x) for x in all_args], go_nosystemexit=True)
-#    print topt.generate_cmd_line(add_default=True, ignore=ign)
-#    print all_args == topt.generate_cmd_line(add_default=True, ignore=ign)
-
-#    topt = TestOption1(go_args=['--enable-level_level', '--disable-longbase'])
-#    print topt.options
-#    print topt.generate_cmd_line(ignore=ign)
-
-
-#    ## test ExtOptions
-#    topt = TestOption1(go_args=['--ext_date=1970-01-01'])
-#    print topt.options.ext_date
-#    print topt.options.ext_date == datetime.date(1970, 1, 1)
-#
-#    topt = TestOption1(go_args=['--ext_datetime=1970-01-01 01:01:01.000001'])
-#    print topt.options.ext_datetime
-#    print topt.options.ext_datetime == datetime.datetime(1970, 1, 1, 1, 1, 1, 1)
-#
-#    ## extend to None default
-#    topt = TestOption1(go_args=['--ext_extend=one,two,three'])
-#    print topt.options.ext_extend.__repr__()
-#
-#    # default ['zero'], will be extended
-#    topt = TestOption1(go_args=['--ext_extenddefault=one,two,three'])
-#    print topt.options.ext_extenddefault.__repr__()
-
-#    ## store_or_None
-#    ign = r'^(?!ext_optional)'
-#    topt = TestOption1(go_args=[], go_nosystemexit=True,)
-#    print topt.options.ext_optional == None
-#    print topt.generate_cmd_line(add_default=True, ignore=ign) == []
-#
-#    topt = TestOption1(go_args=[ '--ext_optional'], go_nosystemexit=True,)
-#    print topt.options.ext_optional == 'DEFAULT'
-#    print topt.generate_cmd_line(add_default=True, ignore=ign) == ['--ext_optional']
-#    print topt.generate_cmd_line(add_default=True, ignore=ign)
-#    print topt.generate_cmd_line(ignore=ign)
-#
-#    topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
-#    print topt.options.ext_optional == 'DEFAULT'
-#
-#    topt = TestOption1(go_args=['--ext_optional', 'REALVALUE'], go_nosystemexit=True,)
-#    print topt.options.ext_optional == 'REALVALUE'
-#    print topt.generate_cmd_line(add_default=True, ignore=ign) == ['--ext_optional=REALVALUE']
-#
-#    topt = TestOption1(go_args=['--ext_optional=REALVALUE'], go_nosystemexit=True,)
-#    print topt.options.ext_optional == 'REALVALUE'
-#
-#    topt = TestOption1(go_args=['-o', 'REALVALUE'], go_nosystemexit=True,)
-#    print topt.options.ext_optional == 'REALVALUE'
-
-#    CONFIGFILE1 = """
-# [MAIN]
-# store=ok
-# longbase=1
-#
-# [ext]
-# extend=one,two,three
-#    """
-#    tmp1 = NamedTemporaryFile()
-#    tmp1.write(CONFIGFILE1)
-#    tmp1.flush()
-#
-#    topt = TestOption1(go_configfiles=[tmp1.name], go_args=['-d'])
-#    print topt.options
-#    print topt.options.store
-#    print topt.options.ext_extend
-
-#    topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['-d', '--store=notok'])
-#    print topt2.options
-#    print topt2.options.store
-#
-#    # remove files
-#    tmp1.close()
-
