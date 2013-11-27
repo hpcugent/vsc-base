@@ -365,12 +365,13 @@ def guess_first_nonoption(gparser, subcmds_map):
     # save original error_func so we can put it back after the hack
     error_func = gparser.error
     try:
-        instancemethod = type(OPTIONPARSER_CLASS.error)
-        # hack to keep OptionParser from writing to sys.stderr
-        gparser.error = instancemethod(error_override, gparser, OPTIONPARSER_CLASS)
-        _, args = gparser.parse_args(cwords[1:])
-    except SystemExit:
-        return None
+        try:
+            instancemethod = type(OPTIONPARSER_CLASS.error)
+            # hack to keep OptionParser from writing to sys.stderr
+            gparser.error = instancemethod(error_override, gparser, OPTIONPARSER_CLASS)
+            _, args = gparser.parse_args(cwords[1:])
+        except SystemExit:
+            return None
     finally:
         # undo the hack and restore original OptionParser error function
         gparser.error = instancemethod(error_func, gparser, OPTIONPARSER_CLASS)
