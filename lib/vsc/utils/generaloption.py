@@ -991,7 +991,7 @@ class GeneralOption(object):
 
                     configfile_options_default[opt_dest] = actual_option.default
 
-                    if actual_option.action in ('store_true', 'store_false',):
+                    if actual_option.action in ('store_true', 'store_false',) + ExtOption.EXTOPTION_LOG:
                         try:
                             newval = self.configfile_parser.getboolean(section, opt)
                             self.log.debug(('parseconfigfiles: getboolean for option %s value %s '
@@ -999,7 +999,17 @@ class GeneralOption(object):
                         except:
                             self.log.raiseException(('parseconfigfiles: failed to getboolean for option %s value %s '
                                                      'in section %s') % (opt, val, section))
-                        configfile_values[opt_dest] = newval
+                        if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
+                            if newval:
+                                cmd_template = "--enable-%s"
+                            else:
+                                cmd_template = "--disable-%s"
+                            configfile_cmdline_dest.append(opt_dest)
+                            configfile_cmdline.append(cmd_template % opt_name)
+                        else:
+                            self.log.debug(("parseconfigfiles: no enable/disable, not trying to set boolean-valued "
+                                            "option %s via cmdline, just setting value to %s" % (opt_name, newval)))
+                            configfile_values[opt_dest] = newval
                     else:
                         configfile_cmdline_dest.append(opt_dest)
                         configfile_cmdline.append("--%s" % opt_name)
@@ -1155,11 +1165,11 @@ class GeneralOption(object):
                     self.log.debug("generate_cmd_line %s adding %s non-default value %s" %
                                    (action, opt_name, opt_value))
                     args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
-            elif action in ("store_true", "store_false", 'store_debuglog'):
+            elif action in ("store_true", "store_false",) + ExtOption.EXTOPTION_LOG:
                 # not default!
                 self.log.debug("generate_cmd_line adding %s value %s. store action found" %
                                (opt_name, opt_value))
-                if (action in ('store_true', 'store_debuglog',) and default is True and opt_value is False) or \
+                if (action in ('store_true',) + ExtOption.EXTOPTION_LOG and default is True and opt_value is False) or \
                     (action in ('store_false',) and default is False and opt_value is True):
                     if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                         args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
@@ -1168,7 +1178,7 @@ class GeneralOption(object):
                                         "with missing ENABLE/DISABLE in option_class") %
                                        (opt_name, default, action))
                 else:
-                    if opt_value == default and ((action in ('store_true', 'store_debuglog',) and default is False)
+                    if opt_value == default and ((action in ('store_true',) + ExtOption.EXTOPTION_LOG and default is False)
                                                  or (action in ('store_false',) and default is True)):
                         if hasattr(self.parser.option_class, 'ENABLE') and \
                             hasattr(self.parser.option_class, 'DISABLE'):
