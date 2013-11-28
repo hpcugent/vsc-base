@@ -42,7 +42,7 @@ import StringIO
 import sys
 import textwrap
 from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
-from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
+from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
@@ -275,9 +275,27 @@ class PassThroughOptionParser(OptionParser):
                 break
 
 
-class ConfigFileFormatter(HelpFormatter):
-    """Print help as example config file"""
+class ExtOptionGroup(OptionGroup):
+    """An OptionGroup with support for configfile section names"""
+    RESERVED_SECTIONS = ['DEFAULT']
+    NO_SECTION = ('NO', 'SECTION')
 
+    def __init__(self, *args, **kwargs):
+        self.log = getLogger(self.__class__.__name__)
+        section_name = kwargs.pop('section_name', None)
+        if section_name in self.RESERVED_SECTIONS:
+            self.log.raiseException('Cannot use reserved name %s for section name.' % section_name)
+
+        OptionGroup.__init__(self, *args, **kwargs)
+        self.section_name = section_name
+        self.section_options = []
+
+    def add_option(self, *args, **kwargs):
+        """Extract configfile section info"""
+        option = OptionGroup.add_option(self, *args, **kwargs)
+        self.section_options.append(option)
+
+        return option
 
 
 class ExtOptionParser(OptionParser):
@@ -453,6 +471,37 @@ class ExtOptionParser(OptionParser):
     def print_confighelp(self, fh=None):
         """Print help as a configfile."""
 
+        # walk through all optiongroups
+        # append where necessary, keep track of sections
+        all_groups = {}
+        for gr in self.option_groups:
+            section = gr.section_name
+            if not (section is None or section == ExtOptionGroup.NO_SECTION):
+                ag = all_groups.setdefault(section, [])
+                ag.extend(gr.section_options)
+        sections = all_groups.keys()
+
+        # set MAIN section first if exists
+        main_idx = sections.index('MAIN')
+        if main_idx > -1:
+            sections.remove('MAIN')
+            sections.insert(0, 'MAIN')
+
+        option_template = "# %(help)s\n#%(option)s=\n"
+        for section in sections:
+            txt = "[%s]\n" % section
+            for option in all_groups[section]:
+                data = {
+                    'help': option.help,
+                    'option': option.get_opt_string().lstrip('-'),
+                }
+                txt += option_template % data
+
+        # overwrite the format_help to be able to use the the regular print_help
+        def format_help(*args, **kwargs):
+            return txt
+        self.format_help = format_help
+        OptionParser.print_help(self, fh)
 
     def _add_help_option(self):
         """Add shorthelp and longhelp"""
@@ -686,7 +735,7 @@ class GeneralOption(object):
         }
         descr = ['Configfile options', '']
         self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
-        self.add_group_parser(opts, descr, prefix=None)
+        self.add_group_parser(opts, descr, prefix=None, section_name=ExtOptionGroup.NO_SECTION)
 
     def main_options(self):
         """Create the main options automatically"""
@@ -771,15 +820,19 @@ class GeneralOption(object):
         self.log.debug("add_group_parser: set prefix %s section_name %s" % (prefix, section_name))
 
         # add the section name to the help output
-        section_help = "(configfile section %s)" % (section_name)
+        if section_name is None or section_name == ExtOptionGroup.NO_SECTION:
+            section_help = ''
+        else:
+            section_help = " (configfile section %s)" % (section_name)
+
         if description[1]:
             short_description = description[0]
-            long_description = "%s %s" % (description[1], section_help)
+            long_description = "%s%s" % (description[1], section_help)
         else:
-            short_description = "%s %s" % (description[0], section_help)
+            short_description = "%s%s" % (description[0], section_help)
             long_description = description[1]
 
-        opt_grp = OptionGroup(self.parser, short_description, long_description)
+        opt_grp = ExtOptionGroup(self.parser, short_description, long_description, section_name=section_name)
         keys = opt_dict.keys()
         if self.OPTIONGROUP_SORTED_OPTIONS:
             keys.sort()  # alphabetical
