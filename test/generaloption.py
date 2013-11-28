@@ -48,6 +48,7 @@ class TestOption1(GeneralOption):
         """Make base options"""
         self._opts_base = {"base":("Long and short base option", None, "store_true", False, 'b'),
                            "longbase":("Long-only base option", None, "store_true", True),
+                           "justatest":("Another long based option", None, "store_true", True),
                            "store":("Store option", None, "store", None),
                            "store-with-dash":("Store option with dash in name", None, "store", None),
                            }
@@ -145,6 +146,7 @@ class GeneralOptionTest(TestCase):
                           'quiet':False,
                           'level_level': True,
                           'longbase': True,
+                          'justatest': True,
                           'level_longlevel': True,
                           'store_with_dash':None,
                           'level_prefix_and_dash':'YY',  # this dict is about destinations
@@ -173,6 +175,7 @@ class GeneralOptionTest(TestCase):
         self.assertEqual([shell_unquote(x) for x in all_args],
                          [
                           '--ext-strlist=x,y',
+                          '--justatest',
                           '--level-level',
                           '--level-longlevel',
                           '--level-prefix-and-dash=YY',
@@ -184,6 +187,7 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign),
                          [
                           '--ext-strlist=x,y',
+                          '--justatest',
                           '--level-level',
                           '--level-longlevel',
                           '--level-prefix-and-dash=YY',
@@ -289,6 +293,7 @@ opt1=value1
 
         self.assertEqual(topt.options.store, 'ok')
         self.assertEqual(topt.options.longbase, True)
+        self.assertEqual(topt.options.justatest, True)
         self.assertEqual(topt.options.store_with_dash, 'XX')
         self.assertEqual(topt.options.level_prefix_and_dash, 'YY')
         self.assertEqual(topt.options.ext_extend, ['one', 'two', 'three'])
@@ -302,8 +307,29 @@ opt1=value1
         topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
         self.assertEqual(topt2.options.store, 'notok')
 
+        CONFIGFILE2 = """
+[base]
+store=notok2
+longbase=0
+justatest=0
+debug=1
+
+"""
+        tmp2 = NamedTemporaryFile()
+        tmp2.write(CONFIGFILE2)
+        tmp2.flush()  # flush, otherwise empty
+
+        # multiple config files, last one wins
+        # cmdline wins always
+        topt3 = TestOption1(go_configfiles=[tmp1.name, tmp2.name], go_args=['--store=notok3'])
+        self.assertEqual(topt3.options.store, 'notok3')
+        self.assertEqual(topt3.options.justatest, False)
+        self.assertEqual(topt3.options.longbase, False)
+        self.assertEqual(topt3.options.debug, True)
+
         # remove files
         tmp1.close()
+        tmp2.close()
 
     def test_get_options_by_property(self):
         """Test get_options_by_property and firends like get_options_by_prefix"""
