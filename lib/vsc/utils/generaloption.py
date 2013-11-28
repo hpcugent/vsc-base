@@ -41,7 +41,8 @@ import re
 import StringIO
 import sys
 import textwrap
-from optparse import OptionParser, OptionGroup, Option, Values, BadOptionError, SUPPRESS_USAGE, OptionValueError
+from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
+from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
@@ -92,6 +93,7 @@ class ExtOption(CompleterOption):
 
        Actions:
          - shorthelp : hook for shortend help messages
+         - confighelp : hook for configfile-style help messages
          - store_debuglog : turns on fancylogger debugloglevel
             - also: 'store_infolog', 'store_warninglog'
          - extend : extend default list (or create new one if is None)
@@ -111,9 +113,9 @@ class ExtOption(CompleterOption):
     EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime', 'regex',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
+    EXTOPTION_HELP = ('shorthelp', 'confighelp',)
 
-    # shorthelp has no extra arguments
-    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + ('shorthelp',)
+    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + EXTOPTION_HELP
     STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_LOG + ('store_or_None',)
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
@@ -162,6 +164,9 @@ class ExtOption(CompleterOption):
 
         if action == 'shorthelp':
             parser.print_shorthelp()
+            parser.exit()
+        elif action == 'confighelp':
+            parser.print_confighelp()
             parser.exit()
         elif action in ('store_true', 'store_false',) + self.EXTOPTION_LOG:
             if action in self.EXTOPTION_LOG:
@@ -270,8 +275,15 @@ class PassThroughOptionParser(OptionParser):
                 break
 
 
+class ConfigFileFormatter(HelpFormatter):
+    """Print help as example config file"""
+
+
+
 class ExtOptionParser(OptionParser):
-    """Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only, C{-H} / C{--help} for all options
+    """
+    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,     
+    C{-H} / C{--help} for all options.
 
     Pass options through environment. Like:
 
@@ -438,6 +450,10 @@ class ExtOptionParser(OptionParser):
 
         OptionParser.print_help(self, fh)
 
+    def print_confighelp(self, fh=None):
+        """Print help as a configfile."""
+
+
     def _add_help_option(self):
         """Add shorthelp and longhelp"""
         self.add_option("-%s" % self.shorthelp[0],
@@ -448,6 +464,9 @@ class ExtOptionParser(OptionParser):
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
                         help=_gettext("show full help message and exit"))
+        self.add_option("--configfilehelp",
+                        action="confighelp",
+                        help=_gettext("show help as annotated configfile"))
 
     def _get_args(self, args):
         """Prepend the options set through the environment"""
