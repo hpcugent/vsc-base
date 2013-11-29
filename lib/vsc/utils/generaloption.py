@@ -488,20 +488,22 @@ class ExtOptionParser(OptionParser):
             sections.insert(0, 'MAIN')
 
         option_template = "# %(help)s\n#%(option)s=\n"
+        txt = ''
         for section in sections:
-            txt = "[%s]\n" % section
+            txt += "[%s]\n" % section
             for option in all_groups[section]:
                 data = {
                     'help': option.help,
                     'option': option.get_opt_string().lstrip('-'),
                 }
                 txt += option_template % data
+            txt += "\n"
 
         # overwrite the format_help to be able to use the the regular print_help
         def format_help(*args, **kwargs):
             return txt
         self.format_help = format_help
-        OptionParser.print_help(self, fh)
+        self.print_help(fh)
 
     def _add_help_option(self):
         """Add shorthelp and longhelp"""
@@ -513,7 +515,7 @@ class ExtOptionParser(OptionParser):
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
                         help=_gettext("show full help message and exit"))
-        self.add_option("--configfilehelp",
+        self.add_option("--confighelp",
                         action="confighelp",
                         help=_gettext("show help as annotated configfile"))
 
@@ -1048,8 +1050,11 @@ class GeneralOption(object):
         for prefix, section_names in self.config_prefix_sectionnames_map.items():
             for section in section_names:
                 # default section is treated separate in ConfigParser
-                if not (self.configfile_parser.has_section(section) or section.lower() == 'default'):
-                    self.log.debug('parseconfigfiles: no section %s' % section)
+                if not self.configfile_parser.has_section(section) or section == ExtOptionGroup.NO_SECTION:
+                    self.log.debug('parseconfigfiles: no section %s' % str(section))
+                    continue
+                elif section.lower() == 'default':
+                    self.log.debug('parseconfigfiles: ignoring default section %s' % section)
                     continue
 
                 for opt, val in self.configfile_parser.items(section):
