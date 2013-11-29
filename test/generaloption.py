@@ -112,8 +112,24 @@ class GeneralOptionTest(TestCase):
                            help_to_string=True,
                            prog='optiontest1',
                            )
-        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > 0,
+        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
                         "Long documentation expanded in long help")
+
+    def test_help_confighelp(self):
+        """Generate long help message"""
+        topt = TestOption1(go_args=['--confighelp'],
+                           go_nosystemexit=True,
+                           go_columns=100,
+                           help_to_string=True,
+                           prog='optiontest1',
+                           )
+
+        for section in ['MAIN', 'base', 'level', 'ext']:
+            self.assertTrue(topt.parser.help_to_file.getvalue().find("[%s]" % section) > -1,
+                            "Looking for [%s] section marker" % section)
+        for opt in ['store-with-dash', 'level-prefix-and-dash', 'ext-strlist', 'level-level', 'debug']:
+            self.assertTrue(topt.parser.help_to_file.getvalue().find("#%s" % opt) > -1,
+                            "Looking for '#%s' option marker" % opt)
 
     def test_dest_with_dash(self):
         """Test the renaming of long opts to dest"""

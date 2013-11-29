@@ -41,7 +41,8 @@ import re
 import StringIO
 import sys
 import textwrap
-from optparse import OptionParser, OptionGroup, Option, Values, BadOptionError, SUPPRESS_USAGE, OptionValueError
+from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
+from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
@@ -92,6 +93,7 @@ class ExtOption(CompleterOption):
 
        Actions:
          - shorthelp : hook for shortend help messages
+         - confighelp : hook for configfile-style help messages
          - store_debuglog : turns on fancylogger debugloglevel
             - also: 'store_infolog', 'store_warninglog'
          - extend : extend default list (or create new one if is None)
@@ -111,9 +113,9 @@ class ExtOption(CompleterOption):
     EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime', 'regex',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
+    EXTOPTION_HELP = ('shorthelp', 'confighelp',)
 
-    # shorthelp has no extra arguments
-    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + ('shorthelp',)
+    ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + EXTOPTION_HELP
     STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_LOG + ('store_or_None',)
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
@@ -162,6 +164,9 @@ class ExtOption(CompleterOption):
 
         if action == 'shorthelp':
             parser.print_shorthelp()
+            parser.exit()
+        elif action == 'confighelp':
+            parser.print_confighelp()
             parser.exit()
         elif action in ('store_true', 'store_false',) + self.EXTOPTION_LOG:
             if action in self.EXTOPTION_LOG:
@@ -270,8 +275,33 @@ class PassThroughOptionParser(OptionParser):
                 break
 
 
+class ExtOptionGroup(OptionGroup):
+    """An OptionGroup with support for configfile section names"""
+    RESERVED_SECTIONS = ['DEFAULT']
+    NO_SECTION = ('NO', 'SECTION')
+
+    def __init__(self, *args, **kwargs):
+        self.log = getLogger(self.__class__.__name__)
+        section_name = kwargs.pop('section_name', None)
+        if section_name in self.RESERVED_SECTIONS:
+            self.log.raiseException('Cannot use reserved name %s for section name.' % section_name)
+
+        OptionGroup.__init__(self, *args, **kwargs)
+        self.section_name = section_name
+        self.section_options = []
+
+    def add_option(self, *args, **kwargs):
+        """Extract configfile section info"""
+        option = OptionGroup.add_option(self, *args, **kwargs)
+        self.section_options.append(option)
+
+        return option
+
+
 class ExtOptionParser(OptionParser):
-    """Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only, C{-H} / C{--help} for all options
+    """
+    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,     
+    C{-H} / C{--help} for all options.
 
     Pass options through environment. Like:
 
@@ -438,6 +468,45 @@ class ExtOptionParser(OptionParser):
 
         OptionParser.print_help(self, fh)
 
+    def print_confighelp(self, fh=None):
+        """Print help as a configfile."""
+
+        # walk through all optiongroups
+        # append where necessary, keep track of sections
+        all_groups = {}
+        sections = []
+        for gr in self.option_groups:
+            section = gr.section_name
+            if not (section is None or section == ExtOptionGroup.NO_SECTION):
+                if not section in sections:
+                    sections.append(section)
+                ag = all_groups.setdefault(section, [])
+                ag.extend(gr.section_options)
+
+        # set MAIN section first if exists
+        main_idx = sections.index('MAIN')
+        if main_idx > 0:  # not needed if it main_idx == 0
+            sections.remove('MAIN')
+            sections.insert(0, 'MAIN')
+
+        option_template = "# %(help)s\n#%(option)s=\n"
+        txt = ''
+        for section in sections:
+            txt += "[%s]\n" % section
+            for option in all_groups[section]:
+                data = {
+                    'help': option.help,
+                    'option': option.get_opt_string().lstrip('-'),
+                }
+                txt += option_template % data
+            txt += "\n"
+
+        # overwrite the format_help to be able to use the the regular print_help
+        def format_help(*args, **kwargs):
+            return txt
+        self.format_help = format_help
+        self.print_help(fh)
+
     def _add_help_option(self):
         """Add shorthelp and longhelp"""
         self.add_option("-%s" % self.shorthelp[0],
@@ -448,6 +517,9 @@ class ExtOptionParser(OptionParser):
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
                         help=_gettext("show full help message and exit"))
+        self.add_option("--confighelp",
+                        action="confighelp",
+                        help=_gettext("show help as annotated configfile"))
 
     def _get_args(self, args):
         """Prepend the options set through the environment"""
@@ -667,7 +739,7 @@ class GeneralOption(object):
         }
         descr = ['Configfile options', '']
         self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
-        self.add_group_parser(opts, descr, prefix=None)
+        self.add_group_parser(opts, descr, prefix=None, section_name=ExtOptionGroup.NO_SECTION)
 
     def main_options(self):
         """Create the main options automatically"""
@@ -752,15 +824,19 @@ class GeneralOption(object):
         self.log.debug("add_group_parser: set prefix %s section_name %s" % (prefix, section_name))
 
         # add the section name to the help output
-        section_help = "(configfile section %s)" % (section_name)
+        if section_name is None or section_name == ExtOptionGroup.NO_SECTION:
+            section_help = ''
+        else:
+            section_help = " (configfile section %s)" % (section_name)
+
         if description[1]:
             short_description = description[0]
-            long_description = "%s %s" % (description[1], section_help)
+            long_description = "%s%s" % (description[1], section_help)
         else:
-            short_description = "%s %s" % (description[0], section_help)
+            short_description = "%s%s" % (description[0], section_help)
             long_description = description[1]
 
-        opt_grp = OptionGroup(self.parser, short_description, long_description)
+        opt_grp = ExtOptionGroup(self.parser, short_description, long_description, section_name=section_name)
         keys = opt_dict.keys()
         if self.OPTIONGROUP_SORTED_OPTIONS:
             keys.sort()  # alphabetical
@@ -976,8 +1052,11 @@ class GeneralOption(object):
         for prefix, section_names in self.config_prefix_sectionnames_map.items():
             for section in section_names:
                 # default section is treated separate in ConfigParser
-                if not (self.configfile_parser.has_section(section) or section.lower() == 'default'):
-                    self.log.debug('parseconfigfiles: no section %s' % section)
+                if not self.configfile_parser.has_section(section) or section == ExtOptionGroup.NO_SECTION:
+                    self.log.debug('parseconfigfiles: no section %s' % str(section))
+                    continue
+                elif section.lower() == 'default':
+                    self.log.debug('parseconfigfiles: ignoring default section %s' % section)
                     continue
 
                 for opt, val in self.configfile_parser.items(section):
