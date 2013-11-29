@@ -474,16 +474,18 @@ class ExtOptionParser(OptionParser):
         # walk through all optiongroups
         # append where necessary, keep track of sections
         all_groups = {}
+        sections = []
         for gr in self.option_groups:
             section = gr.section_name
             if not (section is None or section == ExtOptionGroup.NO_SECTION):
+                if not section in sections:
+                    sections.append(section)
                 ag = all_groups.setdefault(section, [])
                 ag.extend(gr.section_options)
-        sections = all_groups.keys()
 
         # set MAIN section first if exists
         main_idx = sections.index('MAIN')
-        if main_idx > -1:
+        if main_idx > 0:  # not needed if it main_idx == 0
             sections.remove('MAIN')
             sections.insert(0, 'MAIN')
 
