@@ -240,7 +240,7 @@ def get_subclasses(klass):
     return res
 
 
-class TryOrFail():
+class TryOrFail(object):
     """
     Perform the function n times, catching each exception in the exception tuple except on the last try
     where it will be raised again.
