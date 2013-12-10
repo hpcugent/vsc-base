@@ -266,4 +266,3 @@ class TryOrFail():
                         time.sleep(self.sleep)
 
         return new_function
-
