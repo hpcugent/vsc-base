@@ -81,4 +81,3 @@ class TestTryOrFail(TestCase):
 
 def suite():
     """ return all the tests"""
-    return TestLoader().loadTestsFromTestCasestsFromTestCase(TestNub)
