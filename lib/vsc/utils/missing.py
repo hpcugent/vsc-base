@@ -255,8 +255,7 @@ class TryOrFail():
             log = fancylogger.getLogger(function.__name__)
             for i in xrange(0,self.n):
                 try:
-                    function(*args, **kwargs)
-                    break
+                    return function(*args, **kwargs)
                 except self.exceptions, err:
                     if i == self.n - 1:
                         raise
