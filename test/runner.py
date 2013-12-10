@@ -17,7 +17,7 @@ import unittest
 from vsc.utils import fancylogger
 fancylogger.logToScreen(enable=False)
 
-suite = unittest.TestSuite([x.suite() for  x in (a, td, tg, tf, trun, topt)])
+suite = unittest.TestSuite([x.suite() for  x in (a, td, tg, tf, tm, trun, topt)])
 
 try:
     import xmlrunner
