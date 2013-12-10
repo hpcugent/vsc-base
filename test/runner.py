@@ -8,6 +8,7 @@ import test.asyncprocess as a
 import test.dateandtime as td
 import test.generaloption as tg
 import test.fancylogger as tf
+import test.missing as tm
 import test.run as trun
 import test.optcomplete as topt
 import unittest
