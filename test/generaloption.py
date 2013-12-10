@@ -34,7 +34,7 @@ import re
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline

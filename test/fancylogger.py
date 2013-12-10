@@ -36,7 +36,7 @@ import sys
 import tempfile
 from unittest import TestCase, TestLoader, main
 
-from vsc import fancylogger
+from vsc.utils import fancylogger
 
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
