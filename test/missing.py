@@ -37,31 +37,27 @@ from vsc.utils.missing import nub
 from vsc.utils.missing import TryOrFail
 
 
-class TestNub(TestCase):
+class TestMissing(TestCase):
     """Test for the nub function."""
 
     @with_checker([int])
-    def test_length(self, list_of_ints):
+    def test_nub_length(self, list_of_ints):
         nubbed = nub(list_of_ints)
         self.assertTrue(len(list_of_ints) >= len(nubbed))
 
     @with_checker([int])
-    def test_membership(self, list_of_ints):
+    def test_nub_membership(self, list_of_ints):
         nubbed = nub(list_of_ints)
         for x in list_of_ints:
             self.assertTrue(x in nubbed)
 
     @with_checker([int])
-    def test_order(self, list_of_ints):
+    def test_nub_order(self, list_of_ints):
         nubbed = nub(2 * list_of_ints)
         for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
             self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
-
-class TestTryOrFail(TestCase):
-    """Test for the try_or_fail decorator."""
-
-    def test_retry(self):
+    def test_tryorfail(self):
         """test for a retry that succeeds."""
         @TryOrFail(3, (Exception,), 0)
         def f(i):
@@ -81,3 +77,4 @@ class TestTryOrFail(TestCase):
 
 def suite():
     """ return all the tests"""
+    return TestLoader().loadTestsFromTestCase(TestMissing)
