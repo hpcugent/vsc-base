@@ -57,7 +57,7 @@ class TestMissing(TestCase):
         for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
             self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
-    def test_tryorfail(self):
+    def test_tryorfail_no_sleep(self):
         """test for a retry that succeeds."""
 
         raise_boundary = 2
@@ -72,7 +72,7 @@ class TestMissing(TestCase):
         for n in xrange(0, 2 * raise_boundary):
             try:
                 v = f(n)
-                self.assertTrue(n >= raise_boundary)
+                self.assertFalse(n < raise_boundary)
                 self.assertTrue(v == n)
             except:
                 self.assertTrue(n < raise_boundary)
