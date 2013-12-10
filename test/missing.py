@@ -59,20 +59,23 @@ class TestMissing(TestCase):
 
     def test_tryorfail(self):
         """test for a retry that succeeds."""
+
+        raise_boundary = 2
+
         @TryOrFail(3, (Exception,), 0)
         def f(i):
-            if i < 10:
+            if i < raise_boundary:
                 raise Exception
             else:
                 return i
 
-        for n in xrange(0,20):
+        for n in xrange(0, 2 * raise_boundary):
             try:
                 v = f(n)
-                self.assertTrue(n >= 10)
+                self.assertTrue(n >= raise_boundary)
                 self.assertTrue(v == n)
             except:
-                self.assertTrue(n < 10)
+                self.assertTrue(n < raise_boundary)
 
 
 def suite():
