@@ -396,6 +396,30 @@ debug=1
         compl_opts = reg_reply.search(out).group(1).split()
         self.assertEqual(compl_opts, ['--debug'])
 
+    def test_get_by_prefix(self):
+        """Test dict by prefix"""
+        topt = TestOption1(go_args=['--level-level',
+                            '--longbase',
+                            '--level-prefix-and-dash=YY',
+                            ])
+        #
+        noprefixopts_dict = topt.get_options_by_prefix('')
+        noprefix_opts = ['debug', 'info', 'longbase']
+        for opt in noprefix_opts:
+            self.assertTrue(opt in noprefixopts_dict)
+
+        dbp = topt.dict_by_prefix()
+        for prefix in ['', 'ext', 'level']:
+            self.assertTrue(prefix in dbp)
+        for noprefix_opt in noprefix_opts:
+            self.assertFalse(noprefix_opt in dbp)
+
+        dbp = topt.dict_by_prefix(merge_empty_prefix=True)
+        for prefix in ['', 'ext', 'level']:
+            self.assertTrue(prefix in dbp)
+        for noprefix_opt in noprefix_opts:
+            self.assertTrue(noprefix_opt in dbp)
+
 
 def suite():
     """ returns all the testcases in this module """
