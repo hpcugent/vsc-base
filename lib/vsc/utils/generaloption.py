@@ -47,7 +47,7 @@ from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python 
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.fancylogger import getLogger, setLogLevel
-from vsc.utils.missing import shell_quote
+from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 def set_columns(cols=None):
@@ -1155,9 +1155,13 @@ class GeneralOption(object):
 
     def get_options_by_prefix(self, prefix):
         """Get all options that set with prefix. Return a dict. The keys are stripped of the prefix."""
+        offset = 0
+        if prefix:
+            offset = len(prefix) + len(self.OPTIONNAME_PREFIX_SEPARATOR)
+
         prefix_dict = {}
         for dest, value in self._get_options_by_property('prefix', prefix).items():
-            new_dest = dest[len(prefix) + len(self.OPTIONNAME_PREFIX_SEPARATOR):]
+            new_dest = dest[offset:]
             prefix_dict[new_dest] = value
         return prefix_dict
 
@@ -1173,18 +1177,27 @@ class GeneralOption(object):
         """Final step, allows for validating the options and/or args"""
         pass
 
-    def dict_by_prefix(self):
-        """Break the options dict by prefix in sub-dict"""
-        # TODO replace by _get_options_by_property code
+    def dict_by_prefix(self, merge_empty_prefix=False):
+        """Break the options dict by prefix; return nested dict.
+            @param merge_empty_prefix : boolean (default False) also (try to) merge the empty
+                                        prefix in the root of the dict. If there is a non-prefixed optionname
+                                        that matches a prefix, it will be rejected and error will be logged.
+        """
         subdict = {}
-        for k in self.options.__dict__.keys():
-            levels = k.split(self.OPTIONNAME_PREFIX_SEPARATOR)
-            lastlvl = subdict
-            for lvl in levels[:-1]:  # 0 or more
-                lastlvl.setdefault(lvl, {})
-                lastlvl = lastlvl[lvl]
-            lastlvl[levels[-1]] = self.options.__dict__[k]
-        self.log.debug("Returned subdict %s" % subdict)
+
+        prefix_idx = self.PROCESSED_OPTIONS_PROPERTIES.index('prefix')
+        for prefix in nub([props[prefix_idx] for props in self.processed_options.values()]):
+            subdict[prefix] = self.get_options_by_prefix(prefix)
+
+        if merge_empty_prefix and '' in subdict:
+            self.log.debug("dict_by_prefix: merge_empty_prefix set")
+            for opt, val in subdict[''].items():
+                if opt in subdict:
+                    self.log.error("dict_by_prefix: non-prefixed option %s conflicts with prefix of same name." % opt)
+                else:
+                    subdict[opt] = val
+
+        self.log.debug("dict_by_prefix: subdict %s" % subdict)
         return subdict
 
     def generate_cmd_line(self, ignore=None, add_default=None):
