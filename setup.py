@@ -45,14 +45,14 @@ def remove_bdist_rpm_source_file():
 
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 shared_setup.SHARED_TARGET.update({
-    'url': 'https://github.ugent.be/hpcugent/vsc-jobs',
-    'download_url': 'https://github.ugent.be/hpcugent/vsc-jobs'
+    'url': 'https://github.com/hpcugent/vsc-base',
+    'download_url': 'https://github.com/hpcugent/vsc-base'
 })
 
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '1.7.2',
+    'version': '1.7.3',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
     'packages': ['vsc', 'vsc.utils', 'vsc.install'],

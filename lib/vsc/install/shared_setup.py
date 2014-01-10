@@ -126,6 +126,8 @@ lm = ('Luis Fernando Munoz Meji?as', 'luis.munoz@ugent.be')
 sdw = ('Stijn De Weirdt', 'stijn.deweirdt@ugent.be')
 wdp = ('Wouter Depypere', 'wouter.depypere@ugent.be')
 kw = ('Kenneth Waegeman', 'Kenneth.Waegeman@UGent.be')
+eh = ('Ewan Higgs', 'Ewan.Higgs@UGent.be')
+
 
 # FIXME: do we need this here? it won;t hurt, but still ...
 class vsc_install_scripts(install_scripts):
