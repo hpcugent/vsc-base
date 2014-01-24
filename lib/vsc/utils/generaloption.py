@@ -1054,8 +1054,11 @@ class GeneralOption(object):
         for prefix, section_names in self.config_prefix_sectionnames_map.items():
             for section in section_names:
                 # default section is treated separate in ConfigParser
-                if not self.configfile_parser.has_section(section) or section == ExtOptionGroup.NO_SECTION:
+                if not self.configfile_parser.has_section(section):
                     self.log.debug('parseconfigfiles: no section %s' % str(section))
+                    continue
+                elif section == ExtOptionGroup.NO_SECTION:
+                    self.log.debug('parseconfigfiles: ignoring NO_SECTION %s' % str(section))
                     continue
                 elif section.lower() == 'default':
                     self.log.debug('parseconfigfiles: ignoring default section %s' % section)
