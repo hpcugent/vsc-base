@@ -124,6 +124,7 @@ class ExtOption(CompleterOption):
                          ('strtuple', check_str_list_tuple),
                          ] + Option.TYPE_CHECKER.items())
     TYPES = tuple(['strlist', 'strtuple'] + list(Option.TYPES))
+    BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
     def _set_attrs(self, attrs):
         """overwrite _set_attrs to allow store_or callbacks"""
@@ -182,7 +183,7 @@ class ExtOption(CompleterOption):
                 elif action in ('store_false',):
                     action = 'store_true'
 
-            if orig_action in ('store_debuglog', 'store_infolog', 'store_warninglog') and action == 'store_true':
+            if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 setLogLevel(orig_action.split('_')[1][:-3].upper())
 
             Option.take_action(self, action, dest, opt, value, values, parser)
@@ -915,8 +916,9 @@ class GeneralOption(object):
             nameds['help'] = hlp
 
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
-                args.append("--%s-%s" % (self.parser.option_class.ENABLE, opt_name))
-                args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
+                if action in self.parser.option_class.BOOLEAN_ACTIONS:
+                    args.append("--%s-%s" % (self.parser.option_class.ENABLE, opt_name))
+                    args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
 
             # force passed_kwargs as final nameds
             nameds.update(passed_kwargs)
@@ -1070,7 +1072,7 @@ class GeneralOption(object):
 
                     configfile_options_default[opt_dest] = actual_option.default
 
-                    if actual_option.action in ('store_true', 'store_false',) + ExtOption.EXTOPTION_LOG:
+                    if actual_option.action in ExtOption.BOOLEAN_ACTIONS:
                         try:
                             newval = self.configfile_parser.getboolean(section, opt)
                             self.log.debug(('parseconfigfiles: getboolean for option %s value %s '
