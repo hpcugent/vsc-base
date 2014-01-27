@@ -343,6 +343,13 @@ debug=1
         self.assertEqual(topt3.options.longbase, False)
         self.assertEqual(topt3.options.debug, True)
 
+        # add test for _action_taken
+        for dest in ['ext_strlist', 'longbase', 'store']:
+            self.assertTrue(topt3.options._action_taken.get(dest, None))
+
+        for dest in ['level_longlevel']:
+            self.assertFalse(dest in topt3.options._action_taken)
+
         # remove files
         tmp1.close()
         tmp2.close()

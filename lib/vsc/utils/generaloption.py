@@ -124,6 +124,7 @@ class ExtOption(CompleterOption):
                          ('strtuple', check_str_list_tuple),
                          ] + Option.TYPE_CHECKER.items())
     TYPES = tuple(['strlist', 'strtuple'] + list(Option.TYPES))
+    BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
     def _set_attrs(self, attrs):
         """overwrite _set_attrs to allow store_or callbacks"""
@@ -182,7 +183,7 @@ class ExtOption(CompleterOption):
                 elif action in ('store_false',):
                     action = 'store_true'
 
-            if orig_action in ('store_debuglog', 'store_infolog', 'store_warninglog') and action == 'store_true':
+            if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 setLogLevel(orig_action.split('_')[1][:-3].upper())
 
             Option.take_action(self, action, dest, opt, value, values, parser)
@@ -915,8 +916,9 @@ class GeneralOption(object):
             nameds['help'] = hlp
 
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
-                args.append("--%s-%s" % (self.parser.option_class.ENABLE, opt_name))
-                args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
+                if action in self.parser.option_class.BOOLEAN_ACTIONS:
+                    args.append("--%s-%s" % (self.parser.option_class.ENABLE, opt_name))
+                    args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
 
             # force passed_kwargs as final nameds
             nameds.update(passed_kwargs)
@@ -1052,8 +1054,11 @@ class GeneralOption(object):
         for prefix, section_names in self.config_prefix_sectionnames_map.items():
             for section in section_names:
                 # default section is treated separate in ConfigParser
-                if not self.configfile_parser.has_section(section) or section == ExtOptionGroup.NO_SECTION:
+                if not self.configfile_parser.has_section(section):
                     self.log.debug('parseconfigfiles: no section %s' % str(section))
+                    continue
+                elif section == ExtOptionGroup.NO_SECTION:
+                    self.log.debug('parseconfigfiles: ignoring NO_SECTION %s' % str(section))
                     continue
                 elif section.lower() == 'default':
                     self.log.debug('parseconfigfiles: ignoring default section %s' % section)
@@ -1070,7 +1075,7 @@ class GeneralOption(object):
 
                     configfile_options_default[opt_dest] = actual_option.default
 
-                    if actual_option.action in ('store_true', 'store_false',) + ExtOption.EXTOPTION_LOG:
+                    if actual_option.action in ExtOption.BOOLEAN_ACTIONS:
                         try:
                             newval = self.configfile_parser.getboolean(section, opt)
                             self.log.debug(('parseconfigfiles: getboolean for option %s value %s '
@@ -1115,18 +1120,22 @@ class GeneralOption(object):
         self.log.debug('parseconfigfiles: parsed values from configfiles: %s' % configfile_values)
 
         for opt_dest, val in configfile_values.items():
+            set_opt = False
             if not hasattr(self.options, opt_dest):
-                self.log.debug('parseconfigfiles: added new option %s with value %s' % (opt_dest, val))
-                setattr(self.options, opt_dest, val)
+                self.log.debug('parseconfigfiles: adding new option %s with value %s' % (opt_dest, val))
+                set_opt = True
             else:
                 if hasattr(self.options, '_action_taken') and self.options._action_taken.get(opt_dest, None):
                     # value set through take_action. do not modify by configfile
-                    self.log.debug('parseconfigfiles: option %s found in _action_taken' % (opt_dest))
-                    continue
+                    self.log.debug('parseconfigfiles: option %s already found in _action_taken' % (opt_dest))
                 else:
                     self.log.debug('parseconfigfiles: option %s not found in _action_taken, setting to %s' %
                                    (opt_dest, val))
-                    setattr(self.options, opt_dest, val)
+                    set_opt = True
+            if set_opt:
+                setattr(self.options, opt_dest, val)
+                if hasattr(self.options, '_action_taken'):
+                    self.options._action_taken[opt_dest] = True
 
     def make_options_option_name_and_destination(self, prefix, key):
         """Make the options option name"""
