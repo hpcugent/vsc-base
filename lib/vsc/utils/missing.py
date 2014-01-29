@@ -278,15 +278,16 @@ def post_order(graph, root):
     yield root
 
 
-def topological_sort(graph, root):
+def topological_sort(graph):
     """
-    Perform topological sorting of the given graph at the given root.
+    Perform topological sorting of the given graph.
 
     The graph is a dict with the values for a key being the dependencies, i.e., an arrow from key to each value.
     """
     visited = set()
-    for node in post_order(graph, root):
-        if not node in visited:
-            yield node
-            visited.add(node)
+    for root in graph:
+        for node in post_order(graph, root):
+            if not node in visited:
+                yield node
+                visited.add(node)
 
