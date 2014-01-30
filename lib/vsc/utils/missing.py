@@ -274,7 +274,6 @@ def post_order(graph, root):
     for node in graph[root]:
         for child in post_order(graph, node):
             yield child
-        yield node
     yield root
 
 
