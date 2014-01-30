@@ -30,11 +30,42 @@ Tests for the vsc.utils.missing module.
 
 @author: Andy Georges (Ghent University)
 """
+from collections import defaultdict
 from paycheck import with_checker
+from random import randint
 from unittest import TestCase, TestLoader
 
 from vsc.utils.missing import nub
 from vsc.utils.missing import TryOrFail
+from vsc.utils.missing import topological_sort
+
+
+def generate_random_dag():
+    """
+    Based on http://stackoverflow.com/questions/12790337/generating-a-random-dag
+    """
+    edge_probability = randint(10,30)
+    ranks = randint(3, 10)
+    graph = defaultdict(list)
+    node_max = 0
+
+    for r in xrange(ranks):
+        new_nodes = randint(2, 20)
+
+        for old_node in xrange(node_max):
+            for n in xrange(new_nodes):
+                node = node_max + n
+                if randint(0,100) < edge_probability:
+                    graph[old_node].append(node)
+                else:
+                    graph[old_node]
+
+        node_max += new_nodes
+
+    for n in xrange(new_nodes):
+        graph[node_max - n - 1] = []
+
+    return graph
 
 
 class TestMissing(TestCase):
@@ -76,6 +107,21 @@ class TestMissing(TestCase):
                 self.assertTrue(v == n)
             except:
                 self.assertTrue(n < raise_boundary)
+
+    def test_topological_sort(self):
+        """
+        test for a topological sort.
+
+        the key invariant should be that if a appears before b in the resulting sort, there is no way to reach
+        b from a in the DAG.
+        """
+        for i in xrange(10):
+            g = generate_random_dag()
+            visited = set()
+            for node in reversed(list(topological_sort(g))):
+                adjacent = set(g[node])
+                self.assertTrue(adjacent.isdisjoint(visited))
+
 
 
 def suite():
