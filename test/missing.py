@@ -252,7 +252,18 @@ class TestMissing(TestCase):
             except:
                 self.assertTrue(n < raise_boundary)
 
-    def test_topological_sort(self):
+    def test_fixed_topological_sort(self):
+        """
+        test for a topologicalsort on a fixed set of DAGs
+        """
+        for g in DAG_TEST_SET:
+            visited = set()
+            for node in reversed(list(topological_sort(g))):
+                adjacent = set(g[node])
+                self.assertTrue(adjacent.isdisjoint(visited))
+
+
+    def test_random_topological_sort(self):
         """
         test for a topological sort.
 
