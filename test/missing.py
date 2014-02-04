@@ -184,6 +184,7 @@ DAG_TEST_SET = [
 {0: [14, 20, 23, 59, 64, 67, 69], 1: [15, 17, 56, 59, 62, 64, 70], 2: [52, 60], 3: [28, 33, 41, 63, 68], 4: [14, 17, 27, 39, 47, 69, 71], 5: [27, 28, 30, 47], 6: [17, 21, 32, 41, 47, 66], 7: [25, 34, 37, 47, 53, 61, 69], 8: [29, 61, 67], 9: [26, 27, 29, 30, 33, 34, 56, 58, 65], 10: [17, 36, 41, 45], 11: [15, 30, 40, 56], 12: [26, 29, 36, 70], 13: [22, 26, 32, 44, 45, 46, 51, 59, 71], 14: [24, 30, 33, 44, 49, 51], 15: [33, 62, 66], 16: [31, 53, 62], 17: [48, 50, 60, 61, 69], 18: [43, 45, 49, 58, 62, 63, 69], 19: [28, 32, 40, 48, 50, 56, 61, 69], 20: [28, 41, 50, 55, 58, 59, 62, 70, 71], 21: [54, 61, 64, 65], 22: [39, 70], 23: [49, 56], 24: [70], 25: [48, 51, 55], 26: [39, 40, 53, 60, 69], 27: [43, 46, 49, 61], 28: [46, 50, 55, 61, 64, 71], 29: [], 30: [43, 47, 50, 55, 69], 31: [39, 44, 52, 69], 32: [44, 46, 65], 33: [53, 56, 71], 34: [53, 62, 67], 35: [44, 48, 57, 60, 67, 71], 36: [39, 53, 55, 62], 37: [54, 62], 38: [52, 55, 68], 39: [56, 59, 65, 70, 71], 40: [57, 60, 64, 68, 69, 71], 41: [54], 42: [55, 62], 43: [60], 44: [64, 69], 45: [56], 46: [58, 66], 47: [], 48: [58, 70], 49: [56, 66, 70], 50: [60, 62, 66], 51: [], 52: [62, 66], 53: [67, 68], 54: [57, 59], 55: [58], 56: [64, 65], 57: [], 58: [], 59: [], 60: [], 61: [], 62: [], 63: [], 64: [], 65: [], 66: [], 67: [], 68: [], 69: [], 70: [], 71: []},
 ]
 
+
 def generate_random_dag():
     """
     Based on http://stackoverflow.com/questions/12790337/generating-a-random-dag
@@ -258,9 +259,12 @@ class TestMissing(TestCase):
         """
         for g in DAG_TEST_SET:
             visited = set()
-            for node in reversed(list(topological_sort(g))):
+            sorting = list(topological_sort(g))
+            for node in reversed(sorting):
                 adjacent = set(g[node])
                 self.assertTrue(adjacent.isdisjoint(visited))
+
+            self.assertTrue(len(sorting) == len(g.keys()))
 
 
     def test_random_topological_sort(self):
@@ -272,11 +276,13 @@ class TestMissing(TestCase):
         """
         for i in xrange(10):
             g = generate_random_dag()
+            sorting = list(topological_sort(g))
             visited = set()
-            for node in reversed(list(topological_sort(g))):
+            for node in reversed(sorting):
                 adjacent = set(g[node])
                 self.assertTrue(adjacent.isdisjoint(visited))
 
+            self.assertTrue(len(sorting) == len(g.keys()))
 
 
 def suite():
