@@ -32,7 +32,8 @@ import datetime
 import os
 import re
 from tempfile import NamedTemporaryFile
-from unittest import TestCase, TestLoader, main
+from test.utilities import EnhancedTestCase
+from unittest import TestLoader, main
 
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption
@@ -87,7 +88,7 @@ class TestOption1(GeneralOption):
         self.add_group_parser(self._opts_ext, descr, prefix=prefix)
 
 
-class GeneralOptionTest(TestCase):
+class GeneralOptionTest(EnhancedTestCase):
     """Tests for general option"""
 
     def test_basic(self):

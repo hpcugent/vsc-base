@@ -31,14 +31,15 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 """
 from paycheck import with_checker
-from unittest import TestCase, TestLoader
+from test.utilities import EnhancedTestCase
+from unittest import TestLoader, main
 
-from vsc.utils.missing import nub
-from vsc.utils.missing import TryOrFail
+from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
+from vsc.utils.missing import nub, TryOrFail, ConstantDict
 
 
-class TestMissing(TestCase):
-    """Test for the nub function."""
+class TestMissing(EnhancedTestCase):
+    """Test for vsc.utils.missing module."""
 
     @with_checker([int])
     def test_nub_length(self, list_of_ints):
@@ -77,7 +78,57 @@ class TestMissing(TestCase):
             except:
                 self.assertTrue(n < raise_boundary)
 
+    def test_constant_dict(self):
+        """Tests for ConstantDict."""
+        cd = ConstantDict()
+        cd.KNOWN_KEYS = ['foo', 'bar']
+
+        # setting values works fine
+        cd['foo'] = 'FOO'
+        self.assertEqual(cd['foo'], 'FOO')
+
+        # updated method can be used, is_defined class variable is set to True
+        cd.update({
+            'foo': 'FOOFOO',
+            'bar': 'BAR',
+        })
+        cd.set_defined()
+        self.assertTrue(cd.is_defined)
+        self.assertEqual(cd['foo'], 'FOOFOO')
+        self.assertEqual(cd['bar'], 'BAR')
+
+        # further updates are prohibited after a call to the is_defined method
+        msg = "Modifying key '.*' is prohibited after set_defined\(\)"
+        self.assertErrorRegex(Exception, msg, cd.update, {'foo': 'BAR'})
+        self.assertErrorRegex(Exception, msg, cd.__setitem__, 'foo', 'BAR')
+
+        # only valid keys can be set
+        cd = ConstantDict()
+        msg = "Key 'thisisclearlynotavalidkey' \(value: 'FAIL'\) is not valid \(valid keys: .*\)"
+        self.assertErrorRegex(Exception, msg, cd.update, {'thisisclearlynotavalidkey': 'FAIL'})
+
+        # different KeyError messages for unknown and missing keys
+        cd = ConstantDict()
+        cd.KNOWN_KEYS = ['foo', 'bar']
+        self.assertErrorRegex(KeyError, "^\'foo\'$", cd.__getitem__, 'foo')
+        self.assertErrorRegex(KeyError, "unknown key '.*', known keys: .*", cd.__getitem__, 'thisisclearlynotavalidkey')
+
+        # the update_skip_unknown method simply ignores unknown keys (no errors)
+        cd.update_skip_unknown({
+            'foo': 'BAR',
+            'bar': 'FOO',
+            'foobar': 'whatever',
+        })
+        self.assertEqual(cd['foo'], 'BAR')
+        self.assertEqual(cd['bar'], 'FOO')
+        self.assertTrue(not 'foobar' in cd)
 
 def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestMissing)
+
+
+if __name__ == '__main__':
+    #logToScreen(enable=True)
+    #setLogLevelDebug()
+    main()

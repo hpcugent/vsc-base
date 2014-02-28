@@ -34,7 +34,8 @@ import os
 import re
 import sys
 import tempfile
-from unittest import TestCase, TestLoader, main
+from test.utilities import EnhancedTestCase
+from unittest import TestLoader, main
 
 from vsc.utils import fancylogger
 
@@ -42,7 +43,7 @@ MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
 MSGRE_TPL = r"%%s.*%s" % MSG
 
-class FancyLoggerTest(TestCase):
+class FancyLoggerTest(EnhancedTestCase):
     """Tests for fancylogger"""
 
     logfn = None
@@ -61,17 +62,6 @@ class FancyLoggerTest(TestCase):
 
         # disable default ones (with default format)
         fancylogger.disableDefaultHandlers()
-
-    def assertErrorRegex(self, error, regex, call, *args):
-        """ convenience method to match regex with the error message """
-        try:
-            call(*args)
-            self.assertTrue(False)  # this will fail when no exception is thrown at all
-        except error, err:
-            res = re.search(regex, str(err))
-            if not res:
-                print "err: %s" % err
-            self.assertTrue(res)
 
     def test_getlevelint(self):
         """Test the getLevelInt"""

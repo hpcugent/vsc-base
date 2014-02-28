@@ -31,10 +31,11 @@ Python module for handling data and time strings.
 """
 import datetime
 import os
-from unittest import TestCase, TestLoader
+from test.utilities import EnhancedTestCase
+from unittest import TestLoader
 from vsc.utils.dateandtime import FancyMonth, date_parser, datetime_parser
 
-class DateAndTimeTest(TestCase):
+class DateAndTimeTest(EnhancedTestCase):
     """Tests for dateandtime"""
 
     def test_date_parser(self):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# #
+##
 #
-# Copyright 2014-2014 Ghent University
+# Copyright 2012-2013 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -24,33 +24,34 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+##
 """
-Tests for the vsc.utils.wrapper module.
+Test utilities.
 
-@author: Stijn De Weirdt (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
-from test.utilities import EnhancedTestCase
-from unittest import TestLoader
 
-from vsc.utils.wrapper import Wrapper
-
-
-class TestWrapper(EnhancedTestCase):
-    """Test for the Wrapper class."""
-    def test_wrapper(self):
-        """Use the tests provided by the stackoverflow page"""
-        class DictWrapper(Wrapper):
-            __wraps__ = dict
-
-        wrapped_dict = DictWrapper(dict(a=1, b=2, c=3))
-
-        self.assertTrue("b" in wrapped_dict)  # __contains__
-        self.assertEqual(wrapped_dict, dict(a=1, b=2, c=3))  # __eq__
-        self.assertTrue("'a': 1" in str(wrapped_dict))  # __str__
-        self.assertTrue(wrapped_dict.__doc__.startswith("dict()"))  # __doc__
+import re
+import sys
+from unittest import TestCase
 
 
-def suite():
-    """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestWrapper)
+class EnhancedTestCase(TestCase):
+    """Enhanced test case, provides extra functionality (e.g. an assertErrorRegex method)."""
+
+    def assertErrorRegex(self, error, regex, call, *args, **kwargs):
+        """Convenience method to match regex with the expected error message"""
+        try:
+            call(*args, **kwargs)
+            str_kwargs = ', '.join(['='.join([k,str(v)]) for (k,v) in kwargs.items()])
+            str_args = ', '.join(map(str, args) + [str_kwargs])
+            self.assertTrue(False, "Expected errors with %s(%s) call should occur" % (call.__name__, str_args))
+        except error, err:
+            if hasattr(err, 'msg'):
+                msg = str(err.msg)
+            elif hasattr(err, 'message'):
+                msg = str(err.message)
+            else:
+                msg = str(err)
+            self.assertTrue(re.search(regex, msg), "Pattern '%s' is found in '%s'" % (regex, msg))
+
