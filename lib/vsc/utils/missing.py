@@ -218,6 +218,82 @@ class RUDict(dict):
             self[key] = other_dict[key]
 
 
+class ConstantDict(dict):
+    """Abstract class for 'constant' dictionaries."""
+
+    # list of known keys
+    KNOWN_KEYS = []
+
+    def __init__(self, *args, **kwargs):
+        """Custom constructor for ConstantDict: initialize logger."""
+        super(ConstantDict, self).__init__(*args, **kwargs)
+        self.log = fancylogger.getLogger(self.__class__.__name__, fname=False)
+        self.is_defined = False
+        self.skip_unknown = False
+
+    def update(self, *args, **kwargs):
+        """
+        It seems that dict.update doesn't use __setitem__.
+        This function now does what the dict.update doctstring describes i.e.
+
+        D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.
+            If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
+            If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
+            In either case, this is followed by: for k in F: D[k] = F[k]
+        """
+        self.log.debug("ConstantDict.update: %s, %s" % (args, kwargs))
+        if args:
+            if len(args) > 1:
+                self.log.raiseException('Only one argument supported')
+            arg = args[0]
+            if hasattr(arg, 'keys'):
+                for k in arg.keys():
+                    self[k] = arg[k]
+            else:
+                for (k, v) in arg:
+                    self[k] = v
+        for k in kwargs.keys():
+            self[k] = kwargs[k]
+
+    def update_skip_unknown(self, *args, **kwargs):
+        """Update, but skip unknown keys."""
+        self.skip_unknown = True
+        self.update(*args, **kwargs)
+        self.skip_unknown = False
+
+    def set_defined(self):
+        """Set as defined, disallow any further updates."""
+        self.is_defined = True
+
+    def unknown_key(self, msg):
+        """Action taken when an unknown key is encountered: raise error."""
+        if self.skip_unknown:
+            self.log.debug(msg)
+        else:
+            self.log.raiseException(msg)
+
+    def __setitem__(self, key, value, **kwargs):
+        """Redefine __setitem__ to only allow it when self.is_defined is still False and validate keys."""
+        if self.is_defined:
+            class_name = self.__class__.__name__
+            self.log.raiseException("Modifying key '%s' is prohibited after set_defined()." % key)
+        else:
+            if key in self.KNOWN_KEYS:
+                super(ConstantDict, self).__setitem__(key, value, **kwargs)
+            else:
+                self.unknown_key("Key '%s' (value: '%s') is not valid (valid keys: %s)" % (key, value, self.KNOWN_KEYS))
+
+    def __getitem__(self, key, *args, **kwargs):
+        """Redefine __getitem__ to provide a better KeyError message."""
+        try:
+            return super(ConstantDict, self).__getitem__(key, *args, **kwargs)
+        except KeyError, err:
+            if key in self.KNOWN_KEYS:
+                raise KeyError(err)
+            else:
+                raise KeyError("unknown key '%s', known keys: %s" % (key, self.KNOWN_KEYS))
+
+
 def shell_quote(x):
     """Add quotes so it can be apssed to shell"""
     # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
