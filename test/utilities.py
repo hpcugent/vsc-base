@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ##
 #
-# Copyright 2012-2013 Ghent University
+# Copyright 2014-2014 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
