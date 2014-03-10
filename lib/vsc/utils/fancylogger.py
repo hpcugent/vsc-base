@@ -138,9 +138,9 @@ class FancyStreamHandler(logging.StreamHandler):
         logging.StreamHandler.__init__(self)
         if stream is not None:
             pass
-        elif stdout == False or stdout is None:
+        elif stdout is False or stdout is None:
             stream = sys.stderr
-        elif stdout == True:
+        elif stdout is True:
             stream = sys.stdout
 
         self.stream = stream
@@ -301,7 +301,7 @@ class FancyLogger(logging.getLoggerClass()):
 
     def __copy__(self):
         """Return shallow copy, in this case reference to current logger"""
-        return getLogger(self.name, fname=False)
+        return getLogger(self.name, fname=False, clsname=False)
 
     def __deepcopy__(self, memo):
         """This behaviour is undefined, fancylogger will return shallow copy, instead just crashing."""
@@ -315,7 +315,7 @@ def thread_name():
     return threading.currentThread().getName()
 
 
-def getLogger(name=None, fname=True):
+def getLogger(name=None, fname=True, clsname=True):
     """
     returns a fancylogger
     if fname is True, the loggers name will be 'name.functionname'
@@ -324,6 +324,8 @@ def getLogger(name=None, fname=True):
     nameparts = [getRootLoggerName()]
     if name:
         nameparts.append(name)
+    if clsname:
+        nameparts.append(_getCallingClassName())
     if fname:
         nameparts.append(_getCallingFunctionName())
     fullname = ".".join(nameparts)
@@ -346,6 +348,20 @@ def _getCallingFunctionName():
     try:
         return inspect.stack()[2][3]
     except Exception:
+        return "?"
+
+
+def _getCallingClassName():
+    """
+    returns the name of the class calling the function calling this function
+    (for internal use only)
+    """
+    try:
+        i = 0
+        while not 'self' in inspect.stack()[i][0].f_locals:
+            i += 1
+        return inspect.stack()[i][0].f_locals['self'].__class__.__name__
+    except:
         return "?"
 
 
@@ -373,7 +389,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
     by default, logToScreen will log to stderr; logging to stderr instead can be done
     by setting the 'stdout' parameter to True
     """
-    handleropts = {'stdout':stdout}
+    handleropts = {'stdout': stdout}
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
@@ -439,7 +455,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
 
     if you want to disable logging to the handler, pass the earlier obtained handler
     """
-    logger = getLogger(name, fname=False)
+    logger = getLogger(name, fname=False, clsname=False)
 
     if not hasattr(logger, loggeroption):
         # not set.
@@ -517,7 +533,7 @@ def setLogLevel(level):
     """
     if isinstance(level, basestring):
         level = getLevelInt(level)
-    logger = getLogger(fname=False)
+    logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)
     if os.environ.get('FANCYLOGGER_LOGLEVEL_DEBUG', '0').lower() in ('1', 'yes', 'true', 'y'):
         print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
