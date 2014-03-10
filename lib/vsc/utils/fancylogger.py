@@ -315,12 +315,17 @@ def thread_name():
     return threading.currentThread().getName()
 
 
-def getLogger(name=None, fname=True, clsname=True):
+def getLogger(name=None, fname=True, clsname=None):
     """
     returns a fancylogger
-    if fname is True, the loggers name will be 'name.functionname'
+    if fname is True, the loggers name will be 'name.classname.functionname'
+    Except when clsname is False, then it will be ignored
     where functionname is the name of the function calling this function
     """
+    # setting a default of True is what we want, but this breaks stuff which expects different behaviour
+    # setting to the same value of fname is more conservative.
+    if clsname is None:
+        clsname=fname
     nameparts = [getRootLoggerName()]
     if name:
         nameparts.append(name)
@@ -357,11 +362,8 @@ def _getCallingClassName():
     (for internal use only)
     """
     try:
-        i = 0
-        while not 'self' in inspect.stack()[i][0].f_locals:
-            i += 1
-        return inspect.stack()[i][0].f_locals['self'].__class__.__name__
-    except:
+        return inspect.stack()[2][0].f_locals['self'].__class__.__name__
+    except Exception:
         return "?"
 
 
@@ -386,7 +388,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
     you can also pass the name of the logger for which to log to the screen
     otherwise you'll get all logs on the screen
 
-    by default, logToScreen will log to stderr; logging to stderr instead can be done
+    by default, logToScreen will log to stderr; logging to stdout instead can be done
     by setting the 'stdout' parameter to True
     """
     handleropts = {'stdout': stdout}
