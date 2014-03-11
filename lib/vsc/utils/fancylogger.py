@@ -323,9 +323,8 @@ def thread_name():
 def getLogger(name=None, fname=True, clsname=False):
     """
     returns a fancylogger
-    if fname is True, the loggers name will be 'name.classname.functionname'
-    Except when clsname is False, then it will be ignored
-    where functionname is the name of the function calling this function
+    if fname is True, the loggers name will be 'name[.classname].functionname'
+    if clsname is True the loggers name will be 'name.classname[.functionname]'
     """
     nameparts = [getRootLoggerName()]
     if name:
