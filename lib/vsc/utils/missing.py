@@ -60,7 +60,7 @@ def all(ls):
 
 
 def nub(list_):
-    """Returns the unique items of a list, while preserving order of
+    """Returns the unique items of a list of hashables, while preserving order of
     the original list, i.e. the first unique element encoutered is
     retained.
 

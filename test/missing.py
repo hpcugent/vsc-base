@@ -30,8 +30,7 @@ Tests for the vsc.utils.missing module.
 
 @author: Andy Georges (Ghent University)
 """
-from paycheck import with_checker
-from unittest import TestCase, TestLoader
+from unittest import TestCase, TestLoader, main
 
 from vsc.utils.missing import nub
 from vsc.utils.missing import TryOrFail
@@ -40,22 +39,22 @@ from vsc.utils.missing import TryOrFail
 class TestMissing(TestCase):
     """Test for the nub function."""
 
-    @with_checker([int])
-    def test_nub_length(self, list_of_ints):
-        nubbed = nub(list_of_ints)
-        self.assertTrue(len(list_of_ints) >= len(nubbed))
+    def test_nub_length(self):
+        for lst in [], [0], [''], ['bla','bla'], [0,4,5,8] :
+            nubbed = nub(lst)
+            self.assertTrue(len(lst) >= len(nubbed))
 
-    @with_checker([int])
-    def test_nub_membership(self, list_of_ints):
-        nubbed = nub(list_of_ints)
-        for x in list_of_ints:
-            self.assertTrue(x in nubbed)
+    def test_nub_membership(self):
+        for lst in [], [0], [''], ['bla','bla'], [0,4,5,8]:
+            nubbed = nub(lst)
+            for x in lst:
+                self.assertTrue(x in nubbed)
 
-    @with_checker([int])
-    def test_nub_order(self, list_of_ints):
-        nubbed = nub(2 * list_of_ints)
-        for (x, y) in [(x_, y_) for x_ in list_of_ints for y_ in list_of_ints]:
-            self.assertTrue((list_of_ints.index(x) <= list_of_ints.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
+    def test_nub_order(self):
+        for lst in [], [0], [''], ['bla','bla'], [0,4,5,8]:
+            nubbed = nub(2 * lst)
+            for (x, y) in [(x_, y_) for x_ in lst for y_ in lst]:
+                self.assertTrue((lst.index(x) <= lst.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
     def test_tryorfail_no_sleep(self):
         """test for a retry that succeeds."""
@@ -81,3 +80,6 @@ class TestMissing(TestCase):
 def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestMissing)
+
+if __name__ == '__main__':
+    main()

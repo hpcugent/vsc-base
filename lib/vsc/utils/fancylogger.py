@@ -51,7 +51,7 @@ usage:
 >>> fancylogger.getLogger(fname=True)
 >>> # you can use the handler to set a different formatter by using
 >>> handler = fancylogger.logToFile('dir/filename')
->>> formatstring = '%(asctime)-15s %(levelname)-10s %(mpirank)-5s %(funcname)-15s %(threadname)-10s %(message)s'
+>>> formatstring = '%(asctime)-15s %(levelname)-10s %(mpirank)-5s %(funcname)-15s %(threadName)-10s %(message)s'
 >>> handler.setFormatter(logging.Formatter(formatstring))
 >>> # setting a global loglevel will impact all logers:
 >>> from vsc.utils import fancylogger
@@ -83,11 +83,11 @@ import weakref
 from distutils.version import LooseVersion
 
 # constants
-TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadname)-10s  %(message)s'
+TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
 DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
 FANCYLOG_LOGGING_FORMAT = None
 
-# DEFAULT_LOGGING_FORMAT= '%(asctime)-15s %(levelname)-10s %(module)-15s %(threadname)-10s %(message)s'
+# DEFAULT_LOGGING_FORMAT= '%(asctime)-15s %(levelname)-10s %(module)-15s %(threadName)-10s %(message)s'
 MAX_BYTES = 100 * 1024 * 1024  # max bytes in a file with rotating file handler
 BACKUPCOUNT = 10  # number of rotating log files to save
 
@@ -107,7 +107,7 @@ try:
     if MPI.COMM_WORLD.Get_size() > 1:
         # enable mpi rank when mpi is used
         DEFAULT_LOGGING_FORMAT = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
-                                 " mpi: %(mpirank)s %(threadname)-10s  %(message)s"
+                                 " mpi: %(mpirank)s %(threadName)-10s  %(message)s"
 except ImportError:
     _MPIRANK = "N/A"
 
@@ -154,7 +154,12 @@ class FancyLogRecord(logging.LogRecord):
     def __init__(self, *args, **kwargs):
         logging.LogRecord.__init__(self, *args, **kwargs)
         # modify custom specifiers here
-        self.threadname = thread_name()  # actually threadName already exists?
+        # we won't do this when running with -O, becuase this might be a heavy operation
+        # the __debug__ operation is actually recognised by the python compiler and it won't even do a single comparison
+        if __debug__:
+            self.className = _getCallingClassName(depth=5)
+        else:
+            self.className = 'N/A'
         self.mpirank = _MPIRANK
 
 
@@ -325,7 +330,7 @@ def getLogger(name=None, fname=True, clsname=None):
     # setting a default of True is what we want, but this breaks stuff which expects different behaviour
     # setting to the same value of fname is more conservative.
     if clsname is None:
-        clsname=fname
+        clsname = fname
     nameparts = [getRootLoggerName()]
     if name:
         nameparts.append(name)
@@ -356,13 +361,14 @@ def _getCallingFunctionName():
         return "?"
 
 
-def _getCallingClassName():
+def _getCallingClassName(depth=2):
     """
     returns the name of the class calling the function calling this function
     (for internal use only)
     """
     try:
-        return inspect.stack()[2][0].f_locals['self'].__class__.__name__
+        return inspect.stack()[depth][0].f_locals['self'].__class__.__name__
+
     except Exception:
         return "?"
 
