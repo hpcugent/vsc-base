@@ -45,7 +45,7 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 
 
 def classless_function():
-    logger = fancylogger.getLogger()
+    logger = fancylogger.getLogger(clsname=True)
     logger.warn("from classless_function")
 
 
@@ -238,7 +238,7 @@ class FancyLoggerTest(TestCase):
 
         class Foobar:
             def somefunction(self):
-                logger = fancylogger.getLogger()
+                logger = fancylogger.getLogger(clsname=True)
                 logger.warn('we are logging something here')
 
         stringfile = StringIO()
