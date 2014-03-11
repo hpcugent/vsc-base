@@ -320,17 +320,13 @@ def thread_name():
     return threading.currentThread().getName()
 
 
-def getLogger(name=None, fname=True, clsname=None):
+def getLogger(name=None, fname=True, clsname=False):
     """
     returns a fancylogger
     if fname is True, the loggers name will be 'name.classname.functionname'
     Except when clsname is False, then it will be ignored
     where functionname is the name of the function calling this function
     """
-    # setting a default of True is what we want, but this breaks stuff which expects different behaviour
-    # setting to the same value of fname is more conservative.
-    if clsname is None:
-        clsname = fname
     nameparts = [getRootLoggerName()]
     if name:
         nameparts.append(name)
