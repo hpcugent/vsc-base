@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# -*- coding: latin-1 -*-
+# #
 #
-# Copyright 2009-2014 Ghent University
+# Copyright 2014-2014 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -24,41 +24,32 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-#
+# #
 """
-vsc-base base distribution setup.py
+Tests for the vsc.utils.wrapper module.
 
 @author: Stijn De Weirdt (Ghent University)
-@author: Andy Georges (Ghent University)
 """
-import os
-import sys
+from unittest import TestCase, TestLoader
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
-
-import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, jt, sdw
-
-def remove_bdist_rpm_source_file():
-    """List of files to remove from the (source) RPM."""
-    return []
-
-shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
-shared_setup.SHARED_TARGET.update({
-    'url': 'https://github.com/hpcugent/vsc-base',
-    'download_url': 'https://github.com/hpcugent/vsc-base'
-})
+from vsc.utils.wrapper import Wrapper
 
 
-PACKAGE = {
-    'name': 'vsc-base',
-    'version': '1.7.6',
-    'author': [sdw, jt, ag],
-    'maintainer': [sdw, jt, ag],
-    'packages': ['vsc', 'vsc.utils', 'vsc.install'],
-    'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'install_requires' : ['setuptools'],
-}
+class TestWrapper(TestCase):
+    """Test for the Wrapper class."""
+    def test_wrapper(self):
+        """Use the tests provided by the stackoverflow page"""
+        class DictWrapper(Wrapper):
+            __wraps__ = dict
 
-if __name__ == '__main__':
-    shared_setup.action_target(PACKAGE)
+        wrapped_dict = DictWrapper(dict(a=1, b=2, c=3))
+
+        self.assertTrue("b" in wrapped_dict)  # __contains__
+        self.assertEqual(wrapped_dict, dict(a=1, b=2, c=3))  # __eq__
+        self.assertTrue("'a': 1" in str(wrapped_dict))  # __str__
+        self.assertTrue(wrapped_dict.__doc__.startswith("dict()"))  # __doc__
+
+
+def suite():
+    """ return all the tests"""
+    return TestLoader().loadTestsFromTestCase(TestWrapper)
