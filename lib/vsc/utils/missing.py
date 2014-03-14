@@ -341,3 +341,28 @@ class TryOrFail(object):
                         time.sleep(self.sleep)
 
         return new_function
+
+
+def post_order(graph, root):
+    """
+    Walk the graph from the given root in a post-order manner by providing the corresponding generator
+    """
+    for node in graph[root]:
+        for child in post_order(graph, node):
+            yield child
+    yield root
+
+
+def topological_sort(graph):
+    """
+    Perform topological sorting of the given graph.
+
+    The graph is a dict with the values for a key being the dependencies, i.e., an arrow from key to each value.
+    """
+    visited = set()
+    for root in graph:
+        for node in post_order(graph, root):
+            if not node in visited:
+                yield node
+                visited.add(node)
+
