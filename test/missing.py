@@ -37,7 +37,7 @@ from test.utilities import EnhancedTestCase
 from unittest import TestLoader, main
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
-from vsc.utils.missing import nub, topological_sort, ConstantDict, TryOrFail
+from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 
 
 DAG_TEST_SET = [
@@ -253,50 +253,33 @@ class TestMissing(EnhancedTestCase):
             except:
                 self.assertTrue(n < raise_boundary)
 
-    def test_constant_dict(self):
-        """Tests for ConstantDict."""
-        cd = ConstantDict()
-        cd.KNOWN_KEYS = ['foo', 'bar']
+    def test_frozendictknownkeys(self):
+        """Tests for FrozenDictKnownKeys."""
+        fdkk = FrozenDictKnownKeys()
 
-        # setting values works fine
-        cd['foo'] = 'FOO'
-        self.assertEqual(cd['foo'], 'FOO')
+        # abstract class has empty set of known keys, so can be initialized with a dict
+        self.assertErrorRegex(Exception, 'Encountered unknown keys', FrozenDictKnownKeys, {'foo': 'bar'})
 
-        # updated method can be used, is_defined class variable is set to True
-        cd.update({
-            'foo': 'FOOFOO',
-            'bar': 'BAR',
-        })
-        cd.set_defined()
-        self.assertTrue(cd.is_defined)
-        self.assertEqual(cd['foo'], 'FOOFOO')
-        self.assertEqual(cd['bar'], 'BAR')
+        class TestFrozenDictKnownKeys(FrozenDictKnownKeys):
+            """Inner test class derived from FrozenDictKnownKeys."""
+            KNOWN_KEYS = ['foo', 'foo2']
 
-        # further updates are prohibited after a call to the is_defined method
-        msg = "Modifying key '.*' is prohibited after set_defined\(\)"
-        self.assertErrorRegex(Exception, msg, cd.update, {'foo': 'BAR'})
-        self.assertErrorRegex(Exception, msg, cd.__setitem__, 'foo', 'BAR')
+        tfdkk = TestFrozenDictKnownKeys({'foo': 'bar'})
+        self.assertEqual(tfdkk['foo'], 'bar')
 
-        # only valid keys can be set
-        cd = ConstantDict()
-        msg = "Key 'thisisclearlynotavalidkey' \(value: 'FAIL'\) is not valid \(valid keys: .*\)"
-        self.assertErrorRegex(Exception, msg, cd.update, {'thisisclearlynotavalidkey': 'FAIL'})
+        # check different error message for missing known and unknown keys
+        self.assertErrorRegex(Exception, "foo2", tfdkk.__getitem__, 'foo2')
+        self.assertErrorRegex(Exception, "unknown key 'foo3', known keys: .*", tfdkk.__getitem__, 'foo3')
 
-        # different KeyError messages for unknown and missing keys
-        cd = ConstantDict()
-        cd.KNOWN_KEYS = ['foo', 'bar']
-        self.assertErrorRegex(KeyError, "^\'foo\'$", cd.__getitem__, 'foo')
-        self.assertErrorRegex(KeyError, "unknown key '.*', known keys: .*", cd.__getitem__, 'thisisclearlynotavalidkey')
+        # no (direct) way of adjusting dictionary
+        self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.__setitem__(x), ('foo2', 'bar2'))
+        self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.update(x), {'foo2': 'bar2'})
+        # unknown keys are not allowed
+        self.assertErrorRegex(Exception, 'Encountered unknown keys', TestFrozenDictKnownKeys, {'foo3': 'bar3'})
 
-        # the update_skip_unknown method simply ignores unknown keys (no errors)
-        cd.update_skip_unknown({
-            'foo': 'BAR',
-            'bar': 'FOO',
-            'foobar': 'whatever',
-        })
-        self.assertEqual(cd['foo'], 'BAR')
-        self.assertEqual(cd['bar'], 'FOO')
-        self.assertTrue(not 'foobar' in cd)
+        # test ignoring of unknown keys
+        tfdkk = TestFrozenDictKnownKeys({'foo': 'bar', 'foo2': 'bar2', 'foo3': 'bar3'}, ignore_unknown_keys=True)
+        self.assertEqual(sorted(tfdkk.keys()), ['foo', 'foo2'])
 
     def test_fixed_topological_sort(self):
         """

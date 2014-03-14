@@ -45,6 +45,7 @@ import subprocess
 import time
 
 from vsc.utils import fancylogger
+from vsc.utils.frozendict import frozendict
 
 
 def any(ls):
@@ -218,75 +219,37 @@ class RUDict(dict):
             self[key] = other_dict[key]
 
 
-class ConstantDict(dict):
-    """Abstract class for 'constant' dictionaries."""
+class FrozenDictKnownKeys(frozendict):
+    """A frozen dictionary only allowing known keys."""
 
     # list of known keys
     KNOWN_KEYS = []
 
     def __init__(self, *args, **kwargs):
-        """Custom constructor for ConstantDict: initialize logger."""
-        super(ConstantDict, self).__init__(*args, **kwargs)
+        """Constructor, only way to define the contents."""
         self.log = fancylogger.getLogger(self.__class__.__name__, fname=False)
-        self.is_defined = False
-        self.skip_unknown = False
 
-    def update(self, *args, **kwargs):
-        """
-        It seems that dict.update doesn't use __setitem__.
-        This function now does what the dict.update doctstring describes i.e.
+        # support ignoring of unknown keys
+        ignore_unknown_keys = kwargs.pop('ignore_unknown_keys', False)
 
-        D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.
-            If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
-            If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
-            In either case, this is followed by: for k in F: D[k] = F[k]
-        """
-        self.log.debug("ConstantDict.update: %s, %s" % (args, kwargs))
-        if args:
-            if len(args) > 1:
-                self.log.raiseException('Only one argument supported')
-            arg = args[0]
-            if hasattr(arg, 'keys'):
-                for k in arg.keys():
-                    self[k] = arg[k]
+        # handle unknown keys: either ignore them or raise an exception
+        tmpdict = dict(*args, **kwargs)
+        unknown_keys = [key for key in tmpdict.keys() if not key in self.KNOWN_KEYS]
+        if unknown_keys:
+            if ignore_unknown_keys:
+                for key in unknown_keys:
+                    self.log.debug("Ignoring unknown key '%s' (value '%s')" % (key, args[0][key]))
+                    # filter key out of dictionary before creating instance
+                    del args[0][key]
             else:
-                for (k, v) in arg:
-                    self[k] = v
-        for k in kwargs.keys():
-            self[k] = kwargs[k]
+                self.log.raiseException("Encountered unknown keys %s (known keys: %s)" % (unknown_keys, self.KNOWN_KEYS))
 
-    def update_skip_unknown(self, *args, **kwargs):
-        """Update, but skip unknown keys."""
-        self.skip_unknown = True
-        self.update(*args, **kwargs)
-        self.skip_unknown = False
-
-    def set_defined(self):
-        """Set as defined, disallow any further updates."""
-        self.is_defined = True
-
-    def unknown_key(self, msg):
-        """Action taken when an unknown key is encountered: raise error."""
-        if self.skip_unknown:
-            self.log.debug(msg)
-        else:
-            self.log.raiseException(msg)
-
-    def __setitem__(self, key, value, **kwargs):
-        """Redefine __setitem__ to only allow it when self.is_defined is still False and validate keys."""
-        if self.is_defined:
-            class_name = self.__class__.__name__
-            self.log.raiseException("Modifying key '%s' is prohibited after set_defined()." % key)
-        else:
-            if key in self.KNOWN_KEYS:
-                super(ConstantDict, self).__setitem__(key, value, **kwargs)
-            else:
-                self.unknown_key("Key '%s' (value: '%s') is not valid (valid keys: %s)" % (key, value, self.KNOWN_KEYS))
+        super(FrozenDictKnownKeys, self).__init__(*args, **kwargs)
 
     def __getitem__(self, key, *args, **kwargs):
         """Redefine __getitem__ to provide a better KeyError message."""
         try:
-            return super(ConstantDict, self).__getitem__(key, *args, **kwargs)
+            return super(FrozenDictKnownKeys, self).__getitem__(key, *args, **kwargs)
         except KeyError, err:
             if key in self.KNOWN_KEYS:
                 raise KeyError(err)
