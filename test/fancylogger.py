@@ -33,6 +33,7 @@ Unit tests for fancylogger.
 import os
 import re
 import sys
+from StringIO import StringIO
 import tempfile
 from test.utilities import EnhancedTestCase
 from unittest import TestLoader, main
@@ -43,6 +44,13 @@ MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
 MSGRE_TPL = r"%%s.*%s" % MSG
 
+
+def classless_function():
+    logger = fancylogger.getLogger(clsname=True)
+    logger.warn("from classless_function")
+
+
+class FancyLoggerTest(TestCase):
 class FancyLoggerTest(EnhancedTestCase):
     """Tests for fancylogger"""
 
@@ -110,7 +118,6 @@ class FancyLoggerTest(EnhancedTestCase):
         pi_l2c = log_l2c._get_parent_info()
         self.assertEqual(len(pi_l2c), 3)  # level1a as parent does not exist
 
-
     def test_uft8_decoding(self):
         """Test UTF8 decoding."""
         # truncate the logfile
@@ -119,11 +126,12 @@ class FancyLoggerTest(EnhancedTestCase):
         logger = fancylogger.getLogger('utf8_test')
         logger.setLevel('DEBUG')
 
-        for msg in [
-                    "This is a pure ASCII text.",  # pure ASCII
-                    "Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
-                    "This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
-                   ]:
+        msgs = [
+            "This is a pure ASCII text.",  # pure ASCII
+            "Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
+            "This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
+        ]
+        for msg in msgs:
             logger.critical(msg)
             logger.debug(msg)
             logger.error(msg)
@@ -164,6 +172,7 @@ class FancyLoggerTest(EnhancedTestCase):
         self.assertTrue(msgre_warning.search(txt))
 
     def _stream_stdouterr(self, isstdout=True, expect_match=True):
+        """Log to stdout or stderror, check stdout or stderror"""
         fd, logfn = tempfile.mkstemp()
         # fh will be checked
         fh = os.fdopen(fd, 'w')
@@ -181,7 +190,7 @@ class FancyLoggerTest(EnhancedTestCase):
         fancylogger.setLogLevelInfo()
         name = 'test_stream_stdout'
         lh = fancylogger.logToScreen(stdout=isstdout)
-        logger = fancylogger.getLogger(name)
+        logger = fancylogger.getLogger(name, clsname=False)
         # logfn makes it unique
         msg = 'TEST isstdout %s expect_match %s logfn %s' % (isstdout, expect_match, logfn)
         logger.info(msg)
@@ -205,15 +214,55 @@ class FancyLoggerTest(EnhancedTestCase):
 
     def test_stream_stdout_stderr(self):
         # log to stdout, check stdout
-        self._stream_stdouterr(isstdout=True, expect_match=True)
+        self._stream_stdouterr(True, True)
         # log to stderr, check stderr
-        self._stream_stdouterr(isstdout=False, expect_match=True)
+        self._stream_stdouterr(False, True)
 
         # log to stdout, check stderr
-        self._stream_stdouterr(isstdout=True, expect_match=False)
+        self._stream_stdouterr(True, False)
         # log to stderr, check stdout
-        self._stream_stdouterr(isstdout=False, expect_match=False)
+        self._stream_stdouterr(False, False)
 
+    def test_classname_in_log(self):
+        """Do a log and check if the classname is correctly in it"""
+        _stderr = sys.stderr
+
+        class Foobar:
+            def somefunction(self):
+                logger = fancylogger.getLogger(clsname=True)
+                logger.warn('we are logging something here')
+
+        stringfile = StringIO()
+        sys.stderr = stringfile
+        handler = fancylogger.logToScreen()
+
+        Foobar().somefunction()
+        self.assertTrue('Foobar.somefunction' in stringfile.getvalue())
+        stringfile.close()
+
+        # restore
+        fancylogger.logToScreen(enable=False, handler=handler)
+        # and again
+        stringfile = StringIO()
+        sys.stderr = stringfile
+        handler = fancylogger.logToScreen()
+        classless_function()
+        self.assertTrue('?.classless_function' in stringfile.getvalue())
+
+        # restore
+        fancylogger.logToScreen(enable=False, handler=handler)
+        stringfile = StringIO()
+        sys.stderr = stringfile
+
+        fancylogger.setLogFormat("%(className)s blabla")
+        handler = fancylogger.logToScreen()
+        logger = fancylogger.getLogger(fname=False, clsname=False)
+        logger.warn("blabla")
+        print stringfile.getvalue()
+        self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
+        # restore
+        fancylogger.logToScreen(enable=False, handler=handler)
+        sys.stderr = _stderr
 
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)
