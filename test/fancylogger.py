@@ -50,7 +50,6 @@ def classless_function():
     logger.warn("from classless_function")
 
 
-class FancyLoggerTest(TestCase):
 class FancyLoggerTest(EnhancedTestCase):
     """Tests for fancylogger"""
 
