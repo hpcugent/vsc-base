@@ -31,7 +31,6 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 """
 from unittest import TestCase, TestLoader, main
-from collections import defaultdict
 from random import randint
 
 from vsc.utils.missing import nub
@@ -113,7 +112,7 @@ def generate_random_dag():
     """
     edge_probability = randint(10, 30)
     ranks = randint(3, 10)
-    graph = defaultdict(list)
+    graph = {}
     node_max = 0
 
     for r in xrange(ranks):
@@ -123,9 +122,11 @@ def generate_random_dag():
             for n in xrange(new_nodes):
                 node = node_max + n
                 if randint(0, 100) < edge_probability:
-                    graph[old_node].append(node)
+                    somenode = graph.get(old_node, [])
+                    somenode.append(node)
+                    graph[old_node] = somenode
                 else:
-                    graph[old_node]
+                    graph[old_node] = []
 
         node_max += new_nodes
 
