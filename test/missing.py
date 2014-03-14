@@ -30,8 +30,9 @@ Tests for the vsc.utils.missing module.
 
 @author: Andy Georges (Ghent University)
 """
+import sys
 from unittest import TestCase, TestLoader, main
-from random import randint
+from random import randint, seed
 
 from vsc.utils.missing import nub
 from vsc.utils.missing import TryOrFail
@@ -110,6 +111,9 @@ def generate_random_dag():
     """
     Based on http://stackoverflow.com/questions/12790337/generating-a-random-dag
     """
+    myseed = randint(0, sys.maxint)
+    seed(myseed)
+    print "testing with random seed %d", myseed
     edge_probability = randint(10, 30)
     ranks = randint(3, 10)
     graph = {}
