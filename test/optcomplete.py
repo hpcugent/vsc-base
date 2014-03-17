@@ -32,15 +32,14 @@ Tests for the vsc.utils.optcomplete module and its use in generaloption.
 """
 import os
 import tempfile
-from test.utilities import EnhancedTestCase
-from unittest import TestLoader, main
+from unittest import TestCase, TestLoader, main
 from vsc.utils import optcomplete
 from vsc.utils.optcomplete import Completer, CompleterMissingCallArgument
 from vsc.utils.optcomplete import NoneCompleter, ListCompleter, AllCompleter, KnownHostsCompleter
 from vsc.utils.optcomplete import FileCompleter, DirCompleter, RegexCompleter
 from vsc.utils.optcomplete import extract_word, gen_cmdline, OPTCOMPLETE_ENVIRONMENT
 
-class TestOptcomplete(EnhancedTestCase):
+class TestOptcomplete(TestCase):
     """Tests for optcomplete."""
 
     def setUp(self):

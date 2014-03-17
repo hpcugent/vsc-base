@@ -32,8 +32,7 @@ Unit tests for asyncprocess.py.
 
 import os
 import time
-from test.utilities import EnhancedTestCase
-from unittest import TestSuite, main
+from unittest import TestCase, TestSuite, main
 
 import vsc.utils.asyncprocess as p
 from vsc.utils.asyncprocess import Popen
@@ -45,7 +44,7 @@ def p_recv_some_exception(*args, **kwargs):
     return p.recv_some(*args, **kwargs)
 
 
-class AsyncProcessTest(EnhancedTestCase):
+class AsyncProcessTest(TestCase):
     """ Testcase for asyncprocess """
 
     def setUp(self):

@@ -30,13 +30,12 @@ Tests for the vsc.utils.wrapper module.
 
 @author: Stijn De Weirdt (Ghent University)
 """
-from test.utilities import EnhancedTestCase
-from unittest import TestLoader
+from unittest import TestCase, TestLoader
 
 from vsc.utils.wrapper import Wrapper
 
 
-class TestWrapper(EnhancedTestCase):
+class TestWrapper(TestCase):
     """Test for the Wrapper class."""
     def test_wrapper(self):
         """Use the tests provided by the stackoverflow page"""
