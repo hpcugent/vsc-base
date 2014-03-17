@@ -51,6 +51,8 @@ class EnhancedTestCase(TestCase):
                 msg = str(err.msg)
             elif hasattr(err, 'message'):
                 msg = str(err.message)
+            elif hasattr(err, 'args'):  # KeyError in Python 2.4 only provides message via 'args' attribute
+                msg = str(err.args[0])
             else:
                 msg = str(err)
             self.assertTrue(re.search(regex, msg), "Pattern '%s' is found in '%s'" % (regex, msg))
