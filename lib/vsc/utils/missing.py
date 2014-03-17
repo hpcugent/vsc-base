@@ -242,7 +242,8 @@ class FrozenDictKnownKeys(frozendict):
                     # filter key out of dictionary before creating instance
                     del tmpdict[key]
             else:
-                self.log.raiseException("Encountered unknown keys %s (known keys: %s)" % (unknown_keys, self.KNOWN_KEYS))
+                msg = "Encountered unknown keys %s (known keys: %s)" % (unknown_keys, self.KNOWN_KEYS)
+                self.log.raiseException(msg, exception=KeyError)
 
         super(FrozenDictKnownKeys, self).__init__(tmpdict)
 
