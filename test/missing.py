@@ -31,7 +31,6 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 """
 from collections import defaultdict
-from paycheck import with_checker
 from random import randint, seed
 from test.utilities import EnhancedTestCase
 from unittest import TestLoader, main
