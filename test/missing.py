@@ -183,21 +183,29 @@ class TestMissing(EnhancedTestCase):
 
     def test_frozendictknownkeys(self):
         """Tests for FrozenDictKnownKeys."""
-        fdkk = FrozenDictKnownKeys()
-
-        # abstract class has empty set of known keys, so can be initialized with a dict
-        self.assertErrorRegex(Exception, 'Encountered unknown keys', FrozenDictKnownKeys, {'foo': 'bar'})
 
         class TestFrozenDictKnownKeys(FrozenDictKnownKeys):
             """Inner test class derived from FrozenDictKnownKeys."""
             KNOWN_KEYS = ['foo', 'foo2']
+
+        # initializing instance with options supported by dict type works
+        for (fdkk, ref) in [
+            (FrozenDictKnownKeys(), {}), # no arguments => empty dictionary
+            (TestFrozenDictKnownKeys({'foo': 'bar'}), {'foo': 'bar'}),  # initialize by dict
+            (TestFrozenDictKnownKeys([('foo', 'bar')]), {'foo': 'bar'}),  # initialize by listed of tuples
+            (TestFrozenDictKnownKeys(foo='bar'), {'foo': 'bar'}),  # initialize by named arguments
+        ]:
+            self.assertEqual(sorted(fdkk.items()), sorted(ref.items()))
+
+        # abstract class has empty set of known keys, so can be initialized with a dict
+        self.assertErrorRegex(Exception, 'Encountered unknown keys', FrozenDictKnownKeys, {'foo': 'bar'})
 
         tfdkk = TestFrozenDictKnownKeys({'foo': 'bar'})
         self.assertEqual(tfdkk['foo'], 'bar')
 
         # check different error message for missing known and unknown keys
         self.assertErrorRegex(Exception, "foo2", tfdkk.__getitem__, 'foo2')
-        self.assertErrorRegex(Exception, "unknown key 'foo3', known keys: .*", tfdkk.__getitem__, 'foo3')
+        self.assertErrorRegex(Exception, "Unknown key 'foo3' .* instance \(known keys: .*\)", tfdkk.__getitem__, 'foo3')
 
         # no (direct) way of adjusting dictionary
         self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.__setitem__(x), ('foo2', 'bar2'))

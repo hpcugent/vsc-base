@@ -240,11 +240,11 @@ class FrozenDictKnownKeys(frozendict):
                 for key in unknown_keys:
                     self.log.debug("Ignoring unknown key '%s' (value '%s')" % (key, args[0][key]))
                     # filter key out of dictionary before creating instance
-                    del args[0][key]
+                    del tmpdict[key]
             else:
                 self.log.raiseException("Encountered unknown keys %s (known keys: %s)" % (unknown_keys, self.KNOWN_KEYS))
 
-        super(FrozenDictKnownKeys, self).__init__(*args, **kwargs)
+        super(FrozenDictKnownKeys, self).__init__(tmpdict)
 
     def __getitem__(self, key, *args, **kwargs):
         """Redefine __getitem__ to provide a better KeyError message."""
@@ -254,7 +254,8 @@ class FrozenDictKnownKeys(frozendict):
             if key in self.KNOWN_KEYS:
                 raise KeyError(err)
             else:
-                raise KeyError("unknown key '%s', known keys: %s" % (key, self.KNOWN_KEYS))
+                tup = (key, self.__class__.__name__, self.KNOWN_KEYS)
+                raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % tup)
 
 
 def shell_quote(x):
