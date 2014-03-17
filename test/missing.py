@@ -139,6 +139,18 @@ def generate_random_dag():
     return graph
 
 
+# provide function to check for disjoint sets (set.disjoint only works for Python 2.6 and up)
+def disjoint_sets(s1, s2):
+    """Return True is provided sets are disjoint."""
+    for x in s1:
+        if x in s2:
+            return False
+    for x in s2:
+        if x in s1:
+            return False
+    return True
+
+
 class TestMissing(EnhancedTestCase):
     """Test for vsc.utils.missing module."""
 
@@ -224,7 +236,7 @@ class TestMissing(EnhancedTestCase):
             sorting = list(topological_sort(g))
             for node in reversed(sorting):
                 adjacent = set(g[node])
-                self.assertTrue(adjacent.isdisjoint(visited))
+                self.assertTrue(disjoint_sets(adjacent, visited))
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
@@ -241,7 +253,7 @@ class TestMissing(EnhancedTestCase):
             visited = set()
             for node in reversed(sorting):
                 adjacent = set(g[node])
-                self.assertTrue(adjacent.isdisjoint(visited))
+                self.assertTrue(disjoint_sets(adjacent, visited))
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
