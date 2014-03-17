@@ -21,6 +21,7 @@ from UserDict import DictMixin
 
 
 # minor adjustment: deriving from DictMixin instead of collections.Mapping to make it Python 2.4 compatible
+# see also http://docs.python.org/2/library/userdict.html#UserDict.DictMixin
 class frozendict(object, DictMixin):
 
     def __init__(self, *args, **kwargs):
