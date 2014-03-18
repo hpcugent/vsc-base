@@ -52,3 +52,7 @@ class frozendict(object, DictMixin):
     # minor adjustment: define missing keys() method
     def keys(self):
         return self.__dict.keys()
+
+
+# provide frozendict under camel-case class naming scheme
+FrozenDict = frozendict
