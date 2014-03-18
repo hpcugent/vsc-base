@@ -20,9 +20,11 @@ import operator
 from UserDict import DictMixin
 
 
-# minor adjustment: deriving from DictMixin instead of collections.Mapping to make it Python 2.4 compatible
-# see also http://docs.python.org/2/library/userdict.html#UserDict.DictMixin
-class frozendict(object, DictMixin):
+# minor adjustments:
+# * renamed to FrozenDict
+# * deriving from DictMixin instead of collections.Mapping to make it Python 2.4 compatible
+#   see also http://docs.python.org/2/library/userdict.html#UserDict.DictMixin
+class FrozenDict(object, DictMixin):
 
     def __init__(self, *args, **kwargs):
         self.__dict = dict(*args, **kwargs)
@@ -32,7 +34,7 @@ class frozendict(object, DictMixin):
         return self.__dict[key]
 
     def copy(self, **add_or_replace):
-        return frozendict(self, **add_or_replace)
+        return FrozenDict(self, **add_or_replace)
 
     def __iter__(self):
         return iter(self.__dict)
@@ -41,7 +43,7 @@ class frozendict(object, DictMixin):
         return len(self.__dict)
 
     def __repr__(self):
-        return '<frozendict %s>' % repr(self.__dict)
+        return '<FrozenDict %s>' % repr(self.__dict)
 
     def __hash__(self):
         if self.__hash is None:
@@ -52,7 +54,3 @@ class frozendict(object, DictMixin):
     # minor adjustment: define missing keys() method
     def keys(self):
         return self.__dict.keys()
-
-
-# provide frozendict under camel-case class naming scheme
-FrozenDict = frozendict
