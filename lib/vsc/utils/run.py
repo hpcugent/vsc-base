@@ -692,34 +692,42 @@ class RunQA(RunLoop, RunAsync):
         split = '[\s\n]+'
         reg_split = re.compile(r"" + split)
 
-        def process_qa(q, a):
+        def process_qa(q, a_s):
             split_q = [escape_special(x) for x in reg_split.split(q)]
             reg_q_txt = split.join(split_q) + split.rstrip('+') + "*$"
             # add optional split at the end
-            if not a.endswith('\n'):
-                a += '\n'
+            for i in range(0, len(a_s)):
+                if not a_s[i].endswith('\n'):
+                    a_s[i] += '\n'
             reg_q = re.compile(r"" + reg_q_txt)
             if reg_q.search(q):
-                return (a, reg_q)
+                return (a_s, reg_q)
             else:
                 self.log.error("_parse_q_a process_qa: question %s converted in %s does not match itself" %
                                (q, reg_q_txt))
 
         new_qa = {}
         self.log.debug("new_qa: ")
-        for question, answer in qa.items():
-            (a, reg_q) = process_qa(question, answer)
-            new_qa[reg_q] = a
-            self.log.debug("new_qa[%s]: %s" % (reg_q.pattern.__repr__(), a))
+        for question, answers in qa.items():
+            if not isinstance(answers, list):
+                answers = [answers]
+            (answers, reg_q) = process_qa(question, answers)
+            # list of answers may be manipulated, so take a copy
+            new_qa[reg_q] = answers[:]
+            self.log.debug("new_qa[%s]: %s" % (reg_q.pattern.__repr__(), answers))
 
         new_qa_reg = {}
         self.log.debug("new_qa_reg: ")
-        for question, answer in qa_reg.items():
+        for question, answers in qa_reg.items():
+            if not isinstance(answers, list):
+                answers = [answers]
             reg_q = re.compile(r"" + question + r"[\s\n]*$")
-            if not answer.endswith('\n'):
-                answer += '\n'
-            new_qa_reg[reg_q] = answer
-            self.log.debug("new_qa_reg[%s]: %s" % (reg_q.pattern.__repr__(), answer))
+            for i in range(0, len(answers)):
+                if not answers[i].endswith('\n'):
+                    answers[i] += '\n'
+            # list of answers may be manipulated, so take a copy
+            new_qa_reg[reg_q] = answers[:]
+            self.log.debug("new_qa_reg[%s]: %s" % (reg_q.pattern.__repr__(), answers))
 
         # simple statements, can contain wildcards
         new_no_qa = [re.compile(r"" + x + r"[\s\n]*$") for x in no_qa]
@@ -742,13 +750,15 @@ class RunQA(RunLoop, RunAsync):
 
         # qa first and then qa_reg
         nr_qa = len(self.qa)
-        for idx, (q, a) in enumerate(self.qa.items() + self.qa_reg.items()):
-            res = q.search(self._process_output)
+        for idx, (question, answers) in enumerate(self.qa.items() + self.qa_reg.items()):
+            res = question.search(self._process_output)
             if output and res:
-                fa = a % res.groupdict()
+                answer = answers[0] % res.groupdict()
+                if len(answers) > 1:
+                    answers.pop(0)
                 self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" %
-                               (fa, q.pattern, idx >= nr_qa, self._process_output[-50:]))
-                self._process_module.send_all(self._process, fa)
+                               (answer, question.pattern, idx >= nr_qa, self._process_output[-50:]))
+                self._process_module.send_all(self._process, answer)
                 hit = True
                 break
 
