@@ -692,46 +692,42 @@ class RunQA(RunLoop, RunAsync):
         split = '[\s\n]+'
         reg_split = re.compile(r"" + split)
 
-        def process_qa(q, a_s):
-            split_q = [escape_special(x) for x in reg_split.split(q)]
-            reg_q_txt = split.join(split_q) + split.rstrip('+') + "*$"
-            # add optional split at the end
-            for i in [idx for idx, a in enumerate(a_s) if not a.endswith('\n')]:
-                a_s[i] += '\n'
-            reg_q = re.compile(r"" + reg_q_txt)
-            if reg_q.search(q):
-                return (a_s, reg_q)
-            else:
-                self.log.error("_parse_q_a process_qa: question %s converted in %s does not match itself" %
-                               (q, reg_q_txt))
-
-        def check_answers_list(answers):
-            """Make sure we have a list of answers (as strings)."""
+        def process_answers(answers):
+            """Construct list of newline-terminated answers (as strings)."""
             if isinstance(answers, basestring):
                 answers = [answers]
             elif not isinstance(answers, list):
                 msg = "Invalid type for answer on %s, no string or list: %s (%s)" % (question, type(answers), answers)
                 self.log.raiseException(msg, exception=TypeError)
-            return answers
+            # add optional split at the end
+            for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
+                answers[i] += '\n'
+            # list is manipulated when answering matching question, so return a copy
+            return answers[:]
+
+        def process_question(question):
+            """Convert string question to regex."""
+            split_q = [escape_special(x) for x in reg_split.split(question)]
+            reg_q_txt = split.join(split_q) + split.rstrip('+') + "*$"
+            reg_q = re.compile(r"" + reg_q_txt)
+            if reg_q.search(question):
+                return reg_q
+            else:
+                self.log.error("_parse_qa process_question: question %s converted in %s does not match itself" %
+                               (question, reg_q_txt))
 
         new_qa = {}
         self.log.debug("new_qa: ")
         for question, answers in qa.items():
-            answers = check_answers_list(answers)
-            (answers, reg_q) = process_qa(question, answers)
-            # list is manipulated when answering matching question, so take a copy
-            new_qa[reg_q] = answers[:]
+            reg_q = process_question(question)
+            new_qa[reg_q] = process_answers(answers)
             self.log.debug("new_qa[%s]: %s" % (reg_q.pattern.__repr__(), answers))
 
         new_qa_reg = {}
         self.log.debug("new_qa_reg: ")
         for question, answers in qa_reg.items():
-            answers = check_answers_list(answers)
             reg_q = re.compile(r"" + question + r"[\s\n]*$")
-            for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
-                answers[i] += '\n'
-            # list is manipulated when answering matching question, so take a copy
-            new_qa_reg[reg_q] = answers[:]
+            new_qa_reg[reg_q] = process_answers(answers)
             self.log.debug("new_qa_reg[%s]: %s" % (reg_q.pattern.__repr__(), answers))
 
         # simple statements, can contain wildcards
