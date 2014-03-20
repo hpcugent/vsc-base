@@ -698,14 +698,16 @@ class RunQA(RunLoop, RunAsync):
             """Construct list of newline-terminated answers (as strings)."""
             if isinstance(answers, basestring):
                 answers = [answers]
-            elif not isinstance(answers, list):
+            elif isinstance(answers, list):
+                # list is manipulated when answering matching question, so take a copy
+                answers = answers[:]
+            else:
                 msg_tmpl = "Invalid type for answer, not a string or list: %s (%s)"
                 self.log.raiseException(msg_tmpl % (type(answers), answers), exception=TypeError)
             # add optional split at the end
             for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
                 answers[i] += '\n'
-            # list is manipulated when answering matching question, so return a copy
-            return answers[:]
+            return answers
 
         def process_question(question):
             """Convert string question to regex."""
