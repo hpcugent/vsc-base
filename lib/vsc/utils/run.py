@@ -699,8 +699,8 @@ class RunQA(RunLoop, RunAsync):
             if isinstance(answers, basestring):
                 answers = [answers]
             elif not isinstance(answers, list):
-                msg = "Invalid type for answer on %s, no string or list: %s (%s)" % (question, type(answers), answers)
-                self.log.raiseException(msg, exception=TypeError)
+                msg_tmpl = "Invalid type for answer, not a string or list: %s (%s)"
+                self.log.raiseException(msg_tmpl % (type(answers), answers), exception=TypeError)
             # add optional split at the end
             for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
                 answers[i] += '\n'
@@ -717,7 +717,7 @@ class RunQA(RunLoop, RunAsync):
             else:
                 # this is just a sanity check on the created regex, can this actually occur?
                 msg_tmpl = "_parse_qa process_question: question %s converted in %s does not match itself"
-                self.log.raiseException(msg_tmpl % (question,reg_q_txt), exception=ValueError)
+                self.log.raiseException(msg_tmpl % (question.pattern, reg_q_txt), exception=ValueError)
 
         new_qa = {}
         self.log.debug("new_qa: ")
@@ -762,7 +762,7 @@ class RunQA(RunLoop, RunAsync):
                     last_answer = answers.pop(0)
                     if self.CYCLE_ANSWERS:
                         answers.append(last_answer)
-                    self.log.debug("New answers list for question %s: %s" % (question, answers))
+                    self.log.debug("New answers list for question %s: %s" % (question.pattern, answers))
                 self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" %
                                (answer, question.pattern, idx >= nr_qa, self._process_output[-50:]))
                 self._process_module.send_all(self._process, answer)
