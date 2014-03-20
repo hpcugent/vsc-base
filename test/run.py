@@ -31,8 +31,9 @@ Tests for the vsc.utils.run module.
 @author: Stijn De Weirdt (Ghent University)
 """
 import os
+import re
 import time
-from unittest import TestCase, TestLoader
+from unittest import TestCase, TestLoader, main
 
 from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
@@ -103,7 +104,27 @@ class TestRun(TestCase):
         ec, output = run_qas([SCRIPT_QA, 'waitforit'], qa=qa_dict, no_qa=no_qa)
         self.assertEqual(ec, 0)
 
+    def test_qa_list_of_answers(self):
+        """Test qa with list of answers."""
+        qa_dict = {
+            "Enter a number ('0' to stop):": ['1', '2', '4', '0'],
+        }
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa=qa_dict)
+        self.assertEqual(ec, 0)
+        answer_re = re.compile(".*Answer: 7$")
+        self.assertTrue(answer_re.match(output))
+
+        qa_reg_dict = {
+            "Enter a number \(.*\):": ['2', '3', '5', '0'] + ['100'] * 100,
+        }
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
+        self.assertEqual(ec, 0)
+        answer_re = re.compile(".*Answer: 10$")
+        self.assertTrue(answer_re.match(output))
 
 def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestRun)
+
+if __name__ == '__main__':
+    main()
