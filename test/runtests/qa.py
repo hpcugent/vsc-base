@@ -13,7 +13,7 @@ now = time.time()
 res = {}
 
 qa = {
-    'ask_number': ("Enter a number ('0' to stop):", '[0-9]*'),
+    'ask_number': ("Enter a number ('0' to stop):", r'^\d+$'),
     'noquestion': (None, None),
     'simple': ('Simple question: ', 'simple answer'),
     'whattime': ('Now it is %s. What time is it? ' % now, "%s" % now),
@@ -46,7 +46,7 @@ for k, v in qa.items():
                     if k in res:
                         prev = int(res[k][1])
                     a = str(prev + int(a))
-                res[k] = [a_re.match(v[1]), a]
+                res[k] = [a_re.match(a), a]
 
 if __name__ == '__main__':
     failed = 0

@@ -107,23 +107,48 @@ class TestRun(EnhancedTestCase):
 
     def test_qa_list_of_answers(self):
         """Test qa with list of answers."""
+        # test multiple answers in qa
         qa_dict = {
             "Enter a number ('0' to stop):": ['1', '2', '4', '0'],
         }
         ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa=qa_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 7$")
-        self.assertTrue(answer_re.match(output))
+        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
 
+        # test multple answers in qa_reg
+        # and test premature exit on 0 while we're at it
         qa_reg_dict = {
             "Enter a number \(.*\):": ['2', '3', '5', '0'] + ['100'] * 100,
         }
         ec, output = run_qas([SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 10$")
-        self.assertTrue(answer_re.match(output))
+        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
 
+        # verify type checking on answers
         self.assertErrorRegex(TypeError, "Invalid type for answer", run_qas, [], qa={'q': 1})
+
+        # test more questions than answers, both with and without cycling
+        qa_reg_dict = {
+            "Enter a number \(.*\):": ['2', '7'],
+        }
+        # loop 3 times, with cycling (the default) => 2 + 7 + 2 + 7 = 18
+        self.assertTrue(RunQAShort.CYCLE_ANSWERS)
+        orig_cycle_answers = RunQAShort.CYCLE_ANSWERS
+        RunQAShort.CYCLE_ANSWERS = True
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
+        self.assertEqual(ec, 0)
+        answer_re = re.compile(".*Answer: 18$")
+        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
+        # loop 3 times, no cycling => 2 + 7 + 7 + 7 = 23
+        RunQAShort.CYCLE_ANSWERS = False
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
+        self.assertEqual(ec, 0)
+        answer_re = re.compile(".*Answer: 23$")
+        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
+        # restore
+        RunQAShort.CYCLE_ANSWERS = orig_cycle_answers
 
 
 def suite():

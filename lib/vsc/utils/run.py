@@ -654,6 +654,7 @@ class RunQA(RunLoop, RunAsync):
     """Question/Answer processing"""
     LOOP_MAX_MISS_COUNT = 20
     INIT_INPUT_CLOSE = False
+    CYCLE_ANSWERS = True
 
     def __init__(self, cmd, **kwargs):
         """
@@ -683,14 +684,15 @@ class RunQA(RunLoop, RunAsync):
             - replace whitespace
             - replace newline
         - qa_reg: question is compiled as is, and whitespace+ending is added
+        - provided answers can be either strings or lists of strings (which will be used iteratively)
         """
 
         def escape_special(string):
             specials = '.*+?(){}[]|\$^'
             return re.sub(r"([%s])" % ''.join(['\%s' % x for x in specials]), r"\\\1", string)
 
-        split = '[\s\n]+'
-        reg_split = re.compile(r"" + split)
+        SPLIT = '[\s\n]+'
+        REG_SPLIT = re.compile(r"" + SPLIT)
 
         def process_answers(answers):
             """Construct list of newline-terminated answers (as strings)."""
@@ -707,14 +709,15 @@ class RunQA(RunLoop, RunAsync):
 
         def process_question(question):
             """Convert string question to regex."""
-            split_q = [escape_special(x) for x in reg_split.split(question)]
-            reg_q_txt = split.join(split_q) + split.rstrip('+') + "*$"
+            split_q = [escape_special(x) for x in REG_SPLIT.split(question)]
+            reg_q_txt = SPLIT.join(split_q) + SPLIT.rstrip('+') + "*$"
             reg_q = re.compile(r"" + reg_q_txt)
             if reg_q.search(question):
                 return reg_q
             else:
-                self.log.error("_parse_qa process_question: question %s converted in %s does not match itself" %
-                               (question, reg_q_txt))
+                # this is just a sanity check on the created regex, can this actually occur?
+                msg_tmpl = "_parse_qa process_question: question %s converted in %s does not match itself"
+                self.log.raiseException(msg_tmpl % (question,reg_q_txt), exception=ValueError)
 
         new_qa = {}
         self.log.debug("new_qa: ")
@@ -756,7 +759,10 @@ class RunQA(RunLoop, RunAsync):
             if output and res:
                 answer = answers[0] % res.groupdict()
                 if len(answers) > 1:
-                    answers.pop(0)
+                    last_answer = answers.pop(0)
+                    if self.CYCLE_ANSWERS:
+                        answers.append(last_answer)
+                    self.log.debug("New answers list for question %s: %s" % (question, answers))
                 self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" %
                                (answer, question.pattern, idx >= nr_qa, self._process_output[-50:]))
                 self._process_module.send_all(self._process, answer)
