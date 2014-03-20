@@ -33,7 +33,8 @@ Tests for the vsc.utils.run module.
 import os
 import re
 import time
-from unittest import TestCase, TestLoader, main
+from test.utilities import EnhancedTestCase
+from unittest import TestLoader, main
 
 from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
@@ -49,7 +50,7 @@ class RunQAShort(RunQA):
 run_qas = RunQAShort.run
 
 
-class TestRun(TestCase):
+class TestRun(EnhancedTestCase):
     """Test for the run module."""
     def test_simple(self):
         ec, output = run_simple([SCRIPT_SIMPLE, 'shortsleep'])
@@ -121,6 +122,9 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 10$")
         self.assertTrue(answer_re.match(output))
+
+        self.assertErrorRegex(TypeError, "Invalid type for answer", run_qas, [], qa={'q': 1})
+
 
 def suite():
     """ return all the tests"""

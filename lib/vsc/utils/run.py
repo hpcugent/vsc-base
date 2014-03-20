@@ -696,9 +696,8 @@ class RunQA(RunLoop, RunAsync):
             split_q = [escape_special(x) for x in reg_split.split(q)]
             reg_q_txt = split.join(split_q) + split.rstrip('+') + "*$"
             # add optional split at the end
-            for i in range(0, len(a_s)):
-                if not a_s[i].endswith('\n'):
-                    a_s[i] += '\n'
+            for i in [idx for idx, a in enumerate(a_s) if not a.endswith('\n')]:
+                a_s[i] += '\n'
             reg_q = re.compile(r"" + reg_q_txt)
             if reg_q.search(q):
                 return (a_s, reg_q)
@@ -706,26 +705,32 @@ class RunQA(RunLoop, RunAsync):
                 self.log.error("_parse_q_a process_qa: question %s converted in %s does not match itself" %
                                (q, reg_q_txt))
 
+        def check_answers_list(answers):
+            """Make sure we have a list of answers (as strings)."""
+            if isinstance(answers, basestring):
+                answers = [answers]
+            elif not isinstance(answers, list):
+                msg = "Invalid type for answer on %s, no string or list: %s (%s)" % (question, type(answers), answers)
+                self.log.raiseException(msg, exception=TypeError)
+            return answers
+
         new_qa = {}
         self.log.debug("new_qa: ")
         for question, answers in qa.items():
-            if not isinstance(answers, list):
-                answers = [answers]
+            answers = check_answers_list(answers)
             (answers, reg_q) = process_qa(question, answers)
-            # list of answers may be manipulated, so take a copy
+            # list is manipulated when answering matching question, so take a copy
             new_qa[reg_q] = answers[:]
             self.log.debug("new_qa[%s]: %s" % (reg_q.pattern.__repr__(), answers))
 
         new_qa_reg = {}
         self.log.debug("new_qa_reg: ")
         for question, answers in qa_reg.items():
-            if not isinstance(answers, list):
-                answers = [answers]
+            answers = check_answers_list(answers)
             reg_q = re.compile(r"" + question + r"[\s\n]*$")
-            for i in range(0, len(answers)):
-                if not answers[i].endswith('\n'):
-                    answers[i] += '\n'
-            # list of answers may be manipulated, so take a copy
+            for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
+                answers[i] += '\n'
+            # list is manipulated when answering matching question, so take a copy
             new_qa_reg[reg_q] = answers[:]
             self.log.debug("new_qa_reg[%s]: %s" % (reg_q.pattern.__repr__(), answers))
 
