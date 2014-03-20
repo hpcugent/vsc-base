@@ -761,9 +761,9 @@ class RunQA(RunLoop, RunAsync):
             if output and res:
                 answer = answers[0] % res.groupdict()
                 if len(answers) > 1:
-                    last_answer = answers.pop(0)
+                    prev_answer = answers.pop(0)
                     if self.CYCLE_ANSWERS:
-                        answers.append(last_answer)
+                        answers.append(prev_answer)
                     self.log.debug("New answers list for question %s: %s" % (question.pattern, answers))
                 self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" %
                                (answer, question.pattern, idx >= nr_qa, self._process_output[-50:]))
