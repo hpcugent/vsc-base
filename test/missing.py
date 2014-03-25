@@ -30,13 +30,13 @@ Tests for the vsc.utils.missing module.
 
 @author: Andy Georges (Ghent University)
 """
-import sys
-from unittest import TestCase, TestLoader, main
 from random import randint, seed
+from test.utilities import EnhancedTestCase
+from unittest import TestLoader, main
+import sys
 
-from vsc.utils.missing import nub
-from vsc.utils.missing import TryOrFail
-from vsc.utils.missing import topological_sort
+from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
+from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 
 
 DAG_TEST_SET = [
@@ -139,8 +139,20 @@ def generate_random_dag():
     return graph
 
 
-class TestMissing(TestCase):
-    """Test for the nub function."""
+# provide function to check for disjoint sets (set.disjoint only works for Python 2.6 and up)
+def disjoint_sets(s1, s2):
+    """Return True is provided sets are disjoint."""
+    for x in s1:
+        if x in s2:
+            return False
+    for x in s2:
+        if x in s1:
+            return False
+    return True
+
+
+class TestMissing(EnhancedTestCase):
+    """Test for vsc.utils.missing module."""
 
     def test_nub_length(self):
         for lst in [], [0], [''], ['bla', 'bla'], [0, 4, 5, 8]:
@@ -179,6 +191,42 @@ class TestMissing(TestCase):
             except:
                 self.assertTrue(n < raise_boundary)
 
+    def test_frozendictknownkeys(self):
+        """Tests for FrozenDictKnownKeys."""
+
+        class TestFrozenDictKnownKeys(FrozenDictKnownKeys):
+            """Inner test class derived from FrozenDictKnownKeys."""
+            KNOWN_KEYS = ['foo', 'foo2']
+
+        # initializing instance with options supported by dict type works
+        for (fdkk, ref) in [
+            (FrozenDictKnownKeys(), {}), # no arguments => empty dictionary
+            (TestFrozenDictKnownKeys({'foo': 'bar'}), {'foo': 'bar'}),  # initialize by dict
+            (TestFrozenDictKnownKeys([('foo', 'bar')]), {'foo': 'bar'}),  # initialize by listed of tuples
+            (TestFrozenDictKnownKeys(foo='bar'), {'foo': 'bar'}),  # initialize by named arguments
+        ]:
+            self.assertEqual(sorted(fdkk.items()), sorted(ref.items()))
+
+        # abstract class has empty set of known keys, so can be initialized with a dict
+        self.assertErrorRegex(KeyError, 'Encountered unknown keys', FrozenDictKnownKeys, {'foo': 'bar'})
+
+        tfdkk = TestFrozenDictKnownKeys({'foo': 'bar'})
+        self.assertEqual(tfdkk['foo'], 'bar')
+
+        # check different error message for missing known and unknown keys
+        self.assertErrorRegex(KeyError, "foo2", tfdkk.__getitem__, 'foo2')
+        self.assertErrorRegex(KeyError, "Unknown key 'foo3' .* instance \(known keys: .*\)", tfdkk.__getitem__, 'foo3')
+
+        # no (direct) way of adjusting dictionary
+        self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.__setitem__(x), ('foo2', 'bar2'))
+        self.assertErrorRegex(TypeError, ".*not support item assignment.*", lambda x: tfdkk.update(x), {'foo2': 'bar2'})
+        # unknown keys are not allowed
+        self.assertErrorRegex(KeyError, 'Encountered unknown keys', TestFrozenDictKnownKeys, {'foo3': 'bar3'})
+
+        # test ignoring of unknown keys
+        tfdkk = TestFrozenDictKnownKeys({'foo': 'bar', 'foo2': 'bar2', 'foo3': 'bar3'}, ignore_unknown_keys=True)
+        self.assertEqual(sorted(tfdkk.keys()), ['foo', 'foo2'])
+
     def test_fixed_topological_sort(self):
         """
         test for a topologicalsort on a fixed set of DAGs
@@ -188,7 +236,7 @@ class TestMissing(TestCase):
             sorting = list(topological_sort(g))
             for node in reversed(sorting):
                 adjacent = set(g[node])
-                self.assertTrue(adjacent.isdisjoint(visited))
+                self.assertTrue(disjoint_sets(adjacent, visited))
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
@@ -205,7 +253,7 @@ class TestMissing(TestCase):
             visited = set()
             for node in reversed(sorting):
                 adjacent = set(g[node])
-                self.assertTrue(adjacent.isdisjoint(visited))
+                self.assertTrue(disjoint_sets(adjacent, visited))
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
@@ -214,5 +262,8 @@ def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestMissing)
 
+
 if __name__ == '__main__':
+    #logToScreen(enable=True)
+    #setLogLevelDebug()
     main()
