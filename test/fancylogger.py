@@ -268,7 +268,9 @@ class FancyLoggerTest(TestCase):
         logger = fancylogger.getLogger(fname=False, clsname=False)
         logger.warn("blabla")
         print stringfile.getvalue()
-        self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
+        # this will only hold in debug mode, so also disable the test
+        if  __debug__:
+            self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
         sys.stderr = _stderr
