@@ -173,13 +173,6 @@ class FancyLogger(logging.getLoggerClass()):
     # this attribute can be checked to know if the logger is thread aware
     _thread_aware = True
 
-    def __init__(self, *args, **kwargs):
-        """Overwrite init to add a fancyrecord boolean"""
-        self.fancyrecord = False
-        loggerclass = logging.getLoggerClass()
-        if loggerclass != FancyLogger:
-            loggerclass(self).__init__(*args, **kwargs)
-
     # method definition as it is in logging, can't change this
     def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
         """
@@ -190,7 +183,7 @@ class FancyLogger(logging.getLoggerClass()):
         else:
             new_msg = msg
         logrecordcls = logging.LogRecord
-        if self.fancyrecord:
+        if hasattr(self, 'fancyrecord') and self.fancyrecord:
             logrecordcls = FancyLogRecord
         return logrecordcls(name, level, pathname, lineno, new_msg, args, excinfo)
 
