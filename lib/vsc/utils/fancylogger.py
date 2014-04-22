@@ -177,7 +177,7 @@ class FancyLogger(logging.getLoggerClass()):
     def __init__(self, *args, **kwargs):
         """Overwrite init to add a fancyrecord boolean"""
         self.fancyrecord = False
-        logging.getLoggerClass(self).__init__(*args, **kwargs)
+        logging.getLoggerClass()(self).__init__(*args, **kwargs)
 
     # method definition as it is in logging, can't change this
     def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
