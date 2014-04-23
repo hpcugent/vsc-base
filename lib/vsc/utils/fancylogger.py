@@ -183,7 +183,7 @@ class FancyLogger(logging.getLoggerClass()):
         else:
             new_msg = msg
         logrecordcls = logging.LogRecord
-        if self.fancyrecord:
+        if hasattr(self, 'fancyrecord') and self.fancyrecord:
             logrecordcls = FancyLogRecord
         return logrecordcls(name, level, pathname, lineno, new_msg, args, excinfo)
 
