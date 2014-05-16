@@ -28,8 +28,13 @@
 This module contains Rest api utilities,
 Mainly the RestClient, which you can use to easily pythonify a rest api.
 
+based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e2561fc4d434d3
+
+@author: Jonathan Paugh
+@author: Jens Timmerman
 """
 import base64
+import logging
 import urllib
 import urllib2
 try:
@@ -37,18 +42,18 @@ try:
 except ImportError:
     import simplejson as json
 
-from vsc import fancylogger
-
 
 class Client(object):
-    http_methods = (
+    """An implementation of a REST client"""
+    HTTP_METHODS = (
         'get',
+        'head',
         'post',
         'delete',
         'put',
     )
 
-    def __init__(self, url, username=None, password=None, token=None, bearer='Token'):
+    def __init__(self, url, username=None, password=None, token=None, bearer='Token', user_agent='vsc-rest-client'):
         """
         Create a Client object,
         this client can consume a REST api hosted at host/endpoint
@@ -57,6 +62,13 @@ class Client(object):
         bearer is the bearer for the authorization token text in the http authentication header, defaults to Token
         """
         self.auth_header = None
+        self.username = username
+        self.url = url
+        self.user_agent = user_agent
+
+        handler = urllib2.HTTPSHandler()
+        self.opener = urllib2.build_opener(handler)
+
         if username is not None:
             if password is None and token is None:
                 raise TypeError("You need a password or an OAuth token to authenticate as " + username)
@@ -67,12 +79,14 @@ class Client(object):
             self.auth_header = self.hash_pass(password, username)
         elif token is not None:
             self.auth_header = '%s %s' % (bearer, token)
-        self.username = username
-        self.url = url
 
     def get(self, url, headers={}, **params):
         url += self.urlencode(params)
         return self.request('GET', url, None, headers)
+
+    def head(self, url, headers={}, **params):
+        url += self.urlencode(params)
+        return self.request('HEAD', url, None, headers)
 
     def delete(self, url, headers={}, **params):
         url += self.urlencode(params)
@@ -89,10 +103,8 @@ class Client(object):
     def request(self, method, url, body, headers):
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
-        headers['User-Agent'] = 'vsc-rest-client'
-        headers['Content-Type'] = 'application/json'
-        fancylogger.getLogger(
-        ).debug('cli request: %s, %s, %s, %s', method, url, body, headers)
+        headers['User-Agent'] = self.user_agent
+        logging.debug('cli request: %s, %s, %s, %s', method, url, body, headers)
         #TODO: Context manager
         conn = self.get_connection(method, url, body, headers)
         status = conn.code
@@ -101,7 +113,7 @@ class Client(object):
             pybody = json.loads(body)
         except ValueError:
             pybody = body
-        fancylogger.getLogger().debug('reponse len: %s ', len(pybody))
+        logging.debug('reponse len: %s ', len(pybody))
         conn.close()
         return status, pybody
 
@@ -116,13 +128,11 @@ class Client(object):
         return 'Basic ' + base64.b64encode('%s:%s' % (username, password)).strip()
 
     def get_connection(self, method, url, body, headers):
-        handler = urllib2.HTTPSHandler()
-        opener = urllib2.build_opener(handler)
         request = urllib2.Request(self.url + '/' + url, data=body)
         for header, value in headers.iteritems():
             request.add_header(header, value)
         request.get_method = lambda: method
-        connection = opener.open(request)
+        connection = self.opener.open(request)
         return connection
 
 
@@ -153,7 +163,7 @@ class RequestBuilder(object):
             newfunc.keywords = keywords
             return newfunc
 
-        if key in self.client.http_methods:
+        if key in self.client.HTTP_METHODS:
             mfun = getattr(self.client, key)
             fun = partial(mfun, url=self.url)
             return fun
@@ -169,7 +179,7 @@ class RequestBuilder(object):
         return "I don't know about " + self.url
 
     def __repr__(self):
-        return '%s: %s' % (self.__class__, self.__str__())
+        return '%s: %s' % (self.__class__, self.url)
 
 
 class RestClient(object):
@@ -202,5 +212,5 @@ class RestClient(object):
         self.client = Client(*args, **kwargs)
 
     def __getattr__(self, key):
-        """Get an argument, we will build a request with it"""
+        """Get an attribute, we will build a request with it"""
         return RequestBuilder(self.client).__getattr__(key)
