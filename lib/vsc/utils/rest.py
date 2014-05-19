@@ -128,10 +128,15 @@ class Client(object):
         return 'Basic ' + base64.b64encode('%s:%s' % (username, password)).strip()
 
     def get_connection(self, method, url, body, headers):
-        request = urllib2.Request(self.url + '/' + url, data=body)
+        if not self.url.endswith('/') and not url.startswith('/'):
+            sep = '/'
+        else:
+            sep = ''
+        request = urllib2.Request(self.url + sep + url, data=body)
         for header, value in headers.iteritems():
             request.add_header(header, value)
         request.get_method = lambda: method
+        logging.debug('opening request:  %s%s%s', self.url, sep, url)
         connection = self.opener.open(request)
         return connection
 
