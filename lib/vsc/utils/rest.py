@@ -42,29 +42,47 @@ try:
 except ImportError:
     import simplejson as json
 
+from vsc.utils.missing import partial
+
 
 class Client(object):
     """An implementation of a REST client"""
+    DELETE = 'DELETE'
+    GET = 'GET'
+    HEAD = 'HEAD'
+    PATCH = 'PATCH'
+    POST = 'POST'
+    PUT = 'PUT'
+
     HTTP_METHODS = (
-        'get',
-        'head',
-        'post',
-        'delete',
-        'put',
+        DELETE,
+        GET,
+        HEAD,
+        PATCH,
+        POST,
+        PUT,
     )
 
-    def __init__(self, url, username=None, password=None, token=None, bearer='Token', user_agent='vsc-rest-client'):
+    USER_AGENT = 'vsc-rest-client'
+
+    def __init__(self, url, username=None, password=None, token=None, token_type='Token', user_agent=None):
         """
         Create a Client object,
         this client can consume a REST api hosted at host/endpoint
 
-        optional username, password and authorization token
-        bearer is the bearer for the authorization token text in the http authentication header, defaults to Token
+        If a username is given a password or a token is required.
+        You can not use a password and a token.
+        token_type is the typoe fo th the authorization token text in the http authentication header, defaults to Token
+        This should be set to 'Bearer' for certain OAuth implementations.
         """
         self.auth_header = None
         self.username = username
         self.url = url
-        self.user_agent = user_agent
+
+        if not user_agent:
+            self.user_agent = self.USER_AGENT
+        else:
+            self.user_agent = user_agent
 
         handler = urllib2.HTTPSHandler()
         self.opener = urllib2.build_opener(handler)
@@ -78,34 +96,62 @@ class Client(object):
         if password is not None:
             self.auth_header = self.hash_pass(password, username)
         elif token is not None:
-            self.auth_header = '%s %s' % (bearer, token)
+            self.auth_header = '%s %s' % (token_type, token)
 
     def get(self, url, headers={}, **params):
+        """
+        Do a http get request on the given url with given headers and parameters
+        Parameters is a dictionary that will will be urlencoded
+        """
         url += self.urlencode(params)
-        return self.request('GET', url, None, headers)
+        return self.request(self.GET, url, None, headers)
 
     def head(self, url, headers={}, **params):
+        """
+        Do a http head request on the given url with given headers and parameters
+        Parameters is a dictionary that will will be urlencoded
+        """
         url += self.urlencode(params)
-        return self.request('HEAD', url, None, headers)
+        return self.request(self.HEAD, url, None, headers)
 
     def delete(self, url, headers={}, **params):
+        """
+        Do a http delete request on the given url with given headers and parameters
+        Parameters is a dictionary that will will be urlencoded
+        """
         url += self.urlencode(params)
-        return self.request('DELETE', url, None, headers)
+        return self.request(self.DELETE, url, None, headers)
 
     def post(self, url, body=None, headers={}, **params):
+        """
+        Do a http post request on the given url with given body, headers and parameters
+        Parameters is a dictionary that will will be urlencoded
+        """
         url += self.urlencode(params)
-        return self.request('POST', url, json.dumps(body), headers)
+        return self.request(self.POST, url, json.dumps(body), headers)
 
     def put(self, url, body=None, headers={}, **params):
+        """
+        Do a http put request on the given url with given body, headers and parameters
+        Parameters is a dictionary that will will be urlencoded
+        """
         url += self.urlencode(params)
-        return self.request('PUT', url, json.dumps(body), headers)
+        return self.request(self.PUT, url, json.dumps(body), headers)
+
+    def patch(self, url, body=None, headers={}, **params):
+        """
+        Do a http patch request on the given url with given body, headers and parameters
+        Parameters is a dictionary that will will be urlencoded
+        """
+        url += self.urlencode(params)
+        return self.request(self.PATCH, url, json.dumps(body), headers)
 
     def request(self, method, url, body, headers):
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent
         logging.debug('cli request: %s, %s, %s, %s', method, url, body, headers)
-        #TODO: Context manager
+        #TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
         status = conn.code
         body = conn.read()
@@ -154,21 +200,20 @@ class RequestBuilder(object):
     To understand the method(...) calls, check out github.client.Client.
     '''
     def __init__(self, client):
+        """Constructor"""
         self.client = client
         self.url = ''
 
     def __getattr__(self, key):
-        def partial(func, *args, **keywords):
-            def newfunc(*fargs, **fkeywords):
-                newkeywords = keywords.copy()
-                newkeywords.update(fkeywords)
-                return func(*(args + fargs), **newkeywords)
-            newfunc.func = func
-            newfunc.args = args
-            newfunc.keywords = keywords
-            return newfunc
-
-        if key in self.client.HTTP_METHODS:
+        """
+        Overwrite __getattr__ to build up the equest url
+        this enables us to do bla.some.path['something']
+        and get the url bla/some/path/something
+        """
+        # our methods are lowercase, but our HTTP_METHOD constants are upercase, so check if it is in there, but only
+        # if it was a lowercase key
+        # this is here so bla.something.get() should work, and not result in bla/something/get being returned
+        if key.upper() in self.client.HTTP_METHODS and [x for x in key if x.islower()]:
             mfun = getattr(self.client, key)
             fun = partial(mfun, url=self.url)
             return fun
@@ -181,7 +226,7 @@ class RequestBuilder(object):
         '''If you ever stringify this, you've (probably) messed up
         somewhere. So let's give a semi-helpful message.
         '''
-        return "I don't know about " + self.url
+        return "I don't know about %s, You probably want to do a get or other http request, use .get()" % self.url
 
     def __repr__(self):
         return '%s: %s' % (self.__class__, self.url)
