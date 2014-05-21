@@ -48,12 +48,16 @@ class EnhancedTestCase(TestCase):
             self.assertTrue(False, "Expected errors with %s(%s) call should occur" % (call.__name__, str_args))
         except error, err:
             if hasattr(err, 'msg'):
-                msg = str(err.msg)
+                msg = err.msg
             elif hasattr(err, 'message'):
-                msg = str(err.message)
+                msg = err.message
             elif hasattr(err, 'args'):  # KeyError in Python 2.4 only provides message via 'args' attribute
-                msg = str(err.args[0])
+                msg = err.args[0]
             else:
-                msg = str(err)
+                msg = err
+            try:
+                msg = str(msg)
+            except UnicodeEncodeError:
+                msg = msg.encode('utf8', 'replace')
             self.assertTrue(re.search(regex, msg), "Pattern '%s' is found in '%s'" % (regex, msg))
 
