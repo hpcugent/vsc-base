@@ -155,10 +155,9 @@ class FancyLoggerTest(EnhancedTestCase):
         msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.1", max_ver)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.0", max_ver)
-        # no deprecation if current version is lower than max version
-        logger.deprecated(MSG, "0.9", max_ver)
 
         # test whether deprecated warning works
+        # no deprecation if current version is lower than max version
         logger.deprecated(MSG, "0.9", max_ver)
         msgre_tpl_warning = r"WARNING.*DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
         msgre_warning = re.compile(msgre_tpl_warning)
