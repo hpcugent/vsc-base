@@ -126,9 +126,16 @@ class FancyLoggerTest(EnhancedTestCase):
         logger.setLevel('DEBUG')
 
         msgs = [
+            # bytestrings
+            "This is a pure ASCII text.",  # pure ASCII
+            "Here are some UTF-8 characters: ß, ©, Ω, £.",  # only UTF8 characters
+            "This non-UTF-8 character '\x80' should be handled properly.",  # contains non UTF-8 character
+            "This is a UTF-16 character: 水.",  # UTF-16
+            # unicode strings
             u"This is a pure ASCII text.",  # pure ASCII
             u"Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
             u"This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
+            u"This is a UTF-16 character: 水.",  # UTF-16
         ]
         for msg in msgs:
             logger.critical(msg)
@@ -139,7 +146,10 @@ class FancyLoggerTest(EnhancedTestCase):
             logger.info(msg)
             logger.warning(msg)
             logger.warn(msg)
-            regex = msg.encode('utf8', 'replace')
+            if isinstance(msg, unicode):
+                regex = msg.encode('utf8', 'replace')
+            else:
+                regex = str(msg)
             self.assertErrorRegex(Exception, regex, logger.raiseException, msg)
 
     def test_deprecated(self):
@@ -167,7 +177,7 @@ class FancyLoggerTest(EnhancedTestCase):
 
         # test handling of non-UTF8 chars
         msg = MSG + u"\x81"
-        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, msg.encode('utf8', 'replace'))
+        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
         logger.deprecated(msg, "0.9", max_ver)
         txt = open(self.logfn, 'r').read()
