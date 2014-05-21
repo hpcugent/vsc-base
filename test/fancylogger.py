@@ -126,9 +126,9 @@ class FancyLoggerTest(EnhancedTestCase):
         logger.setLevel('DEBUG')
 
         msgs = [
-            "This is a pure ASCII text.",  # pure ASCII
-            "Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
-            "This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
+            u"This is a pure ASCII text.",  # pure ASCII
+            u"Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
+            u"This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
         ]
         for msg in msgs:
             logger.critical(msg)
@@ -140,6 +140,7 @@ class FancyLoggerTest(EnhancedTestCase):
             logger.warning(msg)
             logger.warn(msg)
             self.assertErrorRegex(Exception, msg, logger.raiseException, msg)
+            print msg
 
     def test_deprecated(self):
         """Test deprecated log function."""
