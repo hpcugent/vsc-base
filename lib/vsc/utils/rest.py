@@ -34,7 +34,6 @@ based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e256
 @author: Jens Timmerman
 """
 import base64
-import logging
 import urllib
 import urllib2
 try:
@@ -42,6 +41,7 @@ try:
 except ImportError:
     import simplejson as json
 
+from vsc.utils import fancylogger
 from vsc.utils.missing import partial
 
 
@@ -150,7 +150,7 @@ class Client(object):
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent
-        logging.debug('cli request: %s, %s, %s, %s', method, url, body, headers)
+        fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers)
         #TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
         status = conn.code
@@ -159,7 +159,7 @@ class Client(object):
             pybody = json.loads(body)
         except ValueError:
             pybody = body
-        logging.debug('reponse len: %s ', len(pybody))
+        fancylogger.getLogger().debug('reponse len: %s ', len(pybody))
         conn.close()
         return status, pybody
 
@@ -182,7 +182,7 @@ class Client(object):
         for header, value in headers.iteritems():
             request.add_header(header, value)
         request.get_method = lambda: method
-        logging.debug('opening request:  %s%s%s', self.url, sep, url)
+        fancylogger.getLogger().debug('opening request:  %s%s%s', self.url, sep, url)
         connection = self.opener.open(request)
         return connection
 
