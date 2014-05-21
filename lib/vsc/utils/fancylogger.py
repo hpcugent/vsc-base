@@ -227,7 +227,7 @@ class FancyLogger(logging.getLoggerClass()):
         loose_cv.version = loose_cv.version[:depth]
         loose_mv.version = loose_mv.version[:depth]
 
-        if loose_cv > loose_mv:
+        if loose_cv >= loose_mv:
             self.raiseException("DEPRECATED (since v%s) functionality used: %s" % (max_ver, msg), exception=exception)
         else:
             deprecation_msg = "Deprecated functionality, will no longer work in v%s: %s" % (max_ver, msg)
