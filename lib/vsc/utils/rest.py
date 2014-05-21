@@ -210,6 +210,8 @@ class RequestBuilder(object):
         this enables us to do bla.some.path['something']
         and get the url bla/some/path/something
         """
+        # make sure key is a string
+        key = str(key)
         # our methods are lowercase, but our HTTP_METHOD constants are upercase, so check if it is in there, but only
         # if it was a lowercase key
         # this is here so bla.something.get() should work, and not result in bla/something/get being returned
@@ -217,7 +219,7 @@ class RequestBuilder(object):
             mfun = getattr(self.client, key)
             fun = partial(mfun, url=self.url)
             return fun
-        self.url += '/' + str(key)
+        self.url += '/' + key
         return self
 
     __getitem__ = __getattr__
