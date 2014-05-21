@@ -139,8 +139,8 @@ class FancyLoggerTest(EnhancedTestCase):
             logger.info(msg)
             logger.warning(msg)
             logger.warn(msg)
-            self.assertErrorRegex(Exception, msg, logger.raiseException, msg)
-            print msg
+            regex = msg.encode('utf8', 'replace')
+            self.assertErrorRegex(Exception, regex, logger.raiseException, msg)
 
     def test_deprecated(self):
         """Test deprecated log function."""
@@ -164,8 +164,8 @@ class FancyLoggerTest(EnhancedTestCase):
         self.assertTrue(msgre_warning.search(txt))
 
         # test handling of non-UTF8 chars
-        msg = MSG + "\x81"
-        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, msg)
+        msg = MSG + u"\x81"
+        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, msg.encode('utf8', 'replace'))
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
         logger.deprecated(msg, "0.9", max_ver)
         txt = open(self.logfn, 'r').read()
