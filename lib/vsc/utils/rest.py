@@ -34,7 +34,6 @@ based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e256
 @author: Jens Timmerman
 """
 import base64
-import logging
 import urllib
 import urllib2
 try:
@@ -42,6 +41,7 @@ try:
 except ImportError:
     import simplejson as json
 
+from vsc.utils import fancylogger
 from vsc.utils.missing import partial
 
 
@@ -150,7 +150,7 @@ class Client(object):
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent
-        logging.debug('cli request: %s, %s, %s, %s', method, url, body, headers)
+        fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers)
         #TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
         status = conn.code
@@ -159,7 +159,7 @@ class Client(object):
             pybody = json.loads(body)
         except ValueError:
             pybody = body
-        logging.debug('reponse len: %s ', len(pybody))
+        fancylogger.getLogger().debug('reponse len: %s ', len(pybody))
         conn.close()
         return status, pybody
 
@@ -182,7 +182,7 @@ class Client(object):
         for header, value in headers.iteritems():
             request.add_header(header, value)
         request.get_method = lambda: method
-        logging.debug('opening request:  %s%s%s', self.url, sep, url)
+        fancylogger.getLogger().debug('opening request:  %s%s%s', self.url, sep, url)
         connection = self.opener.open(request)
         return connection
 
@@ -210,6 +210,8 @@ class RequestBuilder(object):
         this enables us to do bla.some.path['something']
         and get the url bla/some/path/something
         """
+        # make sure key is a string
+        key = str(key)
         # our methods are lowercase, but our HTTP_METHOD constants are upercase, so check if it is in there, but only
         # if it was a lowercase key
         # this is here so bla.something.get() should work, and not result in bla/something/get being returned
@@ -217,7 +219,7 @@ class RequestBuilder(object):
             mfun = getattr(self.client, key)
             fun = partial(mfun, url=self.url)
             return fun
-        self.url += '/' + str(key)
+        self.url += '/' + key
         return self
 
     __getitem__ = __getattr__

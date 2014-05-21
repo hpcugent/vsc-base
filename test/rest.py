@@ -63,6 +63,9 @@ class RestClientTest(TestCase):
         # dGhpcyBpcyBhIGxpbmUgb2YgdGV4dAo= == 'this is a line of text' in base64 encoding
         self.assertEqual(body['content'].strip(), u"dGhpcyBpcyBhIGxpbmUgb2YgdGV4dAo=")
 
+        status, body = self.client.repos['hpcugent']['easybuild-framework'].pulls[1].get()
+        self.assertEqual(status, 200)
+        self.assertEqual(body['merge_commit_sha'], u'fba3e13815f3d2a9dfbd2f89f1cf678dd58bb1f1')
 
 def suite():
     """ returns all the testcases in this module """
