@@ -23,6 +23,7 @@ import glob
 import os
 import shutil
 import sys
+import re
 from distutils import log  # also for setuptools
 from distutils.dir_util import remove_tree
 
@@ -130,6 +131,8 @@ eh = ('Ewan Higgs', 'Ewan.Higgs@UGent.be')
 
 
 # FIXME: do we need this here? it won;t hurt, but still ...
+REGEXP_REMOVE_SUFFIX = re.compile(r'(\.(?:py|sh|pl))$')
+
 class vsc_install_scripts(install_scripts):
     """Create the (fake) links for mympirun also remove .sh and .py extensions from the scripts."""
 
@@ -145,9 +148,10 @@ class vsc_install_scripts(install_scripts):
         self.outfiles = []  # reset it
         for script in self.original_outfiles:
             # remove suffixes for .py and .sh
-            if script.endswith(".py") or script.endswith(".sh"):
-                shutil.move(script, script[:-3])
-                script = script[:-3]
+            if REGEXP_REMOVE_SUFFIX.search(script):
+                newscript = REGEXP_REMOVE_SUFFIX.sub('', script)
+                shutil.move(script, newscript)
+                script = newscript
             self.outfiles.append(script)
 
 
