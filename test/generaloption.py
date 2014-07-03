@@ -51,6 +51,7 @@ class TestOption1(GeneralOption):
                            "justatest":("Another long based option", None, "store_true", True),
                            "store":("Store option", None, "store", None),
                            "store-with-dash":("Store option with dash in name", None, "store", None),
+                           "aregexopt":("A regex option", None, "regex", None),
                            }
         descr = ["Base", "Base level of options"]
 
@@ -177,6 +178,7 @@ class GeneralOptionTest(TestCase):
                           'ext_optionalchoice': None,
                           'ext_strlist': ['x', 'y'],
                           'ext_strtuple': ('x',),
+                          'aregexopt': None,
                           })
 
         # cmdline is ordered alphabetically
@@ -211,6 +213,11 @@ class GeneralOptionTest(TestCase):
                           '--store="some whitespace"',
                           ])
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
+
+        topt = TestOption1(go_args=["--aregexopt='^foo.*bar$'"])
+        self.assertTrue("--aregexopt='^foo.*bar$'" in topt.generate_cmd_line())
+        self.assertTrue(topt.options.aregexopt is not None)
+        self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
 
     def test_enable_disable(self):
         """Test the enable/disable prefix
