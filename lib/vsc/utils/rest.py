@@ -137,6 +137,7 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
+        headers['Content-Type'] = 'application/json'
         return self.request(self.POST, url, json.dumps(body), headers)
 
     def put(self, url, body=None, headers={}, **params):
@@ -147,6 +148,7 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
+        headers['Content-Type'] = 'application/json'
         return self.request(self.PUT, url, json.dumps(body), headers)
 
     def patch(self, url, body=None, headers={}, **params):
@@ -157,13 +159,13 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
+        headers['Content-Type'] = 'application/json'
         return self.request(self.PATCH, url, json.dumps(body), headers)
 
     def request(self, method, url, body, headers):
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent
-        headers['Content-Type'] = 'application/json'
         fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers)
         #TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
