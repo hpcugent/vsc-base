@@ -30,6 +30,7 @@ A class that can be used to generated options to python scripts in a general way
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Jens Timmerman (Ghent University)
+@author: Ward Poelmans (Ghent University)
 """
 
 import ConfigParser
@@ -46,7 +47,7 @@ from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueErro
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
-from vsc.utils.fancylogger import getLogger, setLogLevel
+from vsc.utils.fancylogger import getLevelInt, getLogger, setLogLevel
 from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
@@ -184,7 +185,9 @@ class ExtOption(CompleterOption):
                     action = 'store_true'
 
             if orig_action in self.EXTOPTION_LOG and action == 'store_true':
-                setLogLevel(orig_action.split('_')[1][:-3].upper())
+                new_loglevel = orig_action.split('_')[1][:-3].upper()
+                if getLevelInt(new_loglevel) < getLogger().getEffectiveLevel():
+                    setLogLevel(new_loglevel)
 
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
