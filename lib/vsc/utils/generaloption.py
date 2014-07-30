@@ -185,6 +185,7 @@ class ExtOption(CompleterOption):
 
             if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 setLogLevel(orig_action.split('_')[1][:-3].upper())
+                setattr(values, '_logaction_taken', True)
 
             Option.take_action(self, action, dest, opt, value, values, parser)
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
@@ -541,6 +542,7 @@ class ExtOptionParser(OptionParser):
         env_long_opts = []
 
         if not self.process_env_options:
+            self.log.debug("Not processing environment for options")
             return env_long_opts
 
         if self.envvar_prefix is None:
@@ -1080,7 +1082,18 @@ class GeneralOption(object):
 
                     configfile_options_default[opt_dest] = actual_option.default
 
-                    if actual_option.action in ExtOption.BOOLEAN_ACTIONS:
+                    # log actions require special care
+                    # if any log action was already taken before, it would precede the one from the configfile
+                    # however, multiple logactions in a configfile (or environment for that matter) have
+                    # undefined behaviour
+                    is_log_action = actual_option.action in ExtOption.EXTOPTION_LOG
+                    log_action_taken = hasattr(self.options, '_logaction_taken') and self.options._logaction_taken
+
+                    if is_log_action and log_action_taken:
+                        # value set through take_action. do not modify by configfile
+                        self.log.debug(('parseconfigfiles: log action %s (value %s) found,'
+                                        ' but log action already taken. Ignoring.') % (opt_dest, val))
+                    elif actual_option.action in ExtOption.BOOLEAN_ACTIONS:
                         try:
                             newval = self.configfile_parser.getboolean(section, opt)
                             self.log.debug(('parseconfigfiles: getboolean for option %s value %s '
