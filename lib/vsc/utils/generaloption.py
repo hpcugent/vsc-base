@@ -324,6 +324,7 @@ class ExtOptionParser(OptionParser):
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
         self.envvar_prefix = kwargs.pop('envvar_prefix', None)
+        self.process_env_options = kwargs.pop('process_env_options', True)
 
         # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
         self.epilog = kwargs.pop('epilog', None)
@@ -538,6 +539,10 @@ class ExtOptionParser(OptionParser):
     def get_env_options(self):
         """Retrieve options from the environment: prefix_longopt.upper()"""
         env_long_opts = []
+
+        if not self.process_env_options:
+            return env_long_opts
+
         if self.envvar_prefix is None:
             self.get_env_options_prefix()
 
@@ -1102,7 +1107,9 @@ class GeneralOption(object):
         # reparse
         self.log.debug('parseconfigfiles: going to parse options through cmdline %s' % configfile_cmdline)
         try:
+            self.parser.process_env_options = False
             (parsed_configfile_options, parsed_configfile_args) = self.parser.parse_args(configfile_cmdline)
+            self.parser.process_env_options = True
         except:
             self.log.raiseException('parseconfigfiles: failed to parse options through cmdline %s' %
                                     configfile_cmdline)
