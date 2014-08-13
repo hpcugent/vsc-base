@@ -66,7 +66,8 @@ def remove_extra_bdist_rpm_files():
 try:
     # raise("no setuptools")  # to try distutils, uncomment
     from setuptools import setup
-    from setuptools.command.bdist_rpm import bdist_rpm, _bdist_rpm
+    from setuptools.command.bdist_rpm import bdist_rpm
+    from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
     from setuptools.command.build_py import build_py
     from setuptools.command.install_scripts import install_scripts
     from setuptools.command.sdist import sdist
