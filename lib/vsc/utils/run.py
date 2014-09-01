@@ -75,9 +75,6 @@ import time
 from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
 
 
-PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
-PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
-
 RUNRUN_TIMEOUT_OUTPUT = ''
 RUNRUN_TIMEOUT_EXITCODE = 123
 RUNRUN_QA_MAX_MISS_EXITCODE = 124
@@ -114,7 +111,7 @@ class Run(object):
             @param input: set "simple" input
             @param startpath: directory to change to before executing command
             @param disable_log: use fake logger (won't log anything)
-            @param use_shell: use the subshell 
+            @param use_shell: use the subshell
             @param shell: change the shell
         """
         self.input = kwargs.pop('input', None)
@@ -150,18 +147,10 @@ class Run(object):
         """Set the log name"""
         return self.__class__.__name__
 
-    def _prep_module(self, modulepath=None, extendfromlist=None):
+    def _prep_module(self):
         # these will provide the required Popen, PIPE and STDOUT
-        if modulepath is None:
-            modulepath = PROCESS_MODULE_SUBPROCESS_PATH
-
-        fromlist = ['Popen', 'PIPE', 'STDOUT']
-        if extendfromlist is not None:
-            fromlist.extend(extendfromlist)
-
-        self._process_modulepath = modulepath
-
-        self._process_module = __import__(self._process_modulepath, globals(), locals(), fromlist)
+        import subprocess
+        self._process_module = subprocess
 
     def _run(self):
         """actual method
@@ -532,13 +521,10 @@ class RunLoopStdout(RunLoop):
 class RunAsync(Run):
     """Async process class"""
 
-    def _prep_module(self, modulepath=None, extendfromlist=None):
+    def _prep_module(self):
         # these will provide the required Popen, PIPE and STDOUT
-        if modulepath is None:
-            modulepath = PROCESS_MODULE_ASYNCPROCESS_PATH
-        if extendfromlist is None:
-            extendfromlist = ['send_all', 'recv_some']
-        super(RunAsync, self)._prep_module(modulepath=modulepath, extendfromlist=extendfromlist)
+        from vsc.utils import assyncprocess
+        self._process_module = assyncprocesss
 
     def _read_process(self, readsize=None):
         """Read from async process, return out"""
