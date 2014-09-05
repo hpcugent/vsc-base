@@ -195,7 +195,8 @@ class ExtOption(CompleterOption):
                 self.log.debug("changing loglevel to %s, current state: %s" % (newloglevel, logstate))
                 setLogLevel(newloglevel)
                 self.log.debug("changed loglevel to %s, previous state: %s" % (newloglevel, logstate))
-                setattr(values, '_logaction_taken', True)
+                if hasattr(values, '_logaction_taken'):
+                    setattr(values, '_logaction_taken', True)
 
             Option.take_action(self, action, dest, opt, value, values, parser)
 
@@ -416,12 +417,14 @@ class ExtOptionParser(OptionParser):
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
             - make it dynamic, otherwise the class constant is shared between multiple instances
-            - class constant is used to avoid _taken_action as option in the __dict__
+            - class constant is used to avoid _action_taken as option in the __dict__ 
+                - same for _logaction_taken
         """
         values = OptionParser.get_default_values(self)
 
         class ExtValues(self.VALUES_CLASS):
             _action_taken = {}
+            _logaction_taken = None
 
         newvalues = ExtValues()
         newvalues.__dict__ = values.__dict__.copy()
@@ -1104,8 +1107,7 @@ class GeneralOption(object):
                     # however, multiple logactions in a configfile (or environment for that matter) have
                     # undefined behaviour
                     is_log_action = actual_option.action in ExtOption.EXTOPTION_LOG
-                    log_action_taken = hasattr(self.options, '_logaction_taken') and self.options._logaction_taken
-
+                    log_action_taken = getattr(self.options, '_logaction_taken', False)
                     if is_log_action and log_action_taken:
                         # value set through take_action. do not modify by configfile
                         self.log.debug(('parseconfigfiles: log action %s (value %s) found,'
