@@ -283,11 +283,16 @@ class FancyLoggerTest(EnhancedTestCase):
         (and also the getAllExistingLoggers, getAllFancyloggers and 
         getAllNonFancyloggers function call)
         """
+        # logger names are unique
         for fancy, func in [(False, fancylogger.getAllNonFancyloggers),
                             (True, fancylogger.getAllFancyloggers),
                             (None, fancylogger.getAllExistingLoggers)]:
-            self.assertEqual(len(func()), len(fancylogger.getInfoLogLevel(fancy)),
+            self.assertEqual([name for name, _ in func()],
+                             [name for name, _ in fancylogger.getInfoLogLevel(fancy)],
                              "Test getInfoLogLevel fancy %s and function %s" % (fancy, func.__name__))
+        self.assertEqual([name for name, _ in fancylogger.getAllFancyloggers()],
+                         [name for name, _ in fancylogger.getInfoLogLevel()],
+                         "Test getInfoLogLevel default fancy True and function getAllFancyloggers")
 
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)
