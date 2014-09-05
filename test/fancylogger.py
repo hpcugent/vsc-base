@@ -286,7 +286,7 @@ class FancyLoggerTest(EnhancedTestCase):
         for fancy, func in [(False, fancylogger.getAllNonFancyloggers),
                             (True, fancylogger.getAllFancyloggers),
                             (None, fancylogger.getAllExistingLoggers)]:
-            self.assertEqual(len(func())+1, len(fancylogger.getInfoLogLevel(fancy)), 
+            self.assertEqual(len(func()), len(fancylogger.getInfoLogLevel(fancy)),
                              "Test getInfoLogLevel fancy %s and function %s" % (fancy, func.__name__))
 
     def tearDown(self):

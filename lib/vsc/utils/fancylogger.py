@@ -691,9 +691,9 @@ def getInfoLogLevel(fancy=True):
         False: getAllNonFancyloggers,
     }
     func = func_map.get(fancy, getAllExistingLoggers)
-    res=[]
+    res = []
     for name, logger in func():
         # PlaceHolder instances have no level attribute set
-        level_name = logging.getLevelName(getattr(logger,'level', logging.NOTSET))
+        level_name = logging.getLevelName(getattr(logger, 'level', logging.NOTSET))
         res.append((name, level_name))
     return res
