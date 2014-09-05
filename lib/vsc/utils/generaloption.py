@@ -743,7 +743,7 @@ class GeneralOption(object):
         self._logopts = {
             'debug': ("Enable debug log mode", None, "store_debuglog", False, 'd'),
             'info': ("Enable info log mode", None, "store_infolog", False),
-            'quiet': ("Enable info quiet/warning mode", None, "store_warninglog", False),
+            'quiet': ("Enable quiet/warning log mode", None, "store_warninglog", False),
         }
 
         descr = ['Debug and logging options', '']
