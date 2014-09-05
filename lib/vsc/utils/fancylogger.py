@@ -95,9 +95,10 @@ DEFAULT_UDP_PORT = 5005
 
 # register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, 'APOCALYPTIC')
-# register EXCEPTION and FATAL alias
+# register QUIET, EXCEPTION and FATAL alias
 logging._levelNames['EXCEPTION'] = logging.ERROR
 logging._levelNames['FATAL'] = logging.CRITICAL
+logging._levelNames['QUIET'] = logging.WARNING
 
 
 # mpi rank support
