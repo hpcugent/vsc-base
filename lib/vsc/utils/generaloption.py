@@ -46,7 +46,7 @@ from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueErro
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
-from vsc.utils.fancylogger import getLogger, setLogLevel, getInfoLogLevel
+from vsc.utils.fancylogger import getLogger, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
@@ -191,7 +191,7 @@ class ExtOption(CompleterOption):
 
             if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 newloglevel = orig_action.split('_')[1][:-3].upper()
-                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getInfoLogLevel()])
+                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels()])
                 self.log.debug("changing loglevel to %s, current state: %s" % (newloglevel, logstate))
                 setLogLevel(newloglevel)
                 self.log.debug("changed loglevel to %s, previous state: %s" % (newloglevel, logstate))

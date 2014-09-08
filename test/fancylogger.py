@@ -277,9 +277,9 @@ class FancyLoggerTest(EnhancedTestCase):
         fancylogger.logToScreen(enable=False, handler=handler)
         sys.stderr = _stderr
 
-    def test_getInfoLogLevel(self):
+    def test_getDetailsLogLevels(self):
         """
-        Test the getInfoLogLevel selection logic 
+        Test the getDetailsLogLevels selection logic 
         (and also the getAllExistingLoggers, getAllFancyloggers and 
         getAllNonFancyloggers function call)
         """
@@ -288,11 +288,11 @@ class FancyLoggerTest(EnhancedTestCase):
                             (True, fancylogger.getAllFancyloggers),
                             (None, fancylogger.getAllExistingLoggers)]:
             self.assertEqual([name for name, _ in func()],
-                             [name for name, _ in fancylogger.getInfoLogLevel(fancy)],
-                             "Test getInfoLogLevel fancy %s and function %s" % (fancy, func.__name__))
+                             [name for name, _ in fancylogger.getDetailsLogLevels(fancy)],
+                             "Test getDetailsLogLevels fancy %s and function %s" % (fancy, func.__name__))
         self.assertEqual([name for name, _ in fancylogger.getAllFancyloggers()],
-                         [name for name, _ in fancylogger.getInfoLogLevel()],
-                         "Test getInfoLogLevel default fancy True and function getAllFancyloggers")
+                         [name for name, _ in fancylogger.getDetailsLogLevels()],
+                         "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)

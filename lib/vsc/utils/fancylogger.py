@@ -680,7 +680,7 @@ def enableDefaultHandlers():
     _enable_disable_default_handlers(True)
 
 
-def getInfoLogLevel(fancy=True):
+def getDetailsLogLevels(fancy=True):
     """
     Return list of (name,loglevelname) pairs of existing loggers
     
