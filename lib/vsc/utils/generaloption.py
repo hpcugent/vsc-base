@@ -1270,6 +1270,10 @@ class GeneralOption(object):
         opt_dests.sort()
 
         for opt_dest in opt_dests:
+            if not opt_dest in self.processed_options:
+                self.log.debug("generate_cmd_line: ignoring non-processed option '%s'" % opt_dest)
+                continue
+
             opt_value = self.options.__dict__[opt_dest]
             # this is the action as parsed by the class, not the actual action set in option
             # (eg action store_or_None is shown here as store_or_None, not as callback)
