@@ -30,6 +30,7 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+import logging
 import os
 import re
 import sys
@@ -275,6 +276,23 @@ class FancyLoggerTest(EnhancedTestCase):
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
         sys.stderr = _stderr
+
+    def test_getDetailsLogLevels(self):
+        """
+        Test the getDetailsLogLevels selection logic 
+        (and also the getAllExistingLoggers, getAllFancyloggers and 
+        getAllNonFancyloggers function call)
+        """
+        # logger names are unique
+        for fancy, func in [(False, fancylogger.getAllNonFancyloggers),
+                            (True, fancylogger.getAllFancyloggers),
+                            (None, fancylogger.getAllExistingLoggers)]:
+            self.assertEqual([name for name, _ in func()],
+                             [name for name, _ in fancylogger.getDetailsLogLevels(fancy)],
+                             "Test getDetailsLogLevels fancy %s and function %s" % (fancy, func.__name__))
+        self.assertEqual([name for name, _ in fancylogger.getAllFancyloggers()],
+                         [name for name, _ in fancylogger.getDetailsLogLevels()],
+                         "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)

@@ -29,6 +29,7 @@ Unit tests for generaloption
 @author: Stijn De Weirdt (Ghent University)
 """
 import datetime
+import logging
 import os
 import re
 from tempfile import NamedTemporaryFile
@@ -373,6 +374,55 @@ debug=1
         """Test the loglevel default setting"""
         topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
         self.assertEqual(topt.log.getEffectiveLevel(), fancylogger.getLevelInt(topt.DEFAULT_LOGLEVEL.upper()))
+
+        topt = TestOption1(go_args=['--debug'], go_nosystemexit=True,)
+        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+
+        topt = TestOption1(go_args=['--info'], go_nosystemexit=True,)
+        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+
+        topt = TestOption1(go_args=['--quiet'], go_nosystemexit=True,)
+        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+
+        # last one wins
+        topt = TestOption1(go_args=['--debug', '--info', '--quiet'], go_nosystemexit=True,)
+        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+
+        CONFIGFILE1 = """
+[base]
+debug=1
+"""
+        tmp1 = NamedTemporaryFile()
+        tmp1.write(CONFIGFILE1)
+        tmp1.flush()  # flush, otherwise empty
+        envvar = 'logactionoptiontest'.upper()
+        topt = TestOption1(go_configfiles=[tmp1.name],
+                           go_args=[],
+                           go_nosystemexit=True,
+                           envvar_prefix=envvar
+                           )
+        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+
+        # set via environment; environment wins over cfg file
+        os.environ['%s_INFO' % envvar] = '1';
+        topt = TestOption1(go_configfiles=[tmp1.name],
+                           go_args=[],
+                           go_nosystemexit=True,
+                           envvar_prefix=envvar
+                           )
+        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+
+        # commandline always wins
+        topt = TestOption1(go_configfiles=[tmp1.name],
+                           go_args=['--quiet'],
+                           go_nosystemexit=True,
+                           envvar_prefix=envvar
+                           )
+        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+
+        # remove tmp1
+        del os.environ['%s_INFO' % envvar]
+        tmp1.close()
 
     def test_optcomplete(self):
         """Test optcomplete support"""
