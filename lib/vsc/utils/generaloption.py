@@ -196,7 +196,7 @@ class ExtOption(CompleterOption):
                 setLogLevel(newloglevel)
                 self.log.debug("changed loglevel to %s, previous state: %s" % (newloglevel, logstate))
                 if hasattr(values, '_logaction_taken'):
-                    setattr(values, '_logaction_taken', True)
+                    values._logaction_taken[dest] = True
 
             Option.take_action(self, action, dest, opt, value, values, parser)
 
@@ -418,13 +418,14 @@ class ExtOptionParser(OptionParser):
         """Introduce the ExtValues class with class constant
             - make it dynamic, otherwise the class constant is shared between multiple instances
             - class constant is used to avoid _action_taken as option in the __dict__ 
+                - only works by using reference to object
                 - same for _logaction_taken
         """
         values = OptionParser.get_default_values(self)
 
         class ExtValues(self.VALUES_CLASS):
             _action_taken = {}
-            _logaction_taken = None
+            _logaction_taken = {}
 
         newvalues = ExtValues()
         newvalues.__dict__ = values.__dict__.copy()
