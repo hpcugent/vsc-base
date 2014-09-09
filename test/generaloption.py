@@ -155,11 +155,12 @@ class GeneralOptionTest(TestCase):
                                     '--level-prefix-and-dash=YY',
                                     shell_unquote('--store="some whitespace"'),
                                     '--ext-strlist=x,y',
+                                    '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
                          {
                           'store': 'some whitespace',
-                          'debug': False,
+                          'debug': True,
                           'info':False,
                           'quiet':False,
                           'level_level': True,
@@ -180,6 +181,7 @@ class GeneralOptionTest(TestCase):
                           'ext_strlist': ['x', 'y'],
                           'ext_strtuple': ('x',),
                           'aregexopt': None,
+                          '_logaction_taken': True,
                           })
 
         # cmdline is ordered alphabetically
