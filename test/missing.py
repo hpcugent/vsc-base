@@ -36,7 +36,7 @@ from unittest import TestLoader, main
 import sys
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
-from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+from vsc.utils.missing import get_class_for, nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 
 
 DAG_TEST_SET = [
@@ -256,6 +256,13 @@ class TestMissing(EnhancedTestCase):
                 self.assertTrue(disjoint_sets(adjacent, visited))
 
             self.assertTrue(len(sorting) == len(g.keys()))
+
+    def test_get_class_for(self):
+        """Test get_class_for."""
+        from vsc.utils.generaloption import GeneralOption
+        self.assertEqual(get_class_for('vsc.utils.generaloption', 'GeneralOption'), GeneralOption)
+        self.assertErrorRegex(ImportError, 'No module named .*', get_class_for, 'no.such.module', 'Test')
+        self.assertErrorRegex(ImportError, 'Failed to import .*', get_class_for, 'vsc.utils', 'NoSuchClass')
 
 
 def suite():
