@@ -42,7 +42,7 @@ except ImportError:
     import simplejson as json
 
 from vsc.utils import fancylogger
-from vsc.utils.missing import partial
+from functools import partial
 
 
 class Client(object):
