@@ -293,8 +293,8 @@ def get_class_for(modulepath, class_name):
     """
     Get class for a given Python class name and Python module path.
 
-    @param modulepath: Python module path (e.g., 'easybuild.easyblocks.gcc')
-    @param class_name: Python class name (e.g., 'EB_GCC')
+    @param modulepath: Python module path (e.g., 'vsc.utils.generaloption')
+    @param class_name: Python class name (e.g., 'GeneralOption')
     """
     # try to import specified module path, reraise ImportError if it occurs
     try:
