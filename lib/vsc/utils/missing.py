@@ -39,13 +39,19 @@ Various functions that are missing from the default Python library.
 
 @author: Andy Georges (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
+import os
 import shlex
+import stat
 import subprocess
 import time
 
 from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
+
+
+_log = fancylogger.getLogger(name='vsc.utils.missing')
 
 
 def partial(func, *args, **keywords):
