@@ -107,8 +107,10 @@ class Popen(subprocess.Popen):
             return 0
 
         try:
+            if isinstance(inp, str):
+                inp = inp.encode()
             written = os.write(self.stdin.fileno(), inp)
-        except OSError, why:
+        except OSError as why:
             if why[0] == errno.EPIPE:  # broken pipe
                 return self._close('stdin')
             raise
@@ -177,7 +179,7 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
             len_y += len(r)
         else:
             time.sleep(max((x - time.time()) / tr, 0))
-    return ''.join(y)
+    return b''.join(y)
 
 
 def send_all(p, data):
@@ -188,4 +190,9 @@ def send_all(p, data):
         sent = p.send(data)
         if sent is None:
             raise Exception(MESSAGE)
-        data = buffer(data, sent)
+        try:
+            if isinstance(data, str):
+                data = data.encode()
+            data = memoryview(data) #[:sent]  # sent?
+        except NameError:
+            data = buffer(data, sent)

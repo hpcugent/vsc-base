@@ -46,7 +46,7 @@ class EnhancedTestCase(TestCase):
             str_kwargs = ', '.join(['='.join([k,str(v)]) for (k,v) in kwargs.items()])
             str_args = ', '.join(map(str, args) + [str_kwargs])
             self.assertTrue(False, "Expected errors with %s(%s) call should occur" % (call.__name__, str_args))
-        except error, err:
+        except error as err:
             if hasattr(err, 'msg'):
                 msg = err.msg
             elif hasattr(err, 'message'):

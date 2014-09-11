@@ -268,7 +268,7 @@ class FrozenDictKnownKeys(FrozenDict):
         """Redefine __getitem__ to provide a better KeyError message."""
         try:
             return super(FrozenDictKnownKeys, self).__getitem__(key, *args, **kwargs)
-        except KeyError, err:
+        except KeyError as err:
             if key in self.KNOWN_KEYS:
                 raise KeyError(err)
             else:
@@ -334,7 +334,7 @@ class TryOrFail(object):
             for i in xrange(0, self.n):
                 try:
                     return function(*args, **kwargs)
-                except self.exceptions, err:
+                except self.exceptions as err:
                     if i == self.n - 1:
                         raise
                     log.exception("try_or_fail caught an exception - attempt %d: %s" % (i, err))

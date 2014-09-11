@@ -34,12 +34,18 @@ import logging
 import os
 import re
 import sys
-from StringIO import StringIO
 import tempfile
+from distutils.version import LooseVersion
 from test.utilities import EnhancedTestCase
 from unittest import TestLoader, main
 
 from vsc.utils import fancylogger
+
+pyver = sys.version.split(' ')[0]
+if LooseVersion(pyver) < LooseVersion('3.0'):
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
@@ -269,7 +275,7 @@ class FancyLoggerTest(EnhancedTestCase):
         handler = fancylogger.logToScreen()
         logger = fancylogger.getLogger(fname=False, clsname=False)
         logger.warn("blabla")
-        print stringfile.getvalue()
+        print(stringfile.getvalue())
         # this will only hold in debug mode, so also disable the test
         if  __debug__:
             self.assertTrue('FancyLoggerTest' in stringfile.getvalue())

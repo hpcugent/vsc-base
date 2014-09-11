@@ -35,14 +35,21 @@ based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e256
 """
 import base64
 import urllib
-import urllib2
+import sys
 try:
     import json
 except ImportError:
     import simplejson as json
 
+from distutils.version import LooseVersion
 from vsc.utils import fancylogger
 from vsc.utils.missing import partial
+
+pyver = sys.version.split(' ')[0]
+if LooseVersion(pyver) < LooseVersion('3.0'):
+    from urllib2 import HTTPSHandler, Request, build_opener
+else:
+    from urllib.request import HTTPSHandler, Request, build_opener
 
 
 class Client(object):
@@ -85,8 +92,8 @@ class Client(object):
         else:
             self.user_agent = user_agent
 
-        handler = urllib2.HTTPSHandler()
-        self.opener = urllib2.build_opener(handler)
+        handler = HTTPSHandler()
+        self.opener = build_opener(handler)
 
         if username is not None:
             if password is None and token is None:
@@ -194,7 +201,7 @@ class Client(object):
             sep = '/'
         else:
             sep = ''
-        request = urllib2.Request(self.url + sep + url, data=body)
+        request = Request(self.url + sep + url, data=body)
         for header, value in headers.iteritems():
             request.add_header(header, value)
         request.get_method = lambda: method

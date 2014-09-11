@@ -307,7 +307,7 @@ class Run(object):
         if self.cmd is None:
             self.log.raiseExcpetion("_make_shell_command: no cmd set.")
 
-        if isinstance(self.cmd, basestring):
+        if isinstance(self.cmd, str):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = " ".join(self.cmd)
@@ -356,7 +356,7 @@ class Run(object):
         if readsize is None:
             readsize = -1  # read all
         self.log.debug("_read_process: going to read with readsize %s" % readsize)
-        out = self._process.stdout.read(readsize)
+        out = self._process.stdout.read(readsize).decode()
         return out
 
     def _post_exitcode(self):
@@ -384,7 +384,7 @@ class Run(object):
         """
         if tasks is None:
             self.log.error("killtasks no tasks passed")
-        elif isinstance(tasks, basestring):
+        elif isinstance(tasks, str):
             try:
                 tasks = [int(tasks)]
             except:
@@ -397,11 +397,11 @@ class Run(object):
                 if kill_pgid:
                     os.killpg(pgid, sig)
                 self.log.debug("Killed %s with signal %s" % (pid, sig))
-            except OSError, err:
+            except OSError as err:
                 # ERSCH is no such process, so no issue
                 if not err.errno == errno.ESRCH:
                     self.log.error("Failed to kill %s: %s" % (pid, err))
-            except Exception, err:
+            except Exception as err:
                 self.log.error("Failed to kill %s: %s" % (pid, err))
 
     def stop_tasks(self):
@@ -480,7 +480,7 @@ class RunLoop(Run):
 
             # process after updating the self._process_ vars
             self._loop_process_output_final(output)
-        except RunLoopException, err:
+        except RunLoopException as err:
             self.log.debug('RunLoopException %s' % err)
             self._process_output = err.output
             self._process_exitcode = err.code
@@ -696,7 +696,7 @@ class RunQA(RunLoop, RunAsync):
 
         def process_answers(answers):
             """Construct list of newline-terminated answers (as strings)."""
-            if isinstance(answers, basestring):
+            if isinstance(answers, str):
                 answers = [answers]
             elif isinstance(answers, list):
                 # list is manipulated when answering matching question, so take a copy

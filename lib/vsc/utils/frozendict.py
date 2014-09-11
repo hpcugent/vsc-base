@@ -17,14 +17,20 @@
 # IN THE SOFTWARE
 
 import operator
-from UserDict import DictMixin
-
+import sys
+from distutils.version import LooseVersion
+pyver = sys.version.split(' ')[0]
+if LooseVersion(pyver) < LooseVersion('3.0'):
+    from UserDict import DictMixin as MutableMapping
+else:
+    # see http://stackoverflow.com/questions/11165188/how-to-achieve-the-functionality-of-userdict-dictmixin-in-python-3
+    from collections import MutableMapping
 
 # minor adjustments:
 # * renamed to FrozenDict
 # * deriving from DictMixin instead of collections.Mapping to make it Python 2.4 compatible
 #   see also http://docs.python.org/2/library/userdict.html#UserDict.DictMixin
-class FrozenDict(object, DictMixin):
+class FrozenDict(MutableMapping, object):
 
     def __init__(self, *args, **kwargs):
         self.__dict = dict(*args, **kwargs)

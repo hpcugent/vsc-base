@@ -24,7 +24,7 @@ suite = unittest.TestSuite([x.suite() for x in (a, td, tg, tf, tm, trest, trun, 
 try:
     import xmlrunner
     rs = xmlrunner.XMLTestRunner(output="test-reports").run(suite)
-except ImportError, err:
+except ImportError as err:
     rs = unittest.TextTestRunner().run(suite)
 
 if not rs.wasSuccessful():
