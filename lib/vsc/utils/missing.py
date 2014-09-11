@@ -289,6 +289,26 @@ def shell_unquote(x):
     return shlex.split(str(x))[0]
 
 
+def get_class_for(modulepath, class_name):
+    """
+    Get class for a given Python class name and Python module path.
+
+    @param modulepath: Python module path (e.g., 'vsc.utils.generaloption')
+    @param class_name: Python class name (e.g., 'GeneralOption')
+    """
+    # try to import specified module path, reraise ImportError if it occurs
+    try:
+        module = __import__(modulepath, globals(), locals(), [''])
+    except ImportError, err:
+        raise ImportError(err)
+    # try to import specified class name from specified module path, throw ImportError if this fails
+    try:
+        klass = getattr(module, class_name)
+    except AttributeError, err:
+        raise ImportError("Failed to import %s from %s: %s" % (class_name, modulepath, err))
+    return klass
+
+
 def get_subclasses(klass):
     """Get all subclasses recursively"""
     res = []
