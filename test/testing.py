@@ -31,6 +31,7 @@ Tests for the vsc.utils.testing module.
 @author: Kenneth Hoste (Ghent University)
 """
 import os
+import re
 from unittest import TestLoader, main
 
 from vsc.utils.missing import shell_quote
@@ -60,6 +61,9 @@ class TestTesting(EnhancedTestCase):
         """Tests for assertErrorRegex method."""
         testfile = '/no/such/file'
         self.assertErrorRegex(KeyError, "foo", {'one': 1}.pop, 'foo')
+        self.assertErrorRegex(KeyError, "^foo$", {'two': 2}.pop, 'foo')
+        self.assertErrorRegex(KeyError, re.compile("^foo$"), {'two': 2}.pop, 'foo')
+        self.assertErrorRegex(KeyError, re.compile(".*bar.*"), {'two': 2}.pop, 'foobarbaz')
         # INCEPTION!
         # id(0) should never throw any error
         regex = "Expected errors with .* should occur"
