@@ -63,5 +63,6 @@ class EnhancedTestCase(TestCase):
             self.assertTrue(False, "Expected errors with %s(%s) call should occur" % (call.__name__, str_args))
         except error, err:
             msg = self.convert_exception_to_str(err)
-            self.assertTrue(re.search(regex, msg), "Pattern '%s' is found in '%s'" % (regex, msg))
+            regex = re.compile(regex)
+            self.assertTrue(regex.search(msg), "Pattern '%s' is found in '%s'" % (regex.pattern, msg))
 
