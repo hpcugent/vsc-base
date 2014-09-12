@@ -39,25 +39,29 @@ from unittest import TestCase
 class EnhancedTestCase(TestCase):
     """Enhanced test case, provides extra functionality (e.g. an assertErrorRegex method)."""
 
+    def convert_exception_to_str(self, err):
+        """Convert an Exception instance to a string."""
+        msg = err
+        if hasattr(err, 'msg'):
+            msg = err.msg
+        try:
+            res = str(msg)
+        except UnicodeEncodeError:
+            res = msg.encode('utf8', 'replace')
+
+        return res
+
     def assertErrorRegex(self, error, regex, call, *args, **kwargs):
-        """Convenience method to match regex with the expected error message"""
+        """
+        Convenience method to match regex with the expected error message.
+        Example: self.assertErrorRegex(OSError, "No such file or directory", os.remove, '/no/such/file')
+        """
         try:
             call(*args, **kwargs)
-            str_kwargs = ', '.join(['='.join([k,str(v)]) for (k,v) in kwargs.items()])
-            str_args = ', '.join(map(str, args) + [str_kwargs])
+            str_kwargs = ['='.join([k, str(v)]) for (k, v) in kwargs.items()]
+            str_args = ', '.join(map(str, args) + str_kwargs)
             self.assertTrue(False, "Expected errors with %s(%s) call should occur" % (call.__name__, str_args))
         except error, err:
-            if hasattr(err, 'msg'):
-                msg = err.msg
-            elif hasattr(err, 'message'):
-                msg = err.message
-            elif hasattr(err, 'args'):  # KeyError in Python 2.4 only provides message via 'args' attribute
-                msg = err.args[0]
-            else:
-                msg = err
-            try:
-                msg = str(msg)
-            except UnicodeEncodeError:
-                msg = msg.encode('utf8', 'replace')
+            msg = self.convert_exception_to_str(err)
             self.assertTrue(re.search(regex, msg), "Pattern '%s' is found in '%s'" % (regex, msg))
 
