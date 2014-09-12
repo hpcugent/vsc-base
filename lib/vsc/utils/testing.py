@@ -44,6 +44,13 @@ class EnhancedTestCase(TestCase):
         msg = err
         if hasattr(err, 'msg'):
             msg = err.msg
+        elif hasattr(err, 'message'):
+            msg = err.message
+            if not msg:
+                # if message is empty, just convert instance to string via str(msg) below
+                msg = err
+        else:
+            msg = err
         try:
             res = str(msg)
         except UnicodeEncodeError:
