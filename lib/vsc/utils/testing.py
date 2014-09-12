@@ -46,9 +46,8 @@ class EnhancedTestCase(TestCase):
             msg = err.msg
         elif hasattr(err, 'message'):
             msg = err.message
-            if not msg:
-                # if message is empty, just convert instance to string via str(msg) below
-                msg = err
+        elif hasattr(err, 'args'):  # KeyError in Python 2.4 only provides message via 'args' attribute
+            msg = err.args[0]
         else:
             msg = err
         try:
