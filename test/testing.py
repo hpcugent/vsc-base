@@ -59,7 +59,7 @@ class TestTesting(EnhancedTestCase):
     def test_assertErrorRegex(self):
         """Tests for assertErrorRegex method."""
         testfile = '/no/such/file'
-        self.assertErrorRegex(KeyError, "foo", {}.pop, 'foo')
+        self.assertErrorRegex(KeyError, "foo", {'one': 1}.pop, 'foo')
         # INCEPTION!
         # id(0) should never throw any error
         regex = "Expected errors with .* should occur"
