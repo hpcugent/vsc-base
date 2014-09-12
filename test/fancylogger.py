@@ -201,7 +201,7 @@ class FancyLoggerTest(EnhancedTestCase):
         fancylogger.setLogLevelInfo()
         name = 'test_stream_stdout'
         lh = fancylogger.logToScreen(stdout=isstdout)
-        logger = fancylogger.getLogger(name, clsname=False)
+        logger = fancylogger.getLogger(name, fname=True, clsname=False)
         # logfn makes it unique
         msg = 'TEST isstdout %s expect_match %s logfn %s' % (isstdout, expect_match, logfn)
         logger.info(msg)
@@ -240,7 +240,7 @@ class FancyLoggerTest(EnhancedTestCase):
 
         class Foobar:
             def somefunction(self):
-                logger = fancylogger.getLogger(clsname=True)
+                logger = fancylogger.getLogger(fname=True, clsname=True)
                 logger.warn('we are logging something here')
 
         stringfile = StringIO()
@@ -279,8 +279,8 @@ class FancyLoggerTest(EnhancedTestCase):
 
     def test_getDetailsLogLevels(self):
         """
-        Test the getDetailsLogLevels selection logic 
-        (and also the getAllExistingLoggers, getAllFancyloggers and 
+        Test the getDetailsLogLevels selection logic
+        (and also the getAllExistingLoggers, getAllFancyloggers and
         getAllNonFancyloggers function call)
         """
         # logger names are unique
