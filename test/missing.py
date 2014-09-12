@@ -31,12 +31,12 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 """
 from random import randint, seed
-from test.utilities import EnhancedTestCase
 from unittest import TestLoader, main
 import sys
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
 from vsc.utils.missing import get_class_for, nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+from vsc.utils.testing import EnhancedTestCase
 
 
 DAG_TEST_SET = [

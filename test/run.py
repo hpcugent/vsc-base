@@ -33,11 +33,12 @@ Tests for the vsc.utils.run module.
 import os
 import re
 import time
-from test.utilities import EnhancedTestCase
 from unittest import TestLoader, main
 
 from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
+from vsc.utils.testing import EnhancedTestCase
+
 
 SCRIPT_DIR = os.path.join(os.path.dirname(__file__), 'runtests')
 SCRIPT_SIMPLE = os.path.join(SCRIPT_DIR, 'simple.py')

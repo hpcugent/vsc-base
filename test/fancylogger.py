@@ -36,10 +36,10 @@ import re
 import sys
 from StringIO import StringIO
 import tempfile
-from test.utilities import EnhancedTestCase
 from unittest import TestLoader, main
 
 from vsc.utils import fancylogger
+from vsc.utils.testing import EnhancedTestCase
 
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
