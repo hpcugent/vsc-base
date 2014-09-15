@@ -418,7 +418,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
     # If we are not requested for complete, simply return silently, let the code
     # caller complete. This is the normal path of execution.
-    if not os.environ.has_key(OPTCOMPLETE_ENVIRONMENT):
+    if not OPTCOMPLETE_ENVIRONMENT in os.environ:
         return
     # After this point we should never return, only sys.exit(1)
 
@@ -544,7 +544,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     if isinstance(completions, basestring):
         # is a bash command, just run it
         if SHELL in (BASH,):  # TODO: zsh
-            print completions
+            print(completions)
         else:
             raise Exception("Commands are unsupported by this shell %s" % SHELL)
     else:
@@ -555,9 +555,9 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
         # Save results
         if SHELL == "bash":
-            print 'COMPREPLY=(' + completions + ')'
+            print('COMPREPLY=(' + completions + ')')
         else:
-            print completions
+            print(completions)
 
     # Print debug output (if needed).  You can keep a shell with 'tail -f' to
     # the log file to monitor what is happening.

@@ -31,16 +31,14 @@ A class that can be used to generated options to python scripts in a general way
 @author: Stijn De Weirdt (Ghent University)
 @author: Jens Timmerman (Ghent University)
 """
-
-import ConfigParser
 import copy
 import inspect
 import operator
 import os
 import re
-import StringIO
 import sys
 import textwrap
+from distutils.version import LooseVersion
 from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
 from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
@@ -50,6 +48,13 @@ from vsc.utils.fancylogger import getLogger, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
+pyver = sys.version.split(' ')[0]
+if LooseVersion(pyver) < LooseVersion('3.0'):
+    from ConfigParser import ConfigParser
+    from StringIO import StringIO
+else:
+    from configparser import ConfigParser
+    from io import StringIO
 
 def set_columns(cols=None):
     """Set os.environ COLUMNS variable
@@ -123,7 +128,7 @@ class ExtOption(CompleterOption):
 
     TYPE_CHECKER = dict([('strlist', check_str_list_tuple),
                          ('strtuple', check_str_list_tuple),
-                         ] + Option.TYPE_CHECKER.items())
+                         ] + list(Option.TYPE_CHECKER.items()))
     TYPES = tuple(['strlist', 'strtuple'] + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
@@ -241,7 +246,7 @@ class PassThroughOptionParser(OptionParser):
         """Extend optparse code with catch of unknown long options error"""
         try:
             OptionParser._process_long_opt(self, rargs, values)
-        except BadOptionError, err:
+        except BadOptionError as err:
             self.largs.append(err.opt_str)
 
     def _process_short_opts(self, rargs, values):
@@ -463,7 +468,7 @@ class ExtOptionParser(OptionParser):
         removeoptgrp = []
         for optgrp in self.option_groups:
             # remove all option groups that have only nohelp options
-            if reduce(operator.and_, [opt.help == nohelp for opt in optgrp.option_list]):
+            if all([opt.help == nohelp for opt in optgrp.option_list]):
                 removeoptgrp.append(optgrp)
         for optgrp in removeoptgrp:
             self.option_groups.remove(optgrp)
@@ -473,7 +478,7 @@ class ExtOptionParser(OptionParser):
     def print_help(self, fh=None):
         """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
         if self.help_to_string:
-            self.help_to_file = StringIO.StringIO()
+            self.help_to_file = StringIO()
         if fh is None:
             fh = self.help_to_file
 
@@ -648,7 +653,7 @@ class GeneralOption(object):
     CONFIGFILES_INIT = []  # initial list of defaults, overwritten by go_configfiles options
     CONFIGFILES_IGNORE = []
     CONFIGFILES_MAIN_SECTION = 'MAIN'  # sectionname that contains the non-grouped/non-prefixed options
-    CONFIGFILE_PARSER = ConfigParser.ConfigParser
+    CONFIGFILE_PARSER = ConfigParser
 
     METAVAR_DEFAULT = True  # generate a default metavar
     METAVAR_MAP = None  # metvar, list of longopts map
@@ -863,7 +868,7 @@ class GeneralOption(object):
             long_description = description[1]
 
         opt_grp = ExtOptionGroup(self.parser, short_description, long_description, section_name=section_name)
-        keys = opt_dict.keys()
+        keys = list(opt_dict.keys())
         if self.OPTIONGROUP_SORTED_OPTIONS:
             keys.sort()  # alphabetical
         for key in keys:
@@ -926,7 +931,7 @@ class GeneralOption(object):
                         # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
                         hlp += ' (choices: %s)' % ', '.join(nameds['choices'])
-                    elif isinstance(extra_detail, basestring) and len(extra_detail) == 1:
+                    elif isinstance(extra_detail, str) and len(extra_detail) == 1:
                         args.insert(0, "-%s" % extra_detail)
                     elif isinstance(extra_detail, (dict,)):
                         # extract any optcomplete completer hints
@@ -982,7 +987,7 @@ class GeneralOption(object):
 
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
-        except SystemExit, err:
+        except SystemExit as err:
             if self.no_system_exit:
                 try:
                     msg = err.message
@@ -1267,7 +1272,7 @@ class GeneralOption(object):
             self.log.debug("generate_cmd_line no ignore")
 
         args = []
-        opt_dests = self.options.__dict__.keys()
+        opt_dests = list(self.options.__dict__.keys())
         opt_dests.sort()
 
         for opt_dest in opt_dests:

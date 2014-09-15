@@ -72,6 +72,9 @@ Logging to a udp server:
 @author: Kenneth Hoste (Ghent University)
 """
 
+# required to avoid Py2 interpreting "print('a', 'b')" as printing a tuple
+from __future__ import print_function
+
 import inspect
 import logging
 import logging.handlers
@@ -95,10 +98,27 @@ DEFAULT_UDP_PORT = 5005
 
 # register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, 'APOCALYPTIC')
-# register QUIET, EXCEPTION and FATAL alias
-logging._levelNames['EXCEPTION'] = logging.ERROR
-logging._levelNames['FATAL'] = logging.CRITICAL
-logging._levelNames['QUIET'] = logging.WARNING
+logging.addLevelName('EXCEPTION', logging.ERROR)
+logging.addLevelName('FATAL', logging.CRITICAL)
+logging.addLevelName('QUIET', logging.WARNING)
+# register EXCEPTION and FATAL alias
+# can't use addLevelName since that would redefine the ERROR/CRITICAL log level names
+level_aliases = {
+    'EXCEPTION': logging.ERROR,
+    'FATAL': logging.CRITICAL,
+    'FATAL': logging.WARNING,
+}
+if hasattr(logging, '_levelNames'):
+    # Python v2.x - v3.3
+    for alias, log_level in level_aliases.items():
+        logging._levelNames[alias] = log_level
+elif hasattr(logging, '_nameToLevel'):
+    # Python v3.4 and more recent
+    for alias, log_level in level_aliases.items():
+        logging._nameToLevel[alias] = log_level
+else:
+    sys.stderr.write("Failed to register EXCEPTION/FATAL log levels.")
+    sys,exit(1)
 
 
 # mpi rank support
@@ -119,11 +139,16 @@ class MissingLevelName(KeyError):
 
 def getLevelInt(level_name):
     """Given a level name, return the int value"""
-    if not isinstance(level_name, basestring):
+    if not isinstance(level_name, str):
         raise TypeError('Provided name %s is not a string (type %s)' % (level_name, type(level_name)))
 
-    level = logging.getLevelName(level_name)
-    if isinstance(level, basestring):
+    if hasattr(logging, '_nameToLevel'):
+        # only for Python 3.4 or more recent, where getLevelName does not return an int for a given level name anymore
+        # see https://docs.python.org/3/library/logging.html#logging.getLevelName
+        level = logging._nameToLevel[level_name]
+    else:
+        level = logging.getLevelName(level_name)
+    if isinstance(level, str):
         raise MissingLevelName('Unknown loglevel name %s' % level_name)
 
     return level
@@ -175,10 +200,19 @@ class FancyLogger(logging.getLoggerClass()):
     _thread_aware = True
 
     # method definition as it is in logging, can't change this
-    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
+    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, *otherargs, **kwargs):
         """
         overwrite make record to use a fancy record (with more options)
         """
+        if len(otherargs) >= 1:
+            func = otherargs[0]
+            extra = kwargs.get('extra', None)
+        if len(otherargs) >= 2:
+            extra = otherargs[1]
+            sinfo = kwargs.get('sinfo', None)  # only in Python 3.x
+        if len(otherargs) >= 3:
+            sinfo = otherargs[2]
+
         logrecordcls = logging.LogRecord
         if hasattr(self, 'fancyrecord') and self.fancyrecord:
             logrecordcls = FancyLogRecord
@@ -350,10 +384,10 @@ def getLogger(name=None, fname=True, clsname=False, fancyrecord=None):
     l = logging.getLogger(fullname)
     l.fancyrecord = fancyrecord
     if os.environ.get('FANCYLOGGER_GETLOGGER_DEBUG', '0').lower() in ('1', 'yes', 'true', 'y'):
-        print 'FANCYLOGGER_GETLOGGER_DEBUG',
-        print 'name', name, 'fname', fname, 'fullname', fullname,
-        print 'parent_info verbose'
-        print "\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG"))
+        print('FANCYLOGGER_GETLOGGER_DEBUG',)
+        print('name', name, 'fname', fname, 'fullname', fullname,)
+        print('parent_info verbose')
+        print("\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
         sys.stdout.flush()
     return l
 
@@ -547,13 +581,13 @@ def setLogLevel(level):
     """
     set a global log level (for this root logger)
     """
-    if isinstance(level, basestring):
+    if isinstance(level, str):
         level = getLevelInt(level)
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)
     if os.environ.get('FANCYLOGGER_LOGLEVEL_DEBUG', '0').lower() in ('1', 'yes', 'true', 'y'):
-        print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
-        print "\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG"))
+        print("FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level))
+        print("\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG")))
         sys.stdout.flush()
 
 

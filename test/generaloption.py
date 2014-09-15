@@ -310,7 +310,7 @@ strlist=x,y
 opt1=value1
 
 """
-        tmp1 = NamedTemporaryFile()
+        tmp1 = NamedTemporaryFile(mode='w+')
         tmp1.write(CONFIGFILE1)
         tmp1.flush()  # flush, otherwise empty
 
@@ -340,7 +340,7 @@ justatest=0
 debug=1
 
 """
-        tmp2 = NamedTemporaryFile()
+        tmp2 = NamedTemporaryFile(mode='w+')
         tmp2.write(CONFIGFILE2)
         tmp2.flush()  # flush, otherwise empty
 
