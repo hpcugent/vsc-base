@@ -11,6 +11,7 @@ import test.fancylogger as tf
 import test.missing as tm
 import test.rest as trest
 import test.run as trun
+import test.testing as tt
 import test.optcomplete as topt
 import test.wrapper as wrapt
 import unittest
@@ -19,7 +20,7 @@ import unittest
 from vsc.utils import fancylogger
 fancylogger.logToScreen(enable=False)
 
-suite = unittest.TestSuite([x.suite() for x in (a, td, tg, tf, tm, trest, trun, topt, wrapt)])
+suite = unittest.TestSuite([x.suite() for x in (a, td, tg, tf, tm, trest, trun, tt, topt, wrapt)])
 
 try:
     import xmlrunner
