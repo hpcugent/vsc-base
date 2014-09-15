@@ -72,7 +72,7 @@ class EnhancedTestCase(TestCase):
             self.assertTrue(False, "Expected errors with %s(%s) call should occur" % (call.__name__, str_args))
         except error, err:
             msg = self.convert_exception_to_str(err)
-            if not isinstance(regex, re._pattern_type):
+            if isinstance(regex, basestring):
                 regex = re.compile(regex)
             self.assertTrue(regex.search(msg), "Pattern '%s' is found in '%s'" % (regex.pattern, msg))
 
