@@ -294,6 +294,29 @@ class FancyLoggerTest(EnhancedTestCase):
                          [name for name, _ in fancylogger.getDetailsLogLevels()],
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
+    def test_normal_logging(self):
+        """
+        Test if just using import logging, logging.warning still works after importing fancylogger
+        """
+        _stderr = sys.stderr
+        stringfile = StringIO()
+        sys.stderr = stringfile
+        handler = fancylogger.logToScreen()
+        import logging
+        logging.warning('this is my string')
+        self.assertTrue('this is my string' in stringfile.getvalue())
+
+        logging.getLogger().warning('there are many like it')
+        self.assertTrue('there are many like it' in stringfile.getvalue())
+
+        logging.getLogger('mine').warning('but this one is mine')
+        self.assertTrue('but this one is mine' in stringfile.getvalue())
+
+        # restore
+        fancylogger.logToScreen(enable=False, handler=handler)
+        sys.stderr = _stderr
+
+
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)
         self.handle.close()
