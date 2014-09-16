@@ -47,7 +47,7 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 
 
 def classless_function():
-    logger = fancylogger.getLogger(clsname=True)
+    logger = fancylogger.getLogger(fname=True, clsname=True)
     logger.warn("from classless_function")
 
 
@@ -201,7 +201,7 @@ class FancyLoggerTest(EnhancedTestCase):
         fancylogger.setLogLevelInfo()
         name = 'test_stream_stdout'
         lh = fancylogger.logToScreen(stdout=isstdout)
-        logger = fancylogger.getLogger(name, clsname=False)
+        logger = fancylogger.getLogger(name, fname=True, clsname=False)
         # logfn makes it unique
         msg = 'TEST isstdout %s expect_match %s logfn %s' % (isstdout, expect_match, logfn)
         logger.info(msg)
@@ -240,7 +240,7 @@ class FancyLoggerTest(EnhancedTestCase):
 
         class Foobar:
             def somefunction(self):
-                logger = fancylogger.getLogger(clsname=True)
+                logger = fancylogger.getLogger(fname=True, clsname=True)
                 logger.warn('we are logging something here')
 
         stringfile = StringIO()
@@ -279,8 +279,8 @@ class FancyLoggerTest(EnhancedTestCase):
 
     def test_getDetailsLogLevels(self):
         """
-        Test the getDetailsLogLevels selection logic 
-        (and also the getAllExistingLoggers, getAllFancyloggers and 
+        Test the getDetailsLogLevels selection logic
+        (and also the getAllExistingLoggers, getAllFancyloggers and
         getAllNonFancyloggers function call)
         """
         # logger names are unique
@@ -293,6 +293,29 @@ class FancyLoggerTest(EnhancedTestCase):
         self.assertEqual([name for name, _ in fancylogger.getAllFancyloggers()],
                          [name for name, _ in fancylogger.getDetailsLogLevels()],
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
+
+    def test_normal_logging(self):
+        """
+        Test if just using import logging, logging.warning still works after importing fancylogger
+        """
+        _stderr = sys.stderr
+        stringfile = StringIO()
+        sys.stderr = stringfile
+        handler = fancylogger.logToScreen()
+        import logging
+        logging.warning('this is my string')
+        self.assertTrue('this is my string' in stringfile.getvalue())
+
+        logging.getLogger().warning('there are many like it')
+        self.assertTrue('there are many like it' in stringfile.getvalue())
+
+        logging.getLogger('mine').warning('but this one is mine')
+        self.assertTrue('but this one is mine' in stringfile.getvalue())
+
+        # restore
+        fancylogger.logToScreen(enable=False, handler=handler)
+        sys.stderr = _stderr
+
 
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)
