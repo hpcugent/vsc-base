@@ -324,7 +324,7 @@ def thread_name():
     return threading.currentThread().getName()
 
 
-def getLogger(name=None, fname=True, clsname=False, fancyrecord=None):
+def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     """
     returns a fancylogger
     if fname is True, the loggers name will be 'name[.classname].functionname'
