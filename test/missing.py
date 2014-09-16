@@ -283,6 +283,9 @@ class TestMissing(EnhancedTestCase):
         self.assertEqual(run_subclasses['RunQA']['module'], 'vsc.utils.run')
         self.assertEqual(sorted(run_subclasses['RunQA']['subclasses']), ['RunQALog', 'RunQAStdout'])
 
+        # check include_base_classes named argument
+        self.assertFalse('Run' in avail_subclasses([Run], ['vsc.utils'], include_base_classes=False))
+
 def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestMissing)

@@ -312,7 +312,7 @@ def get_class_for(modulepath, class_name):
     return klass
 
 
-def avail_subclasses(base_classes, package_names):
+def avail_subclasses(base_classes, package_names, include_base_classes=True):
     """Return detailed list of subclasses for specificied base classes in modules in specified packages."""
     module_regexp = re.compile(r"^(?P<modname>[^_].*)\.py$")
 
@@ -332,12 +332,13 @@ def avail_subclasses(base_classes, package_names):
     def add_subclass(classes, cls):
         """Add a new class, and all of its subclasses, recursively."""
         subclasses = cls.__subclasses__()
-        classes.update({
-            cls.__name__: {
-                'module': cls.__module__,
-                'subclasses': [x.__name__ for x in subclasses],
-            }
-        })
+        if include_base_classes or cls not in base_classes:
+            classes.update({
+                cls.__name__: {
+                    'module': cls.__module__,
+                    'subclasses': [x.__name__ for x in subclasses],
+                }
+            })
         for subclass in subclasses:
             add_subclass(classes, subclass)
 
