@@ -47,7 +47,7 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 
 
 def classless_function():
-    logger = fancylogger.getLogger(clsname=True)
+    logger = fancylogger.getLogger(fname=True, clsname=True)
     logger.warn("from classless_function")
 
 
