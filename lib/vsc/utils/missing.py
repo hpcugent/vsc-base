@@ -40,8 +40,11 @@ Various functions that are missing from the default Python library.
 @author: Andy Georges (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+import os
+import re
 import shlex
 import subprocess
+import sys
 import time
 
 from vsc.utils import fancylogger
@@ -307,6 +310,42 @@ def get_class_for(modulepath, class_name):
     except AttributeError, err:
         raise ImportError("Failed to import %s from %s: %s" % (class_name, modulepath, err))
     return klass
+
+
+def avail_subclasses(base_classes, package_names):
+    """Return detailed list of subclasses for specificied base classes in modules in specified packages."""
+    module_regexp = re.compile(r"^(?P<modname>[^_].*)\.py$")
+
+    for package_name in package_names:
+        # determine paths for this package
+        __import__(package_name)
+        paths = sys.modules[package_name].__path__
+
+        # import all modules in these paths
+        for path in paths:
+            if os.path.exists(path):
+                for f in os.listdir(path):
+                    res = module_regexp.match(f)
+                    if res:
+                        __import__("%s.%s" % (package_name, res.group('modname')))
+
+    def add_subclass(classes, cls):
+        """Add a new class, and all of its subclasses, recursively."""
+        subclasses = cls.__subclasses__()
+        classes.update({
+            cls.__name__: {
+                'module': cls.__module__,
+                'subclasses': [x.__name__ for x in subclasses],
+            }
+        })
+        for subclass in subclasses:
+            add_subclass(classes, subclass)
+
+    classes = {}
+    for base_class in base_classes:
+        add_subclass(classes, base_class)
+
+    return classes
 
 
 def get_subclasses(klass):

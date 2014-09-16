@@ -35,7 +35,7 @@ from unittest import TestLoader, main
 import sys
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
-from vsc.utils.missing import get_class_for, nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+from vsc.utils.missing import avail_subclasses, get_class_for, nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.testing import EnhancedTestCase
 
 
@@ -264,6 +264,24 @@ class TestMissing(EnhancedTestCase):
         self.assertErrorRegex(ImportError, 'No module named .*', get_class_for, 'no.such.module', 'Test')
         self.assertErrorRegex(ImportError, 'Failed to import .*', get_class_for, 'vsc.utils', 'NoSuchClass')
 
+    def test_avail_subclasses(self):
+        """Test avail_subclasses function."""
+        from vsc.utils.run import Run
+        run_subclasses = avail_subclasses([Run], ['vsc.utils'])
+        # check whether all subclasses are found
+        avail_run_subclass_names = ['Run', 'RunAsync', 'RunAsyncLoop', 'RunAsyncLoopLog', 'RunAsyncLoopStdout',
+                                    'RunFile', 'RunLoop', 'RunLoopLog', 'RunLoopStdout', 'RunNoWorries', 'RunPty',
+                                    'RunQA', 'RunQALog', 'RunQAStdout', 'RunTimeout']
+        self.assertEqual(sorted(run_subclasses.keys()), avail_run_subclass_names)
+
+        # check module/subclasses for 'Run' base class
+        self.assertEqual(run_subclasses['Run']['module'], 'vsc.utils.run')
+        direct_run_subclasses = ['RunAsync', 'RunFile', 'RunLoop', 'RunNoWorries', 'RunPty']
+        self.assertEqual(sorted(run_subclasses['Run']['subclasses']), direct_run_subclasses)
+
+        # check module/subclasses for 'RunQA' class
+        self.assertEqual(run_subclasses['RunQA']['module'], 'vsc.utils.run')
+        self.assertEqual(sorted(run_subclasses['RunQA']['subclasses']), ['RunQALog', 'RunQAStdout'])
 
 def suite():
     """ return all the tests"""
