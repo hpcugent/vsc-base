@@ -314,7 +314,7 @@ class ExtOptionGroup(OptionGroup):
 
 class ExtOptionParser(OptionParser):
     """
-    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,     
+    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,
     C{-H} / C{--help} for all options.
 
     Pass options through environment. Like:
@@ -417,7 +417,7 @@ class ExtOptionParser(OptionParser):
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
             - make it dynamic, otherwise the class constant is shared between multiple instances
-            - class constant is used to avoid _action_taken as option in the __dict__ 
+            - class constant is used to avoid _action_taken as option in the __dict__
                 - only works by using reference to object
                 - same for _logaction_taken
         """
@@ -685,7 +685,7 @@ class GeneralOption(object):
         self.configfile_parser = self.CONFIGFILE_PARSER()
         self.configfile_remainder = {}
 
-        loggername = self.__class__.__name__
+        loggername = ''
         if prefixloggername:
             prefix = self.parser.get_env_options_prefix()
             if prefix is not None and len(prefix) > 0:
