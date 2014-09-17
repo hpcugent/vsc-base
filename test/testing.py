@@ -32,6 +32,7 @@ Tests for the vsc.utils.testing module.
 """
 import os
 import re
+import sys
 from unittest import TestLoader, main
 
 from vsc.utils.missing import shell_quote
@@ -73,6 +74,26 @@ class TestTesting(EnhancedTestCase):
         # provided regex pattern should match
         regex = "Pattern .* is found in .*"
         self.assertErrorRegex(AssertionError, regex, self.assertErrorRegex, Exception, 'foobar', os.remove, testfile)
+
+    def test_capture_stdout_stderr(self):
+        """Test capturing of stdout."""
+        orig_sys_stdout = sys.stdout
+        orig_sys_stderr = sys.stderr
+
+        self.mock_stdout(True)
+        print('test')
+        self.assertEqual(self.get_stdout(), "test\n")
+        sys.stdout.write('foo')
+        self.mock_stderr(True)
+        sys.stdout.write('bar\n')
+        sys.stderr.write('testerror')
+        self.assertEqual(self.get_stdout(), "test\nfoobar\n")
+        self.assertEqual(self.get_stderr(), "testerror")
+        self.mock_stdout(False)
+        self.mock_stderr(False)
+
+        self.assertEqual(sys.stdout, orig_sys_stdout)
+        self.assertEqual(sys.stderr, orig_sys_stderr)
 
 
 def suite():
