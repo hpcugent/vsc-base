@@ -336,33 +336,53 @@ def get_subclasses_dict(klass, include_base_class=False):
     return res
 
 
-def avail_subclasses_in(base_classes, pkg_names, include_base_classes=False):
-    """Determine subclasses for specificied base classes in modules in (only) specified packages."""
+def modules_in_pkg(pkg_path):
+    """Return list of module files in specified package path."""
+    modules = []
+    if not os.path.isdir(pkg_path):
+        # if the specified (relative) package path doesn't exist, try and determine the absolute path via sys.path
+        newpath = None
+        for sys_path_dir in sys.path:
+            abspath = os.path.join(sys_path_dir, pkg_path)
+            if os.path.isdir(abspath):
+                # FIXME: also worry about __init__.py's being present on every level?
+                newpath = abspath
+                break
+
+        if newpath is not None:
+            pkg_path = newpath
+        else:
+            # give up if we couldn't find an absolute path for the imported package
+            raise OSError("Can't browse package %s via non-existing relative path %s" % (pkg_name, pkg_path))
+
     module_regexp = re.compile(r"^(?P<modname>[^_%s].*)\.py$" % os.path.sep)
+    for potmod in os.listdir(pkg_path):
+        res = module_regexp.match(potmod)
+        if res:
+            modules.append(res.group('modname'))
+
+    return modules
+
+
+def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
+    """Determine subclasses for specificied base classes in modules in (only) specified packages."""
 
     def try_import(name):
-        """
-        Try import the specified package/module.
-        """
+        """Try import the specified package/module."""
         try:
-            return __import__(name)
+            # don't use return value of __import__ since it may not be the package itself but it's parent
+            __import__(name, globals())
+            return sys.modules[name]
         except ImportError:
             raise ImportError("avail_subclasses_in: failed to import %s" % name)
 
-    for pkg_name in pkg_names:
-        pkg = try_import(pkg_name)
-        # import all modules in package paths
-        for path in pkg.__path__:
-            for f in os.listdir(path):
-                res = module_regexp.match(f)
-                if res:
-                    try_import('%s.%s' % (pkg_name, res.group('modname')))
+    # import all modules in package path(s) before determining subclasses
+    pkg = try_import(pkg_name)
+    for pkg_path in pkg.__path__:
+        for mod in modules_in_pkg(pkg_path):
+            try_import('%s.%s' % (pkg_name, mod))
 
-    classes = {}
-    for base_class in base_classes:
-        classes.update(get_subclasses_dict(base_class, include_base_class=include_base_classes))
-
-    return classes
+    return get_subclasses_dict(base_class, include_base_class=include_base_class)
 
 
 class TryOrFail(object):

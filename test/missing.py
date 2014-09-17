@@ -29,10 +29,12 @@
 Tests for the vsc.utils.missing module.
 
 @author: Andy Georges (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
+import os
+import sys
 from random import randint, seed
 from unittest import TestLoader, main
-import sys
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
 import vsc.utils.missing
@@ -156,24 +158,24 @@ def disjoint_sets(s1, s2):
 class TestMissing(EnhancedTestCase):
     """Test for vsc.utils.missing module."""
 
-    def test_nub_length(self):
+    def xtest_nub_length(self):
         for lst in [], [0], [''], ['bla', 'bla'], [0, 4, 5, 8]:
             nubbed = nub(lst)
             self.assertTrue(len(lst) >= len(nubbed))
 
-    def test_nub_membership(self):
+    def xtest_nub_membership(self):
         for lst in [], [0], [''], ['bla', 'bla'], [0, 4, 5, 8]:
             nubbed = nub(lst)
             for x in lst:
                 self.assertTrue(x in nubbed)
 
-    def test_nub_order(self):
+    def xtest_nub_order(self):
         for lst in [], [0], [''], ['bla', 'bla'], [0, 4, 5, 8]:
             nubbed = nub(2 * lst)
             for (x, y) in [(x_, y_) for x_ in lst for y_ in lst]:
                 self.assertTrue((lst.index(x) <= lst.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
-    def test_tryorfail_no_sleep(self):
+    def xtest_tryorfail_no_sleep(self):
         """test for a retry that succeeds."""
 
         raise_boundary = 2
@@ -193,7 +195,7 @@ class TestMissing(EnhancedTestCase):
             except:
                 self.assertTrue(n < raise_boundary)
 
-    def test_frozendictknownkeys(self):
+    def xtest_frozendictknownkeys(self):
         """Tests for FrozenDictKnownKeys."""
 
         class TestFrozenDictKnownKeys(FrozenDictKnownKeys):
@@ -229,7 +231,7 @@ class TestMissing(EnhancedTestCase):
         tfdkk = TestFrozenDictKnownKeys({'foo': 'bar', 'foo2': 'bar2', 'foo3': 'bar3'}, ignore_unknown_keys=True)
         self.assertEqual(sorted(tfdkk.keys()), ['foo', 'foo2'])
 
-    def test_fixed_topological_sort(self):
+    def xtest_fixed_topological_sort(self):
         """
         test for a topologicalsort on a fixed set of DAGs
         """
@@ -242,7 +244,7 @@ class TestMissing(EnhancedTestCase):
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
-    def test_random_topological_sort(self):
+    def xtest_random_topological_sort(self):
         """
         test for a topological sort.
 
@@ -259,14 +261,14 @@ class TestMissing(EnhancedTestCase):
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
-    def test_get_class_for(self):
+    def xtest_get_class_for(self):
         """Test get_class_for."""
         from vsc.utils.generaloption import GeneralOption
         self.assertEqual(get_class_for('vsc.utils.generaloption', 'GeneralOption'), GeneralOption)
         self.assertErrorRegex(ImportError, 'No module named .*', get_class_for, 'no.such.module', 'Test')
         self.assertErrorRegex(ImportError, 'Failed to import .*', get_class_for, 'vsc.utils', 'NoSuchClass')
 
-    def test_get_subclasses(self):
+    def xtest_get_subclasses(self):
         """Test get_subclasses functions."""
         # T1
         # |-- T12
@@ -299,31 +301,35 @@ class TestMissing(EnhancedTestCase):
 
     def test_avail_subclasses_in(self):
         """Test avail_subclasses_in function."""
-        from vsc.utils.run import Run, RunFile, RunLoop
-        run_subclasses = avail_subclasses_in([Run], ['vsc.utils'])
-        # check whether all subclasses are found (not including Run itself, by default)
-        avail_run_subclass_names = ['RunAsync', 'RunAsyncLoop', 'RunAsyncLoopLog', 'RunAsyncLoopStdout',
-                                    'RunFile', 'RunLoop', 'RunLoopLog', 'RunLoopStdout', 'RunNoWorries', 'RunPty',
-                                    'RunQA', 'RunQALog', 'RunQAStdout', 'RunTimeout']
-        # exclude RunQAShort which is defined in test.run (to avoid test failure when whole suite it run)
-        obtained_run_subclass_names = [x.__name__ for x in run_subclasses.keys() if x.__name__ != 'RunQAShort']
-        self.assertEqual(sorted(obtained_run_subclass_names), avail_run_subclass_names)
+        orig_sys_path = sys.path[:]
+        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sandbox'))
 
-        # check module/subclasses for 'RunLoop' class (none)
-        runloop_subclass_names = ['RunAsyncLoop', 'RunLoopLog', 'RunLoopStdout', 'RunQA', 'RunTimeout']
-        self.assertEqual(sorted([x.__name__ for x in run_subclasses[RunLoop]]), runloop_subclass_names)
+        # companion testmodulebis is purposely not imported
+        from testpkg.testmodule import TestModA, TestModA1, TestModA2
 
-        # check module/subclasses for 'RunFile' class (none)
-        self.assertEqual(sorted([x.__name__ for x in run_subclasses[RunFile]]), [])
+        subclasses = avail_subclasses_in(TestModA, 'testpkg')
+        # verify whether all subclasses are found (not including base class itself, by default)
+        test_subclass_names = ['TestModA1', 'TestModA1B', 'TestModA1B1', 'TestModA2', 'TestModA3']
+        self.assertEqual(sorted([x.__name__ for x in subclasses]), test_subclass_names)
+
+        # verify (direct) subclasses for one of the subclasses of the original base class
+        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA1]]), ['TestModA1B'])
+
+        # check subclasses for class without subclasses
+        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA2]]), [])
 
         # check include_base_classes named argument
-        run_subclasses = avail_subclasses_in([Run], ['vsc.utils'], include_base_classes=True)
-        # check module/subclasses for 'Run' base class
-        direct_run_subclass_names = ['RunAsync', 'RunFile', 'RunLoop', 'RunNoWorries', 'RunPty']
-        self.assertEqual(sorted([x.__name__ for x in run_subclasses[Run]]), direct_run_subclass_names)
+        subclasses = avail_subclasses_in(TestModA, 'testpkg', include_base_class=True)
+        self.assertEqual(sorted([x.__name__ for x in subclasses]), ['TestModA'] + test_subclass_names)
 
-        # check module/subclasses for 'RunLoop' class (none)
-        self.assertEqual(sorted([x.__name__ for x in run_subclasses[RunLoop]]), runloop_subclass_names)
+        # verify (direct) subclasses for one of the subclasses of the original base class
+        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA1]]), ['TestModA1B'])
+
+        # check subclasses for class without subclasses
+        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA2]]), [])
+
+        # cleanup
+        sys.path = orig_sys_path
 
 def suite():
     """ return all the tests"""
