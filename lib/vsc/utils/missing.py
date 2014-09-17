@@ -312,18 +312,6 @@ def get_class_for(modulepath, class_name):
     return klass
 
 
-def get_subclasses(klass, include_base_class=False):
-    """Get list of all subclasses, recursively from the specified base class."""
-    res = set()
-    if include_base_class:
-        res.add(klass)
-    for cls in klass.__subclasses__():
-        # always include base class for recursive call
-        res.update(get_subclasses(cls, include_base_class=True))
-        res.add(cls)
-    return list(res)
-
-
 def get_subclasses_dict(klass, include_base_class=False):
     """Get dict with subclasses per classes, recursively from the specified base class."""
     res = {}
@@ -334,6 +322,11 @@ def get_subclasses_dict(klass, include_base_class=False):
         # always include base class for recursive call
         res.update(get_subclasses_dict(subclass, include_base_class=True))
     return res
+
+
+def get_subclasses(klass, include_base_class=False):
+    """Get list of all subclasses, recursively from the specified base class."""
+    return get_subclasses_dict(klass, include_base_class=include_base_class).keys()
 
 
 def modules_in_pkg(pkg_path):
