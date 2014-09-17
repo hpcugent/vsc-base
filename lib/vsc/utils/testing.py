@@ -109,3 +109,4 @@ class EnhancedTestCase(TestCase):
         """Cleanup after running a test."""
         self.mock_stdout(False)
         self.mock_stderr(False)
+        super(EnhancedTestCase, self).tearDown()
