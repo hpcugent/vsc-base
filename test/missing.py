@@ -158,24 +158,24 @@ def disjoint_sets(s1, s2):
 class TestMissing(EnhancedTestCase):
     """Test for vsc.utils.missing module."""
 
-    def xtest_nub_length(self):
+    def test_nub_length(self):
         for lst in [], [0], [''], ['bla', 'bla'], [0, 4, 5, 8]:
             nubbed = nub(lst)
             self.assertTrue(len(lst) >= len(nubbed))
 
-    def xtest_nub_membership(self):
+    def test_nub_membership(self):
         for lst in [], [0], [''], ['bla', 'bla'], [0, 4, 5, 8]:
             nubbed = nub(lst)
             for x in lst:
                 self.assertTrue(x in nubbed)
 
-    def xtest_nub_order(self):
+    def test_nub_order(self):
         for lst in [], [0], [''], ['bla', 'bla'], [0, 4, 5, 8]:
             nubbed = nub(2 * lst)
             for (x, y) in [(x_, y_) for x_ in lst for y_ in lst]:
                 self.assertTrue((lst.index(x) <= lst.index(y)) == (nubbed.index(x) <= nubbed.index(y)))
 
-    def xtest_tryorfail_no_sleep(self):
+    def test_tryorfail_no_sleep(self):
         """test for a retry that succeeds."""
 
         raise_boundary = 2
@@ -195,7 +195,7 @@ class TestMissing(EnhancedTestCase):
             except:
                 self.assertTrue(n < raise_boundary)
 
-    def xtest_frozendictknownkeys(self):
+    def test_frozendictknownkeys(self):
         """Tests for FrozenDictKnownKeys."""
 
         class TestFrozenDictKnownKeys(FrozenDictKnownKeys):
@@ -231,7 +231,7 @@ class TestMissing(EnhancedTestCase):
         tfdkk = TestFrozenDictKnownKeys({'foo': 'bar', 'foo2': 'bar2', 'foo3': 'bar3'}, ignore_unknown_keys=True)
         self.assertEqual(sorted(tfdkk.keys()), ['foo', 'foo2'])
 
-    def xtest_fixed_topological_sort(self):
+    def test_fixed_topological_sort(self):
         """
         test for a topologicalsort on a fixed set of DAGs
         """
@@ -244,7 +244,7 @@ class TestMissing(EnhancedTestCase):
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
-    def xtest_random_topological_sort(self):
+    def test_random_topological_sort(self):
         """
         test for a topological sort.
 
@@ -261,14 +261,14 @@ class TestMissing(EnhancedTestCase):
 
             self.assertTrue(len(sorting) == len(g.keys()))
 
-    def xtest_get_class_for(self):
+    def test_get_class_for(self):
         """Test get_class_for."""
         from vsc.utils.generaloption import GeneralOption
         self.assertEqual(get_class_for('vsc.utils.generaloption', 'GeneralOption'), GeneralOption)
         self.assertErrorRegex(ImportError, 'No module named .*', get_class_for, 'no.such.module', 'Test')
         self.assertErrorRegex(ImportError, 'Failed to import .*', get_class_for, 'vsc.utils', 'NoSuchClass')
 
-    def xtest_get_subclasses(self):
+    def test_get_subclasses(self):
         """Test get_subclasses functions."""
         # T1
         # |-- T12
