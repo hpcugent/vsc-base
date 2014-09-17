@@ -353,7 +353,7 @@ def modules_in_pkg(pkg_path):
             pkg_path = newpath
         else:
             # give up if we couldn't find an absolute path for the imported package
-            raise OSError("Can't browse package %s via non-existing relative path %s" % (pkg_name, pkg_path))
+            raise OSError("Can't browse package via non-existing path %s" % pkg_path)
 
     module_regexp = re.compile(r"^(?P<modname>[^_%s].*)\.py$" % os.path.sep)
     for potmod in os.listdir(pkg_path):
@@ -373,8 +373,8 @@ def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
             # don't use return value of __import__ since it may not be the package itself but it's parent
             __import__(name, globals())
             return sys.modules[name]
-        except ImportError:
-            raise ImportError("avail_subclasses_in: failed to import %s" % name)
+        except ImportError, err:
+            raise ImportError("avail_subclasses_in: failed to import %s: %s" % (name, err))
 
     # import all modules in package path(s) before determining subclasses
     pkg = try_import(pkg_name)
