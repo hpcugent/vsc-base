@@ -33,11 +33,18 @@ Test utilities.
 
 import re
 import sys
+from cStringIO import StringIO
 from unittest import TestCase
 
 
 class EnhancedTestCase(TestCase):
     """Enhanced test case, provides extra functionality (e.g. an assertErrorRegex method)."""
+
+    def setUp(self):
+        """Prepare test case."""
+        super(EnhancedTestCase, self).setUp()
+        self.orig_sys_stdout = sys.stdout
+        self.orig_sys_stderr = sys.stderr
 
     def convert_exception_to_str(self, err):
         """Convert an Exception instance to a string."""
@@ -76,3 +83,32 @@ class EnhancedTestCase(TestCase):
                 regex = re.compile(regex)
             self.assertTrue(regex.search(msg), "Pattern '%s' is found in '%s'" % (regex.pattern, msg))
 
+    def mock_stdout(self, enable):
+        """Enable/disable mocking stdout."""
+        sys.stdout.flush()
+        if enable:
+            sys.stdout = StringIO()
+        else:
+            sys.stdout = self.orig_sys_stdout
+
+    def mock_stderr(self, enable):
+        """Enable/disable mocking stdout."""
+        sys.stderr.flush()
+        if enable:
+            sys.stderr = StringIO()
+        else:
+            sys.stderr = self.orig_sys_stderr
+
+    def get_stdout(self):
+        """Return output captured from stdout until now."""
+        return sys.stdout.getvalue()
+
+    def get_stderr(self):
+        """Return output captured from stderr until now."""
+        return sys.stderr.getvalue()
+
+    def tearDown(self):
+        """Cleanup after running a test."""
+        self.mock_stdout(False)
+        self.mock_stderr(False)
+        super(EnhancedTestCase, self).tearDown()
