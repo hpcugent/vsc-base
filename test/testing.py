@@ -77,6 +77,9 @@ class TestTesting(EnhancedTestCase):
 
     def test_capture_stdout_stderr(self):
         """Test capturing of stdout."""
+        orig_sys_stdout = sys.stdout
+        orig_sys_stderr = sys.stderr
+
         self.mock_stdout(True)
         print('test')
         self.assertEqual(self.get_stdout(), "test\n")
@@ -88,6 +91,9 @@ class TestTesting(EnhancedTestCase):
         self.assertEqual(self.get_stderr(), "testerror")
         self.mock_stdout(False)
         self.mock_stderr(False)
+
+        self.assertEqual(sys.stdout, orig_sys_stdout)
+        self.assertEqual(sys.stderr, orig_sys_stderr)
 
 
 def suite():

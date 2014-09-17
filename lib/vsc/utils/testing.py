@@ -85,6 +85,7 @@ class EnhancedTestCase(TestCase):
 
     def mock_stdout(self, enable):
         """Enable/disable mocking stdout."""
+        sys.stdout.flush()
         if enable:
             sys.stdout = StringIO()
         else:
@@ -92,6 +93,7 @@ class EnhancedTestCase(TestCase):
 
     def mock_stderr(self, enable):
         """Enable/disable mocking stdout."""
+        sys.stderr.flush()
         if enable:
             sys.stderr = StringIO()
         else:
