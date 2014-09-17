@@ -37,7 +37,6 @@ from random import randint, seed
 from unittest import TestLoader, main
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
-import vsc.utils.missing
 from vsc.utils.missing import avail_subclasses_in, get_class_for, get_subclasses, get_subclasses_dict, nub
 from vsc.utils.missing import topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.testing import EnhancedTestCase
