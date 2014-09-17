@@ -337,7 +337,7 @@ def get_subclasses_dict(klass, include_base_class=False):
 
 
 def avail_subclasses_in(base_classes, pkg_names, include_base_classes=False):
-    """Return subclasses for specificied base classes in modules in specified packages."""
+    """Determine subclasses for specificied base classes in modules in (only) specified packages."""
     module_regexp = re.compile(r"^(?P<modname>[^_%s].*)\.py$" % os.path.sep)
 
     def try_import(name):
