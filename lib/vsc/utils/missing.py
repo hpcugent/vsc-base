@@ -312,50 +312,57 @@ def get_class_for(modulepath, class_name):
     return klass
 
 
-def avail_subclasses(base_classes, package_names, include_base_classes=True):
-    """Return detailed list of subclasses for specificied base classes in modules in specified packages."""
-    module_regexp = re.compile(r"^(?P<modname>[^_].*)\.py$")
+def get_subclasses(klass, include_base_class=False):
+    """Get list of all subclasses, recursively from the specified base class."""
+    res = set()
+    if include_base_class:
+        res.add(klass)
+    for cls in klass.__subclasses__():
+        # always include base class for recursive call
+        res.update(get_subclasses(cls, include_base_class=True))
+        res.add(cls)
+    return list(res)
 
-    for package_name in package_names:
-        # determine paths for this package
-        __import__(package_name)
-        paths = sys.modules[package_name].__path__
 
-        # import all modules in these paths
-        for path in paths:
-            if os.path.exists(path):
-                for f in os.listdir(path):
-                    res = module_regexp.match(f)
-                    if res:
-                        __import__("%s.%s" % (package_name, res.group('modname')))
+def get_subclasses_dict(klass, include_base_class=False):
+    """Get dict with subclasses per classes, recursively from the specified base class."""
+    res = {}
+    subclasses = klass.__subclasses__()
+    if include_base_class:
+        res.update({klass: subclasses})
+    for subclass in subclasses:
+        # always include base class for recursive call
+        res.update(get_subclasses_dict(subclass, include_base_class=True))
+    return res
 
-    def add_subclass(classes, cls):
-        """Add a new class, and all of its subclasses, recursively."""
-        subclasses = cls.__subclasses__()
-        if include_base_classes or cls not in base_classes:
-            classes.update({
-                cls.__name__: {
-                    'module': cls.__module__,
-                    'subclasses': [x.__name__ for x in subclasses],
-                }
-            })
-        for subclass in subclasses:
-            add_subclass(classes, subclass)
+
+def avail_subclasses_in(base_classes, pkg_names, include_base_classes=False):
+    """Return subclasses for specificied base classes in modules in specified packages."""
+    module_regexp = re.compile(r"^(?P<modname>[^_%s].*)\.py$" % os.path.sep)
+
+    def try_import(name):
+        """
+        Try import the specified package/module.
+        """
+        try:
+            return __import__(name)
+        except ImportError:
+            raise ImportError("avail_subclasses: failed to import %s" % name)
+
+    for pkg_name in pkg_names:
+        pkg = try_import(pkg_name)
+        # import all modules in package paths
+        for path in pkg.__path__:
+            for f in os.listdir(path):
+                res = module_regexp.match(f)
+                if res:
+                    try_import('%s.%s' % (pkg_name, res.group('modname')))
 
     classes = {}
     for base_class in base_classes:
-        add_subclass(classes, base_class)
+        classes.update(get_subclasses_dict(base_class, include_base_class=include_base_classes))
 
     return classes
-
-
-def get_subclasses(klass):
-    """Get all subclasses recursively"""
-    res = []
-    for cl in klass.__subclasses__():
-        res.extend(get_subclasses(cl))
-        res.append(cl)
-    return res
 
 
 class TryOrFail(object):

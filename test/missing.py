@@ -35,7 +35,9 @@ from unittest import TestLoader, main
 import sys
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
-from vsc.utils.missing import avail_subclasses, get_class_for, nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+import vsc.utils.missing
+from vsc.utils.missing import avail_subclasses_in, get_class_for, get_subclasses, get_subclasses_dict, nub
+from vsc.utils.missing import topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.testing import EnhancedTestCase
 
 
@@ -264,27 +266,64 @@ class TestMissing(EnhancedTestCase):
         self.assertErrorRegex(ImportError, 'No module named .*', get_class_for, 'no.such.module', 'Test')
         self.assertErrorRegex(ImportError, 'Failed to import .*', get_class_for, 'vsc.utils', 'NoSuchClass')
 
-    def test_avail_subclasses(self):
-        """Test avail_subclasses function."""
-        from vsc.utils.run import Run
-        run_subclasses = avail_subclasses([Run], ['vsc.utils'])
-        # check whether all subclasses are found
-        avail_run_subclass_names = ['Run', 'RunAsync', 'RunAsyncLoop', 'RunAsyncLoopLog', 'RunAsyncLoopStdout',
+    def test_get_subclasses(self):
+        """Test get_subclasses functions."""
+        # T1
+        # |-- T12
+        #     |-- T123
+        # |-- T13
+        class T1(object):
+            pass
+        class T12(T1):
+            pass
+        class T123(T12):
+            pass
+        class T13(T1):
+            pass
+
+        # get_subclasses_dict
+        expected = {
+            T12: [T123],
+            T13: [],
+            T123: [],
+        }
+        self.assertEqual(get_subclasses_dict(T1), expected)
+        expected.update({
+            T1: [T12, T13],
+        })
+        self.assertEqual(get_subclasses_dict(T1, include_base_class=True), expected)
+
+        # get_subclasses
+        self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
+        self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
+
+    def test_avail_subclasses_in(self):
+        """Test avail_subclasses_in function."""
+        from vsc.utils.run import Run, RunFile, RunLoop
+        run_subclasses = avail_subclasses_in([Run], ['vsc.utils'])
+        # check whether all subclasses are found (not including Run itself, by default)
+        avail_run_subclass_names = ['RunAsync', 'RunAsyncLoop', 'RunAsyncLoopLog', 'RunAsyncLoopStdout',
                                     'RunFile', 'RunLoop', 'RunLoopLog', 'RunLoopStdout', 'RunNoWorries', 'RunPty',
                                     'RunQA', 'RunQALog', 'RunQAStdout', 'RunTimeout']
-        self.assertEqual(sorted(run_subclasses.keys()), avail_run_subclass_names)
+        # exclude RunQAShort which is defined in test.run (to avoid test failure when whole suite it run)
+        obtained_run_subclass_names = [x.__name__ for x in run_subclasses.keys() if x.__name__ != 'RunQAShort']
+        self.assertEqual(sorted(obtained_run_subclass_names), avail_run_subclass_names)
 
-        # check module/subclasses for 'Run' base class
-        self.assertEqual(run_subclasses['Run']['module'], 'vsc.utils.run')
-        direct_run_subclasses = ['RunAsync', 'RunFile', 'RunLoop', 'RunNoWorries', 'RunPty']
-        self.assertEqual(sorted(run_subclasses['Run']['subclasses']), direct_run_subclasses)
+        # check module/subclasses for 'RunLoop' class (none)
+        runloop_subclass_names = ['RunAsyncLoop', 'RunLoopLog', 'RunLoopStdout', 'RunQA', 'RunTimeout']
+        self.assertEqual(sorted([x.__name__ for x in run_subclasses[RunLoop]]), runloop_subclass_names)
 
-        # check module/subclasses for 'RunQA' class
-        self.assertEqual(run_subclasses['RunQA']['module'], 'vsc.utils.run')
-        self.assertEqual(sorted(run_subclasses['RunQA']['subclasses']), ['RunQALog', 'RunQAStdout'])
+        # check module/subclasses for 'RunFile' class (none)
+        self.assertEqual(sorted([x.__name__ for x in run_subclasses[RunFile]]), [])
 
         # check include_base_classes named argument
-        self.assertFalse('Run' in avail_subclasses([Run], ['vsc.utils'], include_base_classes=False))
+        run_subclasses = avail_subclasses_in([Run], ['vsc.utils'], include_base_classes=True)
+        # check module/subclasses for 'Run' base class
+        direct_run_subclass_names = ['RunAsync', 'RunFile', 'RunLoop', 'RunNoWorries', 'RunPty']
+        self.assertEqual(sorted([x.__name__ for x in run_subclasses[Run]]), direct_run_subclass_names)
+
+        # check module/subclasses for 'RunLoop' class (none)
+        self.assertEqual(sorted([x.__name__ for x in run_subclasses[RunLoop]]), runloop_subclass_names)
 
 def suite():
     """ return all the tests"""
