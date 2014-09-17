@@ -44,6 +44,7 @@ class EnhancedTestCase(TestCase):
         """Enhanced constructor."""
         super(EnhancedTestCase, self).__init__(*args, **kwargs)
         self.orig_sys_stdout = sys.stdout
+        self.orig_sys_stderr = sys.stderr
 
     def convert_exception_to_str(self, err):
         """Convert an Exception instance to a string."""
@@ -82,19 +83,29 @@ class EnhancedTestCase(TestCase):
                 regex = re.compile(regex)
             self.assertTrue(regex.search(msg), "Pattern '%s' is found in '%s'" % (regex.pattern, msg))
 
-    def capture_stdout(self):
-        """Start capturing stdout."""
-        stringio = StringIO()
-        sys.stdout = stringio
+    def mock_stdout(self, enable):
+        """Enable/disable mocking stdout."""
+        if enable:
+            sys.stdout = StringIO()
+        else:
+            sys.stdout = self.orig_sys_stdout
+
+    def mock_stderr(self, enable):
+        """Enable/disable mocking stdout."""
+        if enable:
+            sys.stderr = StringIO()
+        else:
+            sys.stderr = self.orig_sys_stderr
 
     def get_stdout(self):
         """Return output captured from stdout until now."""
         return sys.stdout.getvalue()
 
-    def restore_stdout(self):
-        """Restore stdout (stop capturing)."""
-        sys.stdout = self.orig_sys_stdout
+    def get_stderr(self):
+        """Return output captured from stderr until now."""
+        return sys.stderr.getvalue()
 
     def tearDown(self):
         """Cleanup after running a test."""
-        self.restore_stdout()
+        self.mock_stdout(False)
+        self.mock_stderr(False)

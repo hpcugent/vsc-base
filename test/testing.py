@@ -75,15 +75,20 @@ class TestTesting(EnhancedTestCase):
         regex = "Pattern .* is found in .*"
         self.assertErrorRegex(AssertionError, regex, self.assertErrorRegex, Exception, 'foobar', os.remove, testfile)
 
-    def test_capture_stdout(self):
+    def test_capture_stdout_stderr(self):
         """Test capturing of stdout."""
-        self.capture_stdout()
+        self.mock_stdout(True)
         print('test')
         self.assertEqual(self.get_stdout(), "test\n")
         sys.stdout.write('foo')
+        self.mock_stderr(True)
         sys.stdout.write('bar\n')
+        sys.stderr.write('testerror')
         self.assertEqual(self.get_stdout(), "test\nfoobar\n")
-        self.restore_stdout()
+        self.assertEqual(self.get_stderr(), "testerror")
+        self.mock_stdout(False)
+        self.mock_stderr(False)
+
 
 def suite():
     """ return all the tests"""
