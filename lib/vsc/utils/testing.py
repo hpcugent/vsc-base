@@ -33,11 +33,17 @@ Test utilities.
 
 import re
 import sys
+from cStringIO import StringIO
 from unittest import TestCase
 
 
 class EnhancedTestCase(TestCase):
     """Enhanced test case, provides extra functionality (e.g. an assertErrorRegex method)."""
+
+    def __init__(self, *args, **kwargs):
+        """Enhanced constructor."""
+        super(EnhancedTestCase, self).__init__(*args, **kwargs)
+        self.orig_sys_stdout = sys.stdout
 
     def convert_exception_to_str(self, err):
         """Convert an Exception instance to a string."""
@@ -76,3 +82,19 @@ class EnhancedTestCase(TestCase):
                 regex = re.compile(regex)
             self.assertTrue(regex.search(msg), "Pattern '%s' is found in '%s'" % (regex.pattern, msg))
 
+    def capture_stdout(self):
+        """Start capturing stdout."""
+        stringio = StringIO()
+        sys.stdout = stringio
+
+    def get_stdout(self):
+        """Return output captured from stdout until now."""
+        return sys.stdout.getvalue()
+
+    def restore_stdout(self):
+        """Restore stdout (stop capturing)."""
+        sys.stdout = self.orig_sys_stdout
+
+    def tearDown(self):
+        """Cleanup after running a test."""
+        self.restore_stdout()
