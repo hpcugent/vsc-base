@@ -40,9 +40,9 @@ from unittest import TestCase
 class EnhancedTestCase(TestCase):
     """Enhanced test case, provides extra functionality (e.g. an assertErrorRegex method)."""
 
-    def __init__(self, *args, **kwargs):
-        """Enhanced constructor."""
-        super(EnhancedTestCase, self).__init__(*args, **kwargs)
+    def setUp(self):
+        """Prepare test case."""
+        super(EnhancedTestCase, self).setUp()
         self.orig_sys_stdout = sys.stdout
         self.orig_sys_stderr = sys.stderr
 
