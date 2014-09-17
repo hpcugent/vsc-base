@@ -347,7 +347,7 @@ def avail_subclasses_in(base_classes, pkg_names, include_base_classes=False):
         try:
             return __import__(name)
         except ImportError:
-            raise ImportError("avail_subclasses: failed to import %s" % name)
+            raise ImportError("avail_subclasses_in: failed to import %s" % name)
 
     for pkg_name in pkg_names:
         pkg = try_import(pkg_name)
