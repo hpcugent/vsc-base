@@ -332,7 +332,7 @@ def get_subclasses(klass, include_base_class=False):
 def modules_in_pkg(pkg_path):
     """Return list of module files in specified package path."""
     modules = []
-    if not os.path.isdir(pkg_path):
+    if not os.path.isabs(pkg_path) and not os.path.isdir(pkg_path):
         # if the specified (relative) package path doesn't exist, try and determine the absolute path via sys.path
         newpath = None
         for sys_path_dir in sys.path:
@@ -355,15 +355,11 @@ def modules_in_pkg(pkg_path):
             pkg_path = newpath
         else:
             # give up if we couldn't find an absolute path for the imported package
-            raise OSError("Can't browse package via non-existing path %s" % pkg_path)
+            tup = (pkg_path, sys.path)
+            raise OSError("Can't browse package via non-existing relative path '%s', not found in sys.path (%s)" % tup)
 
-    module_regexp = re.compile(r"^(?P<modname>[^_%s].*)\.py$" % os.path.sep)
-    for potmod in os.listdir(pkg_path):
-        res = module_regexp.match(potmod)
-        if res:
-            modules.append(res.group('modname'))
-
-    return modules
+    module_regexp = re.compile(r"^(?P<modname>[^_].*)\.py$")
+    return [res.group('modname') for res in map(module_regexp.match, os.listdir(pkg_path)) if res]
 
 
 def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
