@@ -338,8 +338,17 @@ def modules_in_pkg(pkg_path):
         for sys_path_dir in sys.path:
             abspath = os.path.join(sys_path_dir, pkg_path)
             if os.path.isdir(abspath):
-                # FIXME: also worry about __init__.py's being present on every level?
-                newpath = abspath
+                # also make sure an __init__.py is in place in every subdirectory
+                is_pkg = True
+                subdir = ''
+                for pkg_path_dir in pkg_path.split(os.path.sep):
+                    subdir = os.path.join(subdir, pkg_path_dir)
+                    if not os.path.isfile(os.path.join(sys_path_dir, subdir, '__init__.py')):
+                        is_pkg = False
+                        sys.stderr.write('No __init__.py in %s\n' % subdir)
+                        break
+                if is_pkg:
+                    newpath = abspath
                 break
 
         if newpath is not None:
