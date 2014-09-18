@@ -276,8 +276,8 @@ class TestMissing(EnhancedTestCase):
         vsc_utils_modules = ['__init__', 'affinity', 'asyncprocess', 'daemon', 'dateandtime', 'fancylogger',
                              'frozendict', 'generaloption', 'mail', 'missing', 'optcomplete', 'patterns', 'rest',
                              'run', 'testing', 'wrapper']
-        self.assertEqual(modules_in_pkg_path(vsc.utils.__path__[0]), vsc_utils_modules)
-        self.assertEqual(modules_in_pkg_path('vsc/utils'), vsc_utils_modules)
+        self.assertEqual(sorted(modules_in_pkg_path(vsc.utils.__path__[0])), vsc_utils_modules)
+        self.assertEqual(sorted(modules_in_pkg_path('vsc/utils')), vsc_utils_modules)
 
         # toy testcase
         testpkg = 'thisisjustatestpkg'
@@ -292,10 +292,10 @@ class TestMissing(EnhancedTestCase):
         msg_regex = "Can't browse package via non-existing relative path '%s', not found in sys.path" % testpkg
         self.assertErrorRegex(OSError, msg_regex, modules_in_pkg_path, testpkg)
         # works fine via absolute path to package directory
-        self.assertEqual(modules_in_pkg_path(os.path.join(tmpdir, testpkg)), ['__init__', 'testmod'])
+        self.assertEqual(sorted(modules_in_pkg_path(os.path.join(tmpdir, testpkg))), ['__init__', 'testmod'])
         # also found via relative path when parent path is in sys.path
         sys.path.append(tmpdir)
-        self.assertEqual(modules_in_pkg_path(testpkg), ['__init__', 'testmod'])
+        self.assertEqual(sorted(modules_in_pkg_path(testpkg)), ['__init__', 'testmod'])
         # subdirectories with a missing __init__.py are not considered package
         os.remove(os.path.join(tmpdir, testpkg, '__init__.py'))
         self.assertErrorRegex(OSError, msg_regex, modules_in_pkg_path, testpkg)
