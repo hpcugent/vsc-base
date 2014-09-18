@@ -51,6 +51,9 @@ from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
 
 
+_log = fancylogger.getLogger('vsc.utils.missing')
+
+
 def partial(func, *args, **keywords):
     """
     Return a new partial object which when called will behave like func called with the positional arguments args
@@ -329,15 +332,16 @@ def get_subclasses(klass, include_base_class=False):
     return get_subclasses_dict(klass, include_base_class=include_base_class).keys()
 
 
-def modules_in_pkg(pkg_path):
+def modules_in_pkg_path(pkg_path):
     """Return list of module files in specified package path."""
-    modules = []
+    # if the specified (relative) package path doesn't exist, try and determine the absolute path via sys.path
     if not os.path.isabs(pkg_path) and not os.path.isdir(pkg_path):
-        # if the specified (relative) package path doesn't exist, try and determine the absolute path via sys.path
+        _log.debug("Obtained non-existing relative package path '%s', will try to figure out absolute path" % pkg_path)
         newpath = None
         for sys_path_dir in sys.path:
             abspath = os.path.join(sys_path_dir, pkg_path)
             if os.path.isdir(abspath):
+                _log.debug("Found absolute path %s for package path %s, verifying it" % (abspath, pkg_path))
                 # also make sure an __init__.py is in place in every subdirectory
                 is_pkg = True
                 subdir = ''
@@ -345,22 +349,25 @@ def modules_in_pkg(pkg_path):
                     subdir = os.path.join(subdir, pkg_path_dir)
                     if not os.path.isfile(os.path.join(sys_path_dir, subdir, '__init__.py')):
                         is_pkg = False
-                        sys.stderr.write('No __init__.py in %s\n' % subdir)
+                        tup = (subdir, abspath, pkg_path)
+                        _log.debug("No __init__.py found in %s, %s is not a valid absolute path for pkg_path %s" % tup)
                         break
                 if is_pkg:
                     newpath = abspath
-                break
+                    break
 
         if newpath is not None:
             pkg_path = newpath
+            _log.debug("Found absolute package path %s" % pkg_path)
         else:
             # give up if we couldn't find an absolute path for the imported package
             tup = (pkg_path, sys.path)
             raise OSError("Can't browse package via non-existing relative path '%s', not found in sys.path (%s)" % tup)
 
-    module_regexp = re.compile(r"^(?P<modname>[^_].*)\.py$")
-    return [res.group('modname') for res in map(module_regexp.match, os.listdir(pkg_path)) if res]
-
+    module_regexp = re.compile(r"^(?P<modname>[^_].*|__init__)\.py$")
+    modules = [res.group('modname') for res in map(module_regexp.match, os.listdir(pkg_path)) if res]
+    _log.debug("List of modules for package in %s: %s" % (pkg_path, modules))
+    return modules
 
 def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
     """Determine subclasses for specificied base classes in modules in (only) specified packages."""
@@ -377,8 +384,9 @@ def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
     # import all modules in package path(s) before determining subclasses
     pkg = try_import(pkg_name)
     for pkg_path in pkg.__path__:
-        for mod in modules_in_pkg(pkg_path):
-            try_import('%s.%s' % (pkg_name, mod))
+        for mod in modules_in_pkg_path(pkg_path):
+            if not mod.startswith('__init__'):
+                try_import('%s.%s' % (pkg_name, mod))
 
     return get_subclasses_dict(base_class, include_base_class=include_base_class)
 
@@ -395,16 +403,15 @@ class TryOrFail(object):
 
     def __call__(self, function):
         def new_function(*args, **kwargs):
-            log = fancylogger.getLogger(function.__name__)
             for i in xrange(0, self.n):
                 try:
                     return function(*args, **kwargs)
                 except self.exceptions, err:
                     if i == self.n - 1:
                         raise
-                    log.exception("try_or_fail caught an exception - attempt %d: %s" % (i, err))
+                    _log.exception("try_or_fail caught an exception - attempt %d: %s" % (i, err))
                     if self.sleep > 0:
-                        log.warning("try_or_fail is sleeping for %d seconds before the next attempt" % (self.sleep,))
+                        _log.warning("try_or_fail is sleeping for %d seconds before the next attempt" % (self.sleep,))
                         time.sleep(self.sleep)
 
         return new_function
