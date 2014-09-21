@@ -356,18 +356,19 @@ def modules_in_pkg_path(pkg_path):
                     newpath = abspath
                     break
 
-        if newpath is not None:
-            pkg_path = newpath
-            _log.debug("Found absolute package path %s" % pkg_path)
-        else:
+        if newpath is None:
             # give up if we couldn't find an absolute path for the imported package
             tup = (pkg_path, sys.path)
             raise OSError("Can't browse package via non-existing relative path '%s', not found in sys.path (%s)" % tup)
+        else:
+            pkg_path = newpath
+            _log.debug("Found absolute package path %s" % pkg_path)
 
     module_regexp = re.compile(r"^(?P<modname>[^_].*|__init__)\.py$")
     modules = [res.group('modname') for res in map(module_regexp.match, os.listdir(pkg_path)) if res]
     _log.debug("List of modules for package in %s: %s" % (pkg_path, modules))
     return modules
+
 
 def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
     """Determine subclasses for specificied base classes in modules in (only) specified packages."""
@@ -385,7 +386,9 @@ def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
     pkg = try_import(pkg_name)
     for pkg_path in pkg.__path__:
         for mod in modules_in_pkg_path(pkg_path):
+            # no need to directly import __init__ (already done by importing package)
             if not mod.startswith('__init__'):
+                _log.debug("Importing module '%s' from package '%s'" % (mod, pkg_name))
                 try_import('%s.%s' % (pkg_name, mod))
 
     return get_subclasses_dict(base_class, include_base_class=include_base_class)
