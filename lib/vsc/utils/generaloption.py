@@ -72,19 +72,36 @@ def set_columns(cols=None):
         os.environ['COLUMNS'] = "%s" % cols
 
 
+def what_str_list_tuple(name):
+    """Given name, return type and separator"""
+    sep = ','
+    helpsep = 'comma'
+    if name.endswith('path'):
+        sep = os.pathsep
+        helpsep = 'ospath'
+
+    klass = None
+    if name.startswith('strlist'):
+        klass = list
+    elif name.startswith('strtuple'):
+        klass = tuple
+
+    return sep, klass, helpsep
+
 def check_str_list_tuple(option, opt, value):
     """
     check function for strlist and strtuple type
         assumes value is comma-separated list
         returns list or tuple of strings
     """
-    split = value.split(',')
-    if option.type == 'strlist':
-        return split
-    elif option.type == 'strtuple':
-        return tuple(split)
+    sep, klass, _ = what_str_list_tuple(option.type)
+
+    split = value.split(sep)
+
+    if klass:
+        return klass(split)
     else:
-        err = _("check_strlist_strtuple: unsupported type %s" % option.type)
+        err = _gettext("check_strlist_strtuple: unsupported type %s" % option.type)
         raise OptionValueError(err)
 
 
@@ -111,6 +128,8 @@ class ExtOption(CompleterOption):
            
         Types:
           - strlist, strtuple : convert comma-separated list in a list resp. tuple of strings     
+          - strlistpath, strtuplepath : using os.pathsep, convert pathsep-separated list in a list resp. tuple of strings
+              - yes, this is OS-dependent; but such is the reason to use it.
     """
     EXTEND_SEPARATOR = ','
 
@@ -127,10 +146,9 @@ class ExtOption(CompleterOption):
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
-    TYPE_CHECKER = dict([('strlist', check_str_list_tuple),
-                         ('strtuple', check_str_list_tuple),
-                         ] + Option.TYPE_CHECKER.items())
-    TYPES = tuple(['strlist', 'strtuple'] + list(Option.TYPES))
+    TYPE_STRLIST = ['str%s%s' % (klass, name) for klass in ['list', 'tuple'] for name in ['', 'path'] ]
+    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + Option.TYPE_CHECKER.items())
+    TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
     def __init__(self, *args, **kwargs):
@@ -897,16 +915,17 @@ class GeneralOption(object):
                 default = otherdefaults.get(key)
 
             extra_help = []
-            if typ in ('strlist', 'strtuple',):
-                extra_help.append("type comma-separated list")
+            if typ in ExtOption.TYPE_STRLIST:
+                sep, klass, helpsep = what_str_list_tuple(typ)
+                extra_help.append("type %s-separated %s" % (helpsep, klass.__name__))
             elif typ is not None:
                 extra_help.append("type %s" % typ)
 
             if default is not None:
                 if len(str(default)) == 0:
                     extra_help.append("def ''")  # empty string
-                elif typ in ('strlist', 'strtuple',):
-                    extra_help.append("def %s" % ','.join(default))
+                elif typ in ExtOption.TYPE_STRLIST:
+                    extra_help.append("def %s" % sep.join(default))
                 else:
                     extra_help.append("def %s" % default)
 
@@ -1364,9 +1383,10 @@ class GeneralOption(object):
                         else:
                             opt_value = opt_value[len(default):]
 
-                if typ in ('strlist', 'strtuple',) :
-                    restype = 'comma-separated list'
-                    value = ",".join(opt_value)
+                if typ in ExtOption.TYPE_STRLIST:
+                    sep, klass, helpsep = what_str_list_tuple(typ)
+                    restype = '%s-separated %s' % (helpsep, klass.__name__)
+                    value = sep.join(opt_value)
                 else:
                     restype = 'string'
                     value = opt_value
@@ -1380,8 +1400,9 @@ class GeneralOption(object):
                                (opt_name, opt_value, action, restype))
 
                 args.append("--%s=%s" % (opt_name, shell_quote(value)))
-            elif typ in ('strlist', 'strtuple',):
-                args.append("--%s=%s" % (opt_name, shell_quote(",".join(opt_value))))
+            elif typ in ExtOption.TYPE_STRLIST:
+                sep, _, _ = what_str_list_tuple(typ)
+                args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
             elif action in ("append",):
                 # add multiple times
                 self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args" %

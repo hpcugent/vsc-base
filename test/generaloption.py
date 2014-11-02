@@ -89,6 +89,8 @@ class TestOption1(GeneralOption):
                           # list type
                           "strlist":('Test strlist type', 'strlist', 'store', ['x']),
                           "strtuple":('Test strtuple type', 'strtuple', 'store', ('x',)),
+                          "strlistpath":('Test strlistpath type', 'strlistpath', 'store', ['x']),
+                          "strtuplepath":('Test strtuplepath type', 'strtuplepath', 'store', ('x',)),
                           }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -162,6 +164,7 @@ class GeneralOptionTest(TestCase):
                                     '--level-prefix-and-dash=YY',
                                     shell_unquote('--store="some whitespace"'),
                                     '--ext-strlist=x,y',
+                                    '--ext-strlistpath=x:y',
                                     '--ext-add-list-first=two,three',
                                     '--debug',
                                     ])
@@ -193,6 +196,8 @@ class GeneralOptionTest(TestCase):
                           'ext_optionalchoice': None,
                           'ext_strlist': ['x', 'y'],
                           'ext_strtuple': ('x',),
+                          'ext_strlistpath': ['x', 'y'],
+                          'ext_strtuplepath': ('x',),
                           'aregexopt': None,
                           })
 
@@ -201,6 +206,7 @@ class GeneralOptionTest(TestCase):
                          [
                           '--ext-add-list-first=two,three',
                           '--ext-strlist=x,y',
+                          '--ext-strlistpath=x:y',
                           '--level-level',
                           '--level-prefix-and-dash=YY',
                           '--store="some whitespace"',
@@ -210,6 +216,7 @@ class GeneralOptionTest(TestCase):
                          [
                           '--ext-add-list-first=two,three',
                           '--ext-strlist=x,y',
+                          '--ext-strlistpath=x:y',
                           '--justatest',
                           '--level-level',
                           '--level-longlevel',
@@ -223,6 +230,7 @@ class GeneralOptionTest(TestCase):
                          [
                           '--ext-add-list-first=two,three',
                           '--ext-strlist=x,y',
+                          '--ext-strlistpath=x:y',
                           '--justatest',
                           '--level-level',
                           '--level-longlevel',
@@ -295,9 +303,15 @@ class GeneralOptionTest(TestCase):
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""
         # extend to None default
-        topt = TestOption1(go_args=['--ext-strlist=two,three', '--ext-strtuple=two,three'])
+        topt = TestOption1(go_args=['--ext-strlist=two,three',
+                                    '--ext-strtuple=two,three',
+                                    '--ext-strlistpath=two,three:four:five',
+                                    '--ext-strtuplepath=two,three:four:five',
+                                    ])
         self.assertEqual(topt.options.ext_strlist, ['two', 'three'])
         self.assertEqual(topt.options.ext_strtuple, ('two', 'three',))
+        self.assertEqual(topt.options.ext_strlistpath, ['two,three', 'four', 'five'])
+        self.assertEqual(topt.options.ext_strtuplepath, ('two,three', 'four', 'five',))
 
     def test_store_or_None(self):
         """Test store_or_None action"""
