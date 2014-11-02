@@ -74,6 +74,13 @@ class TestOption1(GeneralOption):
         """Make ExtOption options"""
         self._opts_ext = {"extend":("Test action extend", None, 'extend', None),
                           "extenddefault":("Test action extend with default set", None, 'extend', ['zero', 'one']),
+                          # add / add_first
+                          "add":("Test action add", None, 'add', None),
+                          "add-default":("Test action add", None, 'add', 'now'),
+                          "add-list":("Test action add", 'strlist', 'add', None),
+                          "add-list-default":("Test action add", 'strlist', 'add', ['now']),
+                          "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
+                          # date
                           "date":('Test action datetime.date', None, 'date', None),
                           "datetime":('Test action datetime.datetime', None, 'datetime', None),
                           "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
@@ -149,20 +156,21 @@ class GeneralOptionTest(TestCase):
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
-        ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_strlist))'
+        ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_(?:strlist|add_list_first)))'
         topt = TestOption1(go_args=['--level-level',
                                     '--longbase',
                                     '--level-prefix-and-dash=YY',
                                     shell_unquote('--store="some whitespace"'),
                                     '--ext-strlist=x,y',
+                                    '--ext-add-list-first=two,three',
                                     '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
                          {
                           'store': 'some whitespace',
                           'debug': True,
-                          'info':False,
-                          'quiet':False,
+                          'info': False,
+                          'quiet': False,
                           'level_level': True,
                           'longbase': True,
                           'justatest': True,
@@ -174,8 +182,13 @@ class GeneralOptionTest(TestCase):
                           'base': False,
                           'ext_optional': None,
                           'ext_extend': None,
-                          'ext_date': None,
                           'ext_extenddefault': ['zero', 'one'],
+                          'ext_add': None,
+                          'ext_add_default': 'now',
+                          'ext_add_list': None,
+                          'ext_add_list_default': ['now'],
+                          'ext_add_list_first': ['two', 'three', 'now'],
+                          'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
                           'ext_strlist': ['x', 'y'],
@@ -186,6 +199,7 @@ class GeneralOptionTest(TestCase):
         # cmdline is ordered alphabetically
         self.assertEqual(topt.generate_cmd_line(ignore=ign),
                          [
+                          '--ext-add-list-first=two,three',
                           '--ext-strlist=x,y',
                           '--level-level',
                           '--level-prefix-and-dash=YY',
@@ -194,6 +208,7 @@ class GeneralOptionTest(TestCase):
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
         self.assertEqual([shell_unquote(x) for x in all_args],
                          [
+                          '--ext-add-list-first=two,three',
                           '--ext-strlist=x,y',
                           '--justatest',
                           '--level-level',
@@ -206,6 +221,7 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=[shell_unquote(x) for x in all_args], go_nosystemexit=True)
         self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign),
                          [
+                          '--ext-add-list-first=two,three',
                           '--ext-strlist=x,y',
                           '--justatest',
                           '--level-level',
@@ -244,8 +260,29 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext-datetime=1970-01-01 01:01:01.000001'])
         self.assertEqual(topt.options.ext_datetime , datetime.datetime(1970, 1, 1, 1, 1, 1, 1))
 
-    def test_ext_extend(self):
-        """Test extend action"""
+    def test_ext_add(self):
+        """Test add and add_first action"""
+
+        # add to None default
+        topt = TestOption1(go_args=['--ext-add=two,three'])
+        # use default type, no strlist implied or anything
+        self.assertEqual(topt.options.ext_add, 'two,three')
+
+        topt = TestOption1(go_args=['--ext-add-default=two,three'])
+        # use default type, no strlist implied or anything
+        self.assertEqual(topt.options.ext_add_default, 'nowtwo,three')
+
+        # add to None default
+        topt = TestOption1(go_args=['--ext-add-list=two,three'])
+        self.assertEqual(topt.options.ext_add_list, ['two', 'three'])
+
+        topt = TestOption1(go_args=['--ext-add-list-default=two,three'])
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'two', 'three'])
+
+        topt = TestOption1(go_args=['--ext-add-list-first=two,three'])
+        self.assertEqual(topt.options.ext_add_list_first, ['two', 'three', 'now'])
+
+        # now alias to add+strlist
         # extend to None default
         topt = TestOption1(go_args=['--ext-extend=two,three'])
         self.assertEqual(topt.options.ext_extend, ['two', 'three'])
@@ -253,6 +290,7 @@ class GeneralOptionTest(TestCase):
         # default ['zero'], will be extended
         topt = TestOption1(go_args=['--ext-extenddefault=two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
+
 
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""

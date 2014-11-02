@@ -97,7 +97,10 @@ class ExtOption(CompleterOption):
          - confighelp : hook for configfile-style help messages
          - store_debuglog : turns on fancylogger debugloglevel
             - also: 'store_infolog', 'store_warninglog'
-         - extend : extend default list (or create new one if is None)
+         - add : add value to default (result is default + value)
+             - add_first : add default to value (result is value + default)
+             - extend : deprecated/alias, same as add with implied type strlist
+             - type must support + (__add__) and one of - (__neg__) or slicing (__getslice__)
          - date : convert into datetime.date
          - datetime : convert into datetime.datetime
          - regex: compile str in regexp
@@ -105,13 +108,16 @@ class ExtOption(CompleterOption):
            - set default to None if no option passed,
            - set to default if option without value passed,
            - set to value if option with value passed
+           
+        Types:
+          - strlist, strtuple : convert comma-separated list in a list resp. tuple of strings     
     """
     EXTEND_SEPARATOR = ','
 
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ('extend', 'date', 'datetime', 'regex',)
+    EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
     EXTOPTION_HELP = ('shorthelp', 'confighelp',)
@@ -135,7 +141,11 @@ class ExtOption(CompleterOption):
     def _set_attrs(self, attrs):
         """overwrite _set_attrs to allow store_or callbacks"""
         Option._set_attrs(self, attrs)
-        if self.action in self.EXTOPTION_STORE_OR:
+        if self.action == 'extend':
+            # deprecated / alias
+            self.action = 'add'
+            self.type = 'strlist'
+        elif self.action in self.EXTOPTION_STORE_OR:
             setattr(self, 'store_or', self.action)
 
             def store_or(option, opt_str, value, parser, *args, **kwargs):
@@ -201,22 +211,29 @@ class ExtOption(CompleterOption):
             Option.take_action(self, action, dest, opt, value, values, parser)
 
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
-            if action == "extend":
-                # comma separated list convert in list
-                lvalue = value.split(self.EXTEND_SEPARATOR)
-                values.ensure_value(dest, []).extend(lvalue)
+            if action in ("add", "add_first"):
+                # determine type from lvalue
+                # set default first
+                values.ensure_value(dest, type(value)())
+                default = getattr(values, dest)
+                if not (hasattr(default, '__add__') and
+                        (hasattr(default, '__sub__') or hasattr(default, '__getslice__'))):
+                    raise(Exception("Unsupported type %s for action %s (requires + and one of - or slice)" %
+                                    (type(default), action)))
+                if action == 'add':
+                    lvalue = default + value
+                elif action == 'add_first':
+                    lvalue = value + default
             elif action == "date":
                 lvalue = date_parser(value)
-                setattr(values, dest, lvalue)
             elif action == "datetime":
                 lvalue = datetime_parser(value)
-                setattr(values, dest, lvalue)
             elif action == "regex":
                 lvalue = re.compile(r'' + value)
-                setattr(values, dest, lvalue)
             else:
                 raise(Exception("Unknown extended option action %s (known: %s)" %
                                 (action, self.EXTOPTION_EXTRA_OPTIONS)))
+            setattr(values, dest, lvalue)
         else:
             Option.take_action(self, action, dest, opt, value, values, parser)
 
@@ -760,8 +777,8 @@ class GeneralOption(object):
     def _make_configfiles_options(self):
         """Add configfiles option"""
         opts = {
-            'configfiles': ("Parse (additional) configfiles", None, "extend", self.DEFAULT_CONFIGFILES),
-            'ignoreconfigfiles': ("Ignore configfiles", None, "extend", self.DEFAULT_IGNORECONFIGFILES),
+            'configfiles': ("Parse (additional) configfiles", "strlist", "add", self.DEFAULT_CONFIGFILES),
+            'ignoreconfigfiles': ("Ignore configfiles", "strlist", "add", self.DEFAULT_IGNORECONFIGFILES),
         }
         descr = ['Configfile options', '']
         self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
@@ -880,7 +897,7 @@ class GeneralOption(object):
                 default = otherdefaults.get(key)
 
             extra_help = []
-            if action in ("extend",) or typ in ('strlist', 'strtuple',):
+            if typ in ('strlist', 'strtuple',):
                 extra_help.append("type comma-separated list")
             elif typ is not None:
                 extra_help.append("type %s" % typ)
@@ -888,7 +905,7 @@ class GeneralOption(object):
             if default is not None:
                 if len(str(default)) == 0:
                     extra_help.append("def ''")  # empty string
-                elif action in ("extend",) or typ in ('strlist', 'strtuple',):
+                elif typ in ('strlist', 'strtuple',):
                     extra_help.append("def %s" % ','.join(default))
                 else:
                     extra_help.append("def %s" % default)
@@ -983,14 +1000,14 @@ class GeneralOption(object):
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
         except SystemExit, err:
+            try:
+                msg = err.message
+            except:
+                # py2.4
+                msg = '_nomessage_'
+            self.log.debug("parseoptions: parse_args err %s code %s" %
+                           (msg, err.code))
             if self.no_system_exit:
-                try:
-                    msg = err.message
-                except:
-                    # py2.4
-                    msg = '_nomessage_'
-                self.log.debug("parseoptions: no_system_exit set after parse_args err %s code %s" %
-                               (msg, err.code))
                 return
             else:
                 sys.exit(err.code)
@@ -1255,7 +1272,7 @@ class GeneralOption(object):
 
     def generate_cmd_line(self, ignore=None, add_default=None):
         """Create the commandline options that would create the current self.options
-            opt_name is destination
+            opt_name is destination. The result is sorted on the destination names
 
             @param ignore : regex on destination
             @param add_default : print value that are equal to default
@@ -1334,21 +1351,35 @@ class GeneralOption(object):
                                            (opt_name, action, default))
                     else:
                         args.append("--%s" % opt_name)
-            elif action in ("extend",):
-                # comma separated
-                self.log.debug("generate_cmd_line adding %s value %s. extend action, return as comma-separated list" %
-                               (opt_name, opt_value))
-
+            elif action in ("add", "add_first"):
                 if default is not None:
-                    # remove these. if default is set, extend extends the default!
-                    for def_el in default:
-                        opt_value.remove(def_el)
+                    if hasattr(opt_value, '__neg__'):
+                        if action == 'add_first':
+                            opt_value = opt_value - default
+                        else:
+                            opt_value = -default + opt_value
+                    elif hasattr(opt_value, '__getslice__'):
+                        if action == 'add_first':
+                            opt_value = opt_value[:-len(default)]
+                        else:
+                            opt_value = opt_value[len(default):]
 
-                if len(opt_value) == 0:
-                    self.log.debug('generate_cmd_line skipping.')
+                if typ in ('strlist', 'strtuple',) :
+                    restype = 'comma-separated list'
+                    value = ",".join(opt_value)
+                else:
+                    restype = 'string'
+                    value = opt_value
+
+                if not opt_value:
+                    # empty strings, empty lists, 0
+                    self.log.debug('generate_cmd_line no value left, skipping.')
                     continue
 
-                args.append("--%s=%s" % (opt_name, shell_quote(",".join(opt_value))))
+                self.log.debug("generate_cmd_line adding %s value %s. %s action, return as %s" %
+                               (opt_name, opt_value, action, restype))
+
+                args.append("--%s=%s" % (opt_name, shell_quote(value)))
             elif typ in ('strlist', 'strtuple',):
                 args.append("--%s=%s" % (opt_name, shell_quote(",".join(opt_value))))
             elif action in ("append",):
