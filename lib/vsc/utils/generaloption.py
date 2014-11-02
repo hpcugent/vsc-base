@@ -73,7 +73,7 @@ def set_columns(cols=None):
 
 
 def what_str_list_tuple(name):
-    """Given name, return type and separator"""
+    """Given name, return separator, class and helptext wrt separator"""
     sep = ','
     helpsep = 'comma'
     if name.endswith('path'):
@@ -229,7 +229,7 @@ class ExtOption(CompleterOption):
             Option.take_action(self, action, dest, opt, value, values, parser)
 
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
-            if action in ("add", "add_first"):
+            if action in ("add", "add_first",):
                 # determine type from lvalue
                 # set default first
                 values.ensure_value(dest, type(value)())
@@ -1336,7 +1336,7 @@ class GeneralOption(object):
 
     def generate_cmd_line(self, ignore=None, add_default=None):
         """Create the commandline options that would create the current self.options
-            opt_name is destination. The result is sorted on the destination names
+            opt_name is destination. The result is sorted on the destination names.
 
             @param ignore : regex on destination
             @param add_default : print value that are equal to default
@@ -1419,7 +1419,7 @@ class GeneralOption(object):
                 if default is not None:
                     if hasattr(opt_value, '__neg__'):
                         if action == 'add_first':
-                            opt_value = opt_value - default
+                            opt_value = opt_value + -default
                         else:
                             opt_value = -default + opt_value
                     elif hasattr(opt_value, '__getslice__'):
