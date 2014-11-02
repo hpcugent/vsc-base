@@ -381,8 +381,8 @@ opt1=value1
         self.assertFalse('base' in topt.configfile_remainder)
         self.assertEqual(topt.configfile_remainder['remainder'], {'opt1': 'value1'})
 
-        topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
-        self.assertEqual(topt2.options.store, 'notok')
+        topt1b = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
+        self.assertEqual(topt1b.options.store, 'notok')
 
         CONFIGFILE2 = """
 [base]
@@ -398,22 +398,35 @@ debug=1
 
         # multiple config files, last one wins
         # cmdline wins always
-        topt3 = TestOption1(go_configfiles=[tmp1.name, tmp2.name], go_args=['--store=notok3'])
-        self.assertEqual(topt3.options.store, 'notok3')
-        self.assertEqual(topt3.options.justatest, False)
-        self.assertEqual(topt3.options.longbase, False)
-        self.assertEqual(topt3.options.debug, True)
+        topt2 = TestOption1(go_configfiles=[tmp1.name, tmp2.name], go_args=['--store=notok3'])
+        self.assertEqual(topt2.options.store, 'notok3')
+        self.assertEqual(topt2.options.justatest, False)
+        self.assertEqual(topt2.options.longbase, False)
+        self.assertEqual(topt2.options.debug, True)
 
         # add test for _action_taken
         for dest in ['ext_strlist', 'longbase', 'store']:
-            self.assertTrue(topt3.options._action_taken.get(dest, None))
+            self.assertTrue(topt2.options._action_taken.get(dest, None))
 
         for dest in ['level_longlevel']:
-            self.assertFalse(dest in topt3.options._action_taken)
+            self.assertFalse(dest in topt2.options._action_taken)
+
+        # This works because we manipulate DEFAULT and use all uppercase name
+        CONFIGFILE3 = """
+[base]
+store=%(FROMINIT)s
+"""
+        tmp3 = NamedTemporaryFile()
+        tmp3.write(CONFIGFILE3)
+        tmp3.flush()  # flush, otherwise empty
+
+        topt3 = TestOption1(go_configfiles=[tmp3.name], go_configfiles_initenv={'DEFAULT':{'FROMINIT' : 'woohoo'}})
+        self.assertEqual(topt3.options.store, 'woohoo')
 
         # remove files
         tmp1.close()
         tmp2.close()
+        tmp3.close()
 
     def test_get_options_by_property(self):
         """Test get_options_by_property and firends like get_options_by_prefix"""

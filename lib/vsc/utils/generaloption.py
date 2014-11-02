@@ -652,6 +652,9 @@ class GeneralOption(object):
         - go_useconfigfiles : use configfiles or not (default set by CONFIGFILES_USE)
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
+        - go_configfiles_initenv : section dict of key/value dict; inserted before configfileparsing
+            As a special case, using all uppercase key in DEFAULT section with a case-sensitive 
+            configparser can be used to set "constants" for easy interpolation in all sections.
         - go_loggername : name of logger, default classname
         - go_mainbeforedefault : set the main options before the default ones
         - go_autocompleter : dict with named options to pass to the autocomplete call (eg arg_completer)
@@ -683,7 +686,8 @@ class GeneralOption(object):
     CONFIGFILES_INIT = []  # initial list of defaults, overwritten by go_configfiles options
     CONFIGFILES_IGNORE = []
     CONFIGFILES_MAIN_SECTION = 'MAIN'  # sectionname that contains the non-grouped/non-prefixed options
-    CONFIGFILE_PARSER = ConfigParser.ConfigParser
+    CONFIGFILE_PARSER = ConfigParser.SafeConfigParser
+    CONFIGFILE_CASESENSITIVE = True
 
     METAVAR_DEFAULT = True  # generate a default metavar
     METAVAR_MAP = None  # metvar, list of longopts map
@@ -703,6 +707,7 @@ class GeneralOption(object):
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
         self.use_configfiles = kwargs.pop('go_useconfigfiles', self.CONFIGFILES_USE)  # use or ignore config files
         self.configfiles = kwargs.pop('go_configfiles', self.CONFIGFILES_INIT)  # configfiles to parse
+        configfiles_initenv = kwargs.pop('go_configfiles_initenv', None)  # initial environment for configfiles to parse
         prefixloggername = kwargs.pop('go_prefixloggername', False)  # name of logger is same as envvar prefix
         mainbeforedefault = kwargs.pop('go_mainbeforedefault', False)  # Set the main options before the default ones
         autocompleter = kwargs.pop('go_autocompleter', {})  # Pass these options to the autocomplete call
@@ -717,7 +722,7 @@ class GeneralOption(object):
         self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
-        self.configfile_parser = self.CONFIGFILE_PARSER()
+        self.configfile_parser = None
         self.configfile_remainder = {}
 
         loggername = self.__class__.__name__
@@ -752,6 +757,7 @@ class GeneralOption(object):
 
         if not self.options is None:
             # None for eg usage/help
+            self.configfile_parser_init(initenv=configfiles_initenv)
             self.parseconfigfiles()
 
             self._set_default_loglevel()
@@ -1042,6 +1048,36 @@ class GeneralOption(object):
 
         self.log.debug("Found options %s args %s" % (self.options, self.args))
 
+    def configfile_parser_init(self, initenv=None):
+        """Initialise the confgiparser to use.
+        
+            @params initenv: insert initial environment into the configparser. 
+                It is a hash of hashes; the first level key is the section name; 
+                the 2nd level key,value is the key=value. 
+                All section names, keys and values are converted to strings.
+        """
+        self.configfile_parser = self.CONFIGFILE_PARSER()
+
+        # make case sensitive
+        if self.CONFIGFILE_CASESENSITIVE:
+            self.log.debug('Initialise case sensitive configparser')
+            self.configfile_parser.optionxform = str
+        else:
+            self.log.debug('Initialise case insensitive configparser')
+            self.configfile_parser.optionxform = str.lower
+
+        if initenv:
+            for name, section in initenv.items():
+                name = str(name)
+                if name == 'DEFAULT':
+                    # is protected/reserved (and hidden)
+                    pass
+                elif not self.configfile_parser.has_section(name):
+                    self.configfile_parser.add_section(name)
+
+                for key, value in section.items():
+                    self.configfile_parser.set(name, str(key), str(value))
+
     def parseconfigfiles(self):
         """Parse configfiles"""
         if not self.use_configfiles:
@@ -1109,7 +1145,7 @@ class GeneralOption(object):
             if section not in cfg_sections_flat:
                 self.log.debug("parseconfigfiles: found section %s, adding to remainder" % section)
                 remainder = self.configfile_remainder.setdefault(section, {})
-                # parse te remaining options, sections starting with 'raw_'
+                # parse the remaining options, sections starting with 'raw_'
                 # as their name will be considered raw sections
                 for opt, val in self.configfile_parser.items(section, raw=(section.startswith('raw_'))):
                     remainder[opt] = val
@@ -1134,8 +1170,17 @@ class GeneralOption(object):
                     opt_name, opt_dest = self.make_options_option_name_and_destination(prefix, opt)
                     actual_option = self.parser.get_option_by_long_name(opt_name)
                     if actual_option is None:
-                        self.log.raiseException('parseconfigfiles: no option corresponding with dest %s' %
-                                                opt_dest)
+                        # don't fail on DEFAULT UPPERCASE options in case-sensitive mode.
+                        if self.configfile_parser.has_option('DEFAULT', opt) and \
+                            self.CONFIGFILE_CASESENSITIVE and \
+                            opt == opt.upper():
+                            self.log.debug(('parseconfigfiles: no option corresponding with '
+                                            'opt %s dest %s in section %s but found all uppercase '
+                                            'DEFAULT. Skipping.') % (opt, opt_dest, section))
+                            continue
+                        else:
+                            self.log.raiseException(('parseconfigfiles: no option corresponding with '
+                                                     'opt %s dest %s in section %s') % (opt, opt_dest, section))
 
                     configfile_options_default[opt_dest] = actual_option.default
 
