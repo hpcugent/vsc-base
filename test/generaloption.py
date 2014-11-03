@@ -89,8 +89,8 @@ class TestOption1(GeneralOption):
                           # list type
                           "strlist":('Test strlist type', 'strlist', 'store', ['x']),
                           "strtuple":('Test strtuple type', 'strtuple', 'store', ('x',)),
-                          "strlistpath":('Test strlistpath type', 'strlistpath', 'store', ['x']),
-                          "strtuplepath":('Test strtuplepath type', 'strtuplepath', 'store', ('x',)),
+                          "pathlist":('Test pathlist type', 'pathlist', 'store', ['x']),
+                          "pathtuple":('Test pathtuple type', 'pathtuple', 'store', ('x',)),
                           }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -158,13 +158,13 @@ class GeneralOptionTest(TestCase):
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
-        ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_(?:strlist|add_list_first)))'
+        ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_(?:strlist|pathlist|add_list_first)))'
         topt = TestOption1(go_args=['--level-level',
                                     '--longbase',
                                     '--level-prefix-and-dash=YY',
                                     shell_unquote('--store="some whitespace"'),
+                                    '--ext-pathlist=x:y',
                                     '--ext-strlist=x,y',
-                                    '--ext-strlistpath=x:y',
                                     '--ext-add-list-first=two,three',
                                     '--debug',
                                     ])
@@ -196,8 +196,8 @@ class GeneralOptionTest(TestCase):
                           'ext_optionalchoice': None,
                           'ext_strlist': ['x', 'y'],
                           'ext_strtuple': ('x',),
-                          'ext_strlistpath': ['x', 'y'],
-                          'ext_strtuplepath': ('x',),
+                          'ext_pathlist': ['x', 'y'],
+                          'ext_pathtuple': ('x',),
                           'aregexopt': None,
                           })
 
@@ -205,8 +205,8 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(topt.generate_cmd_line(ignore=ign),
                          [
                           '--ext-add-list-first=two,three',
+                          '--ext-pathlist=x:y',
                           '--ext-strlist=x,y',
-                          '--ext-strlistpath=x:y',
                           '--level-level',
                           '--level-prefix-and-dash=YY',
                           '--store="some whitespace"',
@@ -215,8 +215,8 @@ class GeneralOptionTest(TestCase):
         self.assertEqual([shell_unquote(x) for x in all_args],
                          [
                           '--ext-add-list-first=two,three',
+                          '--ext-pathlist=x:y',
                           '--ext-strlist=x,y',
-                          '--ext-strlistpath=x:y',
                           '--justatest',
                           '--level-level',
                           '--level-longlevel',
@@ -229,8 +229,8 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign),
                          [
                           '--ext-add-list-first=two,three',
+                          '--ext-pathlist=x:y',
                           '--ext-strlist=x,y',
-                          '--ext-strlistpath=x:y',
                           '--justatest',
                           '--level-level',
                           '--level-longlevel',
@@ -305,13 +305,13 @@ class GeneralOptionTest(TestCase):
         # extend to None default
         topt = TestOption1(go_args=['--ext-strlist=two,three',
                                     '--ext-strtuple=two,three',
-                                    '--ext-strlistpath=two,three:four:five',
-                                    '--ext-strtuplepath=two,three:four:five',
+                                    '--ext-pathlist=two,three:four:five',
+                                    '--ext-pathtuple=two,three:four:five',
                                     ])
         self.assertEqual(topt.options.ext_strlist, ['two', 'three'])
         self.assertEqual(topt.options.ext_strtuple, ('two', 'three',))
-        self.assertEqual(topt.options.ext_strlistpath, ['two,three', 'four', 'five'])
-        self.assertEqual(topt.options.ext_strtuplepath, ('two,three', 'four', 'five',))
+        self.assertEqual(topt.options.ext_pathlist, ['two,three', 'four', 'five'])
+        self.assertEqual(topt.options.ext_pathtuple, ('two,three', 'four', 'five',))
 
     def test_store_or_None(self):
         """Test store_or_None action"""

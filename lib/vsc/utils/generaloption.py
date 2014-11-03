@@ -73,17 +73,19 @@ def set_columns(cols=None):
 
 
 def what_str_list_tuple(name):
-    """Given name, return separator, class and helptext wrt separator"""
+    """Given name, return separator, class and helptext wrt separator.
+        (Currently supports strlist, strtuple, pathlist, pathtuple) 
+    """
     sep = ','
     helpsep = 'comma'
-    if name.endswith('path'):
+    if name.startswith('path'):
         sep = os.pathsep
         helpsep = 'ospath'
 
     klass = None
-    if name.startswith('strlist'):
+    if name.endswith('list'):
         klass = list
-    elif name.startswith('strtuple'):
+    elif name.endswith('tuple'):
         klass = tuple
 
     return sep, klass, helpsep
@@ -95,7 +97,6 @@ def check_str_list_tuple(option, opt, value):
         returns list or tuple of strings
     """
     sep, klass, _ = what_str_list_tuple(option.type)
-
     split = value.split(sep)
 
     if klass:
@@ -116,8 +117,8 @@ class ExtOption(CompleterOption):
             - also: 'store_infolog', 'store_warninglog'
          - add : add value to default (result is default + value)
              - add_first : add default to value (result is value + default)
-             - extend : deprecated/alias, same as add with implied type strlist
-             - type must support + (__add__) and one of - (__neg__) or slicing (__getslice__)
+             - extend : alias for add with strlist type
+             - type must support + (__add__) and one of negate (__neg__) or slicing (__getslice__)
          - date : convert into datetime.date
          - datetime : convert into datetime.datetime
          - regex: compile str in regexp
@@ -128,8 +129,8 @@ class ExtOption(CompleterOption):
            
         Types:
           - strlist, strtuple : convert comma-separated list in a list resp. tuple of strings     
-          - strlistpath, strtuplepath : using os.pathsep, convert pathsep-separated list in a list resp. tuple of strings
-              - yes, this is OS-dependent; but such is the reason to use it.
+          - pathlist, pathtuple : using os.pathsep, convert pathsep-separated list in a list resp. tuple of strings
+              - the path separator is OS-dependent
     """
     EXTEND_SEPARATOR = ','
 
@@ -146,7 +147,7 @@ class ExtOption(CompleterOption):
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
-    TYPE_STRLIST = ['str%s%s' % (klass, name) for klass in ['list', 'tuple'] for name in ['', 'path'] ]
+    TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path'] ]
     TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + Option.TYPE_CHECKER.items())
     TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
@@ -235,8 +236,8 @@ class ExtOption(CompleterOption):
                 values.ensure_value(dest, type(value)())
                 default = getattr(values, dest)
                 if not (hasattr(default, '__add__') and
-                        (hasattr(default, '__sub__') or hasattr(default, '__getslice__'))):
-                    raise(Exception("Unsupported type %s for action %s (requires + and one of - or slice)" %
+                        (hasattr(default, '__neg__') or hasattr(default, '__getslice__'))):
+                    raise(Exception("Unsupported type %s for action %s (requires + and one of negate or slice)" %
                                     (type(default), action)))
                 if action == 'add':
                     lvalue = default + value
@@ -326,7 +327,7 @@ class PassThroughOptionParser(OptionParser):
 
 class ExtOptionGroup(OptionGroup):
     """An OptionGroup with support for configfile section names"""
-    RESERVED_SECTIONS = ['DEFAULT']
+    RESERVED_SECTIONS = [ConfigParser.DEFAULTSECT]
     NO_SECTION = ('NO', 'SECTION')
 
     def __init__(self, *args, **kwargs):
@@ -1027,11 +1028,10 @@ class GeneralOption(object):
         except SystemExit, err:
             try:
                 msg = err.message
-            except:
+            except AttributeError:
                 # py2.4
                 msg = '_nomessage_'
-            self.log.debug("parseoptions: parse_args err %s code %s" %
-                           (msg, err.code))
+            self.log.debug("parseoptions: parse_args err %s code %s" % (msg, err.code))
             if self.no_system_exit:
                 return
             else:
@@ -1052,7 +1052,7 @@ class GeneralOption(object):
         """Initialise the confgiparser to use.
         
             @params initenv: insert initial environment into the configparser. 
-                It is a hash of hashes; the first level key is the section name; 
+                It is a dict of dicts; the first level key is the section name; 
                 the 2nd level key,value is the key=value. 
                 All section names, keys and values are converted to strings.
         """
@@ -1066,17 +1066,20 @@ class GeneralOption(object):
             self.log.debug('Initialise case insensitive configparser')
             self.configfile_parser.optionxform = str.lower
 
-        if initenv:
-            for name, section in initenv.items():
-                name = str(name)
-                if name == 'DEFAULT':
-                    # is protected/reserved (and hidden)
-                    pass
-                elif not self.configfile_parser.has_section(name):
-                    self.configfile_parser.add_section(name)
+        # insert the initenv in the parser
+        if initenv is None:
+            initenv = {}
 
-                for key, value in section.items():
-                    self.configfile_parser.set(name, str(key), str(value))
+        for name, section in initenv.items():
+            name = str(name)
+            if name == ConfigParser.DEFAULTSECT:
+                # is protected/reserved (and hidden)
+                pass
+            elif not self.configfile_parser.has_section(name):
+                self.configfile_parser.add_section(name)
+
+            for key, value in section.items():
+                self.configfile_parser.set(name, str(key), str(value))
 
     def parseconfigfiles(self):
         """Parse configfiles"""
@@ -1123,7 +1126,8 @@ class GeneralOption(object):
         self.log.debug("parseconfigfiles: following files were parsed %s" % parsed_files)
         self.log.debug("parseconfigfiles: following files were NOT parsed %s" %
                        [x for x in configfiles if not x in parsed_files])
-        self.log.debug("parseconfigfiles: sections (w/o DEFAULT) %s" % self.configfile_parser.sections())
+        self.log.debug("parseconfigfiles: sections (w/o %s) %s" %
+                       (ConfigParser.DEFAULTSECT, self.configfile_parser.sections()))
 
         # walk through list of section names
         # - look for options set though config files
@@ -1171,12 +1175,11 @@ class GeneralOption(object):
                     actual_option = self.parser.get_option_by_long_name(opt_name)
                     if actual_option is None:
                         # don't fail on DEFAULT UPPERCASE options in case-sensitive mode.
-                        if self.configfile_parser.has_option('DEFAULT', opt) and \
-                            self.CONFIGFILE_CASESENSITIVE and \
-                            opt == opt.upper():
+                        in_def = self.configfile_parser.has_option(ConfigParser.DEFAULTSECT, opt)
+                        if in_def and self.CONFIGFILE_CASESENSITIVE and opt == opt.upper():
                             self.log.debug(('parseconfigfiles: no option corresponding with '
                                             'opt %s dest %s in section %s but found all uppercase '
-                                            'DEFAULT. Skipping.') % (opt, opt_dest, section))
+                                            'in DEFAULT section. Skipping.') % (opt, opt_dest, section))
                             continue
                         else:
                             self.log.raiseException(('parseconfigfiles: no option corresponding with '
@@ -1335,8 +1338,8 @@ class GeneralOption(object):
         return subdict
 
     def generate_cmd_line(self, ignore=None, add_default=None):
-        """Create the commandline options that would create the current self.options
-            opt_name is destination. The result is sorted on the destination names.
+        """Create the commandline options that would create the current self.options.
+           The result is sorted on the destination names.
 
             @param ignore : regex on destination
             @param add_default : print value that are equal to default
