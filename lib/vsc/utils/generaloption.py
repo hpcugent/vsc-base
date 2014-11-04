@@ -80,7 +80,7 @@ def what_str_list_tuple(name):
     helpsep = 'comma'
     if name.startswith('path'):
         sep = os.pathsep
-        helpsep = 'ospath'
+        helpsep = 'path'
 
     klass = None
     if name.endswith('list'):
@@ -99,11 +99,11 @@ def check_str_list_tuple(option, opt, value):
     sep, klass, _ = what_str_list_tuple(option.type)
     split = value.split(sep)
 
-    if klass:
-        return klass(split)
-    else:
+    if klass is None:
         err = _gettext("check_strlist_strtuple: unsupported type %s" % option.type)
         raise OptionValueError(err)
+    else:
+        return klass(split)
 
 
 class ExtOption(CompleterOption):
@@ -128,8 +128,8 @@ class ExtOption(CompleterOption):
            - set to value if option with value passed
            
         Types:
-          - strlist, strtuple : convert comma-separated list in a list resp. tuple of strings     
-          - pathlist, pathtuple : using os.pathsep, convert pathsep-separated list in a list resp. tuple of strings
+          - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings     
+          - pathlist, pathtuple : using os.pathsep, convert pathsep-separated string in a list resp. tuple of strings
               - the path separator is OS-dependent
     """
     EXTEND_SEPARATOR = ','
@@ -161,7 +161,7 @@ class ExtOption(CompleterOption):
         """overwrite _set_attrs to allow store_or callbacks"""
         Option._set_attrs(self, attrs)
         if self.action == 'extend':
-            # deprecated / alias
+            # alias
             self.action = 'add'
             self.type = 'strlist'
         elif self.action in self.EXTOPTION_STORE_OR:
@@ -192,7 +192,7 @@ class ExtOption(CompleterOption):
             if self.store_or == 'store_or_None':
                 self.default = None
             else:
-                raise ValueError("_set_attrs: unknown store_or %s" % self.store_or)
+                self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
 
     def take_action(self, action, dest, opt, value, values, parser):
         """Extended take_action"""
@@ -237,8 +237,8 @@ class ExtOption(CompleterOption):
                 default = getattr(values, dest)
                 if not (hasattr(default, '__add__') and
                         (hasattr(default, '__neg__') or hasattr(default, '__getslice__'))):
-                    raise(Exception("Unsupported type %s for action %s (requires + and one of negate or slice)" %
-                                    (type(default), action)))
+                    msg = "Unsupported type %s for action %s (requires + and one of negate or slice)"
+                    self.log.raiseException(msg % (type(default), action))
                 if action == 'add':
                     lvalue = default + value
                 elif action == 'add_first':
@@ -250,8 +250,8 @@ class ExtOption(CompleterOption):
             elif action == "regex":
                 lvalue = re.compile(r'' + value)
             else:
-                raise(Exception("Unknown extended option action %s (known: %s)" %
-                                (action, self.EXTOPTION_EXTRA_OPTIONS)))
+                msg = "Unknown extended option action %s (known: %s)"
+                self.log.raiseException(msg % (action, self.EXTOPTION_EXTRA_OPTIONS))
             setattr(values, dest, lvalue)
         else:
             Option.take_action(self, action, dest, opt, value, values, parser)
@@ -1030,7 +1030,7 @@ class GeneralOption(object):
                 msg = err.message
             except AttributeError:
                 # py2.4
-                msg = '_nomessage_'
+                msg = str(err)
             self.log.debug("parseoptions: parse_args err %s code %s" % (msg, err.code))
             if self.no_system_exit:
                 return
@@ -1049,7 +1049,8 @@ class GeneralOption(object):
         self.log.debug("Found options %s args %s" % (self.options, self.args))
 
     def configfile_parser_init(self, initenv=None):
-        """Initialise the confgiparser to use.
+        """
+        Initialise the confgiparser to use.
         
             @params initenv: insert initial environment into the configparser. 
                 It is a dict of dicts; the first level key is the section name; 
