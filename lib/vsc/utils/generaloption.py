@@ -80,7 +80,7 @@ def what_str_list_tuple(name):
     helpsep = 'comma'
     if name.startswith('path'):
         sep = os.pathsep
-        helpsep = 'path'
+        helpsep = 'pathsep'
 
     klass = None
     if name.endswith('list'):
