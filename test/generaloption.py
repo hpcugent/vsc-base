@@ -74,6 +74,13 @@ class TestOption1(GeneralOption):
         """Make ExtOption options"""
         self._opts_ext = {"extend":("Test action extend", None, 'extend', None),
                           "extenddefault":("Test action extend with default set", None, 'extend', ['zero', 'one']),
+                          # add / add_first
+                          "add":("Test action add", None, 'add', None),
+                          "add-default":("Test action add", None, 'add', 'now'),
+                          "add-list":("Test action add", 'strlist', 'add', None),
+                          "add-list-default":("Test action add", 'strlist', 'add', ['now']),
+                          "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
+                          # date
                           "date":('Test action datetime.date', None, 'date', None),
                           "datetime":('Test action datetime.datetime', None, 'datetime', None),
                           "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
@@ -82,6 +89,8 @@ class TestOption1(GeneralOption):
                           # list type
                           "strlist":('Test strlist type', 'strlist', 'store', ['x']),
                           "strtuple":('Test strtuple type', 'strtuple', 'store', ('x',)),
+                          "pathlist":('Test pathlist type', 'pathlist', 'store', ['x']),
+                          "pathtuple":('Test pathtuple type', 'pathtuple', 'store', ('x',)),
                           }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -149,20 +158,22 @@ class GeneralOptionTest(TestCase):
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
-        ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_strlist))'
+        ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_(?:strlist|pathlist|add_list_first)))'
         topt = TestOption1(go_args=['--level-level',
                                     '--longbase',
                                     '--level-prefix-and-dash=YY',
                                     shell_unquote('--store="some whitespace"'),
+                                    '--ext-pathlist=x:y',
                                     '--ext-strlist=x,y',
+                                    '--ext-add-list-first=two,three',
                                     '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
                          {
                           'store': 'some whitespace',
                           'debug': True,
-                          'info':False,
-                          'quiet':False,
+                          'info': False,
+                          'quiet': False,
                           'level_level': True,
                           'longbase': True,
                           'justatest': True,
@@ -174,18 +185,27 @@ class GeneralOptionTest(TestCase):
                           'base': False,
                           'ext_optional': None,
                           'ext_extend': None,
-                          'ext_date': None,
                           'ext_extenddefault': ['zero', 'one'],
+                          'ext_add': None,
+                          'ext_add_default': 'now',
+                          'ext_add_list': None,
+                          'ext_add_list_default': ['now'],
+                          'ext_add_list_first': ['two', 'three', 'now'],
+                          'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
                           'ext_strlist': ['x', 'y'],
                           'ext_strtuple': ('x',),
+                          'ext_pathlist': ['x', 'y'],
+                          'ext_pathtuple': ('x',),
                           'aregexopt': None,
                           })
 
         # cmdline is ordered alphabetically
         self.assertEqual(topt.generate_cmd_line(ignore=ign),
                          [
+                          '--ext-add-list-first=two,three',
+                          '--ext-pathlist=x:y',
                           '--ext-strlist=x,y',
                           '--level-level',
                           '--level-prefix-and-dash=YY',
@@ -194,6 +214,8 @@ class GeneralOptionTest(TestCase):
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
         self.assertEqual([shell_unquote(x) for x in all_args],
                          [
+                          '--ext-add-list-first=two,three',
+                          '--ext-pathlist=x:y',
                           '--ext-strlist=x,y',
                           '--justatest',
                           '--level-level',
@@ -206,6 +228,8 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=[shell_unquote(x) for x in all_args], go_nosystemexit=True)
         self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign),
                          [
+                          '--ext-add-list-first=two,three',
+                          '--ext-pathlist=x:y',
                           '--ext-strlist=x,y',
                           '--justatest',
                           '--level-level',
@@ -244,8 +268,29 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext-datetime=1970-01-01 01:01:01.000001'])
         self.assertEqual(topt.options.ext_datetime , datetime.datetime(1970, 1, 1, 1, 1, 1, 1))
 
-    def test_ext_extend(self):
-        """Test extend action"""
+    def test_ext_add(self):
+        """Test add and add_first action"""
+
+        # add to None default
+        topt = TestOption1(go_args=['--ext-add=two,three'])
+        # use default type, no strlist implied or anything
+        self.assertEqual(topt.options.ext_add, 'two,three')
+
+        topt = TestOption1(go_args=['--ext-add-default=two,three'])
+        # use default type, no strlist implied or anything
+        self.assertEqual(topt.options.ext_add_default, 'nowtwo,three')
+
+        # add to None default
+        topt = TestOption1(go_args=['--ext-add-list=two,three'])
+        self.assertEqual(topt.options.ext_add_list, ['two', 'three'])
+
+        topt = TestOption1(go_args=['--ext-add-list-default=two,three'])
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'two', 'three'])
+
+        topt = TestOption1(go_args=['--ext-add-list-first=two,three'])
+        self.assertEqual(topt.options.ext_add_list_first, ['two', 'three', 'now'])
+
+        # now alias to add+strlist
         # extend to None default
         topt = TestOption1(go_args=['--ext-extend=two,three'])
         self.assertEqual(topt.options.ext_extend, ['two', 'three'])
@@ -254,12 +299,19 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext-extenddefault=two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
 
+
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""
         # extend to None default
-        topt = TestOption1(go_args=['--ext-strlist=two,three', '--ext-strtuple=two,three'])
+        topt = TestOption1(go_args=['--ext-strlist=two,three',
+                                    '--ext-strtuple=two,three',
+                                    '--ext-pathlist=two,three:four:five',
+                                    '--ext-pathtuple=two,three:four:five',
+                                    ])
         self.assertEqual(topt.options.ext_strlist, ['two', 'three'])
         self.assertEqual(topt.options.ext_strtuple, ('two', 'three',))
+        self.assertEqual(topt.options.ext_pathlist, ['two,three', 'four', 'five'])
+        self.assertEqual(topt.options.ext_pathtuple, ('two,three', 'four', 'five',))
 
     def test_store_or_None(self):
         """Test store_or_None action"""
@@ -329,8 +381,8 @@ opt1=value1
         self.assertFalse('base' in topt.configfile_remainder)
         self.assertEqual(topt.configfile_remainder['remainder'], {'opt1': 'value1'})
 
-        topt2 = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
-        self.assertEqual(topt2.options.store, 'notok')
+        topt1b = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
+        self.assertEqual(topt1b.options.store, 'notok')
 
         CONFIGFILE2 = """
 [base]
@@ -346,22 +398,35 @@ debug=1
 
         # multiple config files, last one wins
         # cmdline wins always
-        topt3 = TestOption1(go_configfiles=[tmp1.name, tmp2.name], go_args=['--store=notok3'])
-        self.assertEqual(topt3.options.store, 'notok3')
-        self.assertEqual(topt3.options.justatest, False)
-        self.assertEqual(topt3.options.longbase, False)
-        self.assertEqual(topt3.options.debug, True)
+        topt2 = TestOption1(go_configfiles=[tmp1.name, tmp2.name], go_args=['--store=notok3'])
+        self.assertEqual(topt2.options.store, 'notok3')
+        self.assertEqual(topt2.options.justatest, False)
+        self.assertEqual(topt2.options.longbase, False)
+        self.assertEqual(topt2.options.debug, True)
 
         # add test for _action_taken
         for dest in ['ext_strlist', 'longbase', 'store']:
-            self.assertTrue(topt3.options._action_taken.get(dest, None))
+            self.assertTrue(topt2.options._action_taken.get(dest, None))
 
         for dest in ['level_longlevel']:
-            self.assertFalse(dest in topt3.options._action_taken)
+            self.assertFalse(dest in topt2.options._action_taken)
+
+        # This works because we manipulate DEFAULT and use all uppercase name
+        CONFIGFILE3 = """
+[base]
+store=%(FROMINIT)s
+"""
+        tmp3 = NamedTemporaryFile()
+        tmp3.write(CONFIGFILE3)
+        tmp3.flush()  # flush, otherwise empty
+
+        topt3 = TestOption1(go_configfiles=[tmp3.name], go_configfiles_initenv={'DEFAULT':{'FROMINIT' : 'woohoo'}})
+        self.assertEqual(topt3.options.store, 'woohoo')
 
         # remove files
         tmp1.close()
         tmp2.close()
+        tmp3.close()
 
     def test_get_options_by_property(self):
         """Test get_options_by_property and firends like get_options_by_prefix"""
