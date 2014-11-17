@@ -47,13 +47,14 @@ class TestOption1(GeneralOption):
     DEFAULT_LOGLEVEL = 'INFO'
     def base_options(self):
         """Make base options"""
-        self._opts_base = {"base":("Long and short base option", None, "store_true", False, 'b'),
-                           "longbase":("Long-only base option", None, "store_true", True),
-                           "justatest":("Another long based option", None, "store_true", True),
-                           "store":("Store option", None, "store", None),
-                           "store-with-dash":("Store option with dash in name", None, "store", None),
-                           "aregexopt":("A regex option", None, "regex", None),
-                           }
+        self._opts_base = {
+            "base":("Long and short base option", None, "store_true", False, 'b'),
+            "longbase":("Long-only base option", None, "store_true", True),
+            "justatest":("Another long based option", None, "store_true", True),
+            "store":("Store option", None, "store", None),
+            "store-with-dash":("Store option with dash in name", None, "store", None),
+            "aregexopt":("A regex option", None, "regex", None),
+            }
         descr = ["Base", "Base level of options"]
 
         prefix = None  # base, no prefixes
@@ -61,10 +62,11 @@ class TestOption1(GeneralOption):
 
     def level1_options(self):
         """Make the level1 related options"""
-        self._opts_level1 = {"level":("Long and short option", None, "store_true", False, 'l'),
-                             "longlevel"  :("Long-only level option", None, "store_true", True),
-                             "prefix-and-dash":("Test combination of prefix and dash", None, "store", True),
-                             }
+        self._opts_level1 = {
+            "level":("Long and short option", None, "store_true", False, 'l'),
+            "longlevel"  :("Long-only level option", None, "store_true", True),
+            "prefix-and-dash":("Test combination of prefix and dash", None, "store", True),
+            }
         descr = ["Level1", "1 higher level of options"]
 
         prefix = 'level'
@@ -72,26 +74,31 @@ class TestOption1(GeneralOption):
 
     def ext_options(self):
         """Make ExtOption options"""
-        self._opts_ext = {"extend":("Test action extend", None, 'extend', None),
-                          "extenddefault":("Test action extend with default set", None, 'extend', ['zero', 'one']),
-                          # add / add_first
-                          "add":("Test action add", None, 'add', None),
-                          "add-default":("Test action add", None, 'add', 'now'),
-                          "add-list":("Test action add", 'strlist', 'add', None),
-                          "add-list-default":("Test action add", 'strlist', 'add', ['now']),
-                          "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
-                          # date
-                          "date":('Test action datetime.date', None, 'date', None),
-                          "datetime":('Test action datetime.datetime', None, 'datetime', None),
-                          "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
-                          # default value is not part of choice!
-                          "optionalchoice":('Test action optional', 'choice', 'store_or_None', 'CHOICE0', ['CHOICE1', 'CHOICE2']),
-                          # list type
-                          "strlist":('Test strlist type', 'strlist', 'store', ['x']),
-                          "strtuple":('Test strtuple type', 'strtuple', 'store', ('x',)),
-                          "pathlist":('Test pathlist type', 'pathlist', 'store', ['x']),
-                          "pathtuple":('Test pathtuple type', 'pathtuple', 'store', ('x',)),
-                          }
+        self._opts_ext = {
+            "extend":("Test action extend", None, 'extend', None),
+            "extenddefault":("Test action extend with default set", None, 'extend', ['zero', 'one']),
+            # add / add_first
+            "add":("Test action add", None, 'add', None),
+            "add-default":("Test action add", None, 'add', 'now'),
+            "add-list":("Test action add", 'strlist', 'add', None),
+            "add-list-default":("Test action add", 'strlist', 'add', ['now']),
+            "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
+            # date
+            "date":('Test action datetime.date', None, 'date', None),
+            "datetime":('Test action datetime.datetime', None, 'datetime', None),
+            "optional":('Test action optional', None, 'store_or_None', 'DEFAULT', 'o'),
+            # default value is not part of choice!
+            "optionalchoice":('Test action optional', 'choice', 'store_or_None', 'CHOICE0', ['CHOICE1', 'CHOICE2']),
+            # list type
+            "strlist":('Test strlist type', 'strlist', 'store', ['x']),
+            "strtuple":('Test strtuple type', 'strtuple', 'store', ('x',)),
+            "pathlist":('Test pathlist type', 'pathlist', 'store', ['x']),
+            "pathtuple":('Test pathtuple type', 'pathtuple', 'store', ('x',)),
+
+            "pathliststorenone":('Test pathlist type with store_or_None', 'pathlist', 'store_or_None', ['x']),
+            "pathliststorenone2":('Test pathlist type with store_or_None (2nd attempt)', 'pathlist', 'store_or_None', ['x2']),
+
+            }
         descr = ["ExtOption", "action from ExtOption"]
 
         prefix = 'ext'
@@ -158,12 +165,16 @@ class GeneralOptionTest(TestCase):
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
+        self.maxDiff = None
+
         ign = r'(^(base|debug|info|quiet)$)|(^ext(?!_(?:strlist|pathlist|add_list_first)))'
         topt = TestOption1(go_args=['--level-level',
                                     '--longbase',
                                     '--level-prefix-and-dash=YY',
                                     shell_unquote('--store="some whitespace"'),
                                     '--ext-pathlist=x:y',
+                                    '--ext-pathliststorenone',
+                                    '--ext-pathliststorenone2=y2:z2',
                                     '--ext-strlist=x,y',
                                     '--ext-add-list-first=two,three',
                                     '--debug',
@@ -197,6 +208,8 @@ class GeneralOptionTest(TestCase):
                           'ext_strlist': ['x', 'y'],
                           'ext_strtuple': ('x',),
                           'ext_pathlist': ['x', 'y'],
+                          'ext_pathliststorenone': ['x'],
+                          'ext_pathliststorenone2': ['y2', 'z2'],
                           'ext_pathtuple': ('x',),
                           'aregexopt': None,
                           })
@@ -206,6 +219,8 @@ class GeneralOptionTest(TestCase):
                          [
                           '--ext-add-list-first=two,three',
                           '--ext-pathlist=x:y',
+                          '--ext-pathliststorenone',
+                          '--ext-pathliststorenone2=y2:z2',
                           '--ext-strlist=x,y',
                           '--level-level',
                           '--level-prefix-and-dash=YY',
@@ -216,6 +231,8 @@ class GeneralOptionTest(TestCase):
                          [
                           '--ext-add-list-first=two,three',
                           '--ext-pathlist=x:y',
+                          '--ext-pathliststorenone',
+                          '--ext-pathliststorenone2=y2:z2',
                           '--ext-strlist=x,y',
                           '--justatest',
                           '--level-level',
@@ -230,6 +247,8 @@ class GeneralOptionTest(TestCase):
                          [
                           '--ext-add-list-first=two,three',
                           '--ext-pathlist=x:y',
+                          '--ext-pathliststorenone',
+                          '--ext-pathliststorenone2=y2:z2',
                           '--ext-strlist=x,y',
                           '--justatest',
                           '--level-level',

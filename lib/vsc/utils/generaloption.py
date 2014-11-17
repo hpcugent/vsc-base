@@ -172,8 +172,7 @@ class ExtOption(CompleterOption):
                 # see http://stackoverflow.com/questions/1229146/parsing-empty-options-in-python
                 # ugly code, optparse is crap
                 if parser.rargs and not parser.rargs[0].startswith('-'):
-                    val = parser.rargs[0]
-                    parser.rargs.pop(0)
+                    val = option.check_value(opt_str, parser.rargs.pop(0))
                 else:
                     val = kwargs.get('orig_default', None)
 
@@ -186,8 +185,9 @@ class ExtOption(CompleterOption):
                 self.type = 'string'
 
             self.callback = store_or
-            self.callback_kwargs = {'orig_default': copy.deepcopy(self.default),
-                                    }
+            self.callback_kwargs = {
+                'orig_default': copy.deepcopy(self.default),
+                }
             self.action = 'callback'  # act as callback
             if self.store_or == 'store_or_None':
                 self.default = None
@@ -1394,7 +1394,11 @@ class GeneralOption(object):
                 else:
                     self.log.debug("generate_cmd_line %s adding %s non-default value %s" %
                                    (action, opt_name, opt_value))
-                    args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
+                    if typ in ExtOption.TYPE_STRLIST:
+                        sep, _, _ = what_str_list_tuple(typ)
+                        args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
+                    else:
+                        args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
             elif action in ("store_true", "store_false",) + ExtOption.EXTOPTION_LOG:
                 # not default!
                 self.log.debug("generate_cmd_line adding %s value %s. store action found" %
