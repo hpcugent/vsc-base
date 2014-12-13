@@ -30,12 +30,13 @@ Tests for the vsc.utils.wrapper module.
 
 @author: Stijn De Weirdt (Ghent University)
 """
-from unittest import TestCase, TestLoader
+from unittest import TestLoader, main
 
-from vsc.utils.wrapper import Wrapper
+from vsc.utils.testing import EnhancedTestCase
+from vsc.utils.wrapper import Wrapper, HybridListDict
 
 
-class TestWrapper(TestCase):
+class TestWrapper(EnhancedTestCase):
     """Test for the Wrapper class."""
     def test_wrapper(self):
         """Use the tests provided by the stackoverflow page"""
@@ -49,7 +50,21 @@ class TestWrapper(TestCase):
         self.assertTrue("'a': 1" in str(wrapped_dict))  # __str__
         self.assertTrue(wrapped_dict.__doc__.startswith("dict()"))  # __doc__
 
+    def test_HybridListDict(self):
+        """Test HybridListDict"""
+        l = [('one', 1), ('two', [2, 2, 2])]
+        h1 = HybridListDict(l)
+        self.assertTrue(isinstance(list(h1), list))
+        self.assertTrue(isinstance(dict(h1), dict))
+        self.assertEqual(h1.items(), l)
+        self.assertEqual(h1.keys(), [x[0] for x in l])
+        self.assertEqual(h1.values(), [x[1] for x in l])
+        h1.update({'three': [3, (3, 3), [3, 3, 3]]})
+        self.assertEqual(h1.items(), l + [('three', [3, (3, 3), [3, 3, 3]])])
 
 def suite():
     """ return all the tests"""
     return TestLoader().loadTestsFromTestCase(TestWrapper)
+
+if __name__ == '__main__':
+    main()
