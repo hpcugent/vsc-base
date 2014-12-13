@@ -54,8 +54,13 @@ class TestWrapper(EnhancedTestCase):
         """Test HybridListDict"""
         l = [('one', 1), ('two', [2, 2, 2])]
         h1 = HybridListDict(l)
+        # acts like a list
+        for i in range(len(h1)):
+            self.assertEqual(h1[i], l[i])
+        # can be converted to both a list and a tuple
         self.assertTrue(isinstance(list(h1), list))
         self.assertTrue(isinstance(dict(h1), dict))
+        # acts like a dict
         self.assertEqual(h1.items(), l)
         self.assertEqual(h1.keys(), [x[0] for x in l])
         self.assertEqual(h1.values(), [x[1] for x in l])
