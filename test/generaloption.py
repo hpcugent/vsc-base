@@ -41,10 +41,12 @@ from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
 
+_init_configfiles = ['/not/a/real/configfile']
 
 class TestOption1(GeneralOption):
     """Create simple test class"""
     DEFAULT_LOGLEVEL = 'INFO'
+    DEFAULT_CONFIGFILES = _init_configfiles[:]
     def base_options(self):
         """Make base options"""
         self._opts_base = {
@@ -192,7 +194,7 @@ class GeneralOptionTest(TestCase):
                           'store_with_dash':None,
                           'level_prefix_and_dash':'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None,
-                          'configfiles': None,
+                          'configfiles': ['/not/a/real/configfile'],
                           'base': False,
                           'ext_optional': None,
                           'ext_extend': None,
@@ -387,6 +389,10 @@ opt1=value1
 
         topt = TestOption1(go_configfiles=[tmp1.name], go_args=[])
 
+        # nothing passed by commandline
+        self.assertEqual(topt.options.configfiles, _init_configfiles);
+        self.assertEqual(topt.configfiles, [tmp1.name] + _init_configfiles);
+
         self.assertEqual(topt.options.store, 'ok')
         self.assertEqual(topt.options.longbase, True)
         self.assertEqual(topt.options.justatest, True)
@@ -401,7 +407,12 @@ opt1=value1
         self.assertEqual(topt.configfile_remainder['remainder'], {'opt1': 'value1'})
 
         topt1b = TestOption1(go_configfiles=[tmp1.name], go_args=['--store=notok'])
+
         self.assertEqual(topt1b.options.store, 'notok')
+
+        self.assertEqual(topt1b.options.configfiles, _init_configfiles);
+        self.assertEqual(topt1b.configfiles, [tmp1.name] + _init_configfiles);
+
 
         CONFIGFILE2 = """
 [base]
@@ -418,6 +429,10 @@ debug=1
         # multiple config files, last one wins
         # cmdline wins always
         topt2 = TestOption1(go_configfiles=[tmp1.name, tmp2.name], go_args=['--store=notok3'])
+
+        self.assertEqual(topt2.options.configfiles, _init_configfiles);
+        self.assertEqual(topt2.configfiles, [tmp1.name, tmp2.name] + _init_configfiles);
+
         self.assertEqual(topt2.options.store, 'notok3')
         self.assertEqual(topt2.options.justatest, False)
         self.assertEqual(topt2.options.longbase, False)
@@ -440,6 +455,10 @@ store=%(FROMINIT)s
         tmp3.flush()  # flush, otherwise empty
 
         topt3 = TestOption1(go_configfiles=[tmp3.name], go_configfiles_initenv={'DEFAULT':{'FROMINIT' : 'woohoo'}})
+
+        self.assertEqual(topt3.options.configfiles, _init_configfiles);
+        self.assertEqual(topt3.configfiles, [tmp3.name] + _init_configfiles);
+
         self.assertEqual(topt3.options.store, 'woohoo')
 
         # remove files
@@ -568,6 +587,19 @@ debug=1
             self.assertTrue(prefix in dbp)
         for noprefix_opt in noprefix_opts:
             self.assertTrue(noprefix_opt in dbp)
+
+    def test_multiple_init(self):
+        """Test behaviour when creating multiple instances of same GO class"""
+        inst1 = TestOption1(go_args=['--level-level'])
+        inst2 = TestOption1(go_args=['--level-level'])
+
+        expected = ['/not/a/real/configfile']
+        # not really "initial instance", but let's assume this test runs first
+        self.assertEqual(inst1.options.configfiles, expected)
+        self.assertEqual(inst2.options.configfiles, expected)
+
+        self.assertEqual(inst1.configfiles, expected);
+        self.assertEqual(inst2.configfiles, expected);
 
 
 def suite():
