@@ -282,11 +282,24 @@ class FrozenDictKnownKeys(FrozenDict):
                 raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % tup)
 
 
-def shell_quote(x):
-    """Add quotes so it can be apssed to shell"""
+def shell_quote(token):
+    """Add quotes so it can be passed to shell"""
     # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
     # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
-    return subprocess.list2cmdline([str(x)])
+    res = subprocess.list2cmdline([str(token)])
+
+    # wrap whole string into single quotes, after escaping single quotes, unless it is already
+    # this takes care of other characters that have a special meaning in shells, e.g. $, (, ), ...
+    if any([c in res for c in '$()']) and not (res[0] == "'" and res[-1] == "'"):
+        # only replace single quote if it wasn't escaped yet
+        escaped_res = re.sub(r"([^\\])'", lambda x: "%s\\'" % x.group(1), res)
+        # avoid wrapping a double-quoted string in single quotes
+        if escaped_res[0] == '"'  and escaped_res[-1] == '"':
+            res = "'%s'" % escaped_res[1:-1]
+        else:
+            res = "'%s'" % escaped_res
+
+    return res
 
 
 def shell_unquote(x):
