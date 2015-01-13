@@ -37,7 +37,7 @@ from unittest import TestCase, TestLoader, main
 
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption
-from vsc.utils.missing import shell_quote, shell_unquote
+from vsc.utils.missing import shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
 
@@ -156,14 +156,6 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--store-with-dash', 'XX', '--level-prefix-and-dash=YY'])
         self.assertEqual(topt.options.store_with_dash, 'XX')
         self.assertEqual(topt.options.level_prefix_and_dash, 'YY')
-
-    def test_quote(self):
-        """Test quote/unquote"""
-        value = 'value with whitespace'
-        txt = '--option=%s' % value
-        # this looks strange, but is correct
-        self.assertEqual(str(txt), '--option=value with whitespace')
-        self.assertEqual(txt , shell_unquote(shell_quote(txt)))
 
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""

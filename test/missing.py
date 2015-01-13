@@ -40,7 +40,7 @@ from unittest import TestLoader, main
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
 from vsc.utils.missing import avail_subclasses_in, get_class_for, get_subclasses, get_subclasses_dict, modules_in_pkg_path
-from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+from vsc.utils.missing import nub, shell_quote, shell_unquote, topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.testing import EnhancedTestCase
 
 
@@ -366,6 +366,22 @@ class TestMissing(EnhancedTestCase):
 
         # cleanup
         sys.path = orig_sys_path
+
+    def test_shell_quote(self):
+        """Test shell_quote function"""
+        values = [
+            (123, '123'),
+            ('foo', 'foo'),
+            ('value with whitespace', '"value with whitespace"'),
+            ('foo\tbar', '"foo\tbar"'),
+            ('(value)', "'(value)'"),
+            ('$value', "'$value'"),
+            ('value with (foo)', "'value with (foo)'"),
+            ('value with $foo', "'value with $foo'"),
+        ]
+        for orig_value, quoted_value in values:
+            self.assertEqual(shell_quote(orig_value), quoted_value)
+            self.assertEqual(str(orig_value), shell_unquote(shell_quote(orig_value)))
 
 def suite():
     """ return all the tests"""
