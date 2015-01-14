@@ -284,7 +284,7 @@ class FrozenDictKnownKeys(FrozenDict):
 def shell_quote(token):
     """
     Wrap provided token in single quotes (to escape space and characters with special meaning in a shell),
-    so it can be used in a shell command.
+    so it can be used in a shell command. This results in token that are not expanded/interpolated by the shell.
     """
     # escape any non-escaped single quotes, and wrap entire token in single quotes
     return "'%s'" % re.sub(r"(?<!\\)'", r"\'", str(token))
