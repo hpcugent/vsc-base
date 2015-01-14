@@ -253,10 +253,10 @@ class GeneralOptionTest(TestCase):
                           ])
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
-        topt = TestOption1(go_args=["--aregexopt='^foo.*bar$'"])
+        topt = TestOption1(go_args=["--aregexopt=%s" % '^foo.*bar$'])
         self.assertTrue("--aregexopt='^foo.*bar$'" in topt.generate_cmd_line())
         self.assertTrue(topt.options.aregexopt is not None)
-        self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
+        self.assertEqual(topt.options.aregexopt.pattern, "^foo.*bar$")
 
     def test_enable_disable(self):
         """Test the enable/disable prefix
