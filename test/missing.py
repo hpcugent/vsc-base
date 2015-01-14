@@ -370,10 +370,10 @@ class TestMissing(EnhancedTestCase):
     def test_shell_quote(self):
         """Test shell_quote function"""
         values = [
-            (123, '123'),
-            ('foo', 'foo'),
-            ('value with whitespace', '"value with whitespace"'),
-            ('foo\tbar', '"foo\tbar"'),
+            (123, "'123'"),
+            ('foo', "'foo'"),
+            ('value with whitespace', "'value with whitespace'"),
+            ('foo\tbar', "'foo\tbar'"),
             ('(value)', "'(value)'"),
             ('$value', "'$value'"),
             ('value with (foo)', "'value with (foo)'"),
@@ -382,6 +382,10 @@ class TestMissing(EnhancedTestCase):
         for orig_value, quoted_value in values:
             self.assertEqual(shell_quote(orig_value), quoted_value)
             self.assertEqual(str(orig_value), shell_unquote(shell_quote(orig_value)))
+
+        # check that escaped single quotes aren't escaped again
+        # note: shell_unquote doesn't work on this quoted string (ValueError: No closing quotation)
+        self.assertEqual(shell_quote("foo'bar\\'baz"), "'foo\\'bar\\'baz'")
 
 def suite():
     """ return all the tests"""

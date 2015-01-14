@@ -43,7 +43,6 @@ Various functions that are missing from the default Python library.
 import os
 import re
 import shlex
-import subprocess
 import sys
 import time
 
@@ -283,23 +282,19 @@ class FrozenDictKnownKeys(FrozenDict):
 
 
 def shell_quote(token):
-    """Add quotes so it can be passed to shell"""
-    # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
-    # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
-    res = subprocess.list2cmdline([str(token)])
-
-    # wrap whole string into single quotes, after escaping single quotes, unless it is already
-    # this takes care of other characters that have a special meaning in shells, e.g. $, (, ), ...
-    if any([c in res for c in '$()']) and not (res[0] == "'" and res[-1] == "'"):
-        # only replace single quote if it wasn't escaped yet
-        escaped_res = re.sub(r"([^\\])'", lambda x: "%s\\'" % x.group(1), res)
-        # avoid wrapping a double-quoted string in single quotes
-        if escaped_res[0] == '"'  and escaped_res[-1] == '"':
-            res = "'%s'" % escaped_res[1:-1]
-        else:
-            res = "'%s'" % escaped_res
-
-    return res
+    """
+    Wrap provided token in single quotes (to escape space and characters with special meaning in a shell),
+    so it can be used in a shell command.
+    """
+    # make sure we're dealing with a string
+    if not isinstance(token, basestring):
+        token = str(token)
+    # check whether token is already wrapped in single quotes
+    is_escaped = re.compile("^'.*'$")
+    if not is_escaped.match(token):
+        # escape any non-escaped single quotes, and wrap entire token in single quotes
+        token = "'%s'" % re.sub(r"([^\\])'", r"\1\\'", token)
+    return token
 
 
 def shell_unquote(x):
