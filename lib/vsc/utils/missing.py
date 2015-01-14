@@ -286,15 +286,8 @@ def shell_quote(token):
     Wrap provided token in single quotes (to escape space and characters with special meaning in a shell),
     so it can be used in a shell command.
     """
-    # make sure we're dealing with a string
-    if not isinstance(token, basestring):
-        token = str(token)
-    # check whether token is already wrapped in single quotes
-    is_escaped = re.compile("^'.*'$")
-    if not is_escaped.match(token):
-        # escape any non-escaped single quotes, and wrap entire token in single quotes
-        token = "'%s'" % re.sub(r"([^\\])'", r"\1\\'", token)
-    return token
+    # escape any non-escaped single quotes, and wrap entire token in single quotes
+    return "'%s'" % re.sub(r"(?<!\\)'", r"\'", str(token))
 
 
 def shell_unquote(x):

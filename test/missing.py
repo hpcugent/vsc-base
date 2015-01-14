@@ -370,22 +370,26 @@ class TestMissing(EnhancedTestCase):
     def test_shell_quote(self):
         """Test shell_quote function"""
         values = [
-            (123, "'123'"),
-            ('foo', "'foo'"),
-            ('value with whitespace', "'value with whitespace'"),
-            ('foo\tbar', "'foo\tbar'"),
-            ('(value)', "'(value)'"),
-            ('$value', "'$value'"),
-            ('value with (foo)', "'value with (foo)'"),
-            ('value with $foo', "'value with $foo'"),
+            (123, "'123'", True),
+            ('foo', "'foo'", True),
+            ('value with whitespace', "'value with whitespace'", True),
+            ('foo\tbar', "'foo\tbar'", True),
+            ('(value)', "'(value)'", True),
+            ('$value', "'$value'", True),
+            ('value with (foo)', "'value with (foo)'", True),
+            ('value with $foo', "'value with $foo'", True),
+            # check that escaped single quotes aren't escaped again
+            # shell_unqoute can't unquote a single-quoted string with (single) quotes in it (ValueError: No closing quotation)
+            ("foo'bar\\'baz", "'foo\\'bar\\'baz'", False),
+            ("'", "'\\''", False),
+            ("\'", "'\\''", False),
+            ("\\'", "'\\''", False),
+            ("''", "'\\'\\''", False),
         ]
-        for orig_value, quoted_value in values:
+        for orig_value, quoted_value, test_unquote in values:
             self.assertEqual(shell_quote(orig_value), quoted_value)
-            self.assertEqual(str(orig_value), shell_unquote(shell_quote(orig_value)))
-
-        # check that escaped single quotes aren't escaped again
-        # note: shell_unquote doesn't work on this quoted string (ValueError: No closing quotation)
-        self.assertEqual(shell_quote("foo'bar\\'baz"), "'foo\\'bar\\'baz'")
+            if test_unquote:
+                self.assertEqual(str(orig_value), shell_unquote(shell_quote(orig_value)))
 
 def suite():
     """ return all the tests"""
