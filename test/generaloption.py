@@ -211,14 +211,14 @@ class GeneralOptionTest(TestCase):
         # cmdline is ordered alphabetically
         self.assertEqual(topt.generate_cmd_line(ignore=ign),
                          [
-                          '--ext-add-list-first=two,three',
-                          '--ext-pathlist=x:y',
-                          '--ext-pathliststorenone',
-                          '--ext-pathliststorenone2=y2:z2',
-                          '--ext-strlist=x,y',
-                          '--level-level',
-                          '--level-prefix-and-dash=YY',
-                          '--store="some whitespace"',
+                          "--ext-add-list-first='two,three'",
+                          "--ext-pathlist='x:y'",
+                          "--ext-pathliststorenone",
+                          "--ext-pathliststorenone2='y2:z2'",
+                          "--ext-strlist='x,y'",
+                          "--level-level",
+                          "--level-prefix-and-dash='YY'",
+                          "--store='some whitespace'",
                           ])
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
         self.assertEqual([shell_unquote(x) for x in all_args],
@@ -239,17 +239,17 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=[shell_unquote(x) for x in all_args], go_nosystemexit=True)
         self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign),
                          [
-                          '--ext-add-list-first=two,three',
-                          '--ext-pathlist=x:y',
-                          '--ext-pathliststorenone',
-                          '--ext-pathliststorenone2=y2:z2',
-                          '--ext-strlist=x,y',
-                          '--justatest',
-                          '--level-level',
-                          '--level-longlevel',
-                          '--level-prefix-and-dash=YY',
-                          '--longbase',
-                          '--store="some whitespace"',
+                          "--ext-add-list-first='two,three'",
+                          "--ext-pathlist='x:y'",
+                          "--ext-pathliststorenone",
+                          "--ext-pathliststorenone2='y2:z2'",
+                          "--ext-strlist='x,y'",
+                          "--justatest",
+                          "--level-level",
+                          "--level-longlevel",
+                          "--level-prefix-and-dash='YY'",
+                          "--longbase",
+                          "--store='some whitespace'",
                           ])
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
