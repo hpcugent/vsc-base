@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: latin-1 -*-
 #
 # Copyright 2009-2014 Ghent University
@@ -39,9 +39,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, jt, sdw
 
+
 def remove_bdist_rpm_source_file():
     """List of files to remove from the (source) RPM."""
     return []
+
 
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 shared_setup.SHARED_TARGET.update({
@@ -52,12 +54,12 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.0.0',
+    'version': '2.0.1',
     'author': [sdw, jt, ag],
     'maintainer': [sdw, jt, ag],
     'packages': ['vsc', 'vsc.utils', 'vsc.install'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'install_requires' : ['setuptools'],
+    'install_requires': ['setuptools'],
 }
 
 if __name__ == '__main__':
