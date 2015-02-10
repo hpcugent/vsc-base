@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# #
+##
 # Copyright 2011-2013 Ghent University
 #
 # This file is part of vsc-base,
@@ -23,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+##
 """
 This module implements a fancy logger on top of python logging
 
