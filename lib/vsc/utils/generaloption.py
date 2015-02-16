@@ -1027,11 +1027,6 @@ class GeneralOption(object):
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
         except SystemExit, err:
-            try:
-                msg = err.message
-            except AttributeError:
-                # py2.4
-                msg = str(err)
             self.log.debug("parseoptions: parse_args err %s code %s" % (msg, err.code))
             if self.no_system_exit:
                 return
