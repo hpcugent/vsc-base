@@ -71,6 +71,9 @@ class FancyLoggerTest(EnhancedTestCase):
         # disable default ones (with default format)
         fancylogger.disableDefaultHandlers()
 
+        self.orig_raise_exception_class = fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS
+        self.orig_raise_exception_method = fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD
+
     def test_getlevelint(self):
         """Test the getLevelInt"""
         DEBUG = fancylogger.getLevelInt('DEBUG')
@@ -181,6 +184,56 @@ class FancyLoggerTest(EnhancedTestCase):
         logger.deprecated(msg, "0.9", max_ver)
         txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
+
+    def test_fail(self):
+        """Test fail log method."""
+        # truncate the logfile
+        open(self.logfn, 'w')
+
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(Exception, 'failtest', logger.fail, 'failtest')
+        self.assertTrue(re.match("^WARNING.*failtest$", open(self.logfn, 'r').read()))
+        self.assertErrorRegex(Exception, 'failtesttemplatingworkstoo', logger.fail, 'failtest%s', 'templatingworkstoo')
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS = KeyError
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(KeyError, 'failkeytest', logger.fail, 'failkeytest')
+        self.assertTrue(re.match("^WARNING.*failkeytest$", open(self.logfn, 'r').read()))
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(KeyError, 'failkeytestagain', logger.fail, 'failkeytestagain')
+        self.assertTrue(re.match("^WARNING.*failkeytestagain$", open(self.logfn, 'r').read()))
+
+    def test_raiseException(self):
+        """Test raiseException log method."""
+        # truncate the logfile
+        open(self.logfn, 'w')
+
+        def test123(exception, msg):
+            """Utility function for testing raiseException."""
+            try:
+                raise exception(msg)
+            except:
+                logger.raiseException('HIT')
+
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(Exception, 'failtest', test123, Exception, 'failtest')
+        self.assertTrue(re.match("^WARNING.*HIT.*failtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS = KeyError
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(KeyError, 'failkeytest', test123, KeyError, 'failkeytest')
+        self.assertTrue(re.match("^WARNING.*HIT.*'failkeytest'\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(AttributeError, 'attrtest', test123, AttributeError, 'attrtest')
+        self.assertTrue(re.match("^WARNING.*HIT.*attrtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
 
     def _stream_stdouterr(self, isstdout=True, expect_match=True):
         """Log to stdout or stderror, check stdout or stderror"""
@@ -321,6 +374,9 @@ class FancyLoggerTest(EnhancedTestCase):
         fancylogger.logToFile(self.logfn, enable=False)
         self.handle.close()
         os.remove(self.logfn)
+
+        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
+        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
 
 
 def suite():
