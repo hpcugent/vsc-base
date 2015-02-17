@@ -200,7 +200,7 @@ class FancyLogger(logging.getLoggerClass()):
 
     def raiseException(self, message, exception=None, catch=False):
         """
-        logs an exception (as warning, since it can be caught higher up and handled)
+        logs message and raises an exception (since it can be caught higher up and handled)
         and raises it afterwards
         @param exception: subclass of Exception to use for raising
         @param catch: boolean, try to catch raised exception and add relevant info to message
