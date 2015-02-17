@@ -175,8 +175,8 @@ class FancyLogger(logging.getLoggerClass()):
     _thread_aware = True
 
     # default class for raiseException method, that can be redefined by deriving loggers
-    DEFAULT_RAISE_EXCEPTION_CLASS = Exception
-    DEFAULT_RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+    RAISE_EXCEPTION_CLASS = Exception
+    RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
 
     # method definition as it is in logging, can't change this
     def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
@@ -195,8 +195,8 @@ class FancyLogger(logging.getLoggerClass()):
     def fail(self, message, *args):
         """Log error message and raise exception."""
         formatted_message = message % args
-        self.DEFAULT_RAISE_EXCEPTION_LOG_METHOD(formatted_message)
-        raise self.DEFAULT_RAISE_EXCEPTION_CLASS(formatted_message)
+        self.RAISE_EXCEPTION_LOG_METHOD(formatted_message)
+        raise self.RAISE_EXCEPTION_CLASS(formatted_message)
 
     def raiseException(self, message, exception=None, catch=False):
         """
@@ -205,7 +205,6 @@ class FancyLogger(logging.getLoggerClass()):
         @param exception: subclass of Exception to use for raising
         @param catch: boolean, try to catch raised exception and add relevant info to message
                       (this will also happen if exception is not specified)
-        @param error: log error message rather than a warning
         """
         fullmessage = message
 
@@ -223,9 +222,9 @@ class FancyLogger(logging.getLoggerClass()):
                 fullmessage += " (%s\n%s)" % (detail, tb_text)
 
         if exception is None:
-            exception = self.DEFAULT_RAISE_EXCEPTION_CLASS
+            exception = self.RAISE_EXCEPTION_CLASS
 
-        self.DEFAULT_RAISE_EXCEPTION_LOG_METHOD(fullmessage)
+        self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
         raise exception(message)
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):

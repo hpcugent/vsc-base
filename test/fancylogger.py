@@ -71,8 +71,8 @@ class FancyLoggerTest(EnhancedTestCase):
         # disable default ones (with default format)
         fancylogger.disableDefaultHandlers()
 
-        self.orig_raise_exception_class = fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS
-        self.orig_raise_exception_method = fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD
+        self.orig_raise_exception_class = fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS
+        self.orig_raise_exception_method = fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
@@ -196,13 +196,13 @@ class FancyLoggerTest(EnhancedTestCase):
         self.assertErrorRegex(Exception, 'failtesttemplatingworkstoo', logger.fail, 'failtest%s', 'templatingworkstoo')
 
         open(self.logfn, 'w')
-        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS = KeyError
+        fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(KeyError, 'failkeytest', logger.fail, 'failkeytest')
         self.assertTrue(re.match("^WARNING.*failkeytest$", open(self.logfn, 'r').read()))
 
         open(self.logfn, 'w')
-        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+        fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(KeyError, 'failkeytestagain', logger.fail, 'failkeytestagain')
         self.assertTrue(re.match("^WARNING.*failkeytestagain$", open(self.logfn, 'r').read()))
@@ -224,13 +224,13 @@ class FancyLoggerTest(EnhancedTestCase):
         self.assertTrue(re.match("^WARNING.*HIT.*failtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
 
         open(self.logfn, 'w')
-        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS = KeyError
+        fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(KeyError, 'failkeytest', test123, KeyError, 'failkeytest')
         self.assertTrue(re.match("^WARNING.*HIT.*'failkeytest'\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
 
         open(self.logfn, 'w')
-        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+        fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(AttributeError, 'attrtest', test123, AttributeError, 'attrtest')
         self.assertTrue(re.match("^WARNING.*HIT.*attrtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
@@ -375,8 +375,8 @@ class FancyLoggerTest(EnhancedTestCase):
         self.handle.close()
         os.remove(self.logfn)
 
-        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
-        fancylogger.FancyLogger.DEFAULT_RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
+        fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
+        fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
 
 
 def suite():
