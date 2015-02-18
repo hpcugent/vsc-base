@@ -174,6 +174,10 @@ class FancyLogger(logging.getLoggerClass()):
     # this attribute can be checked to know if the logger is thread aware
     _thread_aware = True
 
+    # default class for raiseException method, that can be redefined by deriving loggers
+    RAISE_EXCEPTION_CLASS = Exception
+    RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+
     # method definition as it is in logging, can't change this
     def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
         """
@@ -188,12 +192,19 @@ class FancyLogger(logging.getLoggerClass()):
             new_msg = msg.encode('utf8', 'replace')
         return logrecordcls(name, level, pathname, lineno, new_msg, args, excinfo)
 
+    def fail(self, message, *args):
+        """Log error message and raise exception."""
+        formatted_message = message % args
+        self.RAISE_EXCEPTION_LOG_METHOD(formatted_message)
+        raise self.RAISE_EXCEPTION_CLASS(formatted_message)
+
     def raiseException(self, message, exception=None, catch=False):
         """
-        logs an exception (as warning, since it can be caught higher up and handled)
+        logs message and raises an exception (since it can be caught higher up and handled)
         and raises it afterwards
-            catch: boolean, try to catch raised exception and add relevant info to message
-                (this will also happen if exception is not specified)
+        @param exception: subclass of Exception to use for raising
+        @param catch: boolean, try to catch raised exception and add relevant info to message
+                      (this will also happen if exception is not specified)
         """
         fullmessage = message
 
@@ -211,9 +222,9 @@ class FancyLogger(logging.getLoggerClass()):
                 fullmessage += " (%s\n%s)" % (detail, tb_text)
 
         if exception is None:
-            exception = Exception
+            exception = self.RAISE_EXCEPTION_CLASS
 
-        self.warning(fullmessage)
+        self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
         raise exception(message)
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
