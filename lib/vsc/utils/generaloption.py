@@ -1065,10 +1065,10 @@ class GeneralOption(object):
         # note: only available with Python 2.7
         # see also https://docs.python.org/2/library/configparser.html#ConfigParser.RawConfigParser
         if LooseVersion(sys.version) >= LooseVersion('2.7'):
-            self.log.debug("Initializing configfile parser, enable allowing to unset options")
+            self.log.debug("Initializing configfile parser, allowing to unset options is enabled")
             self.configfile_parser = self.CONFIGFILE_PARSER(allow_no_value=True)
         else:
-            self.log.debug("Initializing configfile parser, unsetting of options is not supported < Py2.7")
+            self.log.warning("Initializing configfile parser, unsetting of options is not supported < Py2.7")
             self.configfile_parser = self.CONFIGFILE_PARSER()
 
         # make case sensitive
