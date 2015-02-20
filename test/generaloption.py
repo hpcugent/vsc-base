@@ -454,10 +454,13 @@ store=%(FROMINIT)s
         tmp3.write(CONFIGFILE3)
         tmp3.flush()  # flush, otherwise empty
 
-        topt3 = TestOption1(go_configfiles=[tmp3.name], go_configfiles_initenv={'DEFAULT':{'FROMINIT' : 'woohoo'}})
+        initenv = {'DEFAULT': {'FROMINIT' : 'woohoo'}}
+        topt3 = TestOption1(go_configfiles=[tmp3.name, tmp2.name], go_args=['--ignoreconfigfiles=%s' % tmp2.name],
+                            go_configfiles_initenv=initenv)
 
         self.assertEqual(topt3.options.configfiles, _init_configfiles);
-        self.assertEqual(topt3.configfiles, [tmp3.name] + _init_configfiles);
+        self.assertEqual(topt3.configfiles, [tmp3.name, tmp2.name] + _init_configfiles);
+        self.assertEqual(topt3.options.ignoreconfigfiles, [tmp2.name])
 
         self.assertEqual(topt3.options.store, 'woohoo')
 
