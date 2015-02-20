@@ -1116,7 +1116,7 @@ class GeneralOption(object):
                     self.log.debug("parseconfigfiles: configfile %s not found, will be skipped" % fn)
 
             if fn in option_ignoreconfigfiles:
-                self.log.debug("parseconfigfiles: configfile %s will be ignored %s" % fn)
+                self.log.debug("parseconfigfiles: configfile %s will be ignored", fn)
             else:
                 configfiles.append(fn)
 
