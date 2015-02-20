@@ -37,7 +37,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
 
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, jt, sdw
+from vsc.install.shared_setup import ag, jt, sdw, kh
 
 def remove_bdist_rpm_source_file():
     """List of files to remove from the (source) RPM."""
@@ -52,9 +52,9 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.0.1',
-    'author': [sdw, jt, ag],
-    'maintainer': [sdw, jt, ag],
+    'version': '2.0.2',
+    'author': [sdw, jt, ag, kh],
+    'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc', 'vsc.utils', 'vsc.install'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
     'install_requires' : ['setuptools'],
