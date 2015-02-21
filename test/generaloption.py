@@ -27,11 +27,15 @@
 Unit tests for generaloption
 
 @author: Stijn De Weirdt (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
 import datetime
 import logging
 import os
 import re
+import sys
+from ConfigParser import ParsingError
+from distutils.version import LooseVersion
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
@@ -40,6 +44,7 @@ from vsc.utils.generaloption import GeneralOption
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
+from vsc.utils.testing import EnhancedTestCase
 
 _init_configfiles = ['/not/a/real/configfile']
 
@@ -50,12 +55,14 @@ class TestOption1(GeneralOption):
     def base_options(self):
         """Make base options"""
         self._opts_base = {
-            "base":("Long and short base option", None, "store_true", False, 'b'),
-            "longbase":("Long-only base option", None, "store_true", True),
-            "justatest":("Another long based option", None, "store_true", True),
-            "store":("Store option", None, "store", None),
-            "store-with-dash":("Store option with dash in name", None, "store", None),
-            "aregexopt":("A regex option", None, "regex", None),
+            "base": ("Long and short base option", None, "store_true", False, 'b'),
+            "longbase": ("Long-only base option", None, "store_true", True),
+            "justatest": ("Another long based option", None, "store_true", True),
+            "store": ("Store option", None, "store", None),
+            "store-with-dash": ("Store option with dash in name", None, "store", None),
+            "store-or-None": ("Store-or-None option", None, "store_or_None", None),
+            "store-or-None-default": ("Store-or-None option with a default", None, "store_or_None", 'somedefault'),
+            "aregexopt": ("A regex option", None, "regex", None),
             }
         descr = ["Base", "Base level of options"]
 
@@ -107,7 +114,7 @@ class TestOption1(GeneralOption):
         self.add_group_parser(self._opts_ext, descr, prefix=prefix)
 
 
-class GeneralOptionTest(TestCase):
+class GeneralOptionTest(EnhancedTestCase):
     """Tests for general option"""
 
     def test_basic(self):
@@ -192,6 +199,8 @@ class GeneralOptionTest(TestCase):
                           'justatest': True,
                           'level_longlevel': True,
                           'store_with_dash':None,
+                          'store_or_None':None,
+                          'store_or_None_default':None,
                           'level_prefix_and_dash':'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None,
                           'configfiles': ['/not/a/real/configfile'],
@@ -604,6 +613,29 @@ debug=1
         self.assertEqual(inst1.configfiles, expected);
         self.assertEqual(inst2.configfiles, expected);
 
+    def test_configfile_reset_None(self):
+        """Test (re)setting of None values in a configuration file."""
+        cfgfile = '\n'.join([
+            '[base]',
+            'base = True',
+            'store',
+            'store-with-dash = foo',
+            'store-or-None',
+            'store-or-None-default',
+        ])
+        tmp1 = NamedTemporaryFile()
+        tmp1.write(cfgfile)
+        tmp1.flush()  # flush, otherwise empty
+
+        if LooseVersion(sys.version) >= LooseVersion('2.7'):
+            topt = TestOption1(go_configfiles=[tmp1.name], go_args=[])
+            self.assertTrue(topt.options.base)
+            self.assertEqual(topt.options.store, None)
+            self.assertEqual(topt.options.store_with_dash, 'foo')
+            self.assertEqual(topt.options.store_or_None, None)
+            self.assertEqual(topt.options.store_or_None_default, None)
+        else:
+            self.assertErrorRegex(ParsingError, '.*', TestOption1, go_configfiles=[tmp1.name], go_args=[])
 
 def suite():
     """ returns all the testcases in this module """

@@ -30,6 +30,7 @@ A class that can be used to generated options to python scripts in a general way
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Jens Timmerman (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
 
 import ConfigParser
@@ -41,8 +42,9 @@ import re
 import StringIO
 import sys
 import textwrap
-from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
-from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueError
+from distutils.version import LooseVersion
+from optparse import OptionParser, OptionGroup, Option, Values
+from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
@@ -1053,7 +1055,16 @@ class GeneralOption(object):
                 the 2nd level key,value is the key=value. 
                 All section names, keys and values are converted to strings.
         """
-        self.configfile_parser = self.CONFIGFILE_PARSER()
+        # allow_no_value indicates that options can be unset (a.k.a. set to None) in configuration files,
+        # by specifying them without a value (for example: 'foo' rather than 'foo = bar')
+        # note: only available with Python 2.7
+        # see also https://docs.python.org/2/library/configparser.html#ConfigParser.RawConfigParser
+        if LooseVersion(sys.version) >= LooseVersion('2.7'):
+            self.log.debug("Initializing configfile parser, allowing to unset options is enabled")
+            self.configfile_parser = self.CONFIGFILE_PARSER(allow_no_value=True)
+        else:
+            self.log.warning("Initializing configfile parser, unsetting of options is not supported < Py2.7")
+            self.configfile_parser = self.CONFIGFILE_PARSER()
 
         # make case sensitive
         if self.CONFIGFILE_CASESENSITIVE:
@@ -1213,10 +1224,15 @@ class GeneralOption(object):
                             self.log.debug(("parseconfigfiles: no enable/disable, not trying to set boolean-valued "
                                             "option %s via cmdline, just setting value to %s" % (opt_name, newval)))
                             configfile_values[opt_dest] = newval
-                    else:
+                    # check whether value is None via .get()
+                    # .items() returns extrapolated values, None will always be transformed to '' there
+                    elif self.configfile_parser.get(section, opt) is not None:
+                        self.log.debug("parseconfigfiles: appending option %s (value: %s) to cmdline" % (opt_name, val))
                         configfile_cmdline_dest.append(opt_dest)
                         configfile_cmdline.append("--%s" % opt_name)
                         configfile_cmdline.append(val)
+                    else:
+                        self.log.debug("parseconfigfiles: not passing through option %s with None value" % opt_name)
 
         # reparse
         self.log.debug('parseconfigfiles: going to parse options through cmdline %s' % configfile_cmdline)
