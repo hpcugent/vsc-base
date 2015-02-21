@@ -1029,12 +1029,7 @@ class GeneralOption(object):
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
         except SystemExit, err:
-            try:
-                msg = err.message
-            except AttributeError:
-                # py2.4
-                msg = str(err)
-            self.log.debug("parseoptions: parse_args err %s code %s" % (msg, err.code))
+            self.log.debug("parseoptions: parse_args err %s code %s" % (err, err.code))
             if self.no_system_exit:
                 return
             else:
@@ -1127,7 +1122,7 @@ class GeneralOption(object):
                     self.log.debug("parseconfigfiles: configfile %s not found, will be skipped" % fn)
 
             if fn in option_ignoreconfigfiles:
-                self.log.debug("parseconfigfiles: configfile %s will be ignored %s" % fn)
+                self.log.debug("parseconfigfiles: configfile %s will be ignored", fn)
             else:
                 configfiles.append(fn)
 
