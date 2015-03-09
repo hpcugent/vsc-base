@@ -104,7 +104,7 @@ try:
                 self.filelist.files.remove(f)
 
     has_setuptools = True
-except ImportError, err:
+except ImportError as err:
     log.warn("ImportError, falling back to distutils-only: %s", err)
     from distutils.core import setup
     from distutils.command.install_scripts import install_scripts
