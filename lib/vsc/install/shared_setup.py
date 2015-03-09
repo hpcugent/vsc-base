@@ -64,10 +64,10 @@ def remove_extra_bdist_rpm_files():
 # The following aims to import from setuptools, but if this is not available, we import the basic functionality from
 # distutils instead. Note that setuptools make copies of the scripts, it does _not_ preserve symbolic links.
 try:
-    # raise("no setuptools")  # to try distutils, uncomment
+    #raise ImportError("no setuptools")  # to try distutils, uncomment
     from setuptools import setup
     from setuptools.command.bdist_rpm import bdist_rpm
-    from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
+    from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
     from setuptools.command.build_py import build_py
     from setuptools.command.install_scripts import install_scripts
     from setuptools.command.sdist import sdist
@@ -104,12 +104,14 @@ try:
                 self.filelist.files.remove(f)
 
     has_setuptools = True
-except ImportError:
+except ImportError as err:
+    log.warn("ImportError, falling back to distutils-only: %s", err)
     from distutils.core import setup
     from distutils.command.install_scripts import install_scripts
     from distutils.command.build_py import build_py
     from distutils.command.sdist import sdist
-    from distutils.command.bdist_rpm import bdist_rpm, _bdist_rpm
+    from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
+    bdist_rpm = orig_bdist_rpm  # mimic setuptools' bdist_rpm
 
     class vsc_egg_info(object):
         pass  # dummy class for distutils
@@ -169,7 +171,7 @@ class vsc_bdist_rpm(bdist_rpm):
         log.error("vsc_bdist_rpm = %s" % (self.__dict__))
         SHARED_TARGET['cmdclass']['egg_info'] = vsc_bdist_rpm_egg_info  # changed to allow removal of files
         self.run_command('egg_info')  # ensure distro name is up-to-date
-        _bdist_rpm.run(self)
+        orig_bdist_rpm.run(self)
 
 
 # shared target config
