@@ -44,7 +44,11 @@ def get_callers_logger():
     logger = None
     try:
         # frame may be None, see https://docs.python.org/2/library/inspect.html#inspect.currentframe
-        framerecords = (frame is None and []) or inspect.getouterframes(frame)
+        if frame is None:
+            framerecords = []
+        else:
+            framerecords = inspect.getouterframes(frame)
+
         for frameinfo in framerecords:
             bindings = inspect.getargvalues(frameinfo[0]).locals
             for val in bindings.values():
