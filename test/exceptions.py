@@ -35,7 +35,7 @@ import re
 import tempfile
 from unittest import TestLoader, main
 
-from vsc.utils.exceptions import LoggedException
+from vsc.utils.exceptions import LoggedException, get_callers_logger
 from vsc.utils.fancylogger import getLogger, logToFile, logToScreen, getRootLoggerName, setLogFormat
 from vsc.utils.testing import EnhancedTestCase
 
@@ -112,6 +112,29 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
         os.remove(tmplog)
+
+    def test_get_callers_logger(self):
+        """Test get_callers_logger function."""
+        # returns None if no logger is available
+        self.assertEqual(get_callers_logger(), None)
+
+        # find defined logger in caller's context
+        logger = getLogger('foo')
+        self.assertEqual(logger, get_callers_logger())
+
+        # also works when logger is 'higher up'
+        class Test(object):
+            """Dummy test class"""
+            def foo(self, logger=None):
+                """Dummy test method, returns logger from calling context."""
+                return get_callers_logger()
+
+        test = Test()
+        self.assertEqual(logger, test.foo())
+
+        # closest logger to caller is preferred
+        logger2 = getLogger(test.__class__.__name__)
+        self.assertEqual(logger2, test.foo(logger=logger2))
 
 def suite():
     """ returns all the testcases in this module """
