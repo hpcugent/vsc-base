@@ -45,9 +45,6 @@ def raise_loggedexception(msg, logger=None):
     raise LoggedException(msg, logger=logger)
 
 
-logToScreen(enable=False)
-
-
 class ExceptionsTest(EnhancedTestCase):
     """Tests for exceptions module."""
 
