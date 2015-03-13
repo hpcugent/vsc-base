@@ -42,28 +42,32 @@ def get_callers_logger():
     logger_cls = logging.getLoggerClass()
     frame = inspect.currentframe()
     logger = None
-    try:
-        # frame may be None, see https://docs.python.org/2/library/inspect.html#inspect.currentframe
-        if frame is None:
-            framerecords = []
-        else:
-            framerecords = inspect.getouterframes(frame)
 
-        for frameinfo in framerecords:
-            bindings = inspect.getargvalues(frameinfo[0]).locals
-            for val in bindings.values():
-                if isinstance(val, logger_cls):
-                    logger = val
-    finally:
-        # make very sure that reference to frame object is removed, to avoid reference cycles
-        # see https://docs.python.org/2/library/inspect.html#the-interpreter-stack
-        del frame
+    # frame may be None, see https://docs.python.org/2/library/inspect.html#inspect.currentframe
+    if frame is not None:
+        try:
+            # consider calling stack in reverse order, i.e. most inner frame (closest to caller) first
+            for frameinfo in inspect.getouterframes(frame)[::-1]:
+                bindings = inspect.getargvalues(frameinfo[0]).locals
+                for val in bindings.values():
+                    if isinstance(val, logger_cls):
+                        logger = val
+                        break
+        finally:
+            # make very sure that reference to frame object is removed, to avoid reference cycles
+            # see https://docs.python.org/2/library/inspect.html#the-interpreter-stack
+            del frame
 
     return logger
 
 
 class LoggedException(Exception):
     """Exception that logs it's message when it is created."""
+
+    # logger module to use (must provide getLogger() function)
+    LOGGER_MODULE = fancylogger
+    # name of logging method to use (must accept a single argument of type string, i.e. the log message)
+    LOGGING_METHOD = 'error'
 
     def __init__(self, msg, logger=None):
         """
@@ -77,6 +81,6 @@ class LoggedException(Exception):
             logger = get_callers_logger()
             # search can fail, use root logger as a fallback
             if logger is None:
-                logger = fancylogger.getLogger()
+                logger = self.LOGGER_MODULE.getLogger()
 
-        logger.error(msg)
+        getattr(logger, self.LOGGING_METHOD)(msg)
