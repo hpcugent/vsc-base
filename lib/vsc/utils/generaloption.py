@@ -74,7 +74,7 @@ def set_columns(cols=None):
 
 def what_str_list_tuple(name):
     """Given name, return separator, class and helptext wrt separator.
-        (Currently supports strlist, strtuple, pathlist, pathtuple) 
+        (Currently supports strlist, strtuple, pathlist, pathtuple)
     """
     sep = ','
     helpsep = 'comma'
@@ -126,9 +126,9 @@ class ExtOption(CompleterOption):
            - set default to None if no option passed,
            - set to default if option without value passed,
            - set to value if option with value passed
-           
+
         Types:
-          - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings     
+          - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings
           - pathlist, pathtuple : using os.pathsep, convert pathsep-separated string in a list resp. tuple of strings
               - the path separator is OS-dependent
     """
@@ -350,7 +350,7 @@ class ExtOptionGroup(OptionGroup):
 
 class ExtOptionParser(OptionParser):
     """
-    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,     
+    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,
     C{-H} / C{--help} for all options.
 
     Pass options through environment. Like:
@@ -369,11 +369,27 @@ class ExtOptionParser(OptionParser):
     DESCRIPTION_DOCSTRING = False
 
     def __init__(self, *args, **kwargs):
+        """
+        Following named arguments are specific to ExtOptionParser
+        (the remaining ones are passed to the parent OptionParser class)
+
+            :param help_to_string: boolean, if True, the help is written
+                                   to a newly created StingIO instance
+            :param help_to_file: filehanlde, help is written to this filehandle
+            :param envvar_prefix: string, specify the environment variable prefix
+                                  to use (if you don't want the default one)
+            :param process_env_options: boolean, if False, don't check the
+                                        environment for options (default: True)
+            :param error_env_options: boolean, if True, log error if an environment
+                                      variable with correct envvar_prefix exists
+                                      but does not correspond to (default: False)
+        """
         self.log = getLogger(self.__class__.__name__)
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
         self.envvar_prefix = kwargs.pop('envvar_prefix', None)
         self.process_env_options = kwargs.pop('process_env_options', True)
+        self.error_env_options = kwargs.pop('error_env_options', False)
 
         # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
         self.epilog = kwargs.pop('epilog', None)
@@ -453,7 +469,7 @@ class ExtOptionParser(OptionParser):
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
             - make it dynamic, otherwise the class constant is shared between multiple instances
-            - class constant is used to avoid _action_taken as option in the __dict__ 
+            - class constant is used to avoid _action_taken as option in the __dict__
                 - only works by using reference to object
                 - same for _logaction_taken
         """
@@ -607,6 +623,8 @@ class ExtOptionParser(OptionParser):
         epilogprefixtxt += "eg. --some-opt is same as setting %(prefix)s_SOME_OPT in the environment."
         self.epilog.append(epilogprefixtxt % {'prefix': self.envvar_prefix})
 
+        candidates = dict([(k,v) for k,v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
+
         for opt in self._get_all_options():
             if opt._long_opts is None:
                 continue
@@ -614,7 +632,7 @@ class ExtOptionParser(OptionParser):
                 if len(lo) == 0:
                     continue
                 env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').replace('-', '_').upper())
-                val = os.environ.get(env_opt_name, None)
+                val = candidates.pop(env_opt_name, None)
                 if not val is None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
                         self.environment_arguments.append("%s=%s" % (lo, val))
@@ -624,6 +642,14 @@ class ExtOptionParser(OptionParser):
                             self.environment_arguments.append("%s" % lo)
                 else:
                     self.log.debug("Environment variable %s is not set" % env_opt_name)
+
+        if candidates:
+            msg="Found %s environment variable(s) that are similar but do not match valid option(s): %s"
+            if self.error_env_options:
+                func=self.log.error
+            else:
+                func=self.log.debug
+            func(msg, len(candidates), ",".join(candidates))
 
         self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, self.environment_arguments))
         return self.environment_arguments
@@ -654,7 +680,7 @@ class GeneralOption(object):
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
         - go_configfiles_initenv : section dict of key/value dict; inserted before configfileparsing
-            As a special case, using all uppercase key in DEFAULT section with a case-sensitive 
+            As a special case, using all uppercase key in DEFAULT section with a case-sensitive
             configparser can be used to set "constants" for easy interpolation in all sections.
         - go_loggername : name of logger, default classname
         - go_mainbeforedefault : set the main options before the default ones
@@ -1046,11 +1072,11 @@ class GeneralOption(object):
 
     def configfile_parser_init(self, initenv=None):
         """
-        Initialise the confgiparser to use.
-        
-            @params initenv: insert initial environment into the configparser. 
-                It is a dict of dicts; the first level key is the section name; 
-                the 2nd level key,value is the key=value. 
+        Initialise the configparser to use.
+
+            @params initenv: insert initial environment into the configparser.
+                It is a dict of dicts; the first level key is the section name;
+                the 2nd level key,value is the key=value.
                 All section names, keys and values are converted to strings.
         """
         self.configfile_parser = self.CONFIGFILE_PARSER()

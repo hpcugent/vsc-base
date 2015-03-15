@@ -40,6 +40,7 @@ from vsc.utils.generaloption import GeneralOption
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
+from vsc.utils.testing import EnhancedTestCase
 
 _init_configfiles = ['/not/a/real/configfile']
 
@@ -107,11 +108,8 @@ class TestOption1(GeneralOption):
         self.add_group_parser(self._opts_ext, descr, prefix=prefix)
 
 
-class GeneralOptionTest(TestCase):
+class GeneralOptionTest(EnhancedTestCase):
     """Tests for general option"""
-
-    def test_basic(self):
-        """Basic creation and verification of generaloption"""
 
     def test_help_short(self):
         """Generate short help message"""
@@ -604,6 +602,24 @@ debug=1
         self.assertEqual(inst1.configfiles, expected);
         self.assertEqual(inst2.configfiles, expected);
 
+    def test_error_env_options(self):
+        """Test log error on unknown environment option"""
+        self.reset_logcache()
+        mylogger = fancylogger.getLogger('ExtOptionParser')
+        mylogger.error = self. mock_logmethod(mylogger.error)
+
+        os.environ['GENERALOPTIONTEST_XYZ']='1'
+        topt1 = TestOption1(go_args=['--level-level'],
+                            envvar_prefix='GENERALOPTIONTEST',
+        )
+        self.assertEqual(self.count_logcache('error'), 0)
+        topt1 = TestOption1(go_args=['--level-level'],
+                            envvar_prefix='GENERALOPTIONTEST',
+                            error_env_options=1,
+        )
+        # One error should be logged
+        self.assertEqual(self.count_logcache('error'), 1)
+        
 
 def suite():
     """ returns all the testcases in this module """
