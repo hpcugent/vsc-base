@@ -66,16 +66,21 @@ class LoggedException(Exception):
 
     # logger module to use (must provide getLogger() function)
     LOGGER_MODULE = fancylogger
-    # logging method to use
-    # takes a logger instance and an argument of type string, i.e. the log message
-    # note: 'self' (LoggedException instance) is passed as 1st argument, which is typically just ignored
-    LOGGING_METHOD = lambda _, logger, msg: logger.error(msg)
+    # name of logging method to use
+    # must accept an argument of type string, i.e. the log message, and an optional list of formatting arguments
+    LOGGING_METHOD_NAME = 'error'
 
-    def __init__(self, msg, logger=None):
+    def __init__(self, msg, *args, **kwargs):
         """
         Constructor.
+        @param msg: exception message
+        @param *args: list of formatting arguments for exception message
         @param logger: logger to use
         """
+        # format message with (optional) list of formatting arguments
+        msg = msg % args
+
+        logger = kwargs.get('logger', None)
         # try to use logger defined in caller's environment
         if logger is None:
             logger = get_callers_logger()
@@ -83,6 +88,6 @@ class LoggedException(Exception):
             if logger is None:
                 logger = self.LOGGER_MODULE.getLogger()
 
-        self.LOGGING_METHOD(logger, msg)
+        getattr(logger, self.LOGGING_METHOD_NAME)(msg)
 
         super(LoggedException, self).__init__(msg)

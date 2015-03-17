@@ -40,9 +40,9 @@ from vsc.utils.fancylogger import getLogger, logToFile, logToScreen, getRootLogg
 from vsc.utils.testing import EnhancedTestCase
 
 
-def raise_loggedexception(msg, logger=None):
+def raise_loggedexception(msg, *args, **kwargs):
     """Utility function: just raise a LoggedException."""
-    raise LoggedException(msg, logger=logger)
+    raise LoggedException(msg, *args, **kwargs)
 
 
 class ExceptionsTest(EnhancedTestCase):
@@ -64,6 +64,9 @@ class ExceptionsTest(EnhancedTestCase):
         log_re = re.compile("^%s :: BOOM$" % getRootLoggerName(), re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+
+        # test formatting of message
+        self.assertErrorRegex(LoggedException, 'BOOMBAF', raise_loggedexception, 'BOOM%s', 'BAF')
 
         os.remove(tmplog)
 
