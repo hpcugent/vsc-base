@@ -86,6 +86,8 @@ class TestOption1(GeneralOption):
             "add-list":("Test action add", 'strlist', 'add', None),
             "add-list-default":("Test action add", 'strlist', 'add', ['now']),
             "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
+            "add-list-flex":('Test strlist type with add_flex', 'strlist', 'add_flex', ['x', 'y']),
+
             # date
             "date":('Test action datetime.date', None, 'date', None),
             "datetime":('Test action datetime.datetime', None, 'datetime', None),
@@ -177,6 +179,7 @@ class GeneralOptionTest(EnhancedTestCase):
                                     '--ext-pathliststorenone2=y2:z2',
                                     '--ext-strlist=x,y',
                                     '--ext-add-list-first=two,three',
+                                    '--ext-add-list-flex=a,,b',
                                     '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
@@ -202,6 +205,7 @@ class GeneralOptionTest(EnhancedTestCase):
                           'ext_add_list': None,
                           'ext_add_list_default': ['now'],
                           'ext_add_list_first': ['two', 'three', 'now'],
+                          'ext_add_list_flex': ['a','x', 'y', 'b'],
                           'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
@@ -318,6 +322,18 @@ class GeneralOptionTest(EnhancedTestCase):
         topt = TestOption1(go_args=['--ext-extenddefault=two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
 
+        # flex
+        for args, val in [
+                (',b', ['x','y','b']),
+                ('b,', ['b', 'x','y']),
+                ('a,b', ['a', 'b']),
+                ('a,,b', ['a', 'x', 'y', 'b']),
+        ]:
+            cmd='--ext-add-list-flex=%s' % args
+            topt = TestOption1(go_args=[cmd])
+            self.assertEqual(topt.options.ext_add_list_flex, val)
+            self.assertEqual(topt.generate_cmd_line(ignore=r'(?<!_flex)$'),
+                             [cmd])
 
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""
@@ -619,7 +635,7 @@ debug=1
         )
         # One error should be logged
         self.assertEqual(self.count_logcache('error'), 1)
-        
+
 
 def suite():
     """ returns all the testcases in this module """

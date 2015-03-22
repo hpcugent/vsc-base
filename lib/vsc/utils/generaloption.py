@@ -106,6 +106,22 @@ def check_str_list_tuple(option, opt, value):
         return klass(split)
 
 
+def get_empty_add_flex(allvalues):
+    """Return the empty element for add_flex action for allvalues"""
+    empty = None
+    emptyisNone = False # in case None is the empty value
+
+    if isinstance(allvalues, (list, tuple)):
+        if isinstance(allvalues[0], basestring):
+            empty = ''
+
+    if (empty is None) and not emptyisNone:
+        msg = "get_empty_add_flex cannot determine empty element for type %s (%s)"
+        self.log.raiseException(msg % (type(allvalues), allvalues))
+
+    return empty
+
+
 class ExtOption(CompleterOption):
     """Extended options class
         - enable/disable support
@@ -119,6 +135,15 @@ class ExtOption(CompleterOption):
              - add_first : add default to value (result is value + default)
              - extend : alias for add with strlist type
              - type must support + (__add__) and one of negate (__neg__) or slicing (__getslice__)
+         - add_flex : similar to add / add_first, but replaces the first "empty" element with the default
+             - the empty element is dependant of the type
+                 - for {str,path}{list,tuple} this is the empty string
+             - types must support the index method to determine the location of the "empty" element
+             - the replacement uses +
+             - e.g. a strlist type with value "0,,1"` and default [3,4] and action add_flex will
+                   use the empty string '' as "empty" element, and will result in [0,3,4,1] (not [0,[3,4],1])
+                   (but also a strlist with value "" and default [3,4] will result in [3,4];
+                   so you can't set an empty list with add_flex)
          - date : convert into datetime.date
          - datetime : convert into datetime.datetime
          - regex: compile str in regexp
@@ -137,7 +162,7 @@ class ExtOption(CompleterOption):
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first',)
+    EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first', 'add_flex',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
     EXTOPTION_HELP = ('shorthelp', 'confighelp',)
@@ -230,7 +255,7 @@ class ExtOption(CompleterOption):
             Option.take_action(self, action, dest, opt, value, values, parser)
 
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
-            if action in ("add", "add_first",):
+            if action in ("add", "add_first", "add_flex",):
                 # determine type from lvalue
                 # set default first
                 values.ensure_value(dest, type(value)())
@@ -239,10 +264,23 @@ class ExtOption(CompleterOption):
                         (hasattr(default, '__neg__') or hasattr(default, '__getslice__'))):
                     msg = "Unsupported type %s for action %s (requires + and one of negate or slice)"
                     self.log.raiseException(msg % (type(default), action))
-                if action == 'add':
+                if action in ('add', 'add_flex'):
                     lvalue = default + value
                 elif action == 'add_first':
                     lvalue = value + default
+
+                if action == 'add_flex' and lvalue:
+                    # use lvalue here rather then default to make sure there is 1 element
+                    # to determine the type
+                    if not hasattr(lvalue, 'index'):
+                        msg = "Unsupported type %s for action %s (requires index method)"
+                        self.log.raiseException(msg % (type(lvalue), action))
+                    empty = get_empty_add_flex(lvalue)
+                    if empty in value:
+                        ind = value.index(empty)
+                        lvalue = value[:ind] + default + value[ind+1:]
+                    else:
+                        lvalue = value
             elif action == "date":
                 lvalue = date_parser(value)
             elif action == "datetime":
@@ -1445,18 +1483,27 @@ class GeneralOption(object):
                                            (opt_name, action, default))
                     else:
                         args.append("--%s" % opt_name)
-            elif action in ("add", "add_first"):
+            elif action in ("add", "add_first", "add_flex"):
                 if default is not None:
-                    if hasattr(opt_value, '__neg__'):
-                        if action == 'add_first':
-                            opt_value = opt_value + -default
-                        else:
-                            opt_value = -default + opt_value
-                    elif hasattr(opt_value, '__getslice__'):
-                        if action == 'add_first':
-                            opt_value = opt_value[:-len(default)]
-                        else:
-                            opt_value = opt_value[len(default):]
+                    if action == 'add_flex' and default:
+                        for ind, el in enumerate(opt_value):
+                            if el == default[0] and opt_value[ind:ind+len(default)] == default:
+                                empty = get_empty_add_flex(opt_value)
+                                # TODO: this will only work for tuples and lists
+                                opt_value = opt_value[:ind]+type(opt_value)([empty])+opt_value[ind+len(default):]
+                                # only the first occurence
+                                break
+                    else:
+                        if hasattr(opt_value, '__neg__'):
+                            if action == 'add_first':
+                                opt_value = opt_value + -default
+                            else:
+                                opt_value = -default + opt_value
+                        elif hasattr(opt_value, '__getslice__'):
+                            if action == 'add_first':
+                                opt_value = opt_value[:-len(default)]
+                            else:
+                                opt_value = opt_value[len(default):]
 
                 if typ in ExtOption.TYPE_STRLIST:
                     sep, klass, helpsep = what_str_list_tuple(typ)
