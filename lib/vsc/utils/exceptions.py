@@ -78,7 +78,8 @@ class LoggedException(Exception):
         @param logger: logger to use
         """
         # format message with (optional) list of formatting arguments
-        msg = msg % args
+        if args:
+            msg = msg % args
 
         logger = kwargs.get('logger', None)
         # try to use logger defined in caller's environment
