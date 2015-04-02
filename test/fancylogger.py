@@ -408,6 +408,12 @@ class FancyLoggerTest(EnhancedTestCase):
         logger = fancylogger.getLogger('myname', fancyrecord=False)
         self.assertEqual(logger.fancyrecord, False)
 
+        logger = fancylogger.getLogger('myname', fancyrecord='yes')
+        self.assertEqual(logger.fancyrecord, True)
+        
+        logger = fancylogger.getLogger('myname', fancyrecord=0)
+        self.assertEqual(logger.fancyrecord, False)
+
         fancylogger.FANCYLOG_FANCYRECORD = orig
 
     def tearDown(self):
