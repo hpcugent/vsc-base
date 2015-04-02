@@ -86,6 +86,7 @@ from distutils.version import LooseVersion
 TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
 DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
 FANCYLOG_LOGGING_FORMAT = None
+FANCYLOG_FANCYRECORD = None
 
 # DEFAULT_LOGGING_FORMAT= '%(asctime)-15s %(levelname)-10s %(module)-15s %(threadName)-10s %(message)s'
 MAX_BYTES = 100 * 1024 * 1024  # max bytes in a file with rotating file handler
@@ -107,6 +108,7 @@ try:
     _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
     if MPI.COMM_WORLD.Get_size() > 1:
         # enable mpi rank when mpi is used
+        FANCYLOG_FANCYRECORD = True
         DEFAULT_LOGGING_FORMAT = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
                                  " mpi: %(mpirank)s %(threadName)-10s  %(message)s"
 except ImportError:
@@ -341,15 +343,22 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     if fname is True, the loggers name will be 'name[.classname].functionname'
     if clsname is True the loggers name will be 'name.classname[.functionname]'
     This will return a logger with a fancylog record, which includes the className template for the logformat
-    This can make your code a lot slower, so this can be dissabled by setting fancyrecord to False, and
-    will also be disabled if a Name is set, and fancyrecord is not set to True
+    This can make your code a lot slower, so this can be dissabled by setting fancyrecord or class module
+    FANCYLOG_FANCYRECORD to False, or will also be disabled if a Name is set (and fancyrecord and
+    module constant FANCYLOG_FANCYRECORD are also not set).
     """
     nameparts = [getRootLoggerName()]
 
+    if fancyrecord is None:
+        # Altough we could set it as default value in the function definition
+        # it's easier to explain if we do it this way
+        fancyrecord = FANCYLOG_FANCYRECORD
+
     if name:
         nameparts.append(name)
-    elif fancyrecord is None or fancyrecord:  # only be fancy if fancyrecord is True or no name is given
+    elif fancyrecord is None:  # only be fancy if fancyrecord is True or no name is given
         fancyrecord = True
+
     fancyrecord = bool(fancyrecord)  # make sure fancyrecord is a nice bool, not None
 
     if clsname:

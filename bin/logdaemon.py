@@ -37,7 +37,7 @@ then use mpi to get these environment variables to the clients.
 @author: Jens Timmerman (Ghent University)
 """
 from optparse import OptionParser
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.utils.daemon import Daemon
 import logging
 import os
