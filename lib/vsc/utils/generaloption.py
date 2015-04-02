@@ -412,14 +412,15 @@ class ExtOptionParser(OptionParser):
 
             :param help_to_string: boolean, if True, the help is written
                                    to a newly created StingIO instance
-            :param help_to_file: filehanlde, help is written to this filehandle
+            :param help_to_file: filehandle, help is written to this filehandle
             :param envvar_prefix: string, specify the environment variable prefix
                                   to use (if you don't want the default one)
             :param process_env_options: boolean, if False, don't check the
                                         environment for options (default: True)
             :param error_env_options: boolean, if True, log error if an environment
                                       variable with correct envvar_prefix exists
-                                      but does not correspond to (default: False)
+                                      but does not correspond to an existing option
+                                      (default: False)
         """
         self.log = getLogger(self.__class__.__name__)
         self.help_to_string = kwargs.pop('help_to_string', None)
@@ -660,7 +661,7 @@ class ExtOptionParser(OptionParser):
         epilogprefixtxt += "eg. --some-opt is same as setting %(prefix)s_SOME_OPT in the environment."
         self.epilog.append(epilogprefixtxt % {'prefix': self.envvar_prefix})
 
-        candidates = dict([(k,v) for k,v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
+        candidates = dict([(k, v) for k, v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
 
         for opt in self._get_all_options():
             if opt._long_opts is None:
@@ -681,12 +682,12 @@ class ExtOptionParser(OptionParser):
                     self.log.debug("Environment variable %s is not set" % env_opt_name)
 
         if candidates:
-            msg="Found %s environment variable(s) that are similar but do not match valid option(s): %s"
+            msg = "Found %s environment variable(s) that are prefixed with %s but do not match valid option(s): %s"
+            tup = (len(candidates), self.envvar_prefix, ','.join(candidates))
             if self.error_env_options:
-                func=self.log.error
+                self.log.error(msg, *tup)
             else:
-                func=self.log.debug
-            func(msg, len(candidates), ",".join(candidates))
+                self.log.warning(msg, *tup)
 
         self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, self.environment_arguments))
         return self.environment_arguments
@@ -1485,24 +1486,23 @@ class GeneralOption(object):
             elif action in ("add", "add_first", "add_flex"):
                 if default is not None:
                     if action == 'add_flex' and default:
-                        for ind, el in enumerate(opt_value):
-                            if el == default[0] and opt_value[ind:ind+len(default)] == default:
+                        for ind, elem in enumerate(opt_value):
+                            if elem == default[0] and opt_value[ind:ind+len(default)] == default:
                                 empty = get_empty_add_flex(opt_value)
                                 # TODO: this will only work for tuples and lists
-                                opt_value = opt_value[:ind]+type(opt_value)([empty])+opt_value[ind+len(default):]
+                                opt_value = opt_value[:ind] + type(opt_value)([empty]) + opt_value[ind+len(default):]
                                 # only the first occurence
                                 break
-                    else:
-                        if hasattr(opt_value, '__neg__'):
-                            if action == 'add_first':
-                                opt_value = opt_value + -default
-                            else:
-                                opt_value = -default + opt_value
-                        elif hasattr(opt_value, '__getslice__'):
-                            if action == 'add_first':
-                                opt_value = opt_value[:-len(default)]
-                            else:
-                                opt_value = opt_value[len(default):]
+                    elif hasattr(opt_value, '__neg__'):
+                        if action == 'add_first':
+                            opt_value = opt_value + -default
+                        else:
+                            opt_value = -default + opt_value
+                    elif hasattr(opt_value, '__getslice__'):
+                        if action == 'add_first':
+                            opt_value = opt_value[:-len(default)]
+                        else:
+                            opt_value = opt_value[len(default):]
 
                 if typ in ExtOption.TYPE_STRLIST:
                     sep, klass, helpsep = what_str_list_tuple(typ)

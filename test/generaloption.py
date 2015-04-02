@@ -324,16 +324,15 @@ class GeneralOptionTest(EnhancedTestCase):
 
         # flex
         for args, val in [
-                (',b', ['x','y','b']),
-                ('b,', ['b', 'x','y']),
+                (',b', ['x', 'y', 'b']),
+                ('b,', ['b', 'x', 'y']),
                 ('a,b', ['a', 'b']),
                 ('a,,b', ['a', 'x', 'y', 'b']),
         ]:
-            cmd='--ext-add-list-flex=%s' % args
+            cmd = '--ext-add-list-flex=%s' % args
             topt = TestOption1(go_args=[cmd])
             self.assertEqual(topt.options.ext_add_list_flex, val)
-            self.assertEqual(topt.generate_cmd_line(ignore=r'(?<!_flex)$'),
-                             [cmd])
+            self.assertEqual(topt.generate_cmd_line(ignore=r'(?<!_flex)$'), [cmd])
 
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""
@@ -353,11 +352,11 @@ class GeneralOptionTest(EnhancedTestCase):
         ign = r'^(?!ext_optional)'
         topt = TestOption1(go_args=[], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, None)
-        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , [])
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign), [])
 
         topt = TestOption1(go_args=['--ext-optional'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
-        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , ['--ext-optional'])
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign), ['--ext-optional'])
 
         topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
@@ -615,26 +614,29 @@ debug=1
         self.assertEqual(inst1.options.configfiles, expected)
         self.assertEqual(inst2.options.configfiles, expected)
 
-        self.assertEqual(inst1.configfiles, expected);
-        self.assertEqual(inst2.configfiles, expected);
+        self.assertEqual(inst1.configfiles, expected)
+        self.assertEqual(inst2.configfiles, expected)
 
     def test_error_env_options(self):
         """Test log error on unknown environment option"""
         self.reset_logcache()
         mylogger = fancylogger.getLogger('ExtOptionParser')
-        mylogger.error = self. mock_logmethod(mylogger.error)
+        mylogger.error = self.mock_logmethod(mylogger.error)
+        mylogger.warning = self.mock_logmethod(mylogger.warning)
 
-        os.environ['GENERALOPTIONTEST_XYZ']='1'
-        topt1 = TestOption1(go_args=['--level-level'],
-                            envvar_prefix='GENERALOPTIONTEST',
-        )
         self.assertEqual(self.count_logcache('error'), 0)
-        topt1 = TestOption1(go_args=['--level-level'],
-                            envvar_prefix='GENERALOPTIONTEST',
-                            error_env_options=1,
-        )
-        # One error should be logged
+        self.assertEqual(self.count_logcache('warning'), 0)
+
+        os.environ['GENERALOPTIONTEST_XYZ'] = '1'
+        topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST')
+        # no errors logged, one warning logged
+        self.assertEqual(self.count_logcache('error'), 0)
+        self.assertEqual(self.count_logcache('warning'), 1)
+
+        topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
+        # one error should be logged
         self.assertEqual(self.count_logcache('error'), 1)
+        self.assertEqual(self.count_logcache('warning'), 1)
 
 
 def suite():
