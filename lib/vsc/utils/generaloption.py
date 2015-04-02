@@ -135,7 +135,7 @@ class ExtOption(CompleterOption):
              - extend : alias for add with strlist type
              - type must support + (__add__) and one of negate (__neg__) or slicing (__getslice__)
          - add_flex : similar to add / add_first, but replaces the first "empty" element with the default
-             - the empty element is dependant of the type
+             - the empty element is dependent of the type
                  - for {str,path}{list,tuple} this is the empty string
              - types must support the index method to determine the location of the "empty" element
              - the replacement uses +
@@ -269,7 +269,7 @@ class ExtOption(CompleterOption):
                     lvalue = value + default
 
                 if action == 'add_flex' and lvalue:
-                    # use lvalue here rather then default to make sure there is 1 element
+                    # use lvalue here rather than default to make sure there is 1 element
                     # to determine the type
                     if not hasattr(lvalue, 'index'):
                         msg = "Unsupported type %s for action %s (requires index method)"
