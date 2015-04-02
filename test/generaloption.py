@@ -87,6 +87,7 @@ class TestOption1(GeneralOption):
             "add-list-default":("Test action add", 'strlist', 'add', ['now']),
             "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
             "add-list-flex":('Test strlist type with add_flex', 'strlist', 'add_flex', ['x', 'y']),
+            "add-pathlist-flex":('Test strlist type with add_flex', 'pathlist', 'add_flex', ['p2', 'p3']),
 
             # date
             "date":('Test action datetime.date', None, 'date', None),
@@ -180,6 +181,7 @@ class GeneralOptionTest(EnhancedTestCase):
                                     '--ext-strlist=x,y',
                                     '--ext-add-list-first=two,three',
                                     '--ext-add-list-flex=a,,b',
+                                    '--ext-add-pathlist-flex=p1/foo::p4',
                                     '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
@@ -206,6 +208,7 @@ class GeneralOptionTest(EnhancedTestCase):
                           'ext_add_list_default': ['now'],
                           'ext_add_list_first': ['two', 'three', 'now'],
                           'ext_add_list_flex': ['a','x', 'y', 'b'],
+                          'ext_add_pathlist_flex': ['p1/foo','p2', 'p3', 'p4'],
                           'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
