@@ -641,6 +641,15 @@ debug=1
         self.assertEqual(self.count_logcache('error'), 1)
         self.assertEqual(self.count_logcache('warning'), 1)
 
+        # using a custom error method
+        def raise_error(msg, *args):
+            """Raise error with given message and string arguments to format it."""
+            raise Exception(msg % args)
+
+        self.assertErrorRegex(Exception, "Found 1 environment variable.* prefixed with GENERALOPTIONTEST", TestOption1,
+                              go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True,
+                              error_env_option_method=raise_error)
+
 
 def suite():
     """ returns all the testcases in this module """

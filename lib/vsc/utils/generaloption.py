@@ -417,10 +417,15 @@ class ExtOptionParser(OptionParser):
                                   to use (if you don't want the default one)
             :param process_env_options: boolean, if False, don't check the
                                         environment for options (default: True)
-            :param error_env_options: boolean, if True, log error if an environment
-                                      variable with correct envvar_prefix exists
-                                      but does not correspond to an existing option
+            :param error_env_options: boolean, if True, use error_env_options_method
+                                      if an environment variable with correct envvar_prefix
+                                      exists but does not correspond to an existing option
                                       (default: False)
+            :param error_env_options_method: callable; method to use to report error
+                                             in used environment variables (see error_env_options);
+                                             accepts string value + additional
+                                             string arguments for formatting the message
+                                             (default: own log.error method)
         """
         self.log = getLogger(self.__class__.__name__)
         self.help_to_string = kwargs.pop('help_to_string', None)
@@ -428,6 +433,7 @@ class ExtOptionParser(OptionParser):
         self.envvar_prefix = kwargs.pop('envvar_prefix', None)
         self.process_env_options = kwargs.pop('process_env_options', True)
         self.error_env_options = kwargs.pop('error_env_options', False)
+        self.error_env_option_method = kwargs.pop('error_env_option_method', self.log.error)
 
         # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
         self.epilog = kwargs.pop('epilog', None)
@@ -685,7 +691,7 @@ class ExtOptionParser(OptionParser):
             msg = "Found %s environment variable(s) that are prefixed with %s but do not match valid option(s): %s"
             tup = (len(candidates), self.envvar_prefix, ','.join(candidates))
             if self.error_env_options:
-                self.log.error(msg, *tup)
+                self.error_env_option_method(msg, *tup)
             else:
                 self.log.warning(msg, *tup)
 
