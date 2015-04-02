@@ -352,7 +352,7 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     if fancyrecord is None:
         # Altough we could set it as default value in the function definition
         # it's easier to explain if we do it this way
-        fancylogrecord = FANCYLOG_FANCYRECORD
+        fancyrecord = FANCYLOG_FANCYRECORD
 
     if name:
         nameparts.append(name)

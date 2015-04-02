@@ -369,6 +369,46 @@ class FancyLoggerTest(EnhancedTestCase):
         fancylogger.logToScreen(enable=False, handler=handler)
         sys.stderr = _stderr
 
+    def test_fancyrecord(self):
+        """
+        Test fancyrecord usage
+        """
+        logger=fancylogger.getLogger()
+        self.assertTrue(logger.fancyrecord == True)
+
+        logger=fancylogger.getLogger(fancyrecord=True)
+        self.assertTrue(logger.fancyrecord == True)
+
+        logger=fancylogger.getLogger(fancyrecord=False)
+        self.assertTrue(logger.fancyrecord == False)
+
+        logger=fancylogger.getLogger('myname')
+        self.assertTrue(logger.fancyrecord == False)
+
+        logger=fancylogger.getLogger('myname', fancyrecord=True)
+        self.assertTrue(logger.fancyrecord == True)
+
+        orig=fancylogger.FANCYLOG_FANCYRECORD
+        fancylogger.FANCYLOG_FANCYRECORD=False
+
+        logger=fancylogger.getLogger()
+        self.assertTrue(logger.fancyrecord == False)
+
+        logger=fancylogger.getLogger('myname', fancyrecord=True)
+        self.assertTrue(logger.fancyrecord == True)
+
+        fancylogger.FANCYLOG_FANCYRECORD=True
+
+        logger=fancylogger.getLogger()
+        self.assertTrue(logger.fancyrecord == True)
+
+        logger=fancylogger.getLogger('myname')
+        self.assertTrue(logger.fancyrecord == True)
+
+        logger=fancylogger.getLogger('myname', fancyrecord=False)
+        self.assertTrue(logger.fancyrecord == False)
+
+        fancylogger.FANCYLOG_FANCYRECORD=orig
 
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)
@@ -377,7 +417,6 @@ class FancyLoggerTest(EnhancedTestCase):
 
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
-
 
 def suite():
     """ returns all the testcases in this module """
