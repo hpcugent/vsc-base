@@ -109,13 +109,12 @@ def check_str_list_tuple(option, opt, value):
 def get_empty_add_flex(allvalues):
     """Return the empty element for add_flex action for allvalues"""
     empty = None
-    emptyisNone = False # in case None is the empty value
 
     if isinstance(allvalues, (list, tuple)):
         if isinstance(allvalues[0], basestring):
             empty = ''
 
-    if (empty is None) and not emptyisNone:
+    if empty is None:
         msg = "get_empty_add_flex cannot determine empty element for type %s (%s)"
         self.log.raiseException(msg % (type(allvalues), allvalues))
 
