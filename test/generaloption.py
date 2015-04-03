@@ -625,21 +625,18 @@ debug=1
         self.reset_logcache()
         mylogger = fancylogger.getLogger('ExtOptionParser')
         mylogger.error = self.mock_logmethod(mylogger.error)
-        mylogger.warning = self.mock_logmethod(mylogger.warning)
+        mylogger.debug = self.mock_logmethod(mylogger.debug)
 
         self.assertEqual(self.count_logcache('error'), 0)
-        self.assertEqual(self.count_logcache('warning'), 0)
 
         os.environ['GENERALOPTIONTEST_XYZ'] = '1'
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST')
-        # no errors logged, one warning logged
+        # no errors logged
         self.assertEqual(self.count_logcache('error'), 0)
-        self.assertEqual(self.count_logcache('warning'), 1)
 
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
         # one error should be logged
         self.assertEqual(self.count_logcache('error'), 1)
-        self.assertEqual(self.count_logcache('warning'), 1)
 
         # using a custom error method
         def raise_error(msg, *args):

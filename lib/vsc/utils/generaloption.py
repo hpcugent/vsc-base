@@ -689,11 +689,11 @@ class ExtOptionParser(OptionParser):
 
         if candidates:
             msg = "Found %s environment variable(s) that are prefixed with %s but do not match valid option(s): %s"
-            tup = (len(candidates), self.envvar_prefix, ','.join(candidates))
             if self.error_env_options:
-                self.error_env_option_method(msg, *tup)
+                logmethod = self.error_env_option_method
             else:
-                self.log.warning(msg, *tup)
+                logmethod = self.log.debug
+            logmethod(msg, len(candidates), self.envvar_prefix, ','.join(candidates))
 
         self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, self.environment_arguments))
         return self.environment_arguments
