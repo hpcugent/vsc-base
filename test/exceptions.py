@@ -153,7 +153,7 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM \(at test.*[0-9]+ in raise_testexception\)$" % getRootLoggerName())
+        log_re = re.compile("^%s :: BOOM \(at .*:[0-9]+ in assertErrorRegex\)$" % getRootLoggerName())
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
