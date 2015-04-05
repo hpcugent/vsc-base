@@ -89,7 +89,7 @@ class LoggedException(Exception):
             frames_up = 1
             if self.__class__ != LoggedException:
                 # move a level up when this instance is derived from LoggedException
-                frames_up = 1
+                frames_up += 1
 
             # figure out where error was raised from
             # current frame: this constructor, one frame above: location where this EasyBuildError was created/raised
