@@ -90,7 +90,8 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM', logger=logger1)
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^runpy.testlogger_one :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$", re.M)
+        rootlog = getRootLoggerName()
+        log_re = re.compile("^%s.testlogger_one :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog, re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -111,7 +112,8 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^runpy.testlogger_local :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$")
+        rootlog = getRootLoggerName()
+        log_re = re.compile("^%s.testlogger_local :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
