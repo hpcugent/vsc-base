@@ -31,6 +31,7 @@ Module providing custom exceptions.
 """
 import inspect
 import logging
+import os
 from vsc.utils import fancylogger
 
 
@@ -69,6 +70,8 @@ class LoggedException(Exception):
     # name of logging method to use
     # must accept an argument of type string, i.e. the log message, and an optional list of formatting arguments
     LOGGING_METHOD_NAME = 'error'
+    # list of top-level package names to use to format location info; None implies not to include location info
+    LOC_INFO_TOP_PKG_NAMES = []
 
     def __init__(self, msg, *args, **kwargs):
         """
@@ -80,6 +83,27 @@ class LoggedException(Exception):
         # format message with (optional) list of formatting arguments
         if args:
             msg = msg % args
+
+        if self.LOC_INFO_TOP_PKG_NAMES is not None:
+            # determine correct frame to fetch location information from
+            frames_up = 1
+            if self.__class__ != LoggedException:
+                # move a level up when this instance is derived from LoggedException
+                frames_up = 1
+
+            # figure out where error was raised from
+            # current frame: this constructor, one frame above: location where this EasyBuildError was created/raised
+            frameinfo = inspect.getouterframes(inspect.currentframe())[frames_up]
+
+            # determine short location of Python module where error was raised from (starting with 'easybuild/' or 'vsc/')
+            path_parts = frameinfo[1].split(os.path.sep)
+            relpath = path_parts.pop()
+            while path_parts and not any([relpath.startswith(n + os.path.sep) for n in self.LOC_INFO_TOP_PKG_NAMES]):
+                relpath = os.path.join(path_parts.pop() or os.path.sep, relpath)
+
+            # include location info at the end of the message
+            # for example: "Nope, giving up (at easybuild/tools/somemodule.py:123 in some_function)"
+            msg = "%s (at %s:%s in %s)" % (msg, relpath, frameinfo[2], frameinfo[3])
 
         logger = kwargs.get('logger', None)
         # try to use logger defined in caller's environment
