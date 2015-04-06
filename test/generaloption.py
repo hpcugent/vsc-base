@@ -99,7 +99,10 @@ class TestOption1(GeneralOption):
 
             "pathliststorenone":('Test pathlist type with store_or_None', 'pathlist', 'store_or_None', ['x']),
             "pathliststorenone2":('Test pathlist type with store_or_None (2nd attempt)', 'pathlist', 'store_or_None', ['x2']),
-
+            # dict types
+            "strdict": ('Test strlistdict type', 'strdict', 'store', {'1': 'one', '2': 'two'}),
+            "strlistdict": ('Test strlistdict type', 'strlistdict', 'store', {'1': ['one', 'uno'], '2': ['two']}),
+            "strlistdict2": ('Test strlistdict type', 'strlistdict', 'store', None),
             }
         descr = ["ExtOption", "action from ExtOption"]
 
@@ -179,6 +182,7 @@ class GeneralOptionTest(TestCase):
                                     '--ext-pathliststorenone2=y2:z2',
                                     '--ext-strlist=x,y',
                                     '--ext-add-list-first=two,three',
+                                    '--ext-strlistdict2=foo:bar,baz;test:test',
                                     '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
@@ -213,6 +217,9 @@ class GeneralOptionTest(TestCase):
                           'ext_pathliststorenone': ['x'],
                           'ext_pathliststorenone2': ['y2', 'z2'],
                           'ext_pathtuple': ('x',),
+                          'ext_strdict': {'1': 'one', '2': 'two'},
+                          'ext_strlistdict': {'1': ['one', 'uno'], '2': ['two']},
+                          'ext_strlistdict2': {'foo': ['bar', 'baz'], 'test': ['test']},
                           'aregexopt': None,
                           })
 
@@ -224,6 +231,7 @@ class GeneralOptionTest(TestCase):
                           '--ext-pathliststorenone',
                           '--ext-pathliststorenone2=y2:z2',
                           '--ext-strlist=x,y',
+                          '--ext-strlistdict2=test:test;foo:bar,baz',
                           '--level-level',
                           '--level-prefix-and-dash=YY',
                           '--store="some whitespace"',
@@ -235,7 +243,10 @@ class GeneralOptionTest(TestCase):
                           '--ext-pathlist=x:y',
                           '--ext-pathliststorenone',
                           '--ext-pathliststorenone2=y2:z2',
+                          #'--ext-strdict=1:one;2:two',
                           '--ext-strlist=x,y',
+                          '--ext-strlistdict=1:one,uno;2:two',
+                          '--ext-strlistdict2=test:test;foo:bar,baz',
                           '--justatest',
                           '--level-level',
                           '--level-longlevel',
@@ -251,7 +262,10 @@ class GeneralOptionTest(TestCase):
                           '--ext-pathlist=x:y',
                           '--ext-pathliststorenone',
                           '--ext-pathliststorenone2=y2:z2',
+                          #'--ext-strdict=1:one;2:two',
                           '--ext-strlist=x,y',
+                          '--ext-strlistdict=1:one,uno;2:two',
+                          '--ext-strlistdict2=test:test;foo:bar,baz',
                           '--justatest',
                           '--level-level',
                           '--level-longlevel',
