@@ -32,6 +32,7 @@ import datetime
 import logging
 import os
 import re
+import tempfile
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
@@ -336,6 +337,91 @@ class GeneralOptionTest(EnhancedTestCase):
             topt = TestOption1(go_args=[cmd])
             self.assertEqual(topt.options.ext_add_list_flex, val)
             self.assertEqual(topt.generate_cmd_line(ignore=r'(?<!_flex)$'), [cmd])
+
+    def test_ext_add_multi(self):
+        """Test behaviour when 'add' options are used multiple times."""
+        fd, cfgfile = tempfile.mkstemp()
+        os.close(fd)
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-default=two')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowtwo')
+
+        os.environ['TEST_EXT_ADD_DEFAULT'] = 'three'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowthree')
+
+        args.extend(['--ext-add-default=four', '--ext-add-default=five'])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        #self.assertEqual(topt.options.ext_add_default, 'nowthreefourfive')
+        self.assertEqual(topt.options.ext_add_default, 'nowfive')
+        del os.environ['TEST_EXT_ADD_DEFAULT']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-list-default=two,three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'two', 'three'])
+
+        os.environ['TEST_EXT_ADD_LIST_DEFAULT'] = 'four,five'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'four', 'five'])
+
+        args.extend([
+            '--ext-add-list-default=six',
+            '--ext-add-list-default=seven,eight',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        #self.assertEqual(topt.options.ext_add_list_default, ['now', 'four', 'five', 'six', 'seven', 'eight'])
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'seven', 'eight'])
+        del os.environ['TEST_EXT_ADD_LIST_DEFAULT']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-list-flex=two,,three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['two', 'x', 'y', 'three'])
+
+        os.environ['TEST_EXT_ADD_LIST_FLEX'] = 'four,,five'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['four', 'x', 'y', 'five'])
+
+        args.extend([
+            '--ext-add-list-flex=six,',
+            '--ext-add-list-flex=seven,,eight',
+            '--ext-add-list-flex=,last',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        #self.assertEqual(topt.options.ext_add_list_flex, ['seven', 'six', 'four', 'x', 'y', 'five', 'eight', 'last'])
+        self.assertEqual(topt.options.ext_add_list_flex, ['x', 'y', 'last'])
+        del os.environ['TEST_EXT_ADD_LIST_FLEX']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-pathlist-flex=two::three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['two', 'p2', 'p3', 'three'])
+
+        os.environ['TEST_EXT_ADD_PATHLIST_FLEX'] = 'four::five'
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['four', 'p2', 'p3', 'five'])
+
+        args.extend([
+            '--ext-add-pathlist-flex=six:',
+            '--ext-add-pathlist-flex=:last',
+            '--ext-add-pathlist-flex=seven::eight',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'six', 'four', 'p2', 'p3', 'five', 'eight', 'last'])
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'p2', 'p3', 'eight'])
+        del os.environ['TEST_EXT_ADD_PATHLIST_FLEX']
 
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""
