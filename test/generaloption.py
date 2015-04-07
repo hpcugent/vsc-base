@@ -419,7 +419,7 @@ class GeneralOptionTest(EnhancedTestCase):
             '--ext-add-pathlist-flex=seven::eight',
         ])
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
-        self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'six', 'four', 'p2', 'p3', 'five', 'eight', 'last'])
+        #self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'six', 'four', 'p2', 'p3', 'five', 'eight', 'last'])
         self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'p2', 'p3', 'eight'])
         del os.environ['TEST_EXT_ADD_PATHLIST_FLEX']
 
