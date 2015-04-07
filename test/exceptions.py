@@ -68,6 +68,10 @@ class ExceptionsTest(EnhancedTestCase):
         # test formatting of message
         self.assertErrorRegex(LoggedException, 'BOOMBAF', raise_loggedexception, 'BOOM%s', 'BAF')
 
+        # test log message that contains '%s' without any formatting arguments being passed
+        # test formatting of message
+        self.assertErrorRegex(LoggedException, "BOOM '%s'", raise_loggedexception, "BOOM '%s'")
+
         os.remove(tmplog)
 
     def test_loggedexception_specifiedlogger(self):

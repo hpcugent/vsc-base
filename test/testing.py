@@ -102,11 +102,20 @@ class TestTesting(EnhancedTestCase):
         self.assertEqual(self.count_logcache('error'), 0)
 
         myerror = self.mock_logmethod(logging.error)
-        myerror("Error")
 
+        myerror("Error")
         self.assertEqual(self.count_logcache('error'), 1)
+
+        myerror("Moar error")
+        myerror("Even moar error")
+        self.assertEqual(self.count_logcache('error'), 3)
+
         self.reset_logcache('error')
         self.assertEqual(self.count_logcache('error'), 0)
+
+        myerror("Error")
+        myerror("Moar error")
+        self.assertEqual(self.count_logcache('error'), 2)
 
 def suite():
     """ return all the tests"""

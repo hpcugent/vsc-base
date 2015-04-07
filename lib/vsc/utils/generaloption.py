@@ -109,13 +109,12 @@ def check_str_list_tuple(option, opt, value):
 def get_empty_add_flex(allvalues):
     """Return the empty element for add_flex action for allvalues"""
     empty = None
-    emptyisNone = False # in case None is the empty value
 
     if isinstance(allvalues, (list, tuple)):
         if isinstance(allvalues[0], basestring):
             empty = ''
 
-    if (empty is None) and not emptyisNone:
+    if empty is None:
         msg = "get_empty_add_flex cannot determine empty element for type %s (%s)"
         self.log.raiseException(msg % (type(allvalues), allvalues))
 
@@ -136,7 +135,7 @@ class ExtOption(CompleterOption):
              - extend : alias for add with strlist type
              - type must support + (__add__) and one of negate (__neg__) or slicing (__getslice__)
          - add_flex : similar to add / add_first, but replaces the first "empty" element with the default
-             - the empty element is dependant of the type
+             - the empty element is dependent of the type
                  - for {str,path}{list,tuple} this is the empty string
              - types must support the index method to determine the location of the "empty" element
              - the replacement uses +
@@ -270,7 +269,7 @@ class ExtOption(CompleterOption):
                     lvalue = value + default
 
                 if action == 'add_flex' and lvalue:
-                    # use lvalue here rather then default to make sure there is 1 element
+                    # use lvalue here rather than default to make sure there is 1 element
                     # to determine the type
                     if not hasattr(lvalue, 'index'):
                         msg = "Unsupported type %s for action %s (requires index method)"
@@ -413,14 +412,20 @@ class ExtOptionParser(OptionParser):
 
             :param help_to_string: boolean, if True, the help is written
                                    to a newly created StingIO instance
-            :param help_to_file: filehanlde, help is written to this filehandle
+            :param help_to_file: filehandle, help is written to this filehandle
             :param envvar_prefix: string, specify the environment variable prefix
                                   to use (if you don't want the default one)
             :param process_env_options: boolean, if False, don't check the
                                         environment for options (default: True)
-            :param error_env_options: boolean, if True, log error if an environment
-                                      variable with correct envvar_prefix exists
-                                      but does not correspond to (default: False)
+            :param error_env_options: boolean, if True, use error_env_options_method
+                                      if an environment variable with correct envvar_prefix
+                                      exists but does not correspond to an existing option
+                                      (default: False)
+            :param error_env_options_method: callable; method to use to report error
+                                             in used environment variables (see error_env_options);
+                                             accepts string value + additional
+                                             string arguments for formatting the message
+                                             (default: own log.error method)
         """
         self.log = getLogger(self.__class__.__name__)
         self.help_to_string = kwargs.pop('help_to_string', None)
@@ -428,6 +433,7 @@ class ExtOptionParser(OptionParser):
         self.envvar_prefix = kwargs.pop('envvar_prefix', None)
         self.process_env_options = kwargs.pop('process_env_options', True)
         self.error_env_options = kwargs.pop('error_env_options', False)
+        self.error_env_option_method = kwargs.pop('error_env_option_method', self.log.error)
 
         # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
         self.epilog = kwargs.pop('epilog', None)
@@ -661,7 +667,7 @@ class ExtOptionParser(OptionParser):
         epilogprefixtxt += "eg. --some-opt is same as setting %(prefix)s_SOME_OPT in the environment."
         self.epilog.append(epilogprefixtxt % {'prefix': self.envvar_prefix})
 
-        candidates = dict([(k,v) for k,v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
+        candidates = dict([(k, v) for k, v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
 
         for opt in self._get_all_options():
             if opt._long_opts is None:
@@ -682,12 +688,12 @@ class ExtOptionParser(OptionParser):
                     self.log.debug("Environment variable %s is not set" % env_opt_name)
 
         if candidates:
-            msg="Found %s environment variable(s) that are similar but do not match valid option(s): %s"
+            msg = "Found %s environment variable(s) that are prefixed with %s but do not match valid option(s): %s"
             if self.error_env_options:
-                func=self.log.error
+                logmethod = self.error_env_option_method
             else:
-                func=self.log.debug
-            func(msg, len(candidates), ",".join(candidates))
+                logmethod = self.log.debug
+            logmethod(msg, len(candidates), self.envvar_prefix, ','.join(candidates))
 
         self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, self.environment_arguments))
         return self.environment_arguments
@@ -1486,24 +1492,23 @@ class GeneralOption(object):
             elif action in ("add", "add_first", "add_flex"):
                 if default is not None:
                     if action == 'add_flex' and default:
-                        for ind, el in enumerate(opt_value):
-                            if el == default[0] and opt_value[ind:ind+len(default)] == default:
+                        for ind, elem in enumerate(opt_value):
+                            if elem == default[0] and opt_value[ind:ind+len(default)] == default:
                                 empty = get_empty_add_flex(opt_value)
                                 # TODO: this will only work for tuples and lists
-                                opt_value = opt_value[:ind]+type(opt_value)([empty])+opt_value[ind+len(default):]
+                                opt_value = opt_value[:ind] + type(opt_value)([empty]) + opt_value[ind+len(default):]
                                 # only the first occurence
                                 break
-                    else:
-                        if hasattr(opt_value, '__neg__'):
-                            if action == 'add_first':
-                                opt_value = opt_value + -default
-                            else:
-                                opt_value = -default + opt_value
-                        elif hasattr(opt_value, '__getslice__'):
-                            if action == 'add_first':
-                                opt_value = opt_value[:-len(default)]
-                            else:
-                                opt_value = opt_value[len(default):]
+                    elif hasattr(opt_value, '__neg__'):
+                        if action == 'add_first':
+                            opt_value = opt_value + -default
+                        else:
+                            opt_value = -default + opt_value
+                    elif hasattr(opt_value, '__getslice__'):
+                        if action == 'add_first':
+                            opt_value = opt_value[:-len(default)]
+                        else:
+                            opt_value = opt_value[len(default):]
 
                 if typ in ExtOption.TYPE_STRLIST:
                     sep, klass, helpsep = what_str_list_tuple(typ)
