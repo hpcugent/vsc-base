@@ -92,10 +92,11 @@ class LoggedException(Exception):
                 frames_up += 1
 
             # figure out where error was raised from
-            # current frame: this constructor, one frame above: location where this EasyBuildError was created/raised
+            # current frame: this constructor, one frame above: location where this LoggedException was created/raised
             frameinfo = inspect.getouterframes(inspect.currentframe())[frames_up]
 
-            # determine short location of Python module where error was raised from (starting with 'easybuild/' or 'vsc/')
+            # determine short location of Python module where error was raised from,
+            # i.e. starting with an entry from LOC_INFO_TOP_PKG_NAMES
             path_parts = frameinfo[1].split(os.path.sep)
             relpath = path_parts.pop()
             while path_parts and not any([relpath.startswith(n + os.path.sep) for n in self.LOC_INFO_TOP_PKG_NAMES]):
