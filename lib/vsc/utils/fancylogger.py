@@ -73,6 +73,19 @@ Logging to a udp server:
 """
 
 import inspect
+
+# patch inspect.getsourcefile to cache results to avoid tons of stat syscalls
+_cachegetsourcefile = {}
+_orig_inspect_getsourcefile = inspect.getsourcefile
+def cached_getsourcefile(obj):
+    """Faster version of inspect.getsourcefile, by caching results."""
+    fn = inspect.getfile(obj)
+    if not fn in _cachegetsourcefile:
+        _cachegetsourcefile[fn] = _orig_inspect_getsourcefile(obj)
+    return _cachegetsourcefile[fn]
+
+inspect.getsourcefile = cached_getsourcefile
+
 import logging
 import logging.handlers
 import os
