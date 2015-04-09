@@ -99,10 +99,7 @@ class LoggedException(Exception):
             # i.e. starting with an entry from LOC_INFO_TOP_PKG_NAMES
             path_parts = frameinfo[1].split(os.path.sep)
             top_indices = [path_parts.index(n) for n in self.LOC_INFO_TOP_PKG_NAMES if n in path_parts]
-            if top_indices:
-                relpath = os.path.join(*path_parts[max(top_indices):])
-            else:
-                relpath = os.path.join(*path_parts)
+            relpath = os.path.join(*path_parts[max(top_indices or [0]):])
 
             # include location info at the end of the message
             # for example: "Nope, giving up (at easybuild/tools/somemodule.py:123 in some_function)"
