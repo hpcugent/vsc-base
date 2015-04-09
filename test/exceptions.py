@@ -134,7 +134,7 @@ class ExceptionsTest(EnhancedTestCase):
         # set log format, for each regex searching
         setLogFormat("%(name)s :: %(message)s")
 
-        # if no logger is available, and no logger is specified, use default 'root' fancylogger
+        # no location with default LOC_INFO_TOP_PKG_NAMES ([])
         logToFile(tmplog, enable=True)
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
@@ -146,14 +146,14 @@ class ExceptionsTest(EnhancedTestCase):
         f = open(tmplog, 'w')
         f.write('')
         f.close()
-        TestException.LOC_INFO_TOP_PKG_NAMES = ['test']
+        TestException.LOC_INFO_TOP_PKG_NAMES = ['vsc']
 
-        # if no logger is specified, logger available in calling context should be used
+        # location is included if LOC_INFO_TOP_PKG_NAMES is defined
         logToFile(tmplog, enable=True)
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM \(at .*:[0-9]+ in assertErrorRegex\)$" % getRootLoggerName())
+        log_re = re.compile("^%s :: BOOM \(at vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % getRootLoggerName())
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
