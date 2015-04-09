@@ -90,6 +90,7 @@ def what_str_list_tuple(name):
 
     return sep, klass, helpsep
 
+
 def check_str_list_tuple(option, opt, value):
     """
     check function for strlist and strtuple type
@@ -105,6 +106,25 @@ def check_str_list_tuple(option, opt, value):
     else:
         return klass(split)
 
+
+def check_dict(option, opt, value):
+    """
+    Check function for dict type
+        assumes value is ';'-separated list of key-value pairs, where value may be a comma-separated list
+        return dict with string keys or string or list-of-strings values
+    """
+    key_val_pairs = [x.split(':') for x in value.split(';')]
+
+    if option.type == 'strdict':
+        res = dict(key_val_pairs)
+    elif option.type == 'strlistdict':
+        res = dict([(k, v.split(',')) for (k, v) in key_val_pairs])
+    else:
+        res = dict([])
+        err = _gettext("check_dict: unsupported type %s" % option.type)
+        raise OptionValueError(err)
+
+    return res
 
 class ExtOption(CompleterOption):
     """Extended options class
@@ -131,6 +151,8 @@ class ExtOption(CompleterOption):
           - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings     
           - pathlist, pathtuple : using os.pathsep, convert pathsep-separated string in a list resp. tuple of strings
               - the path separator is OS-dependent
+          - strdict: dictionary with string values (and string keys)
+          - strlistdict: dictionary with list-of-strings values (and string keys)
     """
     EXTEND_SEPARATOR = ','
 
@@ -147,9 +169,12 @@ class ExtOption(CompleterOption):
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
-    TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path'] ]
-    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + Option.TYPE_CHECKER.items())
-    TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
+    TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path']]
+    TYPE_DICT = ['strdict', 'strlistdict']
+    TYPE_CHECKER = copy.deepcopy(Option.TYPE_CHECKER)
+    TYPE_CHECKER.update(dict([(x, check_str_list_tuple) for x in TYPE_STRLIST]))
+    TYPE_CHECKER.update(dict([(x, check_dict) for x in TYPE_DICT]))
+    TYPES = tuple(TYPE_STRLIST + TYPE_DICT + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
     def __init__(self, *args, **kwargs):
@@ -925,15 +950,23 @@ class GeneralOption(object):
             extra_help = []
             if typ in ExtOption.TYPE_STRLIST:
                 sep, klass, helpsep = what_str_list_tuple(typ)
-                extra_help.append("type %s-separated %s" % (helpsep, klass.__name__))
+                extra_help.append("type: %s-separated %s" % (helpsep, klass.__name__))
+            elif typ == 'strdict':
+                extra_help.append("type: dict with string keys, string values")
+            elif typ == 'strlistdict':
+                extra_help.append("type: dict with string keys, list-of-strings values")
             elif typ is not None:
-                extra_help.append("type %s" % typ)
+                extra_help.append("type: %s" % typ)
 
             if default is not None:
                 if len(str(default)) == 0:
                     extra_help.append("def ''")  # empty string
                 elif typ in ExtOption.TYPE_STRLIST:
                     extra_help.append("def %s" % sep.join(default))
+                elif typ == 'strdict':
+                    extra_help.append("def %s" % ';'.join(['%s:%s' % (k, v) for (k, v) in default.items()]))
+                elif typ == 'strlistdict':
+                    extra_help.append("def %s" % ';'.join(['%s:%s' % (k, ','.join(v)) for (k, v) in default.items()]))
                 else:
                     extra_help.append("def %s" % default)
 
@@ -1393,6 +1426,12 @@ class GeneralOption(object):
                     if typ in ExtOption.TYPE_STRLIST:
                         sep, _, _ = what_str_list_tuple(typ)
                         args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
+                    elif typ == 'strdict':
+                        opt_argstr = ';'.join(['%s:%s' % (k, v) for (k, v) in opt_value.items()])
+                        args.append("--%s=%s" % (opt_name, shell_quote(opt_argstr)))
+                    elif typ == 'strlistdict':
+                        opt_argstr = ';'.join(['%s:%s' % (k, ','.join(v)) for (k, v) in opt_value.items()])
+                        args.append("--%s=%s" % (opt_name, shell_quote(opt_argstr)))
                     else:
                         args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
             elif action in ("store_true", "store_false",) + ExtOption.EXTOPTION_LOG:
@@ -1436,6 +1475,12 @@ class GeneralOption(object):
                     sep, klass, helpsep = what_str_list_tuple(typ)
                     restype = '%s-separated %s' % (helpsep, klass.__name__)
                     value = sep.join(opt_value)
+                elif typ == 'strdict':
+                    restype = 'dict with string keys, string values'
+                    value = ';'.join(['%s:%s' % (k, v) for (k, v) in opt_value.items()])
+                elif typ == 'strlistdict':
+                    restype = 'dict with string keys, list-of-strings values'
+                    value = ';'.join(['%s:%s' % (k, ','.join(v)) for (k, v) in opt_value.items()])
                 else:
                     restype = 'string'
                     value = opt_value
@@ -1452,6 +1497,12 @@ class GeneralOption(object):
             elif typ in ExtOption.TYPE_STRLIST:
                 sep, _, _ = what_str_list_tuple(typ)
                 args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
+            elif typ == 'strdict':
+                opt_argstr = ';'.join(['%s:%s' % (k, v) for (k, v) in opt_value.items()])
+                args.append("--%s=%s" % (opt_name, shell_quote(opt_argstr)))
+            elif typ == 'strlistdict':
+                opt_argstr = ';'.join(['%s:%s' % (k, ','.join(v)) for (k, v) in opt_value.items()])
+                args.append("--%s=%s" % (opt_name, shell_quote(opt_argstr)))
             elif action in ("append",):
                 # add multiple times
                 self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args" %
