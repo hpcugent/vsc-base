@@ -61,7 +61,7 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM$" % getRootLoggerName(), re.M)
+        log_re = re.compile("^%s :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % getRootLoggerName(), re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -90,7 +90,8 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM', logger=logger1)
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s.testlogger_one :: BOOM$" % getRootLoggerName())
+        rootlog = getRootLoggerName()
+        log_re = re.compile("^%s.testlogger_one :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog, re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -111,7 +112,48 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s.testlogger_local :: BOOM$" % getRootLoggerName())
+        rootlog = getRootLoggerName()
+        log_re = re.compile("^%s.testlogger_local :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog)
+        logtxt = open(tmplog, 'r').read()
+        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+
+        os.remove(tmplog)
+
+    def test_loggedexception_location(self):
+        """Test inclusion of location information in log message for LoggedException."""
+        class TestException(LoggedException):
+            LOC_INFO_TOP_PKG_NAMES = None
+
+        def raise_testexception(msg, *args, **kwargs):
+            """Utility function: just raise a TestException."""
+            raise TestException(msg, *args, **kwargs)
+
+        fd, tmplog = tempfile.mkstemp()
+        os.close(fd)
+
+        # set log format, for each regex searching
+        setLogFormat("%(name)s :: %(message)s")
+
+        # no location with default LOC_INFO_TOP_PKG_NAMES ([])
+        logToFile(tmplog, enable=True)
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
+        logToFile(tmplog, enable=False)
+
+        log_re = re.compile("^%s :: BOOM$" % getRootLoggerName(), re.M)
+        logtxt = open(tmplog, 'r').read()
+        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+
+        f = open(tmplog, 'w')
+        f.write('')
+        f.close()
+        TestException.LOC_INFO_TOP_PKG_NAMES = ['vsc']
+
+        # location is included if LOC_INFO_TOP_PKG_NAMES is defined
+        logToFile(tmplog, enable=True)
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
+        logToFile(tmplog, enable=False)
+
+        log_re = re.compile("^%s :: BOOM \(at vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % getRootLoggerName())
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
