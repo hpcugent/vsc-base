@@ -98,6 +98,8 @@ class LoggedException(Exception):
             # determine short location of Python module where error was raised from,
             # i.e. starting with an entry from LOC_INFO_TOP_PKG_NAMES
             path_parts = frameinfo[1].split(os.path.sep)
+            if path_parts[0] == '':
+                path_parts[0] = os.path.sep
             top_indices = [path_parts.index(n) for n in self.LOC_INFO_TOP_PKG_NAMES if n in path_parts]
             relpath = os.path.join(*path_parts[max(top_indices or [0]):])
 

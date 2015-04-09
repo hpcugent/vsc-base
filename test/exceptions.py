@@ -139,21 +139,37 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM$" % getRootLoggerName(), re.M)
+        rootlogname = getRootLoggerName()
+
+        log_re = re.compile("^%s :: BOOM$" % rootlogname, re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
         f = open(tmplog, 'w')
         f.write('')
         f.close()
-        TestException.LOC_INFO_TOP_PKG_NAMES = ['vsc']
 
         # location is included if LOC_INFO_TOP_PKG_NAMES is defined
+        TestException.LOC_INFO_TOP_PKG_NAMES = ['vsc']
         logToFile(tmplog, enable=True)
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM \(at vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % getRootLoggerName())
+        log_re = re.compile(r"^%s :: BOOM \(at vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
+        logtxt = open(tmplog, 'r').read()
+        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+
+        f = open(tmplog, 'w')
+        f.write('')
+        f.close()
+
+        # absolute path of location is included if there's no match in LOC_INFO_TOP_PKG_NAMES
+        TestException.LOC_INFO_TOP_PKG_NAMES = ['foobar']
+        logToFile(tmplog, enable=True)
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
+        logToFile(tmplog, enable=False)
+
+        log_re = re.compile(r"^%s :: BOOM \(at /.*/vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
