@@ -350,13 +350,14 @@ class GeneralOptionTest(EnhancedTestCase):
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
         self.assertEqual(topt.options.ext_add_default, 'nowtwo')
 
+        # environment overrides config file
         os.environ['TEST_EXT_ADD_DEFAULT'] = 'three'
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
         self.assertEqual(topt.options.ext_add_default, 'nowthree')
 
+        # command line overrides environment + config file, last value wins
         args.extend(['--ext-add-default=four', '--ext-add-default=five'])
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
-        #self.assertEqual(topt.options.ext_add_default, 'nowthreefourfive')
         self.assertEqual(topt.options.ext_add_default, 'nowfive')
         del os.environ['TEST_EXT_ADD_DEFAULT']
 
@@ -376,7 +377,6 @@ class GeneralOptionTest(EnhancedTestCase):
             '--ext-add-list-default=seven,eight',
         ])
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
-        #self.assertEqual(topt.options.ext_add_list_default, ['now', 'four', 'five', 'six', 'seven', 'eight'])
         self.assertEqual(topt.options.ext_add_list_default, ['now', 'seven', 'eight'])
         del os.environ['TEST_EXT_ADD_LIST_DEFAULT']
 
@@ -397,7 +397,6 @@ class GeneralOptionTest(EnhancedTestCase):
             '--ext-add-list-flex=,last',
         ])
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
-        #self.assertEqual(topt.options.ext_add_list_flex, ['seven', 'six', 'four', 'x', 'y', 'five', 'eight', 'last'])
         self.assertEqual(topt.options.ext_add_list_flex, ['x', 'y', 'last'])
         del os.environ['TEST_EXT_ADD_LIST_FLEX']
 
@@ -419,7 +418,6 @@ class GeneralOptionTest(EnhancedTestCase):
             '--ext-add-pathlist-flex=seven::eight',
         ])
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
-        #self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'six', 'four', 'p2', 'p3', 'five', 'eight', 'last'])
         self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'p2', 'p3', 'eight'])
         del os.environ['TEST_EXT_ADD_PATHLIST_FLEX']
 
