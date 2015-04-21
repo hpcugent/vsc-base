@@ -257,7 +257,7 @@ class ExtOption(CompleterOption):
             if action in ("add", "add_first", "add_flex",):
                 # determine type from lvalue
                 # set default first
-                default = getattr(parser.get_default_values(), dest)
+                default = getattr(parser.get_default_values(), dest, None)
                 if default is None:
                     default = type(value)()
                 if not (hasattr(default, '__add__') and
