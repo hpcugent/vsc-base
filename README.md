@@ -28,7 +28,7 @@ couple of `fancy` features.
 - __daemon.py__ : Daemon class written by Sander Marechal (http://www.jejik.com) to start a python script as a daemon.
 - __missing.py__: Small functions and tools that are commonly used but not
   available in the Python (2.x) API.
-- ~~__cache.py__ : File cache to store pickled data identified by a key accompanied by a timestamp.~~ Was moved to vsc-utils
+- ~~__cache.py__ : File cache to store pickled data identified by a key accompanied by a timestamp.~~ Was moved to [vsc-utils](https://github.com/hpcugent/vsc-utils)
 - __generaloption.py__ : A general option parser for python. It will fetch options (in this order) from config files, from environment variables and from the command line and parse them in a way compatible with the default python optionparser. Thus allowing a very flexible way to configure your scripts.
 It also adds a few other useful extras.
 - __affinity.py__ : Linux cpu affinity.
