@@ -268,7 +268,20 @@ def build_setup_cfg_for_bdist_rpm(target):
 def action_target(target, setupfn=setup, extra_sdist=[]):
     # EXTRA_SDIST_FILES.extend(extra_sdist)
 
-    cleanup()
+    do_cleanup = True
+    try:
+        # very primitive check for install --skip-build
+        # in that case, we don't mind "leftover build";
+        # it's probably intentional
+        install_ind = sys.argv.index('install')
+        build_skip = sys.argv.index('--skip-build')
+        if build_skip > install_ind:
+            do_cleanup = False
+    except ValueError:
+        pass
+
+    if do_cleanup:
+        cleanup()
 
     build_setup_cfg_for_bdist_rpm(target)
     x = parse_target(target)
