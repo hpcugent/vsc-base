@@ -273,8 +273,8 @@ def action_target(target, setupfn=setup, extra_sdist=[]):
         # very primitive check for install --skip-build
         # in that case, we don't mind "leftover build";
         # it's probably intentional
-        install_ind=sys.argv.index('install')
-        build_skip=sys.argv.index('--skip-build')
+        install_ind = sys.argv.index('install')
+        build_skip = sys.argv.index('--skip-build')
         if build_skip > install_ind:
             do_cleanup = False
     except ValueError:
