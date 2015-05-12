@@ -348,6 +348,7 @@ class Run(object):
 
     def _cleanup_process(self):
         """Cleanup any leftovers from the process"""
+        pass
 
     def _read_process(self, readsize=None):
         """Read from process, return out"""
