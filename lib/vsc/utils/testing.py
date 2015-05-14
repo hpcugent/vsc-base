@@ -36,9 +36,10 @@ import sys
 from cStringIO import StringIO
 from unittest import TestCase
 
-
 class EnhancedTestCase(TestCase):
     """Enhanced test case, provides extra functionality (e.g. an assertErrorRegex method)."""
+
+    LOGCACHE = {}
 
     def setUp(self):
         """Prepare test case."""
@@ -107,8 +108,45 @@ class EnhancedTestCase(TestCase):
         """Return output captured from stderr until now."""
         return sys.stderr.getvalue()
 
+    def mock_logmethod(self, logmethod_func):
+        """
+        Intercept the logger logmethod. Use as
+            mylogger = logging.getLogger
+            mylogger.error = self.mock_logmethod(mylogger.error)
+        """
+        def logmethod(*args, **kwargs):
+            if hasattr(logmethod_func, 'func_name'):
+                funcname=logmethod_func.func_name
+            elif hasattr(logmethod_func, 'im_func'):
+                funcname = logmethod_func.im_func.__name__
+            else:
+                raise Exception("Unknown logmethod %s" % (dir(logmethod_func)))
+            logcache = self.LOGCACHE.setdefault(funcname, [])
+            logcache.append({'args': args, 'kwargs': kwargs})
+            logmethod_func(*args, **kwargs)
+
+        return logmethod
+
+    def reset_logcache(self, funcname=None):
+        """
+        Reset the LOGCACHE
+        @param: funcname: if set, only reset the cache for this log function 
+                (default is to reset the whole chache)
+        """
+        if funcname:
+            self.LOGCACHE[funcname] = []
+        else:
+            self.LOGCACHE = {}
+
+    def count_logcache(self, funcname):
+        """
+        Return the number of log messages for funcname in the logcache
+        """
+        return len(self.LOGCACHE.get(funcname, []))
+
     def tearDown(self):
         """Cleanup after running a test."""
         self.mock_stdout(False)
         self.mock_stderr(False)
+        self.reset_logcache()
         super(EnhancedTestCase, self).tearDown()

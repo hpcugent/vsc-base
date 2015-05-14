@@ -38,6 +38,7 @@ from unittest import TestLoader, main
 from vsc.utils.missing import shell_quote
 from vsc.utils.testing import EnhancedTestCase
 
+import logging
 
 class TestTesting(EnhancedTestCase):
     """Tests for vsc.utils.testing module."""
@@ -95,6 +96,26 @@ class TestTesting(EnhancedTestCase):
         self.assertEqual(sys.stdout, orig_sys_stdout)
         self.assertEqual(sys.stderr, orig_sys_stderr)
 
+    def test_mock_logmethod(self):
+        """Test the mocked cache logger"""
+        # There shouldn't be any yet
+        self.assertEqual(self.count_logcache('error'), 0)
+
+        myerror = self.mock_logmethod(logging.error)
+
+        myerror("Error")
+        self.assertEqual(self.count_logcache('error'), 1)
+
+        myerror("Moar error")
+        myerror("Even moar error")
+        self.assertEqual(self.count_logcache('error'), 3)
+
+        self.reset_logcache('error')
+        self.assertEqual(self.count_logcache('error'), 0)
+
+        myerror("Error")
+        myerror("Moar error")
+        self.assertEqual(self.count_logcache('error'), 2)
 
 def suite():
     """ return all the tests"""

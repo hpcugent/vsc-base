@@ -32,6 +32,7 @@ import datetime
 import logging
 import os
 import re
+import tempfile
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
@@ -40,6 +41,7 @@ from vsc.utils.generaloption import GeneralOption
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
+from vsc.utils.testing import EnhancedTestCase
 
 _init_configfiles = ['/not/a/real/configfile']
 
@@ -85,6 +87,9 @@ class TestOption1(GeneralOption):
             "add-list":("Test action add", 'strlist', 'add', None),
             "add-list-default":("Test action add", 'strlist', 'add', ['now']),
             "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
+            "add-list-flex":('Test strlist type with add_flex', 'strlist', 'add_flex', ['x', 'y']),
+            "add-pathlist-flex":('Test strlist type with add_flex', 'pathlist', 'add_flex', ['p2', 'p3']),
+
             # date
             "date":('Test action datetime.date', None, 'date', None),
             "datetime":('Test action datetime.datetime', None, 'datetime', None),
@@ -107,11 +112,8 @@ class TestOption1(GeneralOption):
         self.add_group_parser(self._opts_ext, descr, prefix=prefix)
 
 
-class GeneralOptionTest(TestCase):
+class GeneralOptionTest(EnhancedTestCase):
     """Tests for general option"""
-
-    def test_basic(self):
-        """Basic creation and verification of generaloption"""
 
     def test_help_short(self):
         """Generate short help message"""
@@ -179,6 +181,8 @@ class GeneralOptionTest(TestCase):
                                     '--ext-pathliststorenone2=y2:z2',
                                     '--ext-strlist=x,y',
                                     '--ext-add-list-first=two,three',
+                                    '--ext-add-list-flex=a,,b',
+                                    '--ext-add-pathlist-flex=p1/foo::p4',
                                     '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
@@ -204,6 +208,8 @@ class GeneralOptionTest(TestCase):
                           'ext_add_list': None,
                           'ext_add_list_default': ['now'],
                           'ext_add_list_first': ['two', 'three', 'now'],
+                          'ext_add_list_flex': ['a','x', 'y', 'b'],
+                          'ext_add_pathlist_flex': ['p1/foo','p2', 'p3', 'p4'],
                           'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
@@ -320,6 +326,100 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext-extenddefault=two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
 
+        # flex
+        for args, val in [
+                (',b', ['x', 'y', 'b']),
+                ('b,', ['b', 'x', 'y']),
+                ('a,b', ['a', 'b']),
+                ('a,,b', ['a', 'x', 'y', 'b']),
+        ]:
+            cmd = '--ext-add-list-flex=%s' % args
+            topt = TestOption1(go_args=[cmd])
+            self.assertEqual(topt.options.ext_add_list_flex, val)
+            self.assertEqual(topt.generate_cmd_line(ignore=r'(?<!_flex)$'), [cmd])
+
+    def test_ext_add_multi(self):
+        """Test behaviour when 'add' options are used multiple times."""
+        fd, cfgfile = tempfile.mkstemp()
+        os.close(fd)
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-default=two')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowtwo')
+
+        # environment overrides config file
+        os.environ['TEST_EXT_ADD_DEFAULT'] = 'three'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowthree')
+
+        # command line overrides environment + config file, last value wins
+        args.extend(['--ext-add-default=four', '--ext-add-default=five'])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowfive')
+        del os.environ['TEST_EXT_ADD_DEFAULT']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-list-default=two,three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'two', 'three'])
+
+        os.environ['TEST_EXT_ADD_LIST_DEFAULT'] = 'four,five'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'four', 'five'])
+
+        args.extend([
+            '--ext-add-list-default=six',
+            '--ext-add-list-default=seven,eight',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'seven', 'eight'])
+        del os.environ['TEST_EXT_ADD_LIST_DEFAULT']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-list-flex=two,,three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['two', 'x', 'y', 'three'])
+
+        os.environ['TEST_EXT_ADD_LIST_FLEX'] = 'four,,five'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['four', 'x', 'y', 'five'])
+
+        args.extend([
+            '--ext-add-list-flex=six,',
+            '--ext-add-list-flex=seven,,eight',
+            '--ext-add-list-flex=,last',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['x', 'y', 'last'])
+        del os.environ['TEST_EXT_ADD_LIST_FLEX']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-pathlist-flex=two::three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['two', 'p2', 'p3', 'three'])
+
+        os.environ['TEST_EXT_ADD_PATHLIST_FLEX'] = 'four::five'
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['four', 'p2', 'p3', 'five'])
+
+        args.extend([
+            '--ext-add-pathlist-flex=six:',
+            '--ext-add-pathlist-flex=:last',
+            '--ext-add-pathlist-flex=seven::eight',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'p2', 'p3', 'eight'])
+        del os.environ['TEST_EXT_ADD_PATHLIST_FLEX']
 
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""
@@ -339,11 +439,11 @@ class GeneralOptionTest(TestCase):
         ign = r'^(?!ext_optional)'
         topt = TestOption1(go_args=[], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, None)
-        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , [])
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign), [])
 
         topt = TestOption1(go_args=['--ext-optional'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
-        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , ['--ext-optional'])
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign), ['--ext-optional'])
 
         topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
@@ -601,8 +701,35 @@ debug=1
         self.assertEqual(inst1.options.configfiles, expected)
         self.assertEqual(inst2.options.configfiles, expected)
 
-        self.assertEqual(inst1.configfiles, expected);
-        self.assertEqual(inst2.configfiles, expected);
+        self.assertEqual(inst1.configfiles, expected)
+        self.assertEqual(inst2.configfiles, expected)
+
+    def test_error_env_options(self):
+        """Test log error on unknown environment option"""
+        self.reset_logcache()
+        mylogger = fancylogger.getLogger('ExtOptionParser')
+        mylogger.error = self.mock_logmethod(mylogger.error)
+        mylogger.debug = self.mock_logmethod(mylogger.debug)
+
+        self.assertEqual(self.count_logcache('error'), 0)
+
+        os.environ['GENERALOPTIONTEST_XYZ'] = '1'
+        topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST')
+        # no errors logged
+        self.assertEqual(self.count_logcache('error'), 0)
+
+        topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
+        # one error should be logged
+        self.assertEqual(self.count_logcache('error'), 1)
+
+        # using a custom error method
+        def raise_error(msg, *args):
+            """Raise error with given message and string arguments to format it."""
+            raise Exception(msg % args)
+
+        self.assertErrorRegex(Exception, "Found 1 environment variable.* prefixed with GENERALOPTIONTEST", TestOption1,
+                              go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True,
+                              error_env_option_method=raise_error)
 
 
 def suite():

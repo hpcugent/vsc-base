@@ -74,7 +74,7 @@ def set_columns(cols=None):
 
 def what_str_list_tuple(name):
     """Given name, return separator, class and helptext wrt separator.
-        (Currently supports strlist, strtuple, pathlist, pathtuple) 
+        (Currently supports strlist, strtuple, pathlist, pathtuple)
     """
     sep = ','
     helpsep = 'comma'
@@ -106,6 +106,21 @@ def check_str_list_tuple(option, opt, value):
         return klass(split)
 
 
+def get_empty_add_flex(allvalues):
+    """Return the empty element for add_flex action for allvalues"""
+    empty = None
+
+    if isinstance(allvalues, (list, tuple)):
+        if isinstance(allvalues[0], basestring):
+            empty = ''
+
+    if empty is None:
+        msg = "get_empty_add_flex cannot determine empty element for type %s (%s)"
+        self.log.raiseException(msg % (type(allvalues), allvalues))
+
+    return empty
+
+
 class ExtOption(CompleterOption):
     """Extended options class
         - enable/disable support
@@ -119,6 +134,15 @@ class ExtOption(CompleterOption):
              - add_first : add default to value (result is value + default)
              - extend : alias for add with strlist type
              - type must support + (__add__) and one of negate (__neg__) or slicing (__getslice__)
+         - add_flex : similar to add / add_first, but replaces the first "empty" element with the default
+             - the empty element is dependent of the type
+                 - for {str,path}{list,tuple} this is the empty string
+             - types must support the index method to determine the location of the "empty" element
+             - the replacement uses +
+             - e.g. a strlist type with value "0,,1"` and default [3,4] and action add_flex will
+                   use the empty string '' as "empty" element, and will result in [0,3,4,1] (not [0,[3,4],1])
+                   (but also a strlist with value "" and default [3,4] will result in [3,4];
+                   so you can't set an empty list with add_flex)
          - date : convert into datetime.date
          - datetime : convert into datetime.datetime
          - regex: compile str in regexp
@@ -126,9 +150,9 @@ class ExtOption(CompleterOption):
            - set default to None if no option passed,
            - set to default if option without value passed,
            - set to value if option with value passed
-           
+
         Types:
-          - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings     
+          - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings
           - pathlist, pathtuple : using os.pathsep, convert pathsep-separated string in a list resp. tuple of strings
               - the path separator is OS-dependent
     """
@@ -137,7 +161,7 @@ class ExtOption(CompleterOption):
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first',)
+    EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first', 'add_flex',)
     EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
     EXTOPTION_HELP = ('shorthelp', 'confighelp',)
@@ -230,19 +254,33 @@ class ExtOption(CompleterOption):
             Option.take_action(self, action, dest, opt, value, values, parser)
 
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
-            if action in ("add", "add_first",):
+            if action in ("add", "add_first", "add_flex",):
                 # determine type from lvalue
                 # set default first
-                values.ensure_value(dest, type(value)())
-                default = getattr(values, dest)
+                default = getattr(parser.get_default_values(), dest, None)
+                if default is None:
+                    default = type(value)()
                 if not (hasattr(default, '__add__') and
                         (hasattr(default, '__neg__') or hasattr(default, '__getslice__'))):
                     msg = "Unsupported type %s for action %s (requires + and one of negate or slice)"
                     self.log.raiseException(msg % (type(default), action))
-                if action == 'add':
+                if action in ('add', 'add_flex'):
                     lvalue = default + value
                 elif action == 'add_first':
                     lvalue = value + default
+
+                if action == 'add_flex' and lvalue:
+                    # use lvalue here rather than default to make sure there is 1 element
+                    # to determine the type
+                    if not hasattr(lvalue, 'index'):
+                        msg = "Unsupported type %s for action %s (requires index method)"
+                        self.log.raiseException(msg % (type(lvalue), action))
+                    empty = get_empty_add_flex(lvalue)
+                    if empty in value:
+                        ind = value.index(empty)
+                        lvalue = value[:ind] + default + value[ind+1:]
+                    else:
+                        lvalue = value
             elif action == "date":
                 lvalue = date_parser(value)
             elif action == "datetime":
@@ -350,7 +388,7 @@ class ExtOptionGroup(OptionGroup):
 
 class ExtOptionParser(OptionParser):
     """
-    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,     
+    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,
     C{-H} / C{--help} for all options.
 
     Pass options through environment. Like:
@@ -369,11 +407,34 @@ class ExtOptionParser(OptionParser):
     DESCRIPTION_DOCSTRING = False
 
     def __init__(self, *args, **kwargs):
+        """
+        Following named arguments are specific to ExtOptionParser
+        (the remaining ones are passed to the parent OptionParser class)
+
+            :param help_to_string: boolean, if True, the help is written
+                                   to a newly created StingIO instance
+            :param help_to_file: filehandle, help is written to this filehandle
+            :param envvar_prefix: string, specify the environment variable prefix
+                                  to use (if you don't want the default one)
+            :param process_env_options: boolean, if False, don't check the
+                                        environment for options (default: True)
+            :param error_env_options: boolean, if True, use error_env_options_method
+                                      if an environment variable with correct envvar_prefix
+                                      exists but does not correspond to an existing option
+                                      (default: False)
+            :param error_env_options_method: callable; method to use to report error
+                                             in used environment variables (see error_env_options);
+                                             accepts string value + additional
+                                             string arguments for formatting the message
+                                             (default: own log.error method)
+        """
         self.log = getLogger(self.__class__.__name__)
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
         self.envvar_prefix = kwargs.pop('envvar_prefix', None)
         self.process_env_options = kwargs.pop('process_env_options', True)
+        self.error_env_options = kwargs.pop('error_env_options', False)
+        self.error_env_option_method = kwargs.pop('error_env_option_method', self.log.error)
 
         # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
         self.epilog = kwargs.pop('epilog', None)
@@ -453,7 +514,7 @@ class ExtOptionParser(OptionParser):
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
             - make it dynamic, otherwise the class constant is shared between multiple instances
-            - class constant is used to avoid _action_taken as option in the __dict__ 
+            - class constant is used to avoid _action_taken as option in the __dict__
                 - only works by using reference to object
                 - same for _logaction_taken
         """
@@ -607,6 +668,8 @@ class ExtOptionParser(OptionParser):
         epilogprefixtxt += "eg. --some-opt is same as setting %(prefix)s_SOME_OPT in the environment."
         self.epilog.append(epilogprefixtxt % {'prefix': self.envvar_prefix})
 
+        candidates = dict([(k, v) for k, v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
+
         for opt in self._get_all_options():
             if opt._long_opts is None:
                 continue
@@ -614,7 +677,7 @@ class ExtOptionParser(OptionParser):
                 if len(lo) == 0:
                     continue
                 env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').replace('-', '_').upper())
-                val = os.environ.get(env_opt_name, None)
+                val = candidates.pop(env_opt_name, None)
                 if not val is None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
                         self.environment_arguments.append("%s=%s" % (lo, val))
@@ -624,6 +687,14 @@ class ExtOptionParser(OptionParser):
                             self.environment_arguments.append("%s" % lo)
                 else:
                     self.log.debug("Environment variable %s is not set" % env_opt_name)
+
+        if candidates:
+            msg = "Found %s environment variable(s) that are prefixed with %s but do not match valid option(s): %s"
+            if self.error_env_options:
+                logmethod = self.error_env_option_method
+            else:
+                logmethod = self.log.debug
+            logmethod(msg, len(candidates), self.envvar_prefix, ','.join(candidates))
 
         self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, self.environment_arguments))
         return self.environment_arguments
@@ -654,7 +725,7 @@ class GeneralOption(object):
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
         - go_configfiles_initenv : section dict of key/value dict; inserted before configfileparsing
-            As a special case, using all uppercase key in DEFAULT section with a case-sensitive 
+            As a special case, using all uppercase key in DEFAULT section with a case-sensitive
             configparser can be used to set "constants" for easy interpolation in all sections.
         - go_loggername : name of logger, default classname
         - go_mainbeforedefault : set the main options before the default ones
@@ -1046,11 +1117,11 @@ class GeneralOption(object):
 
     def configfile_parser_init(self, initenv=None):
         """
-        Initialise the confgiparser to use.
-        
-            @params initenv: insert initial environment into the configparser. 
-                It is a dict of dicts; the first level key is the section name; 
-                the 2nd level key,value is the key=value. 
+        Initialise the configparser to use.
+
+            @params initenv: insert initial environment into the configparser.
+                It is a dict of dicts; the first level key is the section name;
+                the 2nd level key,value is the key=value.
                 All section names, keys and values are converted to strings.
         """
         self.configfile_parser = self.CONFIGFILE_PARSER()
@@ -1419,9 +1490,17 @@ class GeneralOption(object):
                                            (opt_name, action, default))
                     else:
                         args.append("--%s" % opt_name)
-            elif action in ("add", "add_first"):
+            elif action in ("add", "add_first", "add_flex"):
                 if default is not None:
-                    if hasattr(opt_value, '__neg__'):
+                    if action == 'add_flex' and default:
+                        for ind, elem in enumerate(opt_value):
+                            if elem == default[0] and opt_value[ind:ind+len(default)] == default:
+                                empty = get_empty_add_flex(opt_value)
+                                # TODO: this will only work for tuples and lists
+                                opt_value = opt_value[:ind] + type(opt_value)([empty]) + opt_value[ind+len(default):]
+                                # only the first occurence
+                                break
+                    elif hasattr(opt_value, '__neg__'):
                         if action == 'add_first':
                             opt_value = opt_value + -default
                         else:
