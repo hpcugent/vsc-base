@@ -450,18 +450,24 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
 
     if you want to disable logging to file, pass the earlier obtained filehandler
     """
-    handleropts = {'filename': filename,
-                   'mode': 'a',
-                   'maxBytes': max_bytes,
-                   'backupCount': backup_count,
-                   }
-    return _logToSomething(logging.handlers.RotatingFileHandler,
-                           handleropts,
-                           loggeroption='logtofile_%s' % filename,
-                           name=name,
-                           enable=enable,
-                           handler=filehandler,
-                           )
+    handleropts = {
+        'filename': filename,
+        'mode': 'a',
+        'maxBytes': max_bytes,
+        'backupCount': backup_count,
+    }
+    # logging to a file is going to create the file later on, so let's try to be helpfull and create the path if needed
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    return _logToSomething(
+        logging.handlers.RotatingFileHandler,
+        handleropts,
+        loggeroption='logtofile_%s' % filename,
+        name=name,
+        enable=enable,
+        handler=filehandler,
+    )
 
 
 def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):

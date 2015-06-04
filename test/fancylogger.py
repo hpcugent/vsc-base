@@ -30,10 +30,11 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
-import logging
 import os
 import re
 import sys
+import shutil
+
 from StringIO import StringIO
 import tempfile
 from unittest import TestLoader, main
@@ -49,6 +50,24 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 def classless_function():
     logger = fancylogger.getLogger(fname=True, clsname=True)
     logger.warn("from classless_function")
+
+
+class FansyLoggerLogToFileTest(EnhancedTestCase):
+    """
+    Tests for fancylogger, specific for logToFile
+    These dont' fit in the FansyLoggerTest class because they don't require the setUp and tearDown
+    """
+
+    def test_logtofile(self):
+        """Test to see if logtofile doesn't fail when logging to a non existing file /directory"""
+        tempdir = tempfile.gettempdir()
+        non_dir = os.path.join(tempdir, 'verytempdir')
+        try:
+             shutil.rmtree(non_dir)
+        except OSError:
+            pass  # we dont' want this dir to exists, so fine if it doesn't exist
+
+        fancylogger.logToFile(os.path.join(non_dir, 'nosuchfile'))
 
 
 class FancyLoggerTest(EnhancedTestCase):
@@ -324,7 +343,7 @@ class FancyLoggerTest(EnhancedTestCase):
         logger.warn("blabla")
         print stringfile.getvalue()
         # this will only hold in debug mode, so also disable the test
-        if  __debug__:
+        if __debug__:
             self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
@@ -410,7 +429,7 @@ class FancyLoggerTest(EnhancedTestCase):
 
         logger = fancylogger.getLogger('myname', fancyrecord='yes')
         self.assertEqual(logger.fancyrecord, True)
-        
+
         logger = fancylogger.getLogger('myname', fancyrecord=0)
         self.assertEqual(logger.fancyrecord, False)
 
