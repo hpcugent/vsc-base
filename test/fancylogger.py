@@ -55,7 +55,7 @@ def classless_function():
 class FancyLoggerLogToFileTest(EnhancedTestCase):
     """
     Tests for fancylogger, specific for logToFile
-    These dont' fit in the FancyLoggerTest class because they don't require the setUp and tearDown
+    These dont' fit in the FancyLoggerTest class because they don't work with the setUp and tearDown used there.
     """
 
     def test_logtofile(self):
