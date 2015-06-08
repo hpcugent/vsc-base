@@ -30,13 +30,14 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
-import logging
 import os
 import re
 import sys
+import shutil
+
 from StringIO import StringIO
 import tempfile
-from unittest import TestLoader, main
+from unittest import TestLoader, main, TestSuite
 
 from vsc.utils import fancylogger
 from vsc.utils.testing import EnhancedTestCase
@@ -49,6 +50,21 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 def classless_function():
     logger = fancylogger.getLogger(fname=True, clsname=True)
     logger.warn("from classless_function")
+
+
+class FancyLoggerLogToFileTest(EnhancedTestCase):
+    """
+    Tests for fancylogger, specific for logToFile
+    These dont' fit in the FancyLoggerTest class because they don't work with the setUp and tearDown used there.
+    """
+
+    def test_logtofile(self):
+        """Test to see if logtofile doesn't fail when logging to a non existing file /directory"""
+        tempdir = tempfile.mkdtemp()
+        non_dir = os.path.join(tempdir, 'verytempdir')
+        fancylogger.logToFile(os.path.join(non_dir, 'nosuchfile'))
+        # clean up temp dir
+        shutil.rmtree(tempdir)
 
 
 class FancyLoggerTest(EnhancedTestCase):
@@ -324,7 +340,7 @@ class FancyLoggerTest(EnhancedTestCase):
         logger.warn("blabla")
         print stringfile.getvalue()
         # this will only hold in debug mode, so also disable the test
-        if  __debug__:
+        if __debug__:
             self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
@@ -410,7 +426,7 @@ class FancyLoggerTest(EnhancedTestCase):
 
         logger = fancylogger.getLogger('myname', fancyrecord='yes')
         self.assertEqual(logger.fancyrecord, True)
-        
+
         logger = fancylogger.getLogger('myname', fancyrecord=0)
         self.assertEqual(logger.fancyrecord, False)
 
@@ -427,7 +443,11 @@ class FancyLoggerTest(EnhancedTestCase):
 
 def suite():
     """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(FancyLoggerTest)
+    suite = TestSuite()
+    suite.addTests(TestLoader().loadTestsFromTestCase(FancyLoggerTest))
+    suite.addTests(TestLoader().loadTestsFromTestCase(FancyLoggerLogToFileTest))
+    return suite
+
 
 if __name__ == '__main__':
     """Use this __main__ block to help write and test unittests"""
