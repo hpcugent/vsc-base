@@ -456,10 +456,14 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
         'maxBytes': max_bytes,
         'backupCount': backup_count,
     }
-    # logging to a file is going to create the file later on, so let's try to be helpfull and create the path if needed
+    # logging to a file is going to create the file later on, so let's try to be helpful and create the path if needed
     directory = os.path.dirname(filename)
     if not os.path.exists(directory):
-        os.makedirs(directory)
+        try:
+            os.makedirs(directory)
+        except Exception as ex:
+            raise sys.exc_info()[0], "Cannot create logdirectory %s: %s" % (directory, ex), sys.exc_info()[2]
+
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
         handleropts,

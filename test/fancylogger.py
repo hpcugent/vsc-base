@@ -37,7 +37,7 @@ import shutil
 
 from StringIO import StringIO
 import tempfile
-from unittest import TestLoader, main
+from unittest import TestLoader, main, TestSuite
 
 from vsc.utils import fancylogger
 from vsc.utils.testing import EnhancedTestCase
@@ -52,10 +52,10 @@ def classless_function():
     logger.warn("from classless_function")
 
 
-class FansyLoggerLogToFileTest(EnhancedTestCase):
+class FancyLoggerLogToFileTest(EnhancedTestCase):
     """
     Tests for fancylogger, specific for logToFile
-    These dont' fit in the FansyLoggerTest class because they don't require the setUp and tearDown
+    These dont' fit in the FancyLoggerTest class because they don't require the setUp and tearDown
     """
 
     def test_logtofile(self):
@@ -446,7 +446,11 @@ class FancyLoggerTest(EnhancedTestCase):
 
 def suite():
     """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(FancyLoggerTest)
+    suite = TestSuite()
+    suite.addTests(TestLoader().loadTestsFromTestCase(FancyLoggerTest))
+    suite.addTests(TestLoader().loadTestsFromTestCase(FancyLoggerLogToFileTest))
+    return suite
+
 
 if __name__ == '__main__':
     """Use this __main__ block to help write and test unittests"""
