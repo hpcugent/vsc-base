@@ -462,7 +462,8 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
         try:
             os.makedirs(directory)
         except Exception as ex:
-            raise sys.exc_info()[0], "Cannot create logdirectory %s: %s" % (directory, ex), sys.exc_info()[2]
+            exc, detail, tb = sys.exc_info()
+            raise exc, "Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail), tb
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
