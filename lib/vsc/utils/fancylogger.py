@@ -209,6 +209,7 @@ class FancyLogger(logging.getLoggerClass()):
                       (this will also happen if exception is not specified)
         """
         fullmessage = message
+        tb = None
 
         if catch or exception is None:
             # assumes no control by codemonkey
@@ -227,7 +228,7 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-        raise exception(message)
+        raise exception, message, tb
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
