@@ -60,14 +60,11 @@ class FancyLoggerLogToFileTest(EnhancedTestCase):
 
     def test_logtofile(self):
         """Test to see if logtofile doesn't fail when logging to a non existing file /directory"""
-        tempdir = tempfile.gettempdir()
+        tempdir = tempfile.mkdtemp()
         non_dir = os.path.join(tempdir, 'verytempdir')
-        try:
-             shutil.rmtree(non_dir)
-        except OSError:
-            pass  # we dont' want this dir to exists, so fine if it doesn't exist
-
         fancylogger.logToFile(os.path.join(non_dir, 'nosuchfile'))
+        # clean up temp dir
+        shutil.rmtree(tempdir)
 
 
 class FancyLoggerTest(EnhancedTestCase):
