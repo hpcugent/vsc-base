@@ -1,5 +1,4 @@
-#
-#
+# #
 # Copyright 2011-2014 Ghent University
 #
 # This file is part of vsc-base,
@@ -46,6 +45,7 @@ from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueErro
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
+from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
@@ -567,6 +567,12 @@ class ExtOptionParser(OptionParser):
 
         self.print_help(fh)
 
+    def _is_enable_disable(self, x):
+        """Does the option start with ENABLE/DISABLE"""
+        _e = x.startswith("--%s-" % self.option_class.ENABLE)
+        _d = x.startswith("--%s-" % self.option_class.DISABLE)
+        return _e or _d
+
     def print_help(self, fh=None):
         """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
         if self.help_to_string:
@@ -575,14 +581,9 @@ class ExtOptionParser(OptionParser):
             fh = self.help_to_file
 
         if hasattr(self.option_class, 'ENABLE') and hasattr(self.option_class, 'DISABLE'):
-            def _is_enable_disable(x):
-                """Does the option start with ENABLE/DISABLE"""
-                _e = x.startswith("--%s-" % self.option_class.ENABLE)
-                _d = x.startswith("--%s-" % self.option_class.DISABLE)
-                return _e or _d
             for opt in self._get_all_options():
                 # remove all long_opts with ENABLE/DISABLE naming
-                opt._long_opts = [x for x in opt._long_opts if not _is_enable_disable(x)]
+                opt._long_opts = [x for x in opt._long_opts if not self._is_enable_disable(x)]
 
         OptionParser.print_help(self, fh)
 
@@ -713,6 +714,68 @@ class ExtOptionParser(OptionParser):
 
         return None
 
+class RstOptionParser(ExtOptionParser):
+
+    def __init__(self, *args, **kwargs):
+        ExtOptionParser.__init__(self, *args, **kwargs)
+
+    def print_help(self, fh=None):
+        """ Print help in rst format """
+        if self.help_to_string:
+            self.help_to_file = StringIO.StringIO()
+        if fh is None:
+            fh = self.help_to_file
+
+        for opt in self._get_all_options():
+            # remove all long_opts with ENABLE/DISABLE naming
+            opt._long_opts = [x for x in opt._long_opts if not self._is_enable_disable(x)]
+        result = []
+        title = "Easybuild help"
+        result.extend([title, "=" * len(title)])
+        if self.usage:
+            result.append("Usage: ``%s``" % self.get_usage().replace("Usage: ", '').strip())
+            result.append('')
+        if self.description:
+            result.append(self.description)
+            result.append('')
+
+        result.append(self.format_option_help())
+
+        print "\n".join(result)
+
+    def format_option_help(self, formatter=None):
+        """ Formatting for help in rst format """
+        if not formatter:
+            formatter = self.formatter
+        formatter.store_option_strings(self)
+
+        res = []
+        opt_title = "Options"
+        res.extend([opt_title, '-' * len(opt_title)])
+        titles = ["Option", "Help"]
+        values = [[],[]]
+        for opt in self.option_list:
+            if not opt.help is nohelp:
+                values[0].append('``%s``' % formatter.option_strings[opt])
+                values[1].append(formatter.expand_default(opt))
+
+        res.extend(mk_rst_table(titles, values))
+        res.append('')
+
+        for group in self.option_groups:
+            res.extend([group.title, '-' * len(group.title)])
+            values[0] = []
+            values[1] = []
+            for opt in group.option_list:
+                if not opt.help is nohelp:
+                    values[0].append('``%s``' % formatter.option_strings[opt])
+                    values[1].append(formatter.expand_default(opt))
+
+            res.extend(mk_rst_table(titles, values))
+            res.append('')
+
+        return '\n'.join(res)
+
 
 class GeneralOption(object):
     """
@@ -751,6 +814,7 @@ class GeneralOption(object):
     USAGE = None
     ALLOPTSMANDATORY = True
     PARSER = ExtOptionParser
+    RST_PARSER = RstOptionParser
     INTERSPERSED = True  # mix args with options
 
     CONFIGFILES_USE = True
@@ -792,7 +856,11 @@ class GeneralOption(object):
             'usage': kwargs.get('usage', self.USAGE),
             'version': self.VERSION,
         })
-        self.parser = self.PARSER(**kwargs)
+
+        if '--output-rst' in self.default_parseoptions():
+            self.parser = self.RST_PARSER(**kwargs)
+        else:
+            self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
         self.configfile_parser = None
