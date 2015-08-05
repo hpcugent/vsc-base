@@ -162,9 +162,9 @@ class ExtOption(CompleterOption):
     DISABLE = 'disable'  # inverse action
 
     EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first', 'add_flex',)
-    EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
+    EXTOPTION_STORE_OR = ('store_or_None', 'formathelp')  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
-    EXTOPTION_HELP = ('shorthelp', 'confighelp',)
+    EXTOPTION_HELP = ('shorthelp', 'confighelp', 'help')
 
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + EXTOPTION_HELP
     STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_LOG + ('store_or_None',)
@@ -211,9 +211,10 @@ class ExtOption(CompleterOption):
             self.callback = store_or
             self.callback_kwargs = {
                 'orig_default': copy.deepcopy(self.default),
-                }
+            }
             self.action = 'callback'  # act as callback
-            if self.store_or == 'store_or_None':
+
+            if self.store_or in ('store_or_None', 'formathelp'):
                 self.default = None
             else:
                 self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
@@ -222,7 +223,13 @@ class ExtOption(CompleterOption):
         """Extended take_action"""
         orig_action = action  # keep copy
 
-        if action == 'shorthelp':
+        # dest is None for actions like shorthelp and confighelp
+        if dest and getattr(parser._long_opt.get('--'+dest, ''), 'store_or', '') == 'formathelp':
+            Option.take_action(self, action, dest, opt, value, values, parser)
+            fn = getattr(parser, 'print_%shelp' % values.help)
+            fn()
+            parser.exit()
+        elif action == 'shorthelp':
             parser.print_shorthelp()
             parser.exit()
         elif action == 'confighelp':
@@ -567,25 +574,77 @@ class ExtOptionParser(OptionParser):
 
         self.print_help(fh)
 
-    def _is_enable_disable(self, x):
-        """Does the option start with ENABLE/DISABLE"""
-        _e = x.startswith("--%s-" % self.option_class.ENABLE)
-        _d = x.startswith("--%s-" % self.option_class.DISABLE)
-        return _e or _d
-
-    def print_help(self, fh=None):
-        """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
+    def check_help(self, fh):
         if self.help_to_string:
             self.help_to_file = StringIO.StringIO()
         if fh is None:
             fh = self.help_to_file
 
         if hasattr(self.option_class, 'ENABLE') and hasattr(self.option_class, 'DISABLE'):
+            def _is_enable_disable(x):
+                """Does the option start with ENABLE/DISABLE"""
+                _e = x.startswith("--%s-" % self.option_class.ENABLE)
+                _d = x.startswith("--%s-" % self.option_class.DISABLE)
+                return _e or _d
             for opt in self._get_all_options():
                 # remove all long_opts with ENABLE/DISABLE naming
-                opt._long_opts = [x for x in opt._long_opts if not self._is_enable_disable(x)]
+                opt._long_opts = [x for x in opt._long_opts if not _is_enable_disable(x)]
+        return fh
 
+    def print_help(self, fh=None):
+        """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
+        fh = self.check_help(fh)
         OptionParser.print_help(self, fh)
+
+    def print_rsthelp(self, fh=None):
+        """ Print help in rst format """
+        fh = self.check_help(fh)
+        result = []
+        title = "Easybuild help"
+        result.extend([title, "=" * len(title)])
+        if self.usage:
+            result.append("Usage: ``%s``" % self.get_usage().replace("Usage: ", '').strip())
+            result.append('')
+        if self.description:
+            result.append(self.description)
+            result.append('')
+
+        result.append(self.format_option_rsthelp())
+
+        print "\n".join(result)
+
+    def format_option_rsthelp(self, formatter=None):
+        """ Formatting for help in rst format """
+        if not formatter:
+            formatter = self.formatter
+        formatter.store_option_strings(self)
+
+        res = []
+        opt_title = "Options"
+        res.extend([opt_title, '-' * len(opt_title)])
+        titles = ["Option", "Help"]
+        values = [[],[]]
+        for opt in self.option_list:
+            if not opt.help is nohelp:
+                values[0].append('``%s``' % formatter.option_strings[opt])
+                values[1].append(formatter.expand_default(opt))
+
+        res.extend(mk_rst_table(titles, values))
+        res.append('')
+
+        for group in self.option_groups:
+            res.extend([group.title, '-' * len(group.title)])
+            values[0] = []
+            values[1] = []
+            for opt in group.option_list:
+                if not opt.help is nohelp:
+                    values[0].append('``%s``' % formatter.option_strings[opt])
+                    values[1].append(formatter.expand_default(opt))
+
+            res.extend(mk_rst_table(titles, values))
+            res.append('')
+
+        return '\n'.join(res)
 
     def print_confighelp(self, fh=None):
         """Print help as a configfile."""
@@ -634,7 +693,8 @@ class ExtOptionParser(OptionParser):
                         help=_gettext("show short help message and exit"))
         self.add_option("-%s" % self.longhelp[0],
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
-                        action="help",
+                        action="formathelp",
+                        default='',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",
                         action="confighelp",
@@ -714,68 +774,6 @@ class ExtOptionParser(OptionParser):
 
         return None
 
-class RstOptionParser(ExtOptionParser):
-
-    def __init__(self, *args, **kwargs):
-        ExtOptionParser.__init__(self, *args, **kwargs)
-
-    def print_help(self, fh=None):
-        """ Print help in rst format """
-        if self.help_to_string:
-            self.help_to_file = StringIO.StringIO()
-        if fh is None:
-            fh = self.help_to_file
-
-        for opt in self._get_all_options():
-            # remove all long_opts with ENABLE/DISABLE naming
-            opt._long_opts = [x for x in opt._long_opts if not self._is_enable_disable(x)]
-        result = []
-        title = "Easybuild help"
-        result.extend([title, "=" * len(title)])
-        if self.usage:
-            result.append("Usage: ``%s``" % self.get_usage().replace("Usage: ", '').strip())
-            result.append('')
-        if self.description:
-            result.append(self.description)
-            result.append('')
-
-        result.append(self.format_option_help())
-
-        print "\n".join(result)
-
-    def format_option_help(self, formatter=None):
-        """ Formatting for help in rst format """
-        if not formatter:
-            formatter = self.formatter
-        formatter.store_option_strings(self)
-
-        res = []
-        opt_title = "Options"
-        res.extend([opt_title, '-' * len(opt_title)])
-        titles = ["Option", "Help"]
-        values = [[],[]]
-        for opt in self.option_list:
-            if not opt.help is nohelp:
-                values[0].append('``%s``' % formatter.option_strings[opt])
-                values[1].append(formatter.expand_default(opt))
-
-        res.extend(mk_rst_table(titles, values))
-        res.append('')
-
-        for group in self.option_groups:
-            res.extend([group.title, '-' * len(group.title)])
-            values[0] = []
-            values[1] = []
-            for opt in group.option_list:
-                if not opt.help is nohelp:
-                    values[0].append('``%s``' % formatter.option_strings[opt])
-                    values[1].append(formatter.expand_default(opt))
-
-            res.extend(mk_rst_table(titles, values))
-            res.append('')
-
-        return '\n'.join(res)
-
 
 class GeneralOption(object):
     """
@@ -814,7 +812,6 @@ class GeneralOption(object):
     USAGE = None
     ALLOPTSMANDATORY = True
     PARSER = ExtOptionParser
-    RST_PARSER = RstOptionParser
     INTERSPERSED = True  # mix args with options
 
     CONFIGFILES_USE = True
@@ -857,10 +854,7 @@ class GeneralOption(object):
             'version': self.VERSION,
         })
 
-        if '--output-rst' in self.default_parseoptions():
-            self.parser = self.RST_PARSER(**kwargs)
-        else:
-            self.parser = self.PARSER(**kwargs)
+        self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
         self.configfile_parser = None
@@ -1491,6 +1485,8 @@ class GeneralOption(object):
         opt_dests.sort()
 
         for opt_dest in opt_dests:
+            # help is store_or_None, but is not a processed option, so skip it
+            if opt_dest in ExtOption.EXTOPTION_HELP: continue
             opt_value = self.options.__dict__[opt_dest]
             # this is the action as parsed by the class, not the actual action set in option
             # (eg action store_or_None is shown here as store_or_None, not as callback)
@@ -1521,7 +1517,7 @@ class GeneralOption(object):
                                (opt_name, opt_value))
                 continue
 
-            if action in ('store_or_None',):
+            if action in ('store_or_None', 'formathelp'):
                 if opt_value == default:
                     self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" %
                                    (action, opt_name, opt_value))
