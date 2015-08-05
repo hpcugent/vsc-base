@@ -611,7 +611,12 @@ class ExtOptionParser(OptionParser):
 
         result.append(self.format_option_rsthelp())
 
-        print "\n".join(result)
+        rsthelptxt = '\n'.join(result)
+        if fh is None:
+            print rsthelptxt
+        else:
+            fh.write(rsthelptxt)
+            fh.flush()
 
     def format_option_rsthelp(self, formatter=None):
         """ Formatting for help in rst format """
@@ -1486,7 +1491,9 @@ class GeneralOption(object):
 
         for opt_dest in opt_dests:
             # help is store_or_None, but is not a processed option, so skip it
-            if opt_dest in ExtOption.EXTOPTION_HELP: continue
+            if opt_dest in ExtOption.EXTOPTION_HELP:
+                continue
+
             opt_value = self.options.__dict__[opt_dest]
             # this is the action as parsed by the class, not the actual action set in option
             # (eg action store_or_None is shown here as store_or_None, not as callback)

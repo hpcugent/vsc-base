@@ -126,6 +126,17 @@ class GeneralOptionTest(EnhancedTestCase):
         self.assertEqual(topt.parser.help_to_file.getvalue().find("--level-longlevel"), -1,
                          "Long documentation not expanded in short help")
 
+    def test_help(self):
+        """Generate (long) help message"""
+        topt = TestOption1(go_args=['--help'],
+                           go_nosystemexit=True,
+                           go_columns=100,
+                           help_to_string=True,
+                           prog='optiontest1',
+                           )
+        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
+                        "Long documentation expanded in long help")
+
     def test_help_long(self):
         """Generate long help message"""
         topt = TestOption1(go_args=['-H'],
@@ -136,6 +147,23 @@ class GeneralOptionTest(EnhancedTestCase):
                            )
         self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
                         "Long documentation expanded in long help")
+
+    def test_help_rst(self):
+        """Generate (long) help message"""
+        topt = TestOption1(go_args=['--help=rst'],
+                           go_nosystemexit=True,
+                           go_columns=100,
+                           help_to_string=True,
+                           prog='optiontest1',
+                           )
+        self.assertTrue(topt.parser.help_to_file.getvalue().find("``--level-longlevel``") > -1,
+                        "Long documentation in .rst format expanded in long help")
+
+    def test_help_wrong(self):
+        """Error when generating help message in wrong format."""
+        # FIXME: make this stricer (type + error message)
+        self.assertErrorRegex(Exception, '.*', TestOption1, go_args=['--help=nosuchoutputformatforhelp'],
+                             go_nosystemexit=True, go_columns=100, help_to_string=True, prog='optiontest1')
 
     def test_help_confighelp(self):
         """Generate long help message"""
@@ -187,6 +215,7 @@ class GeneralOptionTest(EnhancedTestCase):
                                     ])
         self.assertEqual(topt.options.__dict__,
                          {
+                          'help': None,
                           'store': 'some whitespace',
                           'debug': True,
                           'info': False,
@@ -195,7 +224,7 @@ class GeneralOptionTest(EnhancedTestCase):
                           'longbase': True,
                           'justatest': True,
                           'level_longlevel': True,
-                          'store_with_dash':None,
+                          'store_with_dash': None,
                           'level_prefix_and_dash':'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None,
                           'configfiles': ['/not/a/real/configfile'],

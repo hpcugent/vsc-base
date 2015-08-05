@@ -273,9 +273,9 @@ class TestMissing(EnhancedTestCase):
         """Test modules_in_pkg_path function."""
         # real example
         import vsc.utils
-        vsc_utils_modules = ['__init__', 'affinity', 'asyncprocess', 'daemon', 'dateandtime', 'exceptions', 'fancylogger',
-                             'frozendict', 'generaloption', 'mail', 'missing', 'optcomplete', 'patterns', 'rest',
-                             'run', 'testing', 'wrapper']
+        vsc_utils_modules = ['__init__', 'affinity', 'asyncprocess', 'daemon', 'dateandtime', 'docs',
+                             'exceptions', 'fancylogger', 'frozendict', 'generaloption', 'mail', 'missing',
+                             'optcomplete', 'patterns', 'rest', 'run', 'testing', 'wrapper']
         self.assertEqual(sorted(modules_in_pkg_path(vsc.utils.__path__[0])), vsc_utils_modules)
         self.assertEqual(sorted(modules_in_pkg_path('vsc/utils')), vsc_utils_modules)
 
