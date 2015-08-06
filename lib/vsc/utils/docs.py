@@ -31,18 +31,18 @@ Functions for generating rst documentation
 
 INDENT_4SPACES = ' ' * 4
 
-def det_col_width(entries, title):
-    """Determine column width based on column title and list of entries."""
-    return max(map(len, entries + [title]))
 
-def mk_rst_table(titles, values):
-    """
-    Returns an rst table with given titles and values (a nested list of string values for each column)
-    """
-    if len(titles) != len(values):
-        raise LengthNotEqualException, "Number of titles and columns needs to be equal"
+class LengthNotEqualException(Exception):
+    pass
 
+def mk_rst_table(titles, columns):
+    """
+    Returns an rst table with given titles and columns (a nested list of string columns for each column)
+    """
     num_col = len(titles)
+    if num_col != len(columns):
+        msg = "Length of titles and columns should be equal, found titles: %s and entries: %s" % (len(titles), len(columns))
+        raise LengthNotEqualException, msg
     table = []
     col_widths = []
     tmpl = []
@@ -50,10 +50,10 @@ def mk_rst_table(titles, values):
 
     # figure out column widths
     for i, title in enumerate(titles):
-        width = det_col_width(values[i], titles[i])
+        width = max(map(len, columns[i] + [title]))
 
         # make line template
-        tmpl.append('{%s:{c}<%s}' % (str(i), str(width)))
+        tmpl.append('{%s:{c}<%s}' % (i, width))
 
     line = [''] * num_col
     line_tmpl = INDENT_4SPACES.join(tmpl)
@@ -63,13 +63,9 @@ def mk_rst_table(titles, values):
     table.append(line_tmpl.format(*titles, c=' '))
     table.append(table_line)
 
-    for row in map(list, zip(*values)):
+    for row in map(list, zip(*columns)):
         table.append(line_tmpl.format(*row, c=' '))
 
     table.extend([table_line, ''])
 
     return table
-
-
-class LengthNotEqualException(Exception):
-    pass

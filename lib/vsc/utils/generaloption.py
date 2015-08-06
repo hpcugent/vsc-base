@@ -214,7 +214,7 @@ class ExtOption(CompleterOption):
             }
             self.action = 'callback'  # act as callback
 
-            if self.store_or in ('store_or_None', 'help'):
+            if self.store_or in self.EXTOPTION_STORE_OR:
                 self.default = None
             else:
                 self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
@@ -224,13 +224,10 @@ class ExtOption(CompleterOption):
         orig_action = action  # keep copy
 
         # dest is None for actions like shorthelp and confighelp
-        if dest and getattr(parser._long_opt.get('--'+dest, ''), 'store_or', '') == 'help':
+        if dest and getattr(parser._long_opt.get('--' + dest, ''), 'store_or', '') == 'help':
             Option.take_action(self, action, dest, opt, value, values, parser)
-            if hasattr(parser, 'print_%shelp' % values.help):
-                fn = getattr(parser, 'print_%shelp' % values.help)
-                fn()
-            else:
-                self.log.raiseException("Unsupported format %s for help" % values.help)
+            fn = getattr(parser, 'print_%shelp' % values.help)
+            fn()
             parser.exit()
         elif action == 'shorthelp':
             parser.print_shorthelp()
@@ -628,22 +625,16 @@ class ExtOptionParser(OptionParser):
         res = []
         titles = ["Option", "Help"]
 
-        def add_options(title, opts):
+        all_opts = [("Options", self.option_list)] + [(group.title, group.option_list) for group in self.option_groups]
+        for title, opts in all_opts:
             values = []
-            table = [title, '-' * len(title)]
+            res.extend([title, '-' * len(title)])
             for opt in opts:
                 if not opt.help is nohelp:
                     values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
 
-            table.extend(mk_rst_table(titles, map(list, zip(*values))))
-            table.append('')
-            return table
-
-
-        res.extend(add_options("Options", self.option_list))
-
-        for group in self.option_groups:
-            res.extend(add_options(group.title, group.option_list))
+            res.extend(mk_rst_table(titles, map(list, zip(*values))))
+            res.append('')
 
         return '\n'.join(res)
 
@@ -695,6 +686,8 @@ class ExtOptionParser(OptionParser):
         self.add_option("-%s" % self.longhelp[0],
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
+                        type="choice",
+                        choices=['', 'rst', 'short', 'config'],
                         default='',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",
