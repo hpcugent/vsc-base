@@ -24,10 +24,12 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 # #
 """
-A class that has some support functions for generating rst documentation
+Functions for generating rst documentation
 
 @author: Caroline De Brouwer (Ghent University)
 """
+
+INDENT_4SPACES = ' ' * 4
 
 def det_col_width(entries, title):
     """Determine column width based on column title and list of entries."""
@@ -37,6 +39,9 @@ def mk_rst_table(titles, values):
     """
     Returns an rst table with given titles and values (a nested list of string values for each column)
     """
+    if len(titles) != len(values):
+        raise LengthNotEqualException, "Number of titles and columns needs to be equal"
+
     num_col = len(titles)
     table = []
     col_widths = []
@@ -44,23 +49,27 @@ def mk_rst_table(titles, values):
     line= []
 
     # figure out column widths
-    for i in range(0, num_col):
-        col_widths.append(det_col_width(values[i], titles[i]))
+    for i, title in enumerate(titles):
+        width = det_col_width(values[i], titles[i])
 
         # make line template
-        tmpl.append('{' + str(i) + ':{c}<' + str(col_widths[i]) + '}')
-        line.append('') # needed for table line
+        tmpl.append('{%s:{c}<%s}' % (str(i), str(width)))
 
-    line_tmpl = '   '.join(tmpl)
+    line = [''] * num_col
+    line_tmpl = INDENT_4SPACES.join(tmpl)
     table_line = line_tmpl.format(*line, c="=")
 
     table.append(table_line)
     table.append(line_tmpl.format(*titles, c=' '))
     table.append(table_line)
 
-    for i in range(0, len(values[0])):
-        table.append(line_tmpl.format(*[v[i] for v in values], c=' '))
+    for row in map(list, zip(*values)):
+        table.append(line_tmpl.format(*row, c=' '))
 
     table.extend([table_line, ''])
 
     return table
+
+
+class LengthNotEqualException(Exception):
+    pass

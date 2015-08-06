@@ -162,7 +162,7 @@ class ExtOption(CompleterOption):
     DISABLE = 'disable'  # inverse action
 
     EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first', 'add_flex',)
-    EXTOPTION_STORE_OR = ('store_or_None', 'formathelp')  # callback type
+    EXTOPTION_STORE_OR = ('store_or_None', 'help')  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
     EXTOPTION_HELP = ('shorthelp', 'confighelp', 'help')
 
@@ -214,7 +214,7 @@ class ExtOption(CompleterOption):
             }
             self.action = 'callback'  # act as callback
 
-            if self.store_or in ('store_or_None', 'formathelp'):
+            if self.store_or in ('store_or_None', 'help'):
                 self.default = None
             else:
                 self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
@@ -224,10 +224,13 @@ class ExtOption(CompleterOption):
         orig_action = action  # keep copy
 
         # dest is None for actions like shorthelp and confighelp
-        if dest and getattr(parser._long_opt.get('--'+dest, ''), 'store_or', '') == 'formathelp':
+        if dest and getattr(parser._long_opt.get('--'+dest, ''), 'store_or', '') == 'help':
             Option.take_action(self, action, dest, opt, value, values, parser)
-            fn = getattr(parser, 'print_%shelp' % values.help)
-            fn()
+            if hasattr(parser, 'print_%shelp' % values.help):
+                fn = getattr(parser, 'print_%shelp' % values.help)
+                fn()
+            else:
+                self.log.raiseException("Unsupported format %s for help" % values.help)
             parser.exit()
         elif action == 'shorthelp':
             parser.print_shorthelp()
@@ -600,8 +603,6 @@ class ExtOptionParser(OptionParser):
         """ Print help in rst format """
         fh = self.check_help(fh)
         result = []
-        title = "Easybuild help"
-        result.extend([title, "=" * len(title)])
         if self.usage:
             result.append("Usage: ``%s``" % self.get_usage().replace("Usage: ", '').strip())
             result.append('')
@@ -625,29 +626,24 @@ class ExtOptionParser(OptionParser):
         formatter.store_option_strings(self)
 
         res = []
-        opt_title = "Options"
-        res.extend([opt_title, '-' * len(opt_title)])
         titles = ["Option", "Help"]
-        values = [[],[]]
-        for opt in self.option_list:
-            if not opt.help is nohelp:
-                values[0].append('``%s``' % formatter.option_strings[opt])
-                values[1].append(formatter.expand_default(opt))
 
-        res.extend(mk_rst_table(titles, values))
-        res.append('')
+        def add_options(title, opts):
+            values = []
+            table = [title, '-' * len(title)]
+            for opt in opts:
+                if not opt.help is nohelp:
+                    values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
+
+            table.extend(mk_rst_table(titles, map(list, zip(*values))))
+            table.append('')
+            return table
+
+
+        res.extend(add_options("Options", self.option_list))
 
         for group in self.option_groups:
-            res.extend([group.title, '-' * len(group.title)])
-            values[0] = []
-            values[1] = []
-            for opt in group.option_list:
-                if not opt.help is nohelp:
-                    values[0].append('``%s``' % formatter.option_strings[opt])
-                    values[1].append(formatter.expand_default(opt))
-
-            res.extend(mk_rst_table(titles, values))
-            res.append('')
+            res.extend(add_options(group.title, group.option_list))
 
         return '\n'.join(res)
 
@@ -698,7 +694,7 @@ class ExtOptionParser(OptionParser):
                         help=_gettext("show short help message and exit"))
         self.add_option("-%s" % self.longhelp[0],
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
-                        action="formathelp",
+                        action="help",
                         default='',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",
@@ -1524,7 +1520,7 @@ class GeneralOption(object):
                                (opt_name, opt_value))
                 continue
 
-            if action in ('store_or_None', 'formathelp'):
+            if action in ExtOption.EXTOPTION_STORE_OR:
                 if opt_value == default:
                     self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" %
                                    (action, opt_name, opt_value))
