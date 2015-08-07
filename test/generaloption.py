@@ -123,8 +123,8 @@ class GeneralOptionTest(EnhancedTestCase):
                            help_to_string=True,  # don't print to stdout, but to StingIO fh,
                            prog='optiontest1',  # generate as if called from generaloption.py
                            )
-        self.assertEqual(topt.parser.help_to_file.getvalue().find("--level-longlevel"), -1,
-                         "Long documentation not expanded in short help")
+        helptxt = topt.parser.help_to_file.getvalue()
+        self.assertEqual(helptxt.find("--level-longlevel"), -1, "Long documentation not expanded in short help")
 
     def test_help(self):
         """Generate (long) help message"""
@@ -135,10 +135,11 @@ class GeneralOptionTest(EnhancedTestCase):
                            prog='optiontest1',
                            )
         helptxt = topt.parser.help_to_file.getvalue()
-        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
+
         # default format should be textual output
         self.assertTrue(helptxt.startswith('Usage'))
 
+        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
 
     def test_help_long(self):
         """Generate long help message"""
@@ -149,17 +150,25 @@ class GeneralOptionTest(EnhancedTestCase):
                            prog='optiontest1',
                            )
 
-        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1)
+        helptxt = topt.parser.help_to_file.getvalue()
+        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
 
     def test_help_outputformats(self):
         """Generate (long) rst help message"""
-        for choice in HELP_OUTPUT_FORMATS:
-            topt = TestOption1(go_args=['--help=%s' % choice],
+        for output_format in HELP_OUTPUT_FORMATS:
+            topt = TestOption1(go_args=['--help=%s' % output_format],
                                go_nosystemexit=True,
                                go_columns=100,
                                help_to_string=True,
                                prog='optiontest1',
                               )
+            helptxt = topt.parser.help_to_file.getvalue()
+            if output_format == 'short':
+                self.assertEqual(helptxt.find("--level-longlevel"), -1, "Long documentation not expanded in short help")
+            elif output_format == 'config':
+                self.assertTrue(helptxt.find("#level-longlevel") > -1, "Configuration option in config help")
+            else:
+                self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help (format: %s)" % output_format)
 
     def test_help_confighelp(self):
         """Generate long help message"""
