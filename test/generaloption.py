@@ -37,7 +37,7 @@ from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
 from vsc.utils import fancylogger
-from vsc.utils.generaloption import GeneralOption
+from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
@@ -123,8 +123,23 @@ class GeneralOptionTest(EnhancedTestCase):
                            help_to_string=True,  # don't print to stdout, but to StingIO fh,
                            prog='optiontest1',  # generate as if called from generaloption.py
                            )
-        self.assertEqual(topt.parser.help_to_file.getvalue().find("--level-longlevel"), -1,
-                         "Long documentation not expanded in short help")
+        helptxt = topt.parser.help_to_file.getvalue()
+        self.assertEqual(helptxt.find("--level-longlevel"), -1, "Long documentation not expanded in short help")
+
+    def test_help(self):
+        """Generate (long) help message"""
+        topt = TestOption1(go_args=['--help'],
+                           go_nosystemexit=True,
+                           go_columns=100,
+                           help_to_string=True,
+                           prog='optiontest1',
+                           )
+        helptxt = topt.parser.help_to_file.getvalue()
+
+        # default format should be textual output
+        self.assertTrue(helptxt.startswith('Usage'))
+
+        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
 
     def test_help_long(self):
         """Generate long help message"""
@@ -134,8 +149,26 @@ class GeneralOptionTest(EnhancedTestCase):
                            help_to_string=True,
                            prog='optiontest1',
                            )
-        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
-                        "Long documentation expanded in long help")
+
+        helptxt = topt.parser.help_to_file.getvalue()
+        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
+
+    def test_help_outputformats(self):
+        """Generate (long) rst help message"""
+        for output_format in HELP_OUTPUT_FORMATS:
+            topt = TestOption1(go_args=['--help=%s' % output_format],
+                               go_nosystemexit=True,
+                               go_columns=100,
+                               help_to_string=True,
+                               prog='optiontest1',
+                              )
+            helptxt = topt.parser.help_to_file.getvalue()
+            if output_format == 'short':
+                self.assertEqual(helptxt.find("--level-longlevel"), -1, "Long documentation not expanded in short help")
+            elif output_format == 'config':
+                self.assertTrue(helptxt.find("#level-longlevel") > -1, "Configuration option in config help")
+            else:
+                self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help (format: %s)" % output_format)
 
     def test_help_confighelp(self):
         """Generate long help message"""
@@ -187,6 +220,7 @@ class GeneralOptionTest(EnhancedTestCase):
                                     ])
         self.assertEqual(topt.options.__dict__,
                          {
+                          'help': None,
                           'store': 'some whitespace',
                           'debug': True,
                           'info': False,
@@ -195,7 +229,7 @@ class GeneralOptionTest(EnhancedTestCase):
                           'longbase': True,
                           'justatest': True,
                           'level_longlevel': True,
-                          'store_with_dash':None,
+                          'store_with_dash': None,
                           'level_prefix_and_dash':'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None,
                           'configfiles': ['/not/a/real/configfile'],

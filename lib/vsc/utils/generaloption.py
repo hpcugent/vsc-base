@@ -1,5 +1,4 @@
-#
-#
+# #
 # Copyright 2011-2014 Ghent University
 #
 # This file is part of vsc-base,
@@ -46,9 +45,13 @@ from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueErro
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import _ as _gettext  # this is gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
+from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
+
+
+HELP_OUTPUT_FORMATS = ['', 'rst', 'short', 'config']
 
 
 def set_columns(cols=None):
@@ -162,9 +165,9 @@ class ExtOption(CompleterOption):
     DISABLE = 'disable'  # inverse action
 
     EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first', 'add_flex',)
-    EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
+    EXTOPTION_STORE_OR = ('store_or_None', 'help')  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
-    EXTOPTION_HELP = ('shorthelp', 'confighelp',)
+    EXTOPTION_HELP = ('shorthelp', 'confighelp', 'help')
 
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + EXTOPTION_HELP
     STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_LOG + ('store_or_None',)
@@ -211,9 +214,10 @@ class ExtOption(CompleterOption):
             self.callback = store_or
             self.callback_kwargs = {
                 'orig_default': copy.deepcopy(self.default),
-                }
+            }
             self.action = 'callback'  # act as callback
-            if self.store_or == 'store_or_None':
+
+            if self.store_or in self.EXTOPTION_STORE_OR:
                 self.default = None
             else:
                 self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
@@ -222,7 +226,16 @@ class ExtOption(CompleterOption):
         """Extended take_action"""
         orig_action = action  # keep copy
 
-        if action == 'shorthelp':
+        # dest is None for actions like shorthelp and confighelp
+        if dest and getattr(parser._long_opt.get('--' + dest, ''), 'store_or', '') == 'help':
+            Option.take_action(self, action, dest, opt, value, values, parser)
+            fn = getattr(parser, 'print_%shelp' % values.help, None)
+            if fn is None:
+                self.log.raiseException("Unsupported output format for help: %s" % value.help, exception=ValueError)
+            else:
+                fn()
+            parser.exit()
+        elif action == 'shorthelp':
             parser.print_shorthelp()
             parser.exit()
         elif action == 'confighelp':
@@ -567,8 +580,8 @@ class ExtOptionParser(OptionParser):
 
         self.print_help(fh)
 
-    def print_help(self, fh=None):
-        """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
+    def check_help(self, fh):
+        """Checks filehandle for help functions"""
         if self.help_to_string:
             self.help_to_file = StringIO.StringIO()
         if fh is None:
@@ -583,8 +596,53 @@ class ExtOptionParser(OptionParser):
             for opt in self._get_all_options():
                 # remove all long_opts with ENABLE/DISABLE naming
                 opt._long_opts = [x for x in opt._long_opts if not _is_enable_disable(x)]
+        return fh
 
+    def print_help(self, fh=None):
+        """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
+        fh = self.check_help(fh)
         OptionParser.print_help(self, fh)
+
+    def print_rsthelp(self, fh=None):
+        """ Print help in rst format """
+        fh = self.check_help(fh)
+        result = []
+        if self.usage:
+            title = "Usage"
+            result.extend([title, '-' * len(title), '', '``%s``' % self.get_usage().replace("Usage: ", '').strip(), ''])
+        if self.description:
+            title = "Description"
+            result.extend([title, '-' * len(title), '', self.description, ''])
+
+        result.append(self.format_option_rsthelp())
+
+        rsthelptxt = '\n'.join(result)
+        if fh is None:
+            fh = sys.stdout
+        fh.write(rsthelptxt)
+
+
+    def format_option_rsthelp(self, formatter=None):
+        """ Formatting for help in rst format """
+        if not formatter:
+            formatter = self.formatter
+        formatter.store_option_strings(self)
+
+        res = []
+        titles = ["Option flag", "Option description"]
+
+        all_opts = [("Help options", self.option_list)] + [(group.title, group.option_list) for group in self.option_groups]
+        for title, opts in all_opts:
+            values = []
+            res.extend([title, '-' * len(title)])
+            for opt in opts:
+                if not opt.help is nohelp:
+                    values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
+
+            res.extend(mk_rst_table(titles, map(list, zip(*values))))
+            res.append('')
+
+        return '\n'.join(res)
 
     def print_confighelp(self, fh=None):
         """Print help as a configfile."""
@@ -634,6 +692,10 @@ class ExtOptionParser(OptionParser):
         self.add_option("-%s" % self.longhelp[0],
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
+                        type="choice",
+                        choices=HELP_OUTPUT_FORMATS,
+                        default=HELP_OUTPUT_FORMATS[0],
+                        metavar='OUTPUT_FORMAT',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",
                         action="confighelp",
@@ -792,6 +854,7 @@ class GeneralOption(object):
             'usage': kwargs.get('usage', self.USAGE),
             'version': self.VERSION,
         })
+
         self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
@@ -1423,6 +1486,10 @@ class GeneralOption(object):
         opt_dests.sort()
 
         for opt_dest in opt_dests:
+            # help is store_or_None, but is not a processed option, so skip it
+            if opt_dest in ExtOption.EXTOPTION_HELP:
+                continue
+
             opt_value = self.options.__dict__[opt_dest]
             # this is the action as parsed by the class, not the actual action set in option
             # (eg action store_or_None is shown here as store_or_None, not as callback)
@@ -1453,7 +1520,7 @@ class GeneralOption(object):
                                (opt_name, opt_value))
                 continue
 
-            if action in ('store_or_None',):
+            if action in ExtOption.EXTOPTION_STORE_OR:
                 if opt_value == default:
                     self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" %
                                    (action, opt_name, opt_value))
