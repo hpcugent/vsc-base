@@ -581,6 +581,7 @@ class ExtOptionParser(OptionParser):
         self.print_help(fh)
 
     def check_help(self, fh):
+        """Checks filehandle for help functions"""
         if self.help_to_string:
             self.help_to_file = StringIO.StringIO()
         if fh is None:
@@ -693,7 +694,7 @@ class ExtOptionParser(OptionParser):
                         action="help",
                         type="choice",
                         choices=HELP_OUTPUT_FORMATS,
-                        default=HELP_OUTPUT_FORMATS[1],
+                        default=HELP_OUTPUT_FORMATS[0],
                         metavar='OUTPUT_FORMAT',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",

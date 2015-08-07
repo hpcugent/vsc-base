@@ -134,8 +134,11 @@ class GeneralOptionTest(EnhancedTestCase):
                            help_to_string=True,
                            prog='optiontest1',
                            )
-        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
-                        "Long documentation expanded in long help")
+        helptxt = topt.parser.help_to_file.getvalue()
+        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
+        # default format should be textual output
+        self.assertTrue(helptxt.startswith('Usage'))
+
 
     def test_help_long(self):
         """Generate long help message"""
@@ -145,8 +148,8 @@ class GeneralOptionTest(EnhancedTestCase):
                            help_to_string=True,
                            prog='optiontest1',
                            )
-        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
-                        "Long documentation expanded in long help")
+
+        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1)
 
     def test_help_outputformats(self):
         """Generate (long) rst help message"""
