@@ -51,6 +51,9 @@ from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
+HELP_OUTPUTOPTIONS = ['', 'rst', 'short', 'config',]
+
+
 def set_columns(cols=None):
     """Set os.environ COLUMNS variable
         - only if it is not set already
@@ -227,7 +230,10 @@ class ExtOption(CompleterOption):
         if dest and getattr(parser._long_opt.get('--' + dest, ''), 'store_or', '') == 'help':
             Option.take_action(self, action, dest, opt, value, values, parser)
             fn = getattr(parser, 'print_%shelp' % values.help)
-            fn()
+            if fn is None:
+                self.log.raiseException("Unknown option for help: %s" % value.help, exception=ValueError)
+            else:
+                fn()
             parser.exit()
         elif action == 'shorthelp':
             parser.print_shorthelp()
@@ -611,10 +617,8 @@ class ExtOptionParser(OptionParser):
 
         rsthelptxt = '\n'.join(result)
         if fh is None:
-            print rsthelptxt
-        else:
-            fh.write(rsthelptxt)
-            fh.flush()
+            fh = sys.stdout
+        fh.write(rsthelptxt)
 
     def format_option_rsthelp(self, formatter=None):
         """ Formatting for help in rst format """
@@ -687,7 +691,7 @@ class ExtOptionParser(OptionParser):
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
                         type="choice",
-                        choices=['', 'rst', 'short', 'config'],
+                        choices=HELP_OUTPUTOPTIONS,
                         default='',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",

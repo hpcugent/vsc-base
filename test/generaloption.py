@@ -37,7 +37,7 @@ from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
 
 from vsc.utils import fancylogger
-from vsc.utils.generaloption import GeneralOption
+from vsc.utils.generaloption import GeneralOption, HELP_OUTPUTOPTIONS
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
@@ -148,22 +148,15 @@ class GeneralOptionTest(EnhancedTestCase):
         self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
                         "Long documentation expanded in long help")
 
-    def test_help_rst(self):
-        """Generate (long) help message"""
-        topt = TestOption1(go_args=['--help=rst'],
-                           go_nosystemexit=True,
-                           go_columns=100,
-                           help_to_string=True,
-                           prog='optiontest1',
-                           )
-        self.assertTrue(topt.parser.help_to_file.getvalue().find("``--level-longlevel``") > -1,
-                        "Long documentation in .rst format expanded in long help")
-
-    def test_help_wrong(self):
-        """Error when generating help message in wrong format."""
-        # FIXME: make this stricer (type + error message)
-        self.assertErrorRegex(Exception, '.*', TestOption1, go_args=['--help=nosuchoutputformatforhelp'],
-                             go_nosystemexit=True, go_columns=100, help_to_string=True, prog='optiontest1')
+    def test_help_outputformats(self):
+        """Generate (long) rst help message"""
+        for choice in HELP_OUTPUTOPTIONS:
+            topt = TestOption1(go_args=['--help=%s' % choice],
+                               go_nosystemexit=True,
+                               go_columns=100,
+                               help_to_string=True,
+                               prog='optiontest1',
+                              )
 
     def test_help_confighelp(self):
         """Generate long help message"""

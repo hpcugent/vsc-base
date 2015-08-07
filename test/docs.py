@@ -45,8 +45,8 @@ class DocsTest(EnhancedTestCase):
         titles = [t]
 
         # small table
-        table = '\n'.join(mk_rst_table(titles, entries))
-        check = '\n'.join([
+        table = mk_rst_table(titles, entries)
+        check = [
             '=' * len(t),
             t,
             '=' * len(t),
@@ -55,7 +55,7 @@ class DocsTest(EnhancedTestCase):
             'three' + ' ' * (len(t) - 5),
             '=' * len(t),
             '',
-        ])
+        ]
 
         self.assertEqual(table, check)
 
