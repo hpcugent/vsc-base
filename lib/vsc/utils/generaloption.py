@@ -51,7 +51,7 @@ from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
-HELP_OUTPUTOPTIONS = ['', 'rst', 'short', 'config',]
+HELP_OUTPUT_FORMATS = ['', 'rst', 'short', 'config']
 
 
 def set_columns(cols=None):
@@ -229,9 +229,9 @@ class ExtOption(CompleterOption):
         # dest is None for actions like shorthelp and confighelp
         if dest and getattr(parser._long_opt.get('--' + dest, ''), 'store_or', '') == 'help':
             Option.take_action(self, action, dest, opt, value, values, parser)
-            fn = getattr(parser, 'print_%shelp' % values.help)
+            fn = getattr(parser, 'print_%shelp' % values.help, None)
             if fn is None:
-                self.log.raiseException("Unknown option for help: %s" % value.help, exception=ValueError)
+                self.log.raiseException("Unsupported output format for help: %s" % value.help, exception=ValueError)
             else:
                 fn()
             parser.exit()
@@ -602,23 +602,20 @@ class ExtOptionParser(OptionParser):
         fh = self.check_help(fh)
         OptionParser.print_help(self, fh)
 
-    def print_rsthelp(self, fh=None):
+    def print_rsthelp(self):
         """ Print help in rst format """
-        fh = self.check_help(fh)
         result = []
         if self.usage:
-            result.append("Usage: ``%s``" % self.get_usage().replace("Usage: ", '').strip())
-            result.append('')
+            title = "Usage"
+            result.extend([title, '-' * len(title), '', '``%s``' % self.get_usage().replace("Usage: ", '').strip(), ''])
         if self.description:
-            result.append(self.description)
-            result.append('')
+            title = "Description"
+            result.extend([title, '-' * len(title), '', self.description, ''])
 
         result.append(self.format_option_rsthelp())
 
-        rsthelptxt = '\n'.join(result)
-        if fh is None:
-            fh = sys.stdout
-        fh.write(rsthelptxt)
+        print '\n'.join(result)
+
 
     def format_option_rsthelp(self, formatter=None):
         """ Formatting for help in rst format """
@@ -627,9 +624,9 @@ class ExtOptionParser(OptionParser):
         formatter.store_option_strings(self)
 
         res = []
-        titles = ["Option", "Help"]
+        titles = ["Option flag", "Option description"]
 
-        all_opts = [("Options", self.option_list)] + [(group.title, group.option_list) for group in self.option_groups]
+        all_opts = [("Help options", self.option_list)] + [(group.title, group.option_list) for group in self.option_groups]
         for title, opts in all_opts:
             values = []
             res.extend([title, '-' * len(title)])
@@ -691,8 +688,9 @@ class ExtOptionParser(OptionParser):
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
                         type="choice",
-                        choices=HELP_OUTPUTOPTIONS,
-                        default='',
+                        choices=HELP_OUTPUT_FORMATS,
+                        default=HELP_OUTPUT_FORMATS[1],
+                        metavar='OUTPUT_FORMAT',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",
                         action="confighelp",
