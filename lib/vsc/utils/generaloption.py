@@ -602,8 +602,9 @@ class ExtOptionParser(OptionParser):
         fh = self.check_help(fh)
         OptionParser.print_help(self, fh)
 
-    def print_rsthelp(self):
+    def print_rsthelp(self, fh=None):
         """ Print help in rst format """
+        fh = self.check_help(fh)
         result = []
         if self.usage:
             title = "Usage"
@@ -614,7 +615,10 @@ class ExtOptionParser(OptionParser):
 
         result.append(self.format_option_rsthelp())
 
-        print '\n'.join(result)
+        rsthelptxt = '\n'.join(result)
+        if fh is None:
+            fh = sys.stdout
+        fh.write(rsthelptxt)
 
 
     def format_option_rsthelp(self, formatter=None):
