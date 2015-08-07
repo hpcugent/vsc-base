@@ -32,16 +32,17 @@ Functions for generating rst documentation
 INDENT_4SPACES = ' ' * 4
 
 
-class LengthNotEqualException(Exception):
+class LengthNotEqualException(ValueError):
     pass
+
 
 def mk_rst_table(titles, columns):
     """
     Returns an rst table with given titles and columns (a nested list of string columns for each column)
     """
-    num_col = len(titles)
-    if num_col != len(columns):
-        msg = "Length of titles and columns should be equal, found titles: %s and entries: %s" % (len(titles), len(columns))
+    title_cnt, col_cnt = len(titles), len(columns)
+    if title_cnt != col_cnt:
+        msg = "Number of titles/columns should be equal, found %d titles and %d columns" % (title_cnt, col_cnt)
         raise LengthNotEqualException, msg
     table = []
     col_widths = []
@@ -55,9 +56,9 @@ def mk_rst_table(titles, columns):
         # make line template
         tmpl.append('{%s:{c}<%s}' % (i, width))
 
-    line = [''] * num_col
+    line = [''] * col_cnt
     line_tmpl = INDENT_4SPACES.join(tmpl)
-    table_line = line_tmpl.format(*line, c="=")
+    table_line = line_tmpl.format(*line, c='=')
 
     table.append(table_line)
     table.append(line_tmpl.format(*titles, c=' '))
