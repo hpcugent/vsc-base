@@ -73,6 +73,19 @@ Logging to a udp server:
 """
 
 import inspect
+
+# patch inspect.getsourcefile to cache results to avoid tons of stat syscalls
+_cachegetsourcefile = {}
+_orig_inspect_getsourcefile = inspect.getsourcefile
+def cached_getsourcefile(obj):
+    """Faster version of inspect.getsourcefile, by caching results."""
+    fn = inspect.getfile(obj)
+    if not fn in _cachegetsourcefile:
+        _cachegetsourcefile[fn] = _orig_inspect_getsourcefile(obj)
+    return _cachegetsourcefile[fn]
+
+inspect.getsourcefile = cached_getsourcefile
+
 import logging
 import logging.handlers
 import os
@@ -87,6 +100,7 @@ TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message
 DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
 FANCYLOG_LOGGING_FORMAT = None
 FANCYLOG_FANCYRECORD = None
+ROOT_LOGGER_NAME = None
 
 # DEFAULT_LOGGING_FORMAT= '%(asctime)-15s %(levelname)-10s %(module)-15s %(threadName)-10s %(message)s'
 MAX_BYTES = 100 * 1024 * 1024  # max bytes in a file with rotating file handler
@@ -409,10 +423,13 @@ def getRootLoggerName():
     returns the name of the root module
     this is the module that is actually running everything and so doing the logging
     """
-    try:
-        return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
-    except Exception:
-        return "?"
+    global ROOT_LOGGER_NAME
+    if ROOT_LOGGER_NAME is None:
+        try:
+            ROOT_LOGGER_NAME = inspect.stack()[-1][1].split('/')[-1].split('.')[0]
+        except Exception:
+            ROOT_LOGGER_NAME = "?"
+    return ROOT_LOGGER_NAME
 
 
 def logToScreen(enable=True, handler=None, name=None, stdout=False):
