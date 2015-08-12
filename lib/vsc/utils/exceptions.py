@@ -41,7 +41,10 @@ def get_callers_logger():
     @return: logger instance (or None if none was found)
     """
     logger_cls = logging.getLoggerClass()
-    frame = inspect.currentframe()
+    if __debug__:
+        frame = inspect.currentframe()
+    else:
+        frame = None
     logger = None
 
     # frame may be None, see https://docs.python.org/2/library/inspect.html#inspect.currentframe
@@ -91,21 +94,22 @@ class LoggedException(Exception):
                 # move a level up when this instance is derived from LoggedException
                 frames_up += 1
 
-            # figure out where error was raised from
-            # current frame: this constructor, one frame above: location where this LoggedException was created/raised
-            frameinfo = inspect.getouterframes(inspect.currentframe())[frames_up]
+            if __debug__:
+                # figure out where error was raised from
+                # current frame: this constructor, one frame above: location where LoggedException was created/raised
+                frameinfo = inspect.getouterframes(inspect.currentframe())[frames_up]
 
-            # determine short location of Python module where error was raised from,
-            # i.e. starting with an entry from LOC_INFO_TOP_PKG_NAMES
-            path_parts = frameinfo[1].split(os.path.sep)
-            if path_parts[0] == '':
-                path_parts[0] = os.path.sep
-            top_indices = [path_parts.index(n) for n in self.LOC_INFO_TOP_PKG_NAMES if n in path_parts]
-            relpath = os.path.join(*path_parts[max(top_indices or [0]):])
+                # determine short location of Python module where error was raised from,
+                # i.e. starting with an entry from LOC_INFO_TOP_PKG_NAMES
+                path_parts = frameinfo[1].split(os.path.sep)
+                if path_parts[0] == '':
+                    path_parts[0] = os.path.sep
+                top_indices = [path_parts.index(n) for n in self.LOC_INFO_TOP_PKG_NAMES if n in path_parts]
+                relpath = os.path.join(*path_parts[max(top_indices or [0]):])
 
-            # include location info at the end of the message
-            # for example: "Nope, giving up (at easybuild/tools/somemodule.py:123 in some_function)"
-            msg = "%s (at %s:%s in %s)" % (msg, relpath, frameinfo[2], frameinfo[3])
+                # include location info at the end of the message
+                # for example: "Nope, giving up (at easybuild/tools/somemodule.py:123 in some_function)"
+                msg = "%s (at %s:%s in %s)" % (msg, relpath, frameinfo[2], frameinfo[3])
 
         logger = kwargs.get('logger', None)
         # try to use logger defined in caller's environment
