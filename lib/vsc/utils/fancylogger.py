@@ -386,22 +386,26 @@ def _getCallingFunctionName():
     returns the name of the function calling the function calling this function
     (for internal use only)
     """
-    try:
-        return inspect.stack()[2][3]
-    except Exception:
-        return "?"
-
+    if __debug__:
+        try:
+            return inspect.stack()[2][3]
+        except Exception:
+            return "?"
+    else:
+        return "not available in optimized mode"
 
 def _getCallingClassName(depth=2):
     """
     returns the name of the class calling the function calling this function
     (for internal use only)
     """
-    try:
-        return inspect.stack()[depth][0].f_locals['self'].__class__.__name__
-
-    except Exception:
-        return "?"
+    if __debug__:
+        try:
+            return inspect.stack()[depth][0].f_locals['self'].__class__.__name__
+        except Exception:
+            return "?"
+    else:
+        return "not available in optimized mode"
 
 
 def getRootLoggerName():
@@ -409,10 +413,13 @@ def getRootLoggerName():
     returns the name of the root module
     this is the module that is actually running everything and so doing the logging
     """
-    try:
-        return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
-    except Exception:
-        return "?"
+    if __debug__:
+        try:
+            return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
+        except Exception:
+            return "?"
+    else:
+        return "not available in optimized mode"
 
 
 def logToScreen(enable=True, handler=None, name=None, stdout=False):
