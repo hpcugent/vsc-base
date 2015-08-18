@@ -223,7 +223,7 @@ class ExtOption(CompleterOption):
                 self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
 
     def process(self, opt, value, values, parser):
-        """Handle option-as-value issues befoe continuing as usual"""
+        """Handle option-as-value issues before actually processing option."""
 
         if hasattr(parser, 'orig_rargs') and (value in parser._long_opt or value in parser._short_opt):
             orig_rargs = getattr(parser, 'orig_rargs')
@@ -243,9 +243,8 @@ class ExtOption(CompleterOption):
                 else:
                     force_fmt = "%s" % self._short_opts[0]
 
-                raise OptionValueError("Value '%s' is also a valid option."
-                                       " Use '%s%s' to pass this unambigously." %
-                                       (value, force_fmt, value))
+                errmsg = "Value '%s' is also a valid option, use '%s%s' instead." % (value, force_fmt, value))
+                raise OptionValueError(
 
         return Option.process(self, opt, value, values, parser)
 
@@ -497,7 +496,7 @@ class ExtOptionParser(OptionParser):
 
         self.environment_arguments = None
         self.commandline_arguments = None
-        self.orig_rargs = None # copy of the original arguments
+        self.orig_rargs = None  # copy of the original arguments
 
     def parse_args(self, args=None, values=None):
         """Keep a copy of the original arguments for callback / option processing"""
