@@ -243,7 +243,7 @@ class ExtOption(CompleterOption):
                 else:
                     force_fmt = "%s" % self._short_opts[0]
 
-                errmsg = "Value '%s' is also a valid option, use '%s%s' instead." % (value, force_fmt, value))
+                errmsg = "Value '%s' is also a valid option, use '%s%s' instead." % (value, force_fmt, value)
                 raise OptionValueError(
 
         return Option.process(self, opt, value, values, parser)
