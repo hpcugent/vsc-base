@@ -806,9 +806,15 @@ debug=1
         stderr = self.get_stderr()
         self.assertTrue("Value '--base' is also a valid option" in stderr)
 
-        # including a non-existing option should still result in 'no such option' error
+        # including a non-existing option will result in it being treated as a value
+        topt = TestOption1(go_args=['--store', '-f'])
+        self.assertEqual(topt.options.store, '-f')
+        topt = TestOption1(go_args=['--store', '--foo'])
+        self.assertEqual(topt.options.store, '--foo')
+
+        # non-existing options are still reported if they're not consumed as a value
         self.mock_stderr(True)  # reset
-        self.assertErrorRegex(SystemExit, '.*', TestOption1, go_args=['--store', '--nosuchoptiondefinedfoobar'])
+        self.assertErrorRegex(SystemExit, '.*', TestOption1, go_args=['--store', '--foo', '--nosuchoptiondefinedfoobar'])
         stderr = self.get_stderr()
         self.assertTrue("no such option: --nosuchoptiondefinedfoobar" in stderr)
 
