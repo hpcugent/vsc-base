@@ -751,7 +751,7 @@ class ExtOptionParser(OptionParser):
 
     def get_env_options(self):
         """Retrieve options from the environment: prefix_longopt.upper()"""
-        if not self.environment_arguments is None:
+        if self.environment_arguments is not None:
             # already done, let's not do this again
             return self.environment_arguments
 
