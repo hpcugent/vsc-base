@@ -764,6 +764,13 @@ debug=1
                               go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True,
                               error_env_option_method=raise_error)
 
+    def test_nosuchoption(self):
+        """Test catching of non-existing options."""
+        self.mock_stderr(True)  # reset
+        self.assertErrorRegex(SystemExit, '.*', TestOption1, go_args=['--nosuchoptiondefinedfoobar'])
+        stderr = self.get_stderr()
+        self.assertTrue("no such option: --nosuchoptiondefinedfoobar" in stderr)
+
     def test_option_as_value(self):
         """Test how valid options being used as values are handled."""
         # -s requires an argument
@@ -799,8 +806,11 @@ debug=1
         stderr = self.get_stderr()
         self.assertTrue("Value '--base' is also a valid option" in stderr)
 
-        # FIXME: this should fail?
-        topt = TestOption1(go_args=['--store', '--nosuchoptiondefinedfoobar'])
+        # including a non-existing option should still result in 'no such option' error
+        self.mock_stderr(True)  # reset
+        self.assertErrorRegex(SystemExit, '.*', TestOption1, go_args=['--store', '--nosuchoptiondefinedfoobar'])
+        stderr = self.get_stderr()
+        self.assertTrue("no such option: --nosuchoptiondefinedfoobar" in stderr)
 
 def suite():
     """ returns all the testcases in this module """
