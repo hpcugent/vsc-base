@@ -222,6 +222,33 @@ class ExtOption(CompleterOption):
             else:
                 self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
 
+    def process(self, opt, value, values, parser):
+        """Handle option-as-value issues befoe continuing as usual"""
+
+        if hasattr(parser, 'orig_rargs') and (value in parser._long_opt or value in parser._short_opt):
+            orig_rargs = getattr(parser, 'orig_rargs')
+
+            # Check if this is a commandline issue: values that are options
+            # that are passed via --longopt=value or -sVALUE are not a problem.
+            # When processing the enviroment and/or configfile, we always set
+            # --longopt=value, so no issues there.
+
+            # index of last parsed arg in orig_rargs via remainder of parser.rargs
+            last_parsed_idx = len(orig_rargs) - len(parser.rargs) - 1
+            if orig_rargs[last_parsed_idx] == value:
+                # the value that was passed (implying the option always requires a value)
+                # is an option, and it's very ambigous.
+                if self._long_opts:
+                    force_fmt = "%s=" % self._long_opts[0]
+                else:
+                    force_fmt = "%s" % self._short_opts[0]
+
+                raise OptionValueError("Value '%s' is also a valid option."
+                                       " Use '%s%s' to pass this unambigously." %
+                                       (value, force_fmt, value))
+
+        return Option.process(self, opt, value, values, parser)
+
     def take_action(self, action, dest, opt, value, values, parser):
         """Extended take_action"""
         orig_action = action  # keep copy
@@ -470,6 +497,15 @@ class ExtOptionParser(OptionParser):
 
         self.environment_arguments = None
         self.commandline_arguments = None
+        self.orig_rargs = None # copy of the original arguments
+
+    def parse_args(self, args=None, values=None):
+        """Keep a copy of the original arguments for callback / option processing"""
+        # seems like self._get_args returns a copy, but better safe then sorry here
+        self.orig_rargs = self._get_args(args)[:]
+
+        # continue as usual
+        return OptionParser.parse_args(self, args=args, values=values)
 
     def set_description_docstring(self):
         """Try to find the main docstring and add it if description is not None"""
