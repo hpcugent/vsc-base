@@ -2,7 +2,8 @@
 
 ### Build Status
 
-- Python 2.6 : [![Build Status](https://jenkins1.ugent.be/buildStatus/icon?job=vsc-jobs-py26)](https://jenkins1.ugent.be/job/vsc-base-py26/)
+- Python 2.6 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python26/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python26/)
+- Python 2.7 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python27/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python27/)
 
 Common tools used within our organization.
 
