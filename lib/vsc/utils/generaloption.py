@@ -33,6 +33,7 @@ A class that can be used to generated options to python scripts in a general way
 
 import ConfigParser
 import copy
+import difflib
 import inspect
 import operator
 import os
@@ -225,28 +226,15 @@ class ExtOption(CompleterOption):
     def process(self, opt, value, values, parser):
         """Handle option-as-value issues before actually processing option."""
 
-        if hasattr(parser, 'orig_rargs') and (value in parser._long_opt or value in parser._short_opt):
-            orig_rargs = getattr(parser, 'orig_rargs')
-
-            # Check if this is a commandline issue: values that are options
-            # that are passed via --longopt=value or -sVALUE are not a problem.
-            # When processing the enviroment and/or configfile, we always set
-            # --longopt=value, so no issues there.
-
-            # index of last parsed arg in orig_rargs via remainder of parser.rargs
-            last_parsed_idx = len(orig_rargs) - len(parser.rargs) - 1
-            if orig_rargs[last_parsed_idx] == value:
-                # the value that was passed (implying the option always requires a value)
-                # is an option, and it's very ambigous.
-                if self._long_opts:
-                    force_fmt = "%s=" % self._long_opts[0]
-                else:
-                    force_fmt = "%s" % self._short_opts[0]
-
-                errmsg = "Value '%s' is also a valid option, use '%s%s' instead." % (value, force_fmt, value)
-                raise OptionValueError(errmsg)
+        if hasattr(parser, 'is_value_a_commandline_option'):
+            prefix = "%s=" % self._long_opts[0] if self._long_opts else self._short_opts[0]
+            errmsg = parser.is_value_a_commandline_option(value)
+            if errmsg is not None:
+                self.log.raiseException("%s. Use '%s%s' if the value is correct." % (errmsg, prefix, value),
+                                        exception=OptionValueError)
 
         return Option.process(self, opt, value, values, parser)
+
 
     def take_action(self, action, dest, opt, value, values, parser):
         """Extended take_action"""
@@ -445,6 +433,10 @@ class ExtOptionParser(OptionParser):
     VALUES_CLASS = Values
     DESCRIPTION_DOCSTRING = False
 
+    ALLOW_OPTION_AS_VALUE = False # exact match for option as value
+    ALLOW_DASH_AS_VALUE = False # any value starting with a '-'
+    ALLOW_TYPO_AS_VALUE = True # value with similarity score from difflib.get_close_matches
+
     def __init__(self, *args, **kwargs):
         """
         Following named arguments are specific to ExtOptionParser
@@ -505,6 +497,56 @@ class ExtOptionParser(OptionParser):
 
         # continue as usual
         return OptionParser.parse_args(self, args=args, values=values)
+
+    def is_value_a_commandline_option(self, value, index=None):
+        """
+        Determine if value is/could be an option passed via the commandline.
+        If it is, return the reason why (can be used as message); or return None if it isn't.
+
+        index is the index of the value on the commandline (if None, it is determined from orig_rargs and rargs)
+
+        The method tests for possible ambiguity on the commandline when the parser
+        interprets the argument following an option as a value, whereas it is far more likely that
+        it is (intended as) an option.
+        """
+        # Values that are/could be options that are passed via
+        # --longopt=value or -sVALUE are not a problem.
+        # When processing the enviroment and/or configfile, we always set
+        # --longopt=value, so no issues there either.
+
+        try:
+            cmdline_index = self.orig_rargs.index(value)
+        except ValueError:
+            # There is no ambiguity if the value is not passed
+            # as standalone argument via commandline
+            return None
+
+        if index is None:
+            # index of last parsed arg in orig_rargs via remainder of rargs
+            index = len(self.orig_rargs) - len(self.rargs) - 1
+
+        if index != cmdline_index:
+            # This is not the value you are looking for
+            return None
+
+        # First test the exact problem where the value is an option
+        if (not self.ALLOW_OPTION_AS_VALUE) and (value in self._long_opt or value in self._short_opt):
+            return "Value '%s' is also a valid option" % value
+
+        if not self.ALLOW_DASH_AS_VALUE and value.startswith('-'):
+            return "Value '%s' starts with a '-'" % value
+
+        if not self.ALLOW_TYPO_AS_VALUE:
+            possibilities = self._long_opt.keys() + self._short_opt.keys()
+            # also on optionnames, i.e. without the -- / -
+            possibilities.extend([x.lstrip('-') for x in possibilities])
+            # max 3 options; minimum score is taken from EB experience
+            matches = difflib.get_close_matches(value, possibilities, 3, 0.85)
+
+            if matches:
+                return "Value '%s' too close match to option(s) %s" % (value, ', '.join(matches))
+
+        return None
 
     def set_description_docstring(self):
         """Try to find the main docstring and add it if description is not None"""
