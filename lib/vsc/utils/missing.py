@@ -46,6 +46,7 @@ import shlex
 import subprocess
 import sys
 import time
+import zipfile
 
 from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
@@ -332,6 +333,46 @@ def get_subclasses(klass, include_base_class=False):
     return get_subclasses_dict(klass, include_base_class=include_base_class).keys()
 
 
+def _extract_module_names(filelist):
+    """
+    Given a list of files, strip off the suffix ('.py') and hide _prefix
+    files except for __init__.py
+    """
+    module_regexp = re.compile(r"^(?P<modname>[^_].*|__init__)\.py$")
+    return [res.group('modname') for res in map(module_regexp.match, filelist) if res]
+
+
+def _trim_leading_sep(path):
+    """
+    If the first char is a path separator (/), return the path with the
+    separator trimmed off.
+    """
+    if path.startswith(os.sep):
+        return path[1:]
+    return path
+
+def _find_zipped_modules(zip_path, pkg_path):
+    """
+    Given a path to a zipped egg, and a pkg path, return the submodules inside
+    the module
+    """
+    zf = zipfile.ZipFile(zip_path)
+    names = zf.namelist()
+    prefix = os.path.commonprefix([zip_path, pkg_path])
+    zip_pkg_path = _trim_leading_sep(pkg_path[len(prefix):])
+    names = [_trim_leading_sep(n[len(zip_pkg_path):]) for n in names if n.startswith(zip_pkg_path)]
+
+    if names:
+        if '__init__.py' not in names:
+            tup = (zip_path, zip_pkg_path)
+            _log.debug('No __init__.py found in %s/%s. It is not a valid path' % tup)
+            return None
+        modules = _extract_module_names(names)
+        _log.debug("List of modules for package in %s: %s" % (pkg_path, modules))
+        return modules
+    return None
+
+
 def modules_in_pkg_path(pkg_path):
     """Return list of module files in specified package path."""
     # if the specified (relative) package path doesn't exist, try and determine the absolute path via sys.path
@@ -355,7 +396,10 @@ def modules_in_pkg_path(pkg_path):
                 if is_pkg:
                     newpath = abspath
                     break
-
+            elif zipfile.is_zipfile(sys_path_dir):
+                modules = _find_zipped_modules(sys_path_dir, pkg_path)
+                if modules is not None:
+                    return modules
         if newpath is None:
             # give up if we couldn't find an absolute path for the imported package
             tup = (pkg_path, sys.path)
@@ -364,8 +408,15 @@ def modules_in_pkg_path(pkg_path):
             pkg_path = newpath
             _log.debug("Found absolute package path %s" % pkg_path)
 
-    module_regexp = re.compile(r"^(?P<modname>[^_].*|__init__)\.py$")
-    modules = [res.group('modname') for res in map(module_regexp.match, os.listdir(pkg_path)) if res]
+    # Maybe it's a zipped egg.
+    else:
+        for sys_path_dir in sys.path:
+            _log.debug('Zipped egg found in system path: "%s". Checking if the the module there.' % sys_path_dir)
+            if zipfile.is_zipfile(sys_path_dir):
+                modules = _find_zipped_modules(sys_path_dir, pkg_path)
+                if modules is not None:
+                    return modules
+    modules = _extract_module_names(os.listdir(pkg_path))
     _log.debug("List of modules for package in %s: %s" % (pkg_path, modules))
     return modules
 
