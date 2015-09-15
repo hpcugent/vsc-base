@@ -58,6 +58,7 @@ PACKAGE = {
     'packages': ['vsc', 'vsc.utils', 'vsc.install'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
     'install_requires' : ['setuptools'],
+    'zip_safe': True,
 }
 
 if __name__ == '__main__':
