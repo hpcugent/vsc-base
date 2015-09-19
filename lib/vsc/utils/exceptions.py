@@ -82,7 +82,10 @@ class LoggedException(Exception):
         @param msg: exception message
         @param *args: list of formatting arguments for exception message
         @param logger: logger to use
+        @param include_location: include location where error was raised from
         """
+        include_location = kwargs.get('include_location', False)
+
         # format message with (optional) list of formatting arguments
         if args:
             msg = msg % args
@@ -94,7 +97,7 @@ class LoggedException(Exception):
                 # move a level up when this instance is derived from LoggedException
                 frames_up += 1
 
-            if __debug__:
+            if include_location or __debug__:
                 # figure out where error was raised from
                 # current frame: this constructor, one frame above: location where LoggedException was created/raised
                 frameinfo = inspect.getouterframes(inspect.currentframe())[frames_up]
