@@ -75,6 +75,8 @@ class LoggedException(Exception):
     LOGGING_METHOD_NAME = 'error'
     # list of top-level package names to use to format location info; None implies not to include location info
     LOC_INFO_TOP_PKG_NAMES = []
+    # include location where error was raised from (enabled by default under 'python', disabled under 'python -O')
+    INCLUDE_LOCATION = __debug__
 
     def __init__(self, msg, *args, **kwargs):
         """
@@ -94,7 +96,7 @@ class LoggedException(Exception):
                 # move a level up when this instance is derived from LoggedException
                 frames_up += 1
 
-            if __debug__:
+            if self.INCLUDE_LOCATION:
                 # figure out where error was raised from
                 # current frame: this constructor, one frame above: location where LoggedException was created/raised
                 frameinfo = inspect.getouterframes(inspect.currentframe())[frames_up]
