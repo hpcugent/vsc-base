@@ -183,7 +183,8 @@ class ExceptionsTest(EnhancedTestCase):
         # find defined logger in caller's context
         logger = getLogger('foo')
         callers_logger = get_callers_logger(use_inspect=False)
-        self.assertEqual(callers_logger, None)
+        # result depends on whether tests were run under 'python' or 'python -O'
+        self.assertTrue(callers_logger in [logger, None])
         callers_logger = get_callers_logger(use_inspect=True)
         self.assertEqual(callers_logger, logger)
 
