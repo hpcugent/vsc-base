@@ -35,13 +35,13 @@ import os
 from vsc.utils import fancylogger
 
 
-def get_callers_logger():
+def get_callers_logger(use_inspect=False):
     """
     Get logger defined in caller's environment
     @return: logger instance (or None if none was found)
     """
     logger_cls = logging.getLoggerClass()
-    if __debug__:
+    if use_inspect or __debug__:
         frame = inspect.currentframe()
     else:
         frame = None
