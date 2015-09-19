@@ -61,7 +61,7 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % getRootLoggerName(), re.M)
+        log_re = re.compile("^%s :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % getRootLoggerName(), re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -91,7 +91,7 @@ class ExceptionsTest(EnhancedTestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile("^%s.testlogger_one :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog, re.M)
+        log_re = re.compile("^%s.testlogger_one :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog, re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -113,7 +113,7 @@ class ExceptionsTest(EnhancedTestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile("^%s.testlogger_local :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog)
+        log_re = re.compile("^%s(.testlogger_local)? :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -136,7 +136,7 @@ class ExceptionsTest(EnhancedTestCase):
 
         # no location with default LOC_INFO_TOP_PKG_NAMES ([])
         logToFile(tmplog, enable=True)
-        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM', include_location=True)
         logToFile(tmplog, enable=False)
 
         rootlogname = getRootLoggerName()
@@ -152,7 +152,7 @@ class ExceptionsTest(EnhancedTestCase):
         # location is included if LOC_INFO_TOP_PKG_NAMES is defined
         TestException.LOC_INFO_TOP_PKG_NAMES = ['vsc']
         logToFile(tmplog, enable=True)
-        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM', include_location=True)
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
@@ -166,7 +166,7 @@ class ExceptionsTest(EnhancedTestCase):
         # absolute path of location is included if there's no match in LOC_INFO_TOP_PKG_NAMES
         TestException.LOC_INFO_TOP_PKG_NAMES = ['foobar']
         logToFile(tmplog, enable=True)
-        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM', include_location=True)
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at /.*/vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
@@ -182,14 +182,17 @@ class ExceptionsTest(EnhancedTestCase):
 
         # find defined logger in caller's context
         logger = getLogger('foo')
-        self.assertEqual(logger, get_callers_logger())
+        callers_logger = get_callers_logger(use_inspect=False)
+        self.assertEqual(callers_logger, None)
+        callers_logger = get_callers_logger(use_inspect=True)
+        self.assertEqual(callers_logger, logger)
 
         # also works when logger is 'higher up'
         class Test(object):
             """Dummy test class"""
             def foo(self, logger=None):
                 """Dummy test method, returns logger from calling context."""
-                return get_callers_logger()
+                return get_callers_logger(use_inspect=True)
 
         test = Test()
         self.assertEqual(logger, test.foo())
