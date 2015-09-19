@@ -35,13 +35,13 @@ import os
 from vsc.utils import fancylogger
 
 
-def get_callers_logger(use_inspect=False):
+def get_callers_logger():
     """
     Get logger defined in caller's environment
     @return: logger instance (or None if none was found)
     """
     logger_cls = logging.getLoggerClass()
-    if use_inspect or __debug__:
+    if __debug__:
         frame = inspect.currentframe()
     else:
         frame = None
@@ -75,8 +75,8 @@ class LoggedException(Exception):
     LOGGING_METHOD_NAME = 'error'
     # list of top-level package names to use to format location info; None implies not to include location info
     LOC_INFO_TOP_PKG_NAMES = []
-    # include location where error was raised from
-    INCLUDE_LOCATION = False
+    # include location where error was raised from (enabled by default under 'python', disabled under 'python -O')
+    INCLUDE_LOCATION = __debug__
 
     def __init__(self, msg, *args, **kwargs):
         """
@@ -96,7 +96,7 @@ class LoggedException(Exception):
                 # move a level up when this instance is derived from LoggedException
                 frames_up += 1
 
-            if self.INCLUDE_LOCATION or __debug__:
+            if self.INCLUDE_LOCATION:
                 # figure out where error was raised from
                 # current frame: this constructor, one frame above: location where LoggedException was created/raised
                 frameinfo = inspect.getouterframes(inspect.currentframe())[frames_up]

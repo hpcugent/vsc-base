@@ -183,25 +183,23 @@ class ExceptionsTest(EnhancedTestCase):
 
         # find defined logger in caller's context
         logger = getLogger('foo')
-        callers_logger = get_callers_logger(use_inspect=False)
+        callers_logger = get_callers_logger()
         # result depends on whether tests were run under 'python' or 'python -O'
         self.assertTrue(callers_logger in [logger, None])
-        callers_logger = get_callers_logger(use_inspect=True)
-        self.assertEqual(callers_logger, logger)
 
         # also works when logger is 'higher up'
         class Test(object):
             """Dummy test class"""
             def foo(self, logger=None):
                 """Dummy test method, returns logger from calling context."""
-                return get_callers_logger(use_inspect=True)
+                return get_callers_logger()
 
         test = Test()
-        self.assertEqual(logger, test.foo())
+        self.assertTrue(logger, [test.foo(), None])
 
         # closest logger to caller is preferred
         logger2 = getLogger(test.__class__.__name__)
-        self.assertEqual(logger2, test.foo(logger=logger2))
+        self.assertTrue(logger2 in [test.foo(logger=logger2), None])
 
 def suite():
     """ returns all the testcases in this module """
