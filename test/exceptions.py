@@ -123,6 +123,7 @@ class ExceptionsTest(EnhancedTestCase):
         """Test inclusion of location information in log message for LoggedException."""
         class TestException(LoggedException):
             LOC_INFO_TOP_PKG_NAMES = None
+            INCLUDE_LOCATION = True
 
         def raise_testexception(msg, *args, **kwargs):
             """Utility function: just raise a TestException."""
@@ -136,7 +137,7 @@ class ExceptionsTest(EnhancedTestCase):
 
         # no location with default LOC_INFO_TOP_PKG_NAMES ([])
         logToFile(tmplog, enable=True)
-        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM', include_location=True)
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
         rootlogname = getRootLoggerName()
@@ -152,7 +153,7 @@ class ExceptionsTest(EnhancedTestCase):
         # location is included if LOC_INFO_TOP_PKG_NAMES is defined
         TestException.LOC_INFO_TOP_PKG_NAMES = ['vsc']
         logToFile(tmplog, enable=True)
-        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM', include_location=True)
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
@@ -166,7 +167,7 @@ class ExceptionsTest(EnhancedTestCase):
         # absolute path of location is included if there's no match in LOC_INFO_TOP_PKG_NAMES
         TestException.LOC_INFO_TOP_PKG_NAMES = ['foobar']
         logToFile(tmplog, enable=True)
-        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM', include_location=True)
+        self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at /.*/vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
