@@ -32,7 +32,6 @@ vsc-base base distribution setup.py
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
-import glob
 import os
 import sys
 
