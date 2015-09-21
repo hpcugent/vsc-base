@@ -46,7 +46,8 @@ def remove_bdist_rpm_source_file():
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 shared_setup.SHARED_TARGET.update({
     'url': 'https://github.com/hpcugent/vsc-base',
-    'download_url': 'https://github.com/hpcugent/vsc-base'
+    'download_url': 'https://github.com/hpcugent/vsc-base',
+    'zip_safe': True,
 })
 
 
@@ -55,8 +56,9 @@ PACKAGE = {
     'version': '2.2.6',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
-    'packages': ['vsc', 'vsc.utils', 'vsc.install'],
+    'packages': ['vsc', 'vsc.install', 'vsc.test', 'vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
+    'data_files': [('vsc/test/runtests', ['lib/vsc/test/runtests/simple_option.py'])],
     'install_requires' : ['setuptools'],
 }
 
