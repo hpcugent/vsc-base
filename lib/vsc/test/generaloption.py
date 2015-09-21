@@ -33,6 +33,7 @@ import logging
 import os
 import pkgutil
 import re
+import stat
 import tempfile
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
@@ -677,11 +678,12 @@ debug=1
         f = open(tmpscript, 'w')
         f.write(script_txt)
         f.close()
+        os.chmod(tmpscript, stat.S_IRUSR|stat.S_IXUSR)
 
         partial = '-'
         cmd_list = [tmpscript, partial]
 
-        ec, out = run_simple('chmod u+x %s; %s; test $? == 1' % (tmpscript, gen_cmdline(cmd_list, partial)))
+        ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)

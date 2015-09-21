@@ -30,7 +30,9 @@ vsc-base base distribution setup.py
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
+import glob
 import os
 import sys
 
@@ -58,7 +60,7 @@ PACKAGE = {
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc', 'vsc.install', 'vsc.test', 'vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'data_files': [('vsc/test/runtests', ['lib/vsc/test/runtests/simple_option.py'])],
+    'data_files': [('vsc/test/runtests', glob.glob('lib/vsc/test/runtests/*.py'))],
     'install_requires' : ['setuptools'],
 }
 
