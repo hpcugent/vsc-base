@@ -43,6 +43,11 @@ from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN
 from vsc.utils.testing import EnhancedTestCase
 
 
+SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests')
+SCRIPT_SIMPLE = os.path.join(SCRIPTS_DIR, 'simple.py')
+SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
+
+
 class RunQAShort(RunQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
 
@@ -52,33 +57,13 @@ run_qas = RunQAShort.run
 class TestRun(EnhancedTestCase):
     """Test for the run module."""
 
-    def setUp(self):
-        """Setup test."""
-        super(TestRun, self).setUp()
-
-        script_txt = pkgutil.get_data('vsc.test.vsc_base', os.path.join('runtests', 'simple.py'))
-        fd, self.script_simple = tempfile.mkstemp()
-        os.close(fd)
-        f = open(self.script_simple, 'w')
-        f.write(script_txt)
-        f.close()
-        os.chmod(self.script_simple, stat.S_IRUSR|stat.S_IXUSR)
-
-        script_txt = pkgutil.get_data('vsc.test.vsc_base', os.path.join('runtests', 'qa.py'))
-        fd, self.script_qa = tempfile.mkstemp()
-        os.close(fd)
-        f = open(self.script_qa, 'w')
-        f.write(script_txt)
-        f.close()
-        os.chmod(self.script_qa, stat.S_IRUSR|stat.S_IXUSR)
-
     def test_simple(self):
-        ec, output = run_simple([self.script_simple, 'shortsleep'])
+        ec, output = run_simple([SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
     def test_simple_asyncloop(self):
-        ec, output = run_asyncloop([self.script_simple, 'shortsleep'])
+        ec, output = run_asyncloop([SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
@@ -86,7 +71,7 @@ class TestRun(EnhancedTestCase):
         start = time.time()
         timeout = 3
         # longsleep is 10sec
-        ec, output = run_timeout([self.script_simple, 'longsleep'], timeout=timeout)
+        ec, output = run_timeout([SCRIPT_SIMPLE, 'longsleep'], timeout=timeout)
         stop = time.time()
         self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE)
         self.assertTrue(RUNRUN_TIMEOUT_OUTPUT == output)
@@ -94,13 +79,13 @@ class TestRun(EnhancedTestCase):
 
     def test_qa_simple(self):
         """Simple testing"""
-        ec, output = run_qas([self.script_qa, 'noquestion'])
+        ec, output = run_qas([SCRIPT_QA, 'noquestion'])
         self.assertEqual(ec, 0)
 
         qa_dict = {
                    'Simple question:': 'simple answer',
                    }
-        ec, output = run_qas([self.script_qa, 'simple'], qa=qa_dict)
+        ec, output = run_qas([SCRIPT_QA, 'simple'], qa=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_regex(self):
@@ -108,7 +93,7 @@ class TestRun(EnhancedTestCase):
         qa_dict = {
                    '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
                    }
-        ec, output = run_qas([self.script_qa, 'whattime'], qa_reg=qa_dict)
+        ec, output = run_qas([SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_noqa(self):
@@ -117,12 +102,12 @@ class TestRun(EnhancedTestCase):
         qa_dict = {
                    'Now is the time.': 'OK',
                    }
-        ec, output = run_qas([self.script_qa, 'waitforit'], qa=qa_dict)
+        ec, output = run_qas([SCRIPT_QA, 'waitforit'], qa=qa_dict)
         self.assertEqual(ec, RUNRUN_QA_MAX_MISS_EXITCODE)
 
         # this has to work
         no_qa = ['Wait for it \(\d+ seconds\)']
-        ec, output = run_qas([self.script_qa, 'waitforit'], qa=qa_dict, no_qa=no_qa)
+        ec, output = run_qas([SCRIPT_QA, 'waitforit'], qa=qa_dict, no_qa=no_qa)
         self.assertEqual(ec, 0)
 
     def test_qa_list_of_answers(self):
@@ -131,7 +116,7 @@ class TestRun(EnhancedTestCase):
         qa_dict = {
             "Enter a number ('0' to stop):": ['1', '2', '4', '0'],
         }
-        ec, output = run_qas([self.script_qa, 'ask_number', '4'], qa=qa_dict)
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa=qa_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 7$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
@@ -141,7 +126,7 @@ class TestRun(EnhancedTestCase):
         qa_reg_dict = {
             "Enter a number \(.*\):": ['2', '3', '5', '0'] + ['100'] * 100,
         }
-        ec, output = run_qas([self.script_qa, 'ask_number', '100'], qa_reg=qa_reg_dict)
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 10$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
@@ -157,13 +142,13 @@ class TestRun(EnhancedTestCase):
         self.assertTrue(RunQAShort.CYCLE_ANSWERS)
         orig_cycle_answers = RunQAShort.CYCLE_ANSWERS
         RunQAShort.CYCLE_ANSWERS = True
-        ec, output = run_qas([self.script_qa, 'ask_number', '4'], qa_reg=qa_reg_dict)
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 18$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
         # loop 3 times, no cycling => 2 + 7 + 7 + 7 = 23
         RunQAShort.CYCLE_ANSWERS = False
-        ec, output = run_qas([self.script_qa, 'ask_number', '4'], qa_reg=qa_reg_dict)
+        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 23$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))

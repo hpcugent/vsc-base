@@ -31,9 +31,7 @@ Unit tests for generaloption
 import datetime
 import logging
 import os
-import pkgutil
 import re
-import stat
 import tempfile
 from tempfile import NamedTemporaryFile
 from unittest import TestCase, TestLoader, main
@@ -672,16 +670,10 @@ debug=1
 
         reg_reply = re.compile(r'^COMPREPLY=\((.*)\)$')
 
-        script_txt = pkgutil.get_data('vsc.test.vsc_base', os.path.join('runtests', 'simple_option.py'))
-        fd, tmpscript = tempfile.mkstemp()
-        os.close(fd)
-        f = open(tmpscript, 'w')
-        f.write(script_txt)
-        f.close()
-        os.chmod(tmpscript, stat.S_IRUSR|stat.S_IXUSR)
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests', 'simple_option.py')
 
         partial = '-'
-        cmd_list = [tmpscript, partial]
+        cmd_list = [script, partial]
 
         ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
         # tabcompletion ends with exit 1!; test returns this to 0
@@ -698,7 +690,7 @@ debug=1
 
         # test --deb autocompletion
         partial = '--deb'
-        cmd_list = [tmpscript, partial]
+        cmd_list = [script, partial]
 
         ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
         # tabcompletion ends with exit 1!; test returns this to 0
@@ -707,8 +699,6 @@ debug=1
 
         compl_opts = reg_reply.search(out).group(1).split()
         self.assertEqual(compl_opts, ['--debug'])
-
-        os.remove(tmpscript)
 
     def test_get_by_prefix(self):
         """Test dict by prefix"""
