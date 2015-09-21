@@ -55,7 +55,7 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.2.6',
+    'version': '2.3.0',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc', 'vsc.install', 'vsc.test', 'vsc.test.vsc_base', 'vsc.utils'],
