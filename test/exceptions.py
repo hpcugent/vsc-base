@@ -61,7 +61,7 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % getRootLoggerName(), re.M)
+        log_re = re.compile("^%s :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % getRootLoggerName(), re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -91,7 +91,7 @@ class ExceptionsTest(EnhancedTestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile("^%s.testlogger_one :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog, re.M)
+        log_re = re.compile("^%s.testlogger_one :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog, re.M)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -113,7 +113,7 @@ class ExceptionsTest(EnhancedTestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile("^%s(.testlogger_local)? :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog)
+        log_re = re.compile("^%s.testlogger_local :: BOOM \(at .*:[0-9]+ in raise_loggedexception\)$" % rootlog)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -123,7 +123,6 @@ class ExceptionsTest(EnhancedTestCase):
         """Test inclusion of location information in log message for LoggedException."""
         class TestException(LoggedException):
             LOC_INFO_TOP_PKG_NAMES = None
-            INCLUDE_LOCATION = True
 
         def raise_testexception(msg, *args, **kwargs):
             """Utility function: just raise a TestException."""
@@ -183,9 +182,7 @@ class ExceptionsTest(EnhancedTestCase):
 
         # find defined logger in caller's context
         logger = getLogger('foo')
-        callers_logger = get_callers_logger()
-        # result depends on whether tests were run under 'python' or 'python -O'
-        self.assertTrue(callers_logger in [logger, None])
+        self.assertEqual(logger, get_callers_logger())
 
         # also works when logger is 'higher up'
         class Test(object):
@@ -195,11 +192,11 @@ class ExceptionsTest(EnhancedTestCase):
                 return get_callers_logger()
 
         test = Test()
-        self.assertTrue(logger, [test.foo(), None])
+        self.assertEqual(logger, test.foo())
 
         # closest logger to caller is preferred
         logger2 = getLogger(test.__class__.__name__)
-        self.assertTrue(logger2 in [test.foo(logger=logger2), None])
+        self.assertEqual(logger2, test.foo(logger=logger2))
 
 def suite():
     """ returns all the testcases in this module """
