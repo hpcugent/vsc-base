@@ -672,7 +672,7 @@ debug=1
 
         reg_reply = re.compile(r'^COMPREPLY=\((.*)\)$')
 
-        script_txt = pkgutil.get_data('vsc.test', os.path.join('runtests', 'simple_option.py'))
+        script_txt = pkgutil.get_data('vsc.test.vsc_base', os.path.join('runtests', 'simple_option.py'))
         fd, tmpscript = tempfile.mkstemp()
         os.close(fd)
         f = open(tmpscript, 'w')

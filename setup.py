@@ -58,9 +58,9 @@ PACKAGE = {
     'version': '2.2.6',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
-    'packages': ['vsc', 'vsc.install', 'vsc.test', 'vsc.utils'],
+    'packages': ['vsc', 'vsc.install', 'vsc.test', 'vsc.test.vsc_base', 'vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'data_files': [('vsc/test/runtests', glob.glob('lib/vsc/test/runtests/*.py'))],
+    'data_files': [('vsc/test/vsc_base/runtests', glob.glob('lib/vsc/test/vsc_base/runtests/*.py'))],
     'install_requires' : ['setuptools'],
 }
 

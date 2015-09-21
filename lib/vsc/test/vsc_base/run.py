@@ -56,7 +56,7 @@ class TestRun(EnhancedTestCase):
         """Setup test."""
         super(TestRun, self).setUp()
 
-        script_txt = pkgutil.get_data('vsc.test', os.path.join('runtests', 'simple.py'))
+        script_txt = pkgutil.get_data('vsc.test.vsc_base', os.path.join('runtests', 'simple.py'))
         fd, self.script_simple = tempfile.mkstemp()
         os.close(fd)
         f = open(self.script_simple, 'w')
@@ -64,7 +64,7 @@ class TestRun(EnhancedTestCase):
         f.close()
         os.chmod(self.script_simple, stat.S_IRUSR|stat.S_IXUSR)
 
-        script_txt = pkgutil.get_data('vsc.test', os.path.join('runtests', 'qa.py'))
+        script_txt = pkgutil.get_data('vsc.test.vsc_base', os.path.join('runtests', 'qa.py'))
         fd, self.script_qa = tempfile.mkstemp()
         os.close(fd)
         f = open(self.script_qa, 'w')
