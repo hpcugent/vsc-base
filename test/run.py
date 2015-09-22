@@ -30,8 +30,11 @@ Tests for the vsc.utils.run module.
 
 @author: Stijn De Weirdt (Ghent University)
 """
+import pkgutil
 import os
 import re
+import stat
+import tempfile
 import time
 from unittest import TestLoader, main
 
@@ -40,9 +43,9 @@ from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN
 from vsc.utils.testing import EnhancedTestCase
 
 
-SCRIPT_DIR = os.path.join(os.path.dirname(__file__), 'runtests')
-SCRIPT_SIMPLE = os.path.join(SCRIPT_DIR, 'simple.py')
-SCRIPT_QA = os.path.join(SCRIPT_DIR, 'qa.py')
+SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests')
+SCRIPT_SIMPLE = os.path.join(SCRIPTS_DIR, 'simple.py')
+SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
 
 
 class RunQAShort(RunQA):
@@ -53,6 +56,7 @@ run_qas = RunQAShort.run
 
 class TestRun(EnhancedTestCase):
     """Test for the run module."""
+
     def test_simple(self):
         ec, output = run_simple([SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)

@@ -30,6 +30,7 @@ vsc-base base distribution setup.py
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
 import os
 import sys
@@ -46,16 +47,17 @@ def remove_bdist_rpm_source_file():
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 shared_setup.SHARED_TARGET.update({
     'url': 'https://github.com/hpcugent/vsc-base',
-    'download_url': 'https://github.com/hpcugent/vsc-base'
+    'download_url': 'https://github.com/hpcugent/vsc-base',
+    'zip_safe': True,
 })
 
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.2.6',
+    'version': '2.3.0',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
-    'packages': ['vsc', 'vsc.utils', 'vsc.install'],
+    'packages': ['vsc', 'vsc.install', 'vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
     'install_requires' : ['setuptools'],
 }

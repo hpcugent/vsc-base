@@ -670,11 +670,10 @@ debug=1
 
         reg_reply = re.compile(r'^COMPREPLY=\((.*)\)$')
 
-        script_name = 'simple_option.py'
-        script_simple = os.path.join(os.path.dirname(__file__), 'runtests', script_name)
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests', 'simple_option.py')
 
         partial = '-'
-        cmd_list = [script_simple, partial]
+        cmd_list = [script, partial]
 
         ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
         # tabcompletion ends with exit 1!; test returns this to 0
@@ -691,7 +690,7 @@ debug=1
 
         # test --deb autocompletion
         partial = '--deb'
-        cmd_list = [script_simple, partial]
+        cmd_list = [script, partial]
 
         ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
         # tabcompletion ends with exit 1!; test returns this to 0
