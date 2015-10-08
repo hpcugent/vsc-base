@@ -25,11 +25,16 @@ import shutil
 import sys
 import re
 
+try:
+    from unittest.suite import TestSuite
+except ImportError:
+    from unittest import TestSuite
+
 from distutils import log  # also for setuptools
 from distutils.dir_util import remove_tree
 
 from setuptools.command.test import test as TestCommand
-
+from setuptools.command.test import ScanningLoader
 
 # 0 : WARN (default), 1 : INFO, 2 : DEBUG
 log.set_verbosity(2)
@@ -181,11 +186,85 @@ class vsc_bdist_rpm(bdist_rpm):
         self.run_command('egg_info')  # ensure distro name is up-to-date
         orig_bdist_rpm.run(self)
 
+
+# private class variables to communicate
+# between VscScanningLoader and VscTestCommand
+# stored in __builtin__ because the .run_tests
+# reload and cleanup in the modules
+import __builtin__
+if not hasattr(__builtin__,'__test_filter'):
+    setattr(__builtin__, '__test_filter',  {
+        'module': None,
+        'function': None,
+        'allowmods': [],
+    })
+
+
+def filter_testsuites(testsuites):
+    """(Recursive) filtering of (suites of) tests"""
+    test_filter = getattr(__builtin__,'__test_filter')['function']
+
+    res = type(testsuites)()
+
+    for t in testsuites:
+        # t is either a test or testsuite of more tests
+        if isinstance(t, TestSuite):
+            res.addTest(filter_testsuites(t))
+        else:
+            if re.search(test_filter, t._testMethodName):
+                res.addTest(t)
+    return res
+
+
+class VscScanningLoader(ScanningLoader):
+    def loadTestsFromModule(self, module):
+        """Allow for filter"""
+        testsuites = ScanningLoader.loadTestsFromModule(self, module)
+        test_filter = getattr(__builtin__,'__test_filter')
+
+        res = testsuites
+
+        if test_filter['module'] is not None:
+            mod = module.__name__
+            if mod in test_filter['allowmods']:
+                # a parent name space
+                pass
+            elif re.search(test_filter['module'], mod):
+                if test_filter['function'] is not None:
+                    res = filter_testsuites(testsuites)
+                # add parents (and module itself)
+                pms = mod.split('.')
+                for pm_idx in range(len(pms)):
+                    pm = '.'.join(pms[:pm_idx])
+                    if not pm in test_filter['allowmods']:
+                        test_filter['allowmods'].append(pm)
+            else:
+                res = type(testsuites)()
+
+        return res
+
+
 class VscTestCommand(TestCommand):
     """
     The cmdclass for testing
     """
+    user_options = TestCommand.user_options + [
+        ('test-filterf=', 'f', "Regex filter on test function names"),
+        ('test-filterm=', 'F', "Regex filter on test (sub)modules"),
+    ]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.test_filterm = None
+        self.test_filterf = None
+        self.test_loader = "vsc.install.shared_setup:VscScanningLoader"
+
     def run_tests(self):
+        getattr(__builtin__,'__test_filter').update({
+            'function': self.test_filterf,
+            'module': self.test_filterm,
+        })
+
         # should be setup.py
         setup_py = os.path.abspath(sys.argv[0])
         log.info('run_tests from %s' % setup_py)
