@@ -227,14 +227,13 @@ class ExtOption(CompleterOption):
         """Handle option-as-value issues before actually processing option."""
 
         if hasattr(parser, 'is_value_a_commandline_option'):
-            prefix = "%s=" % self._long_opts[0] if self._long_opts else self._short_opts[0]
             errmsg = parser.is_value_a_commandline_option(value)
             if errmsg is not None:
+                prefix = "%s=" % self._long_opts[0] if self._long_opts else self._short_opts[0]
                 self.log.raiseException("%s. Use '%s%s' if the value is correct." % (errmsg, prefix, value),
                                         exception=OptionValueError)
 
         return Option.process(self, opt, value, values, parser)
-
 
     def take_action(self, action, dest, opt, value, values, parser):
         """Extended take_action"""
@@ -488,15 +487,6 @@ class ExtOptionParser(OptionParser):
 
         self.environment_arguments = None
         self.commandline_arguments = None
-        self.orig_rargs = None  # copy of the original arguments
-
-    def parse_args(self, args=None, values=None):
-        """Keep a copy of the original arguments for callback / option processing"""
-        # seems like self._get_args returns a copy, but better safe then sorry here
-        self.orig_rargs = self._get_args(args)[:]
-
-        # continue as usual
-        return OptionParser.parse_args(self, args=args, values=values)
 
     def is_value_a_commandline_option(self, value, index=None):
         """
@@ -515,7 +505,7 @@ class ExtOptionParser(OptionParser):
         # --longopt=value, so no issues there either.
 
         try:
-            cmdline_index = self.orig_rargs.index(value)
+            cmdline_index = self.commandline_arguments.index(value)
         except ValueError:
             # There is no ambiguity if the value is not passed
             # as standalone argument via commandline
@@ -523,7 +513,7 @@ class ExtOptionParser(OptionParser):
 
         if index is None:
             # index of last parsed arg in orig_rargs via remainder of rargs
-            index = len(self.orig_rargs) - len(self.rargs) - 1
+            index = len(self.commandline_arguments) - len(self.rargs) - 1
 
         if index != cmdline_index:
             # This is not the value you are looking for
@@ -793,10 +783,6 @@ class ExtOptionParser(OptionParser):
 
     def get_env_options(self):
         """Retrieve options from the environment: prefix_longopt.upper()"""
-        if self.environment_arguments is not None:
-            # already done, let's not do this again
-            return self.environment_arguments
-
         self.environment_arguments = []
 
         if not self.process_env_options:

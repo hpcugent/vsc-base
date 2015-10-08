@@ -613,21 +613,29 @@ store=%(FROMINIT)s
 
     def test_loglevel(self):
         """Test the loglevel default setting"""
+        def _loglevel(lvl, msg):
+            lvl_int = topt.log.getEffectiveLevel()
+            lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]
+            self.assertEqual(lvl_int,
+                             fancylogger.getLevelInt(lvl),
+                             msg="%s (expected %s got %s)" % (msg, lvl, lvl_name))
+
+
         topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), fancylogger.getLevelInt(topt.DEFAULT_LOGLEVEL.upper()))
+        _loglevel(topt.DEFAULT_LOGLEVEL.upper(), 'Test default loglevel')
 
         topt = TestOption1(go_args=['--debug'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+        _loglevel('DEBUG', '--debug gives DEBUG')
 
         topt = TestOption1(go_args=['--info'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+        _loglevel('INFO', '--info gives INFO')
 
         topt = TestOption1(go_args=['--quiet'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', '--quiet gives WARNING')
 
         # last one wins
         topt = TestOption1(go_args=['--debug', '--info', '--quiet'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', 'last wins: --debug --info --quiet gives WARNING')
 
         CONFIGFILE1 = """
 [base]
@@ -642,7 +650,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+        _loglevel('DEBUG', 'DEBUG set via configfile')
 
         # set via environment; environment wins over cfg file
         os.environ['%s_INFO' % envvar] = '1';
@@ -651,7 +659,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+        _loglevel('INFO', 'env wins: debug in configfile and _INFO in env gives INFO')
 
         # commandline always wins
         topt = TestOption1(go_configfiles=[tmp1.name],
@@ -659,7 +667,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', 'commandline wins: debug in configfile, _INFO in env and --quiet gives WARNING')
 
         # remove tmp1
         del os.environ['%s_INFO' % envvar]
@@ -748,12 +756,13 @@ debug=1
 
         os.environ['GENERALOPTIONTEST_XYZ'] = '1'
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST')
-        # no errors logged
-        self.assertEqual(self.count_logcache('error'), 0)
+        self.assertEqual(self.count_logcache('error'), 0,
+                         msg='no errors logged, got %s' % self.count_logcache('error'))
 
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
-        # one error should be logged
-        self.assertEqual(self.count_logcache('error'), 1)
+        print self.LOGCACHE['error']
+        self.assertEqual(self.count_logcache('error'), 1,
+                         msg='one error should be logged, got %s' % self.count_logcache('error'))
 
         # using a custom error method
         def raise_error(msg, *args):
@@ -777,7 +786,7 @@ debug=1
 
     def test_is_value_a_commandline_option(self):
         """Test ExtOptionParser is_value_a_commandline_option method"""
-        topt = TestOption1()
+        topt = TestOption1(go_args=[])
         tp = topt.parser
         fn = tp.is_value_a_commandline_option
 
@@ -790,9 +799,9 @@ debug=1
 
         # fake commandline args
         # this is purely to test the function, actual usage is in test_option_as_value
-        tp.orig_rargs = ['--base', '-something', 'base']
+        tp.commandline_arguments = ['--base', '-something', 'base']
         def t(fail, tpl):
-            for idx, value in enumerate(tp.orig_rargs):
+            for idx, value in enumerate(tp.commandline_arguments):
                 msg = tpl % value
                 res = fn(value, index=idx)
                 if idx in fail:
