@@ -20,7 +20,6 @@ Shared module for vsc-base setup
 @author: Andy Georges (Ghent University)
 """
 import glob
-import inspect
 import os
 import shutil
 import sys
@@ -39,13 +38,13 @@ has_setuptools = None
 
 # available authors
 ag = ('Andy Georges', 'andy.georges@ugent.be')
+eh = ('Ewan Higgs', 'Ewan.Higgs@UGent.be')
 jt = ('Jens Timmermans', 'jens.timmermans@ugent.be')
 kh = ('Kenneth Hoste', 'kenneth.hoste@ugent.be')
+kw = ('Kenneth Waegeman', 'Kenneth.Waegeman@UGent.be')
 lm = ('Luis Fernando Munoz Meji?as', 'luis.munoz@ugent.be')
 sdw = ('Stijn De Weirdt', 'stijn.deweirdt@ugent.be')
 wdp = ('Wouter Depypere', 'wouter.depypere@ugent.be')
-kw = ('Kenneth Waegeman', 'Kenneth.Waegeman@UGent.be')
-eh = ('Ewan Higgs', 'Ewan.Higgs@UGent.be')
 wp = ('Ward Poelmans', 'Ward.Poelmans@UGent.be')
 
 # FIXME: do we need this here? it won;t hurt, but still ...
@@ -188,24 +187,24 @@ class VscTestCommand(TestCommand):
     """
     def run_tests(self):
         # should be setup.py
-        setup_py = inspect.stack()[-1][1]
+        setup_py = os.path.abspath(sys.argv[0])
         log.info('run_tests from %s' % setup_py)
         base_dir = os.path.dirname(setup_py)
 
         # make a lib dir to trick setup.py to package this properly
         # and git ignore empty dirs, so recreate it if necessary
-        lib_dir = os.path.abspath(os.path.join(base_dir, 'lib'))
+        lib_dir = os.path.join(base_dir, 'lib')
         if not os.path.exists(lib_dir):
             os.mkdir(lib_dir)
 
-        test_dir = os.path.abspath(os.path.join(base_dir, DEFAULT_TEST_SUITE))
+        test_dir = os.path.join(base_dir, DEFAULT_TEST_SUITE)
         if os.path.isdir(test_dir):
             sys.path.insert(0, test_dir)
         else:
             raise Exception("Can't find location of testsuite directory %s in %s" % (DEFAULT_TEST_SUITE, base_dir))
 
         # make sure we can import the script as a module
-        scripts_dir = os.path.abspath(os.path.join(base_dir, 'bin'))
+        scripts_dir = os.path.join(base_dir, 'bin')
         if os.path.isdir(scripts_dir):
             sys.path.insert(0, scripts_dir)
 
