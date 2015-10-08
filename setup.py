@@ -32,6 +32,16 @@ vsc-base base distribution setup.py
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+
+# vsc-base setup.py needs vsc.install, which is currently shipped as part of vsc-base
+# vsc.install doesn't require vsc-base, so we could move it to it's own repo and only 
+# have this hack in the setup.py of vsc.install (and set it as build_requires)
+# until then...
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+
+
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw, URL_GH_HPCUGENT
 
