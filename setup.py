@@ -32,35 +32,26 @@ vsc-base base distribution setup.py
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
-import os
-import sys
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
-
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, kh, jt, sdw
+from vsc.install.shared_setup import ag, kh, jt, sdw, URL_GH_HPCUGENT
 
 def remove_bdist_rpm_source_file():
     """List of files to remove from the (source) RPM."""
     return []
 
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
-shared_setup.SHARED_TARGET.update({
-    'url': 'https://github.com/hpcugent/vsc-base',
-    'download_url': 'https://github.com/hpcugent/vsc-base',
-    'zip_safe': True,
-})
 
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.3.0',
+    'version': '2.3.1',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc', 'vsc.install', 'vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
     'install_requires' : ['setuptools'],
+    'zip_safe': True,
 }
 
 if __name__ == '__main__':
-    shared_setup.action_target(PACKAGE)
+    shared_setup.action_target(PACKAGE, urltemplate=URL_GH_HPCUGENT)

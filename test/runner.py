@@ -2,6 +2,9 @@
 import os
 import sys
 
+if __name__ == '__main__':
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 import test.asyncprocess as a
 import test.dateandtime as td
 import test.docs as tdo
@@ -22,11 +25,12 @@ fancylogger.logToScreen(enable=False)
 
 suite = unittest.TestSuite([x.suite() for x in (a, td, tg, tf, te, tm, trest, trun, tt, topt, wrapt, tdo)])
 
-try:
-    import xmlrunner
-    rs = xmlrunner.XMLTestRunner(output="test-reports").run(suite)
-except ImportError, err:
-    rs = unittest.TextTestRunner().run(suite)
+if __name__ == '__main__':
+    try:
+        import xmlrunner
+        rs = xmlrunner.XMLTestRunner(output="test-reports").run(suite)
+    except ImportError, err:
+        rs = unittest.TextTestRunner().run(suite)
 
-if not rs.wasSuccessful():
-    sys.exit(1)
+    if not rs.wasSuccessful():
+        sys.exit(1)

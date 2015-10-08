@@ -20,23 +20,46 @@ Shared module for vsc-base setup
 @author: Andy Georges (Ghent University)
 """
 import glob
+import inspect
 import os
 import shutil
 import sys
 import re
+
 from distutils import log  # also for setuptools
 from distutils.dir_util import remove_tree
+
+from setuptools.command.test import test as TestCommand
+
 
 # 0 : WARN (default), 1 : INFO, 2 : DEBUG
 log.set_verbosity(2)
 
 has_setuptools = None
 
+# available authors
+ag = ('Andy Georges', 'andy.georges@ugent.be')
+jt = ('Jens Timmermans', 'jens.timmermans@ugent.be')
+kh = ('Kenneth Hoste', 'kenneth.hoste@ugent.be')
+lm = ('Luis Fernando Munoz Meji?as', 'luis.munoz@ugent.be')
+sdw = ('Stijn De Weirdt', 'stijn.deweirdt@ugent.be')
+wdp = ('Wouter Depypere', 'wouter.depypere@ugent.be')
+kw = ('Kenneth Waegeman', 'Kenneth.Waegeman@UGent.be')
+eh = ('Ewan Higgs', 'Ewan.Higgs@UGent.be')
+wp = ('Ward Poelmans', 'Ward.Poelmans@UGent.be')
+
+# FIXME: do we need this here? it won;t hurt, but still ...
+REGEXP_REMOVE_SUFFIX = re.compile(r'(\.(?:py|sh|pl))$')
 
 # We do need all setup files to be included in the source dir if we ever want to install
 # the package elsewhere.
 EXTRA_SDIST_FILES = ['setup.py']
 
+# Put unittests under this directory
+DEFAULT_TEST_SUITE = 'test'
+
+URL_GH_HPCUGENT = 'https://github.com/hpcugent/%(name)s'
+URL_GHUGENT_HPCUGENT = 'https://github.ugent.be/hpcugent/%(name)s'
 
 def find_extra_sdist_files():
     """Looks for files to append to the FileList that is used by the egg_info."""
@@ -122,20 +145,6 @@ except ImportError as err:
     has_setuptools = False
 
 
-# available authors
-ag = ('Andy Georges', 'andy.georges@ugent.be')
-jt = ('Jens Timmermans', 'jens.timmermans@ugent.be')
-kh = ('Kenneth Hoste', 'kenneth.hoste@ugent.be')
-lm = ('Luis Fernando Munoz Meji?as', 'luis.munoz@ugent.be')
-sdw = ('Stijn De Weirdt', 'stijn.deweirdt@ugent.be')
-wdp = ('Wouter Depypere', 'wouter.depypere@ugent.be')
-kw = ('Kenneth Waegeman', 'Kenneth.Waegeman@UGent.be')
-eh = ('Ewan Higgs', 'Ewan.Higgs@UGent.be')
-
-
-# FIXME: do we need this here? it won;t hurt, but still ...
-REGEXP_REMOVE_SUFFIX = re.compile(r'(\.(?:py|sh|pl))$')
-
 class vsc_install_scripts(install_scripts):
     """Create the (fake) links for mympirun also remove .sh and .py extensions from the scripts."""
 
@@ -166,13 +175,56 @@ class vsc_build_py(build_py):
 
 
 class vsc_bdist_rpm(bdist_rpm):
-    """ Custom class to build the RPM, since the __inti__.py cannot be included for the packages that have namespace spread across all of the machine."""
+    """Custom class to build the RPM, since the __init__.py cannot be included for the packages that have namespace spread across all of the machine."""
     def run(self):
         log.error("vsc_bdist_rpm = %s" % (self.__dict__))
         SHARED_TARGET['cmdclass']['egg_info'] = vsc_bdist_rpm_egg_info  # changed to allow removal of files
         self.run_command('egg_info')  # ensure distro name is up-to-date
         orig_bdist_rpm.run(self)
 
+class VscTestCommand(TestCommand):
+    """
+    The cmdclass for testing
+    """
+    def run_tests(self):
+        # should be setup.py
+        setup_py = inspect.stack()[-1][1]
+        log.info('run_tests from %s' % setup_py)
+        base_dir = os.path.dirname(setup_py)
+
+        # make a lib dir to trick setup.py to package this properly
+        # and git ignore empty dirs, so recreate it if necessary
+        lib_dir = os.path.abspath(os.path.join(base_dir, 'lib'))
+        if not os.path.exists(lib_dir):
+            os.mkdir(lib_dir)
+
+        test_dir = os.path.abspath(os.path.join(base_dir, DEFAULT_TEST_SUITE))
+        if os.path.isdir(test_dir):
+            sys.path.insert(0, test_dir)
+        else:
+            raise Exception("Can't find location of testsuite directory %s in %s" % (DEFAULT_TEST_SUITE, base_dir))
+
+        # make sure we can import the script as a module
+        scripts_dir = os.path.abspath(os.path.join(base_dir, 'bin'))
+        if os.path.isdir(scripts_dir):
+            sys.path.insert(0, scripts_dir)
+
+        # and now the ugly bits: cleanup and restore vsc namespace
+        #   we use vsc namespace tools very early
+        #   need to make sure they are picked up from the paths as specified above
+        #   not to mix with installed and already loaded modules
+        loaded_vsc_modules = [mod for mod in sys.modules.keys() if mod == 'vsc' or mod.startswith('vsc.')]
+        reload_vsc_modules = []
+        for mod in loaded_vsc_modules:
+            if hasattr(sys.modules[mod], '__file__'):
+                # only actual modules
+                reload_vsc_modules.append(mod)
+            del(sys.modules[mod])
+        # reimport
+        for mod in reload_vsc_modules:
+            __import__(mod)
+
+        TestCommand.run_tests(self)
 
 # shared target config
 SHARED_TARGET = {
@@ -184,6 +236,8 @@ SHARED_TARGET = {
         "egg_info": vsc_egg_info,
         "bdist_rpm": vsc_bdist_rpm,
     },
+    'cmdclass': {'test': VscTestCommand},
+    'test_suite': DEFAULT_TEST_SUITE,
 }
 
 
@@ -265,7 +319,7 @@ def build_setup_cfg_for_bdist_rpm(target):
     setup_cfg.close()
 
 
-def action_target(target, setupfn=setup, extra_sdist=[]):
+def action_target(target, setupfn=setup, extra_sdist=[], urltemplate=None):
     # EXTRA_SDIST_FILES.extend(extra_sdist)
 
     do_cleanup = True
@@ -282,6 +336,11 @@ def action_target(target, setupfn=setup, extra_sdist=[]):
 
     if do_cleanup:
         cleanup()
+
+    if urltemplate:
+        target['url'] = urltemplate % target
+        if 'github' in urltemplate:
+            target['download_url'] = "%s/tarball/master" % target['url']
 
     build_setup_cfg_for_bdist_rpm(target)
     x = parse_target(target)
