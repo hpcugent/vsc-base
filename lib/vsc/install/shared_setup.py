@@ -25,21 +25,39 @@ import shutil
 import sys
 import re
 
-try:
-    from unittest.suite import TestSuite
-except ImportError:
-    from unittest import TestSuite
-
 from distutils import log  # also for setuptools
+from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
 from distutils.dir_util import remove_tree
 
 from setuptools.command.test import test as TestCommand
 from setuptools.command.test import ScanningLoader
+from setuptools import setup
+from setuptools.command.bdist_rpm import bdist_rpm
+from setuptools.command.build_py import build_py
+from setuptools.command.install_scripts import install_scripts
+# egg_info uses sdist directly through manifest_maker
+from setuptools.command.sdist import sdist
+from setuptools.command.egg_info import egg_info
+
+from unittest import TestSuite
+
+# private class variables to communicate
+# between VscScanningLoader and VscTestCommand
+# stored in __builtin__ because the (Vsc)TestCommand.run_tests
+# reloads and cleans up the modules
+import __builtin__
+if not hasattr(__builtin__,'__test_filter'):
+    setattr(__builtin__, '__test_filter',  {
+        'module': None,
+        'function': None,
+        'allowmods': [],
+    })
+
+# Keep this for legacy reasons, setuptools didn't used to be a requirement
+has_setuptools = True
 
 # 0 : WARN (default), 1 : INFO, 2 : DEBUG
 log.set_verbosity(2)
-
-has_setuptools = None
 
 # available authors
 ag = ('Andy Georges', 'andy.georges@ugent.be')
@@ -52,11 +70,11 @@ sdw = ('Stijn De Weirdt', 'stijn.deweirdt@ugent.be')
 wdp = ('Wouter Depypere', 'wouter.depypere@ugent.be')
 wp = ('Ward Poelmans', 'Ward.Poelmans@UGent.be')
 
-# FIXME: do we need this here? it won;t hurt, but still ...
+# Regexp used to remove suffixes from scripts when installing(/packaging)
 REGEXP_REMOVE_SUFFIX = re.compile(r'(\.(?:py|sh|pl))$')
 
-# We do need all setup files to be included in the source dir if we ever want to install
-# the package elsewhere.
+# We do need all setup files to be included in the source dir
+# if we ever want to install the package elsewhere.
 EXTRA_SDIST_FILES = ['setup.py']
 
 # Put unittests under this directory
@@ -64,6 +82,7 @@ DEFAULT_TEST_SUITE = 'test'
 
 URL_GH_HPCUGENT = 'https://github.com/hpcugent/%(name)s'
 URL_GHUGENT_HPCUGENT = 'https://github.ugent.be/hpcugent/%(name)s'
+
 
 def find_extra_sdist_files():
     """Looks for files to append to the FileList that is used by the egg_info."""
@@ -88,65 +107,34 @@ def remove_extra_bdist_rpm_files():
     """
     return []
 
-# The following aims to import from setuptools, but if this is not available, we import the basic functionality from
-# distutils instead. Note that setuptools make copies of the scripts, it does _not_ preserve symbolic links.
-try:
-    #raise ImportError("no setuptools")  # to try distutils, uncomment
-    from setuptools import setup
-    from setuptools.command.bdist_rpm import bdist_rpm
-    from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
-    from setuptools.command.build_py import build_py
-    from setuptools.command.install_scripts import install_scripts
-    from setuptools.command.sdist import sdist
 
-    # egg_info uses sdist directly through manifest_maker
-    from setuptools.command.egg_info import egg_info
+class vsc_egg_info(egg_info):
+    """Class to determine the set of files that should be included.
 
-    class vsc_egg_info(egg_info):
-        """Class to determine the set of files that should be included.
+    This amounts to including the default files, as determined by setuptools, extended with the
+    few extra files we need to add for installation purposes.
+    """
 
-        This amounts to including the default files, as determined by setuptools, extended with the
-        few extra files we need to add for installation purposes.
-        """
+    def find_sources(self):
+        """Default lookup."""
+        egg_info.find_sources(self)
+        self.filelist.extend(find_extra_sdist_files())
 
-        def find_sources(self):
-            """Default lookup."""
-            egg_info.find_sources(self)
-            self.filelist.extend(find_extra_sdist_files())
+# TODO: this should be in the setup.py, here we should have a placeholder, so we need not change this for every
+# package we deploy
+class vsc_bdist_rpm_egg_info(vsc_egg_info):
+    """Class to determine the source files that should be present in an (S)RPM.
 
-    # TODO: this should be in the setup.py, here we should have a placeholder, so we need not change this for every
-    # package we deploy
-    class vsc_bdist_rpm_egg_info(vsc_egg_info):
-        """Class to determine the source files that should be present in an (S)RPM.
+    All __init__.py files that augment namespace packages should be installed by the
+    dependent package, so we need not install it here.
+    """
 
-        All __init__.py files that augment namespace packages should be installed by the
-        dependent package, so we need not install it here.
-        """
-
-        def find_sources(self):
-            """Fins the sources as default and then drop the cruft."""
-            vsc_egg_info.find_sources(self)
-            for f in remove_extra_bdist_rpm_files():
-                print "DEBUG: removing %s from source list" % (f)
-                self.filelist.files.remove(f)
-
-    has_setuptools = True
-except ImportError as err:
-    log.warn("ImportError, falling back to distutils-only: %s", err)
-    from distutils.core import setup
-    from distutils.command.install_scripts import install_scripts
-    from distutils.command.build_py import build_py
-    from distutils.command.sdist import sdist
-    from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
-    bdist_rpm = orig_bdist_rpm  # mimic setuptools' bdist_rpm
-
-    class vsc_egg_info(object):
-        pass  # dummy class for distutils
-
-    class vsc_bdist_rpm_egg_info(vsc_egg_info):
-        pass  # dummy class for distutils
-
-    has_setuptools = False
+    def find_sources(self):
+        """Fins the sources as default and then drop the cruft."""
+        vsc_egg_info.find_sources(self)
+        for f in remove_extra_bdist_rpm_files():
+            log.debug("removing %s from source list" % (f))
+            self.filelist.files.remove(f)
 
 
 class vsc_install_scripts(install_scripts):
@@ -187,53 +175,47 @@ class vsc_bdist_rpm(bdist_rpm):
         orig_bdist_rpm.run(self)
 
 
-# private class variables to communicate
-# between VscScanningLoader and VscTestCommand
-# stored in __builtin__ because the .run_tests
-# reload and cleanup in the modules
-import __builtin__
-if not hasattr(__builtin__,'__test_filter'):
-    setattr(__builtin__, '__test_filter',  {
-        'module': None,
-        'function': None,
-        'allowmods': [],
-    })
-
-
 def filter_testsuites(testsuites):
     """(Recursive) filtering of (suites of) tests"""
-    test_filter = getattr(__builtin__,'__test_filter')['function']
+    test_filter = getattr(__builtin__, '__test_filter')['function']
 
     res = type(testsuites)()
 
-    for t in testsuites:
-        # t is either a test or testsuite of more tests
-        if isinstance(t, TestSuite):
-            res.addTest(filter_testsuites(t))
+    for ts in testsuites:
+        # ts is either a test or testsuite of more tests
+        if isinstance(ts, TestSuite):
+            res.addTest(filter_testsuites(ts))
         else:
-            if re.search(test_filter, t._testMethodName):
-                res.addTest(t)
+            if re.search(test_filter, ts._testMethodName):
+                res.addTest(ts)
     return res
 
 
 class VscScanningLoader(ScanningLoader):
+    """The class to look for tests"""
+
+    TEST_LOADER_MODULE = __name__
+
     def loadTestsFromModule(self, module):
-        """Allow for filter"""
+        """
+        Support test module and function name based filtering
+        """
         testsuites = ScanningLoader.loadTestsFromModule(self, module)
+
         test_filter = getattr(__builtin__,'__test_filter')
 
         res = testsuites
 
         if test_filter['module'] is not None:
-            mod = module.__name__
-            if mod in test_filter['allowmods']:
+            name = module.__name__
+            if name in test_filter['allowmods']:
                 # a parent name space
                 pass
-            elif re.search(test_filter['module'], mod):
+            elif re.search(test_filter['module'], name):
                 if test_filter['function'] is not None:
                     res = filter_testsuites(testsuites)
                 # add parents (and module itself)
-                pms = mod.split('.')
+                pms = name.split('.')
                 for pm_idx in range(len(pms)):
                     pm = '.'.join(pms[:pm_idx])
                     if not pm in test_filter['allowmods']:
@@ -248,24 +230,40 @@ class VscTestCommand(TestCommand):
     """
     The cmdclass for testing
     """
+
+    # make 2 new 'python setup.py test' options available:
+    #    --test-filterf and --test-filertm
     user_options = TestCommand.user_options + [
         ('test-filterf=', 'f', "Regex filter on test function names"),
         ('test-filterm=', 'F', "Regex filter on test (sub)modules"),
     ]
 
+    TEST_LOADER_CLASS = VscScanningLoader
+
     def initialize_options(self):
+        """
+        Add attributes for new commandline options and set test_loader
+        """
         TestCommand.initialize_options(self)
         self.test_filterm = None
         self.test_filterf = None
-        self.test_loader = "vsc.install.shared_setup:VscScanningLoader"
+        self.test_loader = '%s:%s' % (self.TEST_LOADER_CLASS.TEST_LOADER_MODULE, self.TEST_LOADER_CLASS.__name__)
+        log.info("test_loader set to %s" % self.test_loader)
 
-    def run_tests(self):
-        getattr(__builtin__,'__test_filter').update({
-            'function': self.test_filterf,
-            'module': self.test_filterm,
-        })
+    def setup_sys_path(self):
+        """
+        Prepare sys.path to be able to
+            use the modules provided by this package (assumeing they are in 'lib')
+            use any scripts as modules (for unittesting)
+            use the test modules as modules (for unittesting)
+        Returns a list of directories to cleanup
+        """
+        cleanup = []
 
-        # should be setup.py
+        # determine the base directory of the repository
+        # we will assume that the tests are called from 
+        # a 'setup.py' like file in the basedirectory
+        # (but could be called anything, as long as it is in the basedir) 
         setup_py = os.path.abspath(sys.argv[0])
         log.info('run_tests from %s' % setup_py)
         base_dir = os.path.dirname(setup_py)
@@ -275,6 +273,7 @@ class VscTestCommand(TestCommand):
         lib_dir = os.path.join(base_dir, 'lib')
         if not os.path.exists(lib_dir):
             os.mkdir(lib_dir)
+            cleanup.append(lib_dir)
 
         test_dir = os.path.join(base_dir, DEFAULT_TEST_SUITE)
         if os.path.isdir(test_dir):
@@ -287,22 +286,49 @@ class VscTestCommand(TestCommand):
         if os.path.isdir(scripts_dir):
             sys.path.insert(0, scripts_dir)
 
-        # and now the ugly bits: cleanup and restore vsc namespace
-        #   we use vsc namespace tools very early
-        #   need to make sure they are picked up from the paths as specified above
-        #   not to mix with installed and already loaded modules
-        loaded_vsc_modules = [mod for mod in sys.modules.keys() if mod == 'vsc' or mod.startswith('vsc.')]
-        reload_vsc_modules = []
-        for mod in loaded_vsc_modules:
-            if hasattr(sys.modules[mod], '__file__'):
-                # only actual modules
-                reload_vsc_modules.append(mod)
-            del(sys.modules[mod])
-        # reimport
-        for mod in reload_vsc_modules:
-            __import__(mod)
+        return cleanup
 
-        TestCommand.run_tests(self)
+    def reload_vsc_modules(self):
+        """
+        Cleanup and restore vsc namespace becasue we use vsc namespace tools very early
+        So we need to make sure they are picked up from the paths as specified
+        in setup_sys_path, not to mix with installed and already loaded modules
+        """
+        loaded_vsc_modules = [name for name in sys.modules.keys() if name == 'vsc' or name.startswith('vsc.')]
+        reload_vsc_modules = []
+        for name in loaded_vsc_modules:
+            if hasattr(sys.modules[name], '__file__'):
+                # only actual modules
+                reload_vsc_modules.append(name)
+            del(sys.modules[name])
+
+        # reimport
+        for name in reload_vsc_modules:
+            __import__(name)
+
+    def run_tests(self):
+        """
+        Actually run the tests, but start with
+            passing the filter options via __builtin__
+            set sys.path
+            reload vsc modules
+        """
+        getattr(__builtin__,'__test_filter').update({
+            'function': self.test_filterf,
+            'module': self.test_filterm,
+        })
+
+        cleanup = self.setup_sys_path()
+
+        self.reload_vsc_modules()
+
+        res = TestCommand.run_tests(self)
+
+        # clenaup any diretcories created
+        for directory in cleanup:
+            shutil.rmtree(directory)
+
+        return res
 
 # shared target config
 SHARED_TARGET = {
