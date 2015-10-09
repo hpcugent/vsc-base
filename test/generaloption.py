@@ -774,9 +774,18 @@ debug=1
                               error_env_option_method=raise_error)
 
     def _match_testoption1_sysexit(self, args, msg):
+        """Check whether parsing supplied arguments with TestOption1 results in SystemExit error being raised."""
+        system_exit = False
         self.mock_stderr(True)  # reset
-        self.assertErrorRegex(SystemExit, '.*', TestOption1, go_args=args)
-        stderr = self.get_stderr()
+        # purposely not using self.assertErrorRegex, since we're mocking stderr...
+        try:
+            TestOption1(go_args=args)
+        except SystemExit:
+            system_exit = True
+        finally:
+            stderr = self.get_stderr()
+            self.mock_stderr(False)
+        self.assertTrue(system_exit)
         self.assertTrue(msg in stderr)
 
     def test_nosuchoption(self):
@@ -788,7 +797,6 @@ debug=1
         """Test ExtOptionParser is_value_a_commandline_option method"""
         topt = TestOption1(go_args=[])
         tp = topt.parser
-        fn = tp.is_value_a_commandline_option
 
         self.assertEqual(tp.ALLOW_OPTION_AS_VALUE, False,
                          msg="default do not allow value as option")
@@ -800,10 +808,11 @@ debug=1
         # fake commandline args
         # this is purely to test the function, actual usage is in test_option_as_value
         tp.commandline_arguments = ['--base', '-something', 'base']
-        def t(fail, tpl):
+        def check(fail, tpl):
+            """Check whether expected failures/success occur with given message template."""
             for idx, value in enumerate(tp.commandline_arguments):
                 msg = tpl % value
-                res = fn(value, index=idx)
+                res = tp.is_value_a_commandline_option(value, index=idx)
                 if idx in fail:
                     self.assertFalse(res is None, "failure should not return None for value %s" % value)
                     self.assertTrue(msg in res, msg='%s in %s' % (msg, res))
@@ -815,20 +824,20 @@ debug=1
         tp.ALLOW_DASH_AS_VALUE = True
         tp.ALLOW_TYPO_AS_VALUE = True
 
-        t([-1], 'x%sx') # all ok
+        check([], 'x%sx') # all ok
 
         tp.ALLOW_OPTION_AS_VALUE = False
-        t([0], "Value '%s' is also a valid option")
+        check([0], "Value '%s' is also a valid option")
         tp.ALLOW_OPTION_AS_VALUE = True
 
         tp.ALLOW_DASH_AS_VALUE = False
         # options also start with a -
-        t([0, 1], "Value '%s' starts with a '-'")
+        check([0, 1], "Value '%s' starts with a '-'")
         tp.ALLOW_DASH_AS_VALUE = True
 
         tp.ALLOW_TYPO_AS_VALUE = False
         # an option is a close match for an option, who'd guessed that...
-        t([0,2], "Value '%s' too close match to option(s) ")
+        check([0, 2], "Value '%s' too close match to option(s) ")
         tp.ALLOW_TYPO_AS_VALUE = True
 
 
@@ -843,11 +852,16 @@ debug=1
         self.assertEqual(topt.options.store, '-b')
         self.assertFalse(topt.options.base)  # remain False (default value)
 
-        topt = TestOption1(go_args=['-s-b'])  # equivalent to --store=-b
+        topt = TestOption1(go_args=['-s-b'])  # equivalent to --store=-b (even though -b is a valid short option)
         self.assertEqual(topt.options.store, '-b')
         self.assertFalse(topt.options.base)  # remain False (default value)
 
-        # -s -b is not a valid list of flags, since it's ambiguous: is '-b' a value for '-s', or an option?
+        topt = TestOption1(go_args=['-sb'])  # equivalent to --store=b (even though -b is a valid short option)
+        self.assertEqual(topt.options.store, 'b')
+        self.assertFalse(topt.options.base)  # remain False (default value)
+
+
+        # -s -b is not a valid list of flags (by default), since it's ambiguous: is '-b' a value for '-s', or an option?
         self._match_testoption1_sysexit(['-s', '-b'],
                                         "Value '-b' is also a valid option")
 
@@ -855,11 +869,15 @@ debug=1
         self._match_testoption1_sysexit(['--store', '-b'],
                                         "Value '-b' is also a valid option")
 
+        # same for --store=-b
+        self._match_testoption1_sysexit(['--store=-b'],
+                                        "Value '-b' is also a valid option")
+
         # same for --store --base
         self._match_testoption1_sysexit(['--store', '--base'],
                                         "Value '--base' is also a valid option")
 
-        # including a non-existing option will result in it being treated as a value
+        # including a non-existing option will result in it being treated as a value, but is not allowed (by default)
         self._match_testoption1_sysexit(['--store', '-f'],
                                         "Value '-f' starts with a '-'")
 
