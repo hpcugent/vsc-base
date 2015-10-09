@@ -24,6 +24,7 @@ import os
 import shutil
 import sys
 import re
+import unittest
 
 from distutils import log  # also for setuptools
 from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
@@ -40,6 +41,14 @@ from setuptools.command.install_scripts import install_scripts
 from setuptools.command.sdist import sdist
 
 from unittest import TestSuite
+
+have_xmlrunner = None
+try:
+    import xmlrunner
+    have_xmlrunner = True
+except ImportError:
+    have_xmlrunner = False
+
 
 # private class variables to communicate
 # between VscScanningLoader and VscTestCommand
@@ -314,23 +323,21 @@ class VscTestCommand(TestCommand):
 
         E.g. in case of jenkins and you want junit compatible reports
         """
-        import xmlrunner
-        import unittest
-
         xmlrunner_output = self.test_xmlrunner
 
         class OutputXMLTestRunner(xmlrunner.XMLTestRunner):
             """Force the output"""
             def __init__(self, *args, **kwargs):
                 kwargs['output'] = xmlrunner_output
-                xmlrunner.XMLTestRunner.__init__(self,*args, **kwargs)
+                xmlrunner.XMLTestRunner.__init__(self, *args, **kwargs)
 
         main_orig = unittest.main
+
         class XmlMain(main_orig):
             """This is unittest.main with forced usage of XMLTestRunner"""
             def __init__(self, *args, **kwargs):
                 kwargs['testRunner'] = OutputXMLTestRunner
-                main_orig.__init__(self,*args, **kwargs)
+                main_orig.__init__(self, *args, **kwargs)
 
         unittest.main = XmlMain
 
@@ -347,6 +354,8 @@ class VscTestCommand(TestCommand):
         })
 
         if self.test_xmlrunner is not None:
+            if not have_xmlrunner:
+                raise Exception('test-xmlrunner requires xmlrunner module')
             self.force_xmlrunner()
 
         cleanup = self.setup_sys_path()
