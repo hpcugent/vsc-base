@@ -24,6 +24,7 @@ import os
 import shutil
 import sys
 import re
+import unittest
 
 from distutils import log  # also for setuptools
 from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
@@ -40,6 +41,14 @@ from setuptools.command.install_scripts import install_scripts
 from setuptools.command.sdist import sdist
 
 from unittest import TestSuite
+
+have_xmlrunner = None
+try:
+    import xmlrunner
+    have_xmlrunner = True
+except ImportError:
+    have_xmlrunner = False
+
 
 # private class variables to communicate
 # between VscScanningLoader and VscTestCommand
@@ -234,6 +243,7 @@ class VscTestCommand(TestCommand):
     user_options = TestCommand.user_options + [
         ('test-filterf=', 'f', "Regex filter on test function names"),
         ('test-filterm=', 'F', "Regex filter on test (sub)modules"),
+        ('test-xmlrunner=', 'X', "use XMLTestRunner with value as output name (e.g. test-reports)"),
     ]
 
     TEST_LOADER_CLASS = VscScanningLoader
@@ -245,6 +255,8 @@ class VscTestCommand(TestCommand):
         TestCommand.initialize_options(self)
         self.test_filterm = None
         self.test_filterf = None
+        self.test_xmlrunner = None
+
         self.test_loader = '%s:%s' % (self.TEST_LOADER_CLASS.TEST_LOADER_MODULE, self.TEST_LOADER_CLASS.__name__)
         log.info("test_loader set to %s" % self.test_loader)
 
@@ -259,9 +271,9 @@ class VscTestCommand(TestCommand):
         cleanup = []
 
         # determine the base directory of the repository
-        # we will assume that the tests are called from 
+        # we will assume that the tests are called from
         # a 'setup.py' like file in the basedirectory
-        # (but could be called anything, as long as it is in the basedir) 
+        # (but could be called anything, as long as it is in the basedir)
         setup_py = os.path.abspath(sys.argv[0])
         log.info('run_tests from %s' % setup_py)
         base_dir = os.path.dirname(setup_py)
@@ -304,6 +316,31 @@ class VscTestCommand(TestCommand):
         for name in reload_vsc_modules:
             __import__(name)
 
+    def force_xmlrunner(self):
+        """
+        A monkey-patch attempt to run the tests with
+        xmlrunner.XMLTestRunner(output=xyz).run(suite)
+
+        E.g. in case of jenkins and you want junit compatible reports
+        """
+        xmlrunner_output = self.test_xmlrunner
+
+        class OutputXMLTestRunner(xmlrunner.XMLTestRunner):
+            """Force the output"""
+            def __init__(self, *args, **kwargs):
+                kwargs['output'] = xmlrunner_output
+                xmlrunner.XMLTestRunner.__init__(self, *args, **kwargs)
+
+        main_orig = unittest.main
+
+        class XmlMain(main_orig):
+            """This is unittest.main with forced usage of XMLTestRunner"""
+            def __init__(self, *args, **kwargs):
+                kwargs['testRunner'] = OutputXMLTestRunner
+                main_orig.__init__(self, *args, **kwargs)
+
+        unittest.main = XmlMain
+
     def run_tests(self):
         """
         Actually run the tests, but start with
@@ -315,6 +352,11 @@ class VscTestCommand(TestCommand):
             'function': self.test_filterf,
             'module': self.test_filterm,
         })
+
+        if self.test_xmlrunner is not None:
+            if not have_xmlrunner:
+                raise Exception('test-xmlrunner requires xmlrunner module')
+            self.force_xmlrunner()
 
         cleanup = self.setup_sys_path()
 
