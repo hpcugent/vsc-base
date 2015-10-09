@@ -24,7 +24,8 @@ import os
 import shutil
 import sys
 import re
-import unittest
+
+import setuptools.command.test
 
 from distutils import log  # also for setuptools
 from distutils.command.bdist_rpm import bdist_rpm as orig_bdist_rpm
@@ -331,7 +332,15 @@ class VscTestCommand(TestCommand):
                 kwargs['output'] = xmlrunner_output
                 xmlrunner.XMLTestRunner.__init__(self, *args, **kwargs)
 
-        main_orig = unittest.main
+        # old setuptools
+        main_name = 'main'
+        main_orig = getattr(setuptools.command.test, main_name, None)
+        if main_orig is None:
+            # newer setuptools (e.g. 0.18)
+            main_name = 'unittest_main'
+            main_orig = getattr(setuptools.command.test, main_name, None)
+        if main_orig is None:
+            raise Exception('monkey patching XmlRunner failed')
 
         class XmlMain(main_orig):
             """This is unittest.main with forced usage of XMLTestRunner"""
@@ -339,7 +348,7 @@ class VscTestCommand(TestCommand):
                 kwargs['testRunner'] = OutputXMLTestRunner
                 main_orig.__init__(self, *args, **kwargs)
 
-        unittest.main = XmlMain
+        setattr(setuptools.command.test, main_name, XmlMain)
 
     def run_tests(self):
         """
