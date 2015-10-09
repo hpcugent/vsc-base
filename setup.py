@@ -54,7 +54,7 @@ shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.3.1',
+    'version': '2.4.0',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc', 'vsc.install', 'vsc.utils'],
