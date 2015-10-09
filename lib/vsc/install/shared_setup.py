@@ -332,15 +332,13 @@ class VscTestCommand(TestCommand):
                 kwargs['output'] = xmlrunner_output
                 xmlrunner.XMLTestRunner.__init__(self, *args, **kwargs)
 
-        # old setuptools
-        main_name = 'main'
-        main_orig = getattr(setuptools.command.test, main_name, None)
-        if main_orig is None:
-            # newer setuptools (e.g. 0.18)
-            main_name = 'unittest_main'
+        cand_main_names = ['unittest.main', 'unittest_main', 'main']
+        for main_name in cand_main_names:
             main_orig = getattr(setuptools.command.test, main_name, None)
+            if main_orig is not None:
+                break
         if main_orig is None:
-            raise Exception('monkey patching XmlRunner failed')
+            raise Exception("monkey patching XmlRunner failed")
 
         class XmlMain(main_orig):
             """This is unittest.main with forced usage of XMLTestRunner"""
