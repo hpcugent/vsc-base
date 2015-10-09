@@ -34,10 +34,10 @@ from setuptools.command.test import ScanningLoader
 from setuptools import setup
 from setuptools.command.bdist_rpm import bdist_rpm
 from setuptools.command.build_py import build_py
+from setuptools.command.egg_info import egg_info
 from setuptools.command.install_scripts import install_scripts
 # egg_info uses sdist directly through manifest_maker
 from setuptools.command.sdist import sdist
-from setuptools.command.egg_info import egg_info
 
 from unittest import TestSuite
 
@@ -86,14 +86,13 @@ URL_GHUGENT_HPCUGENT = 'https://github.ugent.be/hpcugent/%(name)s'
 
 def find_extra_sdist_files():
     """Looks for files to append to the FileList that is used by the egg_info."""
-    print "looking for extra dist files"
+    log.info("looking for extra dist files")
     filelist = []
     for fn in EXTRA_SDIST_FILES:
         if os.path.isfile(fn):
             filelist.append(fn)
         else:
-            print "sdist add_defaults Failed to find %s" % fn
-            print "exiting."
+            log.error("sdist add_defaults Failed to find %s. Exiting." % fn)
             sys.exit(1)
     return filelist
 
@@ -130,11 +129,11 @@ class vsc_bdist_rpm_egg_info(vsc_egg_info):
     """
 
     def find_sources(self):
-        """Fins the sources as default and then drop the cruft."""
+        """Finds the sources as default and then drop the cruft."""
         vsc_egg_info.find_sources(self)
-        for f in remove_extra_bdist_rpm_files():
-            log.debug("removing %s from source list" % (f))
-            self.filelist.files.remove(f)
+        for fn in remove_extra_bdist_rpm_files():
+            log.debug("removing %s from source list" % (fn))
+            self.filelist.files.remove(fn)
 
 
 class vsc_install_scripts(install_scripts):
@@ -231,8 +230,7 @@ class VscTestCommand(TestCommand):
     The cmdclass for testing
     """
 
-    # make 2 new 'python setup.py test' options available:
-    #    --test-filterf and --test-filertm
+    # make 2 new 'python setup.py test' options available
     user_options = TestCommand.user_options + [
         ('test-filterf=', 'f', "Regex filter on test function names"),
         ('test-filterm=', 'F', "Regex filter on test (sub)modules"),
