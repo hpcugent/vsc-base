@@ -55,7 +55,7 @@ class TestOption1(GeneralOption):
             "base":("Long and short base option", None, "store_true", False, 'b'),
             "longbase":("Long-only base option", None, "store_true", True),
             "justatest":("Another long based option", None, "store_true", True),
-            "store":("Store option", None, "store", None),
+            "store":("Store option", None, "store", None, 's'),
             "store-with-dash":("Store option with dash in name", None, "store", None),
             "aregexopt":("A regex option", None, "regex", None),
             }
@@ -613,21 +613,29 @@ store=%(FROMINIT)s
 
     def test_loglevel(self):
         """Test the loglevel default setting"""
+        def _loglevel(lvl, msg):
+            lvl_int = topt.log.getEffectiveLevel()
+            lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]
+            self.assertEqual(lvl_int,
+                             fancylogger.getLevelInt(lvl),
+                             msg="%s (expected %s got %s)" % (msg, lvl, lvl_name))
+
+
         topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), fancylogger.getLevelInt(topt.DEFAULT_LOGLEVEL.upper()))
+        _loglevel(topt.DEFAULT_LOGLEVEL.upper(), 'Test default loglevel')
 
         topt = TestOption1(go_args=['--debug'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+        _loglevel('DEBUG', '--debug gives DEBUG')
 
         topt = TestOption1(go_args=['--info'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+        _loglevel('INFO', '--info gives INFO')
 
         topt = TestOption1(go_args=['--quiet'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', '--quiet gives WARNING')
 
         # last one wins
         topt = TestOption1(go_args=['--debug', '--info', '--quiet'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', 'last wins: --debug --info --quiet gives WARNING')
 
         CONFIGFILE1 = """
 [base]
@@ -642,7 +650,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+        _loglevel('DEBUG', 'DEBUG set via configfile')
 
         # set via environment; environment wins over cfg file
         os.environ['%s_INFO' % envvar] = '1';
@@ -651,7 +659,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+        _loglevel('INFO', 'env wins: debug in configfile and _INFO in env gives INFO')
 
         # commandline always wins
         topt = TestOption1(go_configfiles=[tmp1.name],
@@ -659,7 +667,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', 'commandline wins: debug in configfile, _INFO in env and --quiet gives WARNING')
 
         # remove tmp1
         del os.environ['%s_INFO' % envvar]
@@ -748,12 +756,13 @@ debug=1
 
         os.environ['GENERALOPTIONTEST_XYZ'] = '1'
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST')
-        # no errors logged
-        self.assertEqual(self.count_logcache('error'), 0)
+        self.assertEqual(self.count_logcache('error'), 0,
+                         msg='no errors logged, got %s' % self.count_logcache('error'))
 
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
-        # one error should be logged
-        self.assertEqual(self.count_logcache('error'), 1)
+        print self.LOGCACHE['error']
+        self.assertEqual(self.count_logcache('error'), 1,
+                         msg='one error should be logged, got %s' % self.count_logcache('error'))
 
         # using a custom error method
         def raise_error(msg, *args):
@@ -764,6 +773,131 @@ debug=1
                               go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True,
                               error_env_option_method=raise_error)
 
+    def _match_testoption1_sysexit(self, args, msg):
+        """Check whether parsing supplied arguments with TestOption1 results in SystemExit error being raised."""
+        system_exit = False
+        self.mock_stderr(True)  # reset
+        # purposely not using self.assertErrorRegex, since we're mocking stderr...
+        try:
+            TestOption1(go_args=args)
+        except SystemExit:
+            system_exit = True
+        finally:
+            stderr = self.get_stderr()
+            self.mock_stderr(False)
+        self.assertTrue(system_exit)
+        self.assertTrue(msg in stderr)
+
+    def test_nosuchoption(self):
+        """Test catching of non-existing options."""
+        self._match_testoption1_sysexit(['--nosuchoptiondefinedfoobar'],
+                                        "no such option: --nosuchoptiondefinedfoobar")
+
+    def test_is_value_a_commandline_option(self):
+        """Test ExtOptionParser is_value_a_commandline_option method"""
+        topt = TestOption1(go_args=[])
+        tp = topt.parser
+
+        self.assertEqual(tp.ALLOW_OPTION_NAME_AS_VALUE, False,
+                         msg="default do not allow option name as value")
+        self.assertEqual(tp.ALLOW_OPTION_AS_VALUE, False,
+                         msg="default do not allow option as value")
+        self.assertEqual(tp.ALLOW_DASH_AS_VALUE, False,
+                         msg="default do not allow value starting with -")
+        self.assertEqual(tp.ALLOW_TYPO_AS_VALUE, True,
+                         msg="default do allow value similar to option")
+
+        # fake commandline args
+        # this is purely to test the function, actual usage is in test_option_as_value
+        tp.commandline_arguments = ['--base', '-something', 'base', '-base']
+        def check(fail, tpl):
+            """Check whether expected failures/success occur with given message template."""
+            for idx, value in enumerate(tp.commandline_arguments):
+                msg = tpl % value
+                res = tp.is_value_a_commandline_option('--opt', value, index=idx)
+                if idx in fail:
+                    self.assertFalse(res is None, "failure should not return None for value %s" % value)
+                    self.assertTrue(msg in res, msg='%s in %s' % (msg, res))
+                else:
+                    self.assertTrue(res is None)
+
+        # anything goes
+        tp.ALLOW_OPTION_NAME_AS_VALUE = True
+        tp.ALLOW_OPTION_AS_VALUE = True
+        tp.ALLOW_DASH_AS_VALUE = True
+        tp.ALLOW_TYPO_AS_VALUE = True
+
+        check([], 'x%sx') # all ok
+
+        tp.ALLOW_OPTION_AS_VALUE = False
+        check([0], "Value '%s' is also a valid option")
+        tp.ALLOW_OPTION_AS_VALUE = True
+
+        tp.ALLOW_DASH_AS_VALUE = False
+        # options also start with a -
+        check([0, 1, 3], "Value '%s' starts with a '-'")
+        tp.ALLOW_DASH_AS_VALUE = True
+
+        tp.ALLOW_TYPO_AS_VALUE = False
+        # an option is a close match for an option, who'd guessed that...
+        check([0, 2, 3], "Value '%s' too close match to option(s) ")
+        tp.ALLOW_TYPO_AS_VALUE = True
+
+        tp.ALLOW_OPTION_NAME_AS_VALUE = False
+        check([3], "'-%s' is a valid option")
+        tp.ALLOW_OPTION_NAME_AS_VALUE = True
+
+    def test_option_as_value(self):
+        """Test how valid options being used as values are handled."""
+        # -s requires an argument
+        self._match_testoption1_sysexit(['-b', '-s'],
+                                        "-s option requires an argument")
+
+        # only valid way of specifying '-b' as a value to --store
+        topt = TestOption1(go_args=['--store=-b'])
+        self.assertEqual(topt.options.store, '-b')
+        self.assertFalse(topt.options.base)  # remain False (default value)
+
+        # when -b/--base is an option, the following are not accepted, since they're likely not what intended
+        self._match_testoption1_sysexit(['-sb'],
+                                        "'-b' is a valid option")
+        self._match_testoption1_sysexit(['-s', 'b'],
+                                        "'-b' is a valid option")
+        self._match_testoption1_sysexit(['--store', 'b'],
+                                        "'-b' is a valid option")
+        self._match_testoption1_sysexit(['--store', '-base'],
+                                        "'--base' is a valid option")
+        self._match_testoption1_sysexit(['-s', '-base'],
+                                        "'--base' is a valid option")
+        self._match_testoption1_sysexit(['-s-base'],
+                                        "'--base' is a valid option")
+
+        # -s -b is not a valid list of flags, since it's ambiguous: is '-b' a value for '-s', or an option?
+        self._match_testoption1_sysexit(['-s', '-b'],
+                                        "Value '-b' is also a valid option")
+
+        # same for --store -b
+        self._match_testoption1_sysexit(['--store', '-b'],
+                                        "Value '-b' is also a valid option")
+
+        # same for --store --base
+        self._match_testoption1_sysexit(['--store', '--base'],
+                                        "Value '--base' is also a valid option")
+
+        # including a non-existing option will result in it being treated as a value, but is not allowed
+        self._match_testoption1_sysexit(['--store', '-f'],
+                                        "Value '-f' starts with a '-'")
+
+        self._match_testoption1_sysexit(['--store', '--foo'],
+                                        "Value '--foo' starts with a '-'")
+
+        # non-existing options are still reported if they're not consumed as a value
+        self._match_testoption1_sysexit(['--nosuchoptiondefinedfoobar', '--store', '--foo'],
+                                        "no such option: --nosuchoptiondefinedfoobar")
+
+        # but first error still wins
+        self._match_testoption1_sysexit(['--store', '--foo', '--nosuchoptiondefinedfoobar'],
+                                        "Value '--foo' starts with a '-'")
 
 def suite():
     """ returns all the testcases in this module """
