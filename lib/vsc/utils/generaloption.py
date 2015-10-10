@@ -494,6 +494,7 @@ class ExtOptionParser(OptionParser):
         Determine if value is/could be an option passed via the commandline.
         If it is, return the reason why (can be used as message); or return None if it isn't.
 
+        opt is the option flag to which the value is passed;
         index is the index of the value on the commandline (if None, it is determined from orig_rargs and rargs)
 
         The method tests for possible ambiguity on the commandline when the parser
@@ -501,7 +502,7 @@ class ExtOptionParser(OptionParser):
         it is (intended as) an option; --longopt=value is never considered ambiguous, regardless of the value.
         """
         # Values that are/could be options that are passed via
-        # --longopt=value is not a problem.
+        # only --longopt=value is not a problem.
         # When processing the enviroment and/or configfile, we always set
         # --longopt=value, so no issues there either.
 
@@ -515,7 +516,7 @@ class ExtOptionParser(OptionParser):
         except ValueError:
             # no index found for value, so not a stand-alone value
             if opt.startswith('--'):
-                # --longopt=value is unambigouos
+                # only --longopt=value is unambigouos
                 return None
 
         if index is None:
