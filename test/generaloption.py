@@ -812,7 +812,7 @@ debug=1
             """Check whether expected failures/success occur with given message template."""
             for idx, value in enumerate(tp.commandline_arguments):
                 msg = tpl % value
-                res = tp.is_value_a_commandline_option(value, index=idx)
+                res = tp.is_value_a_commandline_option('--opt', value, index=idx)
                 if idx in fail:
                     self.assertFalse(res is None, "failure should not return None for value %s" % value)
                     self.assertTrue(msg in res, msg='%s in %s' % (msg, res))

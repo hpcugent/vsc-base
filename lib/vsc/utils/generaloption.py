@@ -504,6 +504,11 @@ class ExtOptionParser(OptionParser):
         # --longopt=value is not a problem.
         # When processing the enviroment and/or configfile, we always set
         # --longopt=value, so no issues there either.
+
+        # following checks assume that value is a string (not a store_or_None)
+        if not isinstance(value, basestring):
+            return None
+
         cmdline_index = None
         try:
             cmdline_index = self.commandline_arguments.index(value)
@@ -529,7 +534,7 @@ class ExtOptionParser(OptionParser):
         if (not self.ALLOW_OPTION_AS_VALUE) and (value in self._long_opt or value in self._short_opt):
             return "Value '%s' is also a valid option" % value
 
-        if not self.ALLOW_DASH_AS_VALUE and value is not None and value.startswith('-'):
+        if not self.ALLOW_DASH_AS_VALUE and value.startswith('-'):
             return "Value '%s' starts with a '-'" % value
 
         if not self.ALLOW_TYPO_AS_VALUE:
