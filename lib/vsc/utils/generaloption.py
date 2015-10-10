@@ -528,10 +528,10 @@ class ExtOptionParser(OptionParser):
             return None
 
         if not self.ALLOW_OPTION_NAME_AS_VALUE:
-            if '-%s' % value in self._short_opt.keys() + self._long_opt.keys():
+            value_as_opt = '-%s' % value
+            if value_as_opt in self._short_opt or value_as_opt in self._long_opt:
                 return "'-%s' is a valid option" % value
 
-        # First test the exact problem where the value is an option
         if (not self.ALLOW_OPTION_AS_VALUE) and (value in self._long_opt or value in self._short_opt):
             return "Value '%s' is also a valid option" % value
 
