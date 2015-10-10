@@ -520,7 +520,7 @@ class ExtOptionParser(OptionParser):
                 return None
 
         if index is None:
-            # index of last parsed arg in orig_rargs via remainder of rargs
+            # index of last parsed arg in commandline_arguments via remainder of rargs
             index = len(self.commandline_arguments) - len(self.rargs) - 1
 
         if cmdline_index is not None and index != cmdline_index:
