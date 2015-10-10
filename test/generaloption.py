@@ -798,8 +798,10 @@ debug=1
         topt = TestOption1(go_args=[])
         tp = topt.parser
 
+        self.assertEqual(tp.ALLOW_OPTION_NAME_AS_VALUE, False,
+                         msg="default do not allow option name as value")
         self.assertEqual(tp.ALLOW_OPTION_AS_VALUE, False,
-                         msg="default do not allow value as option")
+                         msg="default do not allow option as value")
         self.assertEqual(tp.ALLOW_DASH_AS_VALUE, False,
                          msg="default do not allow value starting with -")
         self.assertEqual(tp.ALLOW_TYPO_AS_VALUE, True,
@@ -807,7 +809,7 @@ debug=1
 
         # fake commandline args
         # this is purely to test the function, actual usage is in test_option_as_value
-        tp.commandline_arguments = ['--base', '-something', 'base']
+        tp.commandline_arguments = ['--base', '-something', 'base', '-base']
         def check(fail, tpl):
             """Check whether expected failures/success occur with given message template."""
             for idx, value in enumerate(tp.commandline_arguments):
@@ -820,6 +822,7 @@ debug=1
                     self.assertTrue(res is None)
 
         # anything goes
+        tp.ALLOW_OPTION_NAME_AS_VALUE = True
         tp.ALLOW_OPTION_AS_VALUE = True
         tp.ALLOW_DASH_AS_VALUE = True
         tp.ALLOW_TYPO_AS_VALUE = True
@@ -832,14 +835,17 @@ debug=1
 
         tp.ALLOW_DASH_AS_VALUE = False
         # options also start with a -
-        check([0, 1], "Value '%s' starts with a '-'")
+        check([0, 1, 3], "Value '%s' starts with a '-'")
         tp.ALLOW_DASH_AS_VALUE = True
 
         tp.ALLOW_TYPO_AS_VALUE = False
         # an option is a close match for an option, who'd guessed that...
-        check([0, 2], "Value '%s' too close match to option(s) ")
+        check([0, 2, 3], "Value '%s' too close match to option(s) ")
         tp.ALLOW_TYPO_AS_VALUE = True
 
+        tp.ALLOW_OPTION_NAME_AS_VALUE = False
+        check([3], "'-%s' is a valid option")
+        tp.ALLOW_OPTION_NAME_AS_VALUE = True
 
     def test_option_as_value(self):
         """Test how valid options being used as values are handled."""
@@ -854,20 +860,17 @@ debug=1
 
         # when -b/--base is an option, the following are not accepted, since they're likely not what intended
         self._match_testoption1_sysexit(['-sb'],
-                                        "'-b' is a valid option, so using 'b' as value is likely a typo")
+                                        "'-b' is a valid option")
         self._match_testoption1_sysexit(['-s', 'b'],
-                                        "'-b' is a valid option, so using 'b' as value is likely a typo")
+                                        "'-b' is a valid option")
         self._match_testoption1_sysexit(['--store', 'b'],
-                                        "'-b' is a valid option, so using 'b' as value is likely a typo")
+                                        "'-b' is a valid option")
         self._match_testoption1_sysexit(['--store', '-base'],
-                                        "'--base' is a valid option, so using '-base' as value is likely a typo")
+                                        "'--base' is a valid option")
         self._match_testoption1_sysexit(['-s', '-base'],
-                                        "'--base' is a valid option, so using '-base' as value is likely a typo")
+                                        "'--base' is a valid option")
         self._match_testoption1_sysexit(['-s-base'],
-                                        "'--base' is a valid option, so using '-base' as value is likely a typo")
-
-        #self._match_testoption1_sysexit(['-s-b'],
-        #                                "Value '-b' is also a valid option")
+                                        "'--base' is a valid option")
 
         # -s -b is not a valid list of flags, since it's ambiguous: is '-b' a value for '-s', or an option?
         self._match_testoption1_sysexit(['-s', '-b'],
