@@ -227,7 +227,7 @@ class ExtOption(CompleterOption):
         """Handle option-as-value issues before actually processing option."""
 
         if hasattr(parser, 'is_value_a_commandline_option'):
-            errmsg = parser.is_value_a_commandline_option(value)
+            errmsg = parser.is_value_a_commandline_option(opt, value)
             if errmsg is not None:
                 prefix = "%s=" % self._long_opts[0] if self._long_opts else self._short_opts[0]
                 self.log.raiseException("%s. Use '%s%s' if the value is correct." % (errmsg, prefix, value),
@@ -432,9 +432,10 @@ class ExtOptionParser(OptionParser):
     VALUES_CLASS = Values
     DESCRIPTION_DOCSTRING = False
 
-    ALLOW_OPTION_AS_VALUE = False # exact match for option as value
-    ALLOW_DASH_AS_VALUE = False # any value starting with a '-'
-    ALLOW_TYPO_AS_VALUE = True # value with similarity score from difflib.get_close_matches
+    ALLOW_OPTION_NAME_AS_VALUE = False  # exact match for option name (without the '-') as value
+    ALLOW_OPTION_AS_VALUE = False  # exact match for option as value
+    ALLOW_DASH_AS_VALUE = False  # any value starting with a '-'
+    ALLOW_TYPO_AS_VALUE = True  # value with similarity score from difflib.get_close_matches
 
     def __init__(self, *args, **kwargs):
         """
@@ -488,7 +489,7 @@ class ExtOptionParser(OptionParser):
         self.environment_arguments = None
         self.commandline_arguments = None
 
-    def is_value_a_commandline_option(self, value, index=None):
+    def is_value_a_commandline_option(self, opt, value, index=None):
         """
         Determine if value is/could be an option passed via the commandline.
         If it is, return the reason why (can be used as message); or return None if it isn't.
@@ -497,33 +498,38 @@ class ExtOptionParser(OptionParser):
 
         The method tests for possible ambiguity on the commandline when the parser
         interprets the argument following an option as a value, whereas it is far more likely that
-        it is (intended as) an option.
+        it is (intended as) an option; --longopt=value is never considered ambiguous, regardless of the value.
         """
         # Values that are/could be options that are passed via
-        # --longopt=value or -sVALUE are not a problem.
+        # --longopt=value is not a problem.
         # When processing the enviroment and/or configfile, we always set
         # --longopt=value, so no issues there either.
-
+        cmdline_index = None
         try:
             cmdline_index = self.commandline_arguments.index(value)
         except ValueError:
-            # There is no ambiguity if the value is not passed
-            # as standalone argument via commandline
-            return None
+            # no index found for value, so not a stand-alone value
+            if opt.startswith('--'):
+                # --longopt=value is unambigouos
+                return None
 
         if index is None:
             # index of last parsed arg in orig_rargs via remainder of rargs
             index = len(self.commandline_arguments) - len(self.rargs) - 1
 
-        if index != cmdline_index:
+        if cmdline_index is not None and index != cmdline_index:
             # This is not the value you are looking for
             return None
+
+        if not self.ALLOW_OPTION_NAME_AS_VALUE:
+            if '-%s' % value in self._short_opt or '-%s' % value in self._long_opt:
+                return "'-%(val)s' is a valid option, so using '%(val)s' as value is likely a typo" % {'val': value}
 
         # First test the exact problem where the value is an option
         if (not self.ALLOW_OPTION_AS_VALUE) and (value in self._long_opt or value in self._short_opt):
             return "Value '%s' is also a valid option" % value
 
-        if not self.ALLOW_DASH_AS_VALUE and value.startswith('-'):
+        if not self.ALLOW_DASH_AS_VALUE and value is not None and value.startswith('-'):
             return "Value '%s' starts with a '-'" % value
 
         if not self.ALLOW_TYPO_AS_VALUE:

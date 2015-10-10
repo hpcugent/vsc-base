@@ -847,21 +847,29 @@ debug=1
         self._match_testoption1_sysexit(['-b', '-s'],
                                         "-s option requires an argument")
 
-        # valid ways of specifying '-b' as a value to --store/-s
+        # only valid way of specifying '-b' as a value to --store
         topt = TestOption1(go_args=['--store=-b'])
         self.assertEqual(topt.options.store, '-b')
         self.assertFalse(topt.options.base)  # remain False (default value)
 
-        topt = TestOption1(go_args=['-s-b'])  # equivalent to --store=-b (even though -b is a valid short option)
-        self.assertEqual(topt.options.store, '-b')
-        self.assertFalse(topt.options.base)  # remain False (default value)
+        # when -b/--base is an option, the following are not accepted, since they're likely not what intended
+        self._match_testoption1_sysexit(['-sb'],
+                                        "'-b' is a valid option, so using 'b' as value is likely a typo")
+        self._match_testoption1_sysexit(['-s', 'b'],
+                                        "'-b' is a valid option, so using 'b' as value is likely a typo")
+        self._match_testoption1_sysexit(['--store', 'b'],
+                                        "'-b' is a valid option, so using 'b' as value is likely a typo")
+        self._match_testoption1_sysexit(['--store', '-base'],
+                                        "'--base' is a valid option, so using '-base' as value is likely a typo")
+        self._match_testoption1_sysexit(['-s', '-base'],
+                                        "'--base' is a valid option, so using '-base' as value is likely a typo")
+        self._match_testoption1_sysexit(['-s-base'],
+                                        "'--base' is a valid option, so using '-base' as value is likely a typo")
 
-        topt = TestOption1(go_args=['-sb'])  # equivalent to --store=b (even though -b is a valid short option)
-        self.assertEqual(topt.options.store, 'b')
-        self.assertFalse(topt.options.base)  # remain False (default value)
+        #self._match_testoption1_sysexit(['-s-b'],
+        #                                "Value '-b' is also a valid option")
 
-
-        # -s -b is not a valid list of flags (by default), since it's ambiguous: is '-b' a value for '-s', or an option?
+        # -s -b is not a valid list of flags, since it's ambiguous: is '-b' a value for '-s', or an option?
         self._match_testoption1_sysexit(['-s', '-b'],
                                         "Value '-b' is also a valid option")
 
@@ -869,15 +877,11 @@ debug=1
         self._match_testoption1_sysexit(['--store', '-b'],
                                         "Value '-b' is also a valid option")
 
-        # same for --store=-b
-        self._match_testoption1_sysexit(['--store=-b'],
-                                        "Value '-b' is also a valid option")
-
         # same for --store --base
         self._match_testoption1_sysexit(['--store', '--base'],
                                         "Value '--base' is also a valid option")
 
-        # including a non-existing option will result in it being treated as a value, but is not allowed (by default)
+        # including a non-existing option will result in it being treated as a value, but is not allowed
         self._match_testoption1_sysexit(['--store', '-f'],
                                         "Value '-f' starts with a '-'")
 
