@@ -319,7 +319,8 @@ class VscTestCommand(TestCommand):
             try:
                 __import__(name)
             except ImportError:
-                log.error('Failed to reload/import %s (sys.path %s). Continuing, fingers crossed.' % (name, sys.path))
+                log.error('Failed to reload/import %s (sys.path %s).', name, sys.path)
+                raise
 
     def force_xmlrunner(self):
         """
