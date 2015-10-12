@@ -93,6 +93,7 @@ DEFAULT_TEST_SUITE = 'test'
 URL_GH_HPCUGENT = 'https://github.com/hpcugent/%(name)s'
 URL_GHUGENT_HPCUGENT = 'https://github.ugent.be/hpcugent/%(name)s'
 
+RELOAD_VSC_MODS = False
 
 def find_extra_sdist_files():
     """Looks for files to append to the FileList that is used by the egg_info."""
@@ -315,7 +316,10 @@ class VscTestCommand(TestCommand):
 
         # reimport
         for name in reload_vsc_modules:
-            __import__(name)
+            try:
+                __import__(name)
+            except ImportError:
+                log.error('Failed to reload/import %s (sys.path %s). Continuing, fingers crossed.' % (name, sys.path))
 
     def force_xmlrunner(self):
         """
@@ -367,7 +371,8 @@ class VscTestCommand(TestCommand):
 
         cleanup = self.setup_sys_path()
 
-        self.reload_vsc_modules()
+        if RELOAD_VSC_MODS:
+            self.reload_vsc_modules()
 
         res = TestCommand.run_tests(self)
 

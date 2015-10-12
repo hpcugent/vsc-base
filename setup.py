@@ -51,10 +51,12 @@ def remove_bdist_rpm_source_file():
 
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 
+# Re-reload the vsc modules that vsc-base ships
+shared_setup.RELOAD_VSC_MODS = True
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.4.1',
+    'version': '2.4.2',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc', 'vsc.install', 'vsc.utils'],
