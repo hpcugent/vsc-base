@@ -43,7 +43,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib
 
 
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, kh, jt, sdw, URL_GH_HPCUGENT
+from vsc.install.shared_setup import ag, kh, jt, sdw
 
 def remove_bdist_rpm_source_file():
     """List of files to remove from the (source) RPM."""
@@ -56,7 +56,7 @@ shared_setup.RELOAD_VSC_MODS = True
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.4.2',
+    'version': '2.4.4',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc', 'vsc.install', 'vsc.utils'],
@@ -66,4 +66,4 @@ PACKAGE = {
 }
 
 if __name__ == '__main__':
-    shared_setup.action_target(PACKAGE, urltemplate=URL_GH_HPCUGENT)
+    shared_setup.action_target(PACKAGE)
