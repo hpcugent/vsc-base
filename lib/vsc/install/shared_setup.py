@@ -476,7 +476,7 @@ def build_setup_cfg_for_bdist_rpm(target):
     setup_cfg.close()
 
 
-def action_target(target, setupfn=setup, extra_sdist=[], urltemplate=None):
+def action_target(target, setupfn=setup, extra_sdist=[], urltemplate=URL_GH_HPCUGENT):
     # EXTRA_SDIST_FILES.extend(extra_sdist)
 
     do_cleanup = True
