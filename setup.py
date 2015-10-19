@@ -33,35 +33,23 @@ vsc-base base distribution setup.py
 @author: Kenneth Hoste (Ghent University)
 """
 
-# vsc-base setup.py needs vsc.install, which is currently shipped as part of vsc-base
-# vsc.install doesn't require vsc-base, so we could move it to it's own repo and only 
-# have this hack in the setup.py of vsc.install (and set it as build_requires)
-# until then...
-import os
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
-
-
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw, URL_GH_HPCUGENT
-
-def remove_bdist_rpm_source_file():
-    """List of files to remove from the (source) RPM."""
-    return []
-
-shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 
 # Re-reload the vsc modules that vsc-base ships
 shared_setup.RELOAD_VSC_MODS = True
 
+VSC_INSTALL_REQ_VERSION = '0.9.0'
+
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.4.2',
+    'version': '2.4.9',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
-    'packages': ['vsc', 'vsc.install', 'vsc.utils'],
+    'packages': ['vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'install_requires' : ['setuptools'],
+    'install_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION], # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
+    'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
     'zip_safe': True,
 }
 
