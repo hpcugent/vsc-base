@@ -2,7 +2,7 @@
 *.swp
 *~
 
-# ok to ignore generated fiel in vsc-base
+# ok to ignore generated file in vsc-base
 setup.cfg
 
 # Packages
