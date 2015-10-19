@@ -43,10 +43,10 @@ VSC_INSTALL_REQ_VERSION = '0.9.0'
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.4.9',
+    'version': '2.4.9.1',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
-    'packages': ['vsc.utils'],
+    'packages': ['vsc', 'vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
     'install_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION], # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
