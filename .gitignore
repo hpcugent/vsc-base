@@ -2,6 +2,9 @@
 *.swp
 *~
 
+# ok to ignore generated fiel in vsc-base
+setup.cfg
+
 # Packages
 *.egg
 *.egg-info

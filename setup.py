@@ -36,12 +36,6 @@ vsc-base base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw, URL_GH_HPCUGENT
 
-def remove_bdist_rpm_source_file():
-    """List of files to remove from the (source) RPM."""
-    return []
-
-shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
-
 # Re-reload the vsc modules that vsc-base ships
 shared_setup.RELOAD_VSC_MODS = True
 
@@ -52,7 +46,8 @@ PACKAGE = {
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'requires': ['vsc.install'],
+    'install_requires': ['vsc-install >= 1.0.0'],
+    'setup_requires': ['vsc-install >= 1.0.0'],
     'zip_safe': True,
 }
 
