@@ -41,13 +41,13 @@ shared_setup.RELOAD_VSC_MODS = True
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.5.0',
+    'version': '2.4.9',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     'packages': ['vsc.utils'],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'install_requires': ['vsc-install >= 1.0.0'],
-    'setup_requires': ['vsc-install >= 1.0.0'],
+    'install_requires': ['vsc-install >= 0.9.0'], # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
+    'setup_requires': ['vsc-install >= 0.9.0'],
     'zip_safe': True,
 }
 
