@@ -36,11 +36,11 @@ vsc-base base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw, URL_GH_HPCUGENT
 
-VSC_INSTALL_REQ_VERSION = '0.9.1'
+VSC_INSTALL_REQ_VERSION = '0.9.3'
 
 PACKAGE = {
     'name': 'vsc-base',
-    'version': '2.4.10',
+    'version': '2.4.11',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
