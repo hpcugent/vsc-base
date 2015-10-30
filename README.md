@@ -5,8 +5,9 @@
 - Python 2.6 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python26/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python26/)
 - Python 2.7 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python27/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python27/)
 
-Common tools used within our organization.
+# Description
 
+Common tools used within our organization.
 Originally created by the HPC team of Ghent University (http://ugent.be/hpc).
 
 # Documentation
