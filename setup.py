@@ -34,12 +34,11 @@ vsc-base base distribution setup.py
 """
 
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, kh, jt, sdw, URL_GH_HPCUGENT
+from vsc.install.shared_setup import ag, kh, jt, sdw
 
 VSC_INSTALL_REQ_VERSION = '0.9.5'
 
 PACKAGE = {
-    'name': 'vsc-base',
     'version': '2.4.14',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
@@ -51,4 +50,4 @@ PACKAGE = {
 }
 
 if __name__ == '__main__':
-    shared_setup.action_target(PACKAGE, urltemplate=URL_GH_HPCUGENT)
+    shared_setup.action_target(PACKAGE)

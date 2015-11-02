@@ -1,3 +1,4 @@
+### External compatible license
 #******************************************************************************\
 # * Copyright (c) 2003-2004, Martin Blais
 # * All rights reserved.
