@@ -46,7 +46,6 @@ PACKAGE = {
     # setuptools must become a requirement for shared namespaces if vsc-install is removed as requirement
     'install_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
-    'zip_safe': True,
 }
 
 if __name__ == '__main__':
