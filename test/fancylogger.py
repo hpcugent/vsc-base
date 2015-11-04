@@ -40,7 +40,7 @@ import tempfile
 from unittest import TestLoader, main, TestSuite
 
 from vsc.utils import fancylogger
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
@@ -52,7 +52,7 @@ def classless_function():
     logger.warn("from classless_function")
 
 
-class FancyLoggerLogToFileTest(EnhancedTestCase):
+class FancyLoggerLogToFileTest(TestCase):
     """
     Tests for fancylogger, specific for logToFile
     These dont' fit in the FancyLoggerTest class because they don't work with the setUp and tearDown used there.
@@ -67,7 +67,7 @@ class FancyLoggerLogToFileTest(EnhancedTestCase):
         shutil.rmtree(tempdir)
 
 
-class FancyLoggerTest(EnhancedTestCase):
+class FancyLoggerTest(TestCase):
     """Tests for fancylogger"""
 
     logfn = None
@@ -89,6 +89,7 @@ class FancyLoggerTest(EnhancedTestCase):
 
         self.orig_raise_exception_class = fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS
         self.orig_raise_exception_method = fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD
+        super(FancyLoggerTest, self).setUp()
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
@@ -440,15 +441,3 @@ class FancyLoggerTest(EnhancedTestCase):
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
 
-
-def suite():
-    """ returns all the testcases in this module """
-    suite = TestSuite()
-    suite.addTests(TestLoader().loadTestsFromTestCase(FancyLoggerTest))
-    suite.addTests(TestLoader().loadTestsFromTestCase(FancyLoggerLogToFileTest))
-    return suite
-
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests"""
-    main()

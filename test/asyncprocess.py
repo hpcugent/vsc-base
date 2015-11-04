@@ -32,7 +32,7 @@ Unit tests for asyncprocess.py.
 
 import os
 import time
-from unittest import TestCase, TestSuite, main
+from vsc.install.testing import TestCase
 
 import vsc.utils.asyncprocess as p
 from vsc.utils.asyncprocess import Popen
@@ -51,6 +51,7 @@ class AsyncProcessTest(TestCase):
         """ setup a basic shell """
         self.shell = Popen('sh', stdin=p.PIPE, stdout=p.PIPE, shell=True, executable='/bin/bash')
         self.cwd = os.getcwd()
+        super(AsyncProcessTest, self).setUp()
 
     def runTest(self):
         """ try echoing some text and see if it comes back out """

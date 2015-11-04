@@ -37,7 +37,7 @@ from unittest import TestLoader, main
 
 from vsc.utils.exceptions import LoggedException, get_callers_logger
 from vsc.utils.fancylogger import getLogger, logToFile, logToScreen, getRootLoggerName, setLogFormat
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 
 def raise_loggedexception(msg, *args, **kwargs):
@@ -45,7 +45,7 @@ def raise_loggedexception(msg, *args, **kwargs):
     raise LoggedException(msg, *args, **kwargs)
 
 
-class ExceptionsTest(EnhancedTestCase):
+class ExceptionsTest(TestCase):
     """Tests for exceptions module."""
 
     def test_loggedexception_defaultlogger(self):
