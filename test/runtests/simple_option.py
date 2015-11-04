@@ -34,7 +34,6 @@ python examples/simple_option.py --info -L itjustworks
 
 @author: Stijn De Weirdt (Ghent University)
 """
-
 from vsc.utils.generaloption import simple_option
 
 # dict = {longopt:(help_description,type,action,default_value,shortopt),}
