@@ -29,7 +29,7 @@ Unit tests for the rest client.
 """
 import os
 
-from unittest import TestLoader, TestCase, main
+from vsc.install.testing import TestCase
 
 from vsc.utils.rest import RestClient
 

@@ -1,4 +1,5 @@
-# #
+### External compatible license
+#
 # Copyright 2005 Josiah Carlson
 # The Asynchronous Python Subprocess recipe was originally created by Josiah Carlson.
 # and released under the GNU Library General Public License v2 or any later version
@@ -29,7 +30,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 
 """
 Module to allow Asynchronous subprocess use on Windows and Posix platforms

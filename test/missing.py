@@ -41,7 +41,7 @@ from unittest import TestLoader, main
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
 from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 
 DAG_TEST_SET = [
@@ -156,7 +156,7 @@ def disjoint_sets(s1, s2):
     return True
 
 
-class TestMissing(EnhancedTestCase):
+class TestMissing(TestCase):
     """Test for vsc.utils.missing module."""
 
     def test_nub_length(self):

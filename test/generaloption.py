@@ -32,16 +32,18 @@ import datetime
 import logging
 import os
 import re
+import sys
 import tempfile
 from tempfile import NamedTemporaryFile
-from unittest import TestCase, TestLoader, main
 
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.shared_setup import REPO_BASE_DIR
+from vsc.install.testing import TestCase
+
 
 _init_configfiles = ['/not/a/real/configfile']
 
@@ -112,7 +114,7 @@ class TestOption1(GeneralOption):
         self.add_group_parser(self._opts_ext, descr, prefix=prefix)
 
 
-class GeneralOptionTest(EnhancedTestCase):
+class GeneralOptionTest(TestCase):
     """Tests for general option"""
 
     def test_help_short(self):
@@ -683,7 +685,8 @@ debug=1
         partial = '-'
         cmd_list = [script, partial]
 
-        ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
+        pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)
@@ -700,7 +703,7 @@ debug=1
         partial = '--deb'
         cmd_list = [script, partial]
 
-        ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)

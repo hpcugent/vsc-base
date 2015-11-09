@@ -29,13 +29,12 @@ Unit tests for the docs module.
 @author: Caroline De Brouwer (Ghent University)
 """
 import os
-from unittest import TestLoader, TestCase, main
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 from vsc.utils.docs import mk_rst_table
 
 
-class DocsTest(EnhancedTestCase):
+class DocsTest(TestCase):
     """Tests for docs functions."""
 
     def test_mk_rst_table(self):

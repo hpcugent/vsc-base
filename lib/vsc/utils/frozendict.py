@@ -1,3 +1,4 @@
+### External compatible license
 # taken from https://github.com/slezica/python-frozendict on March 14th 2014 (commit ID b27053e4d1)
 #
 # Copyright (c) 2012 Santiago Lezica
@@ -15,7 +16,10 @@
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 # CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE
-
+"""
+frozendict is an immutable wrapper around dictionaries that implements the complete mapping interface.
+It can be used as a drop-in replacement for dictionaries where immutability is desired.
+"""
 import operator
 from UserDict import DictMixin
 

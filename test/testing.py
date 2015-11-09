@@ -36,11 +36,11 @@ import sys
 from unittest import TestLoader, main
 
 from vsc.utils.missing import shell_quote
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 import logging
 
-class TestTesting(EnhancedTestCase):
+class TestTesting(TestCase):
     """Tests for vsc.utils.testing module."""
 
     def test_convert_exception_to_str(self):

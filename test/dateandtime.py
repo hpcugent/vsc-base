@@ -31,7 +31,7 @@ Python module for handling data and time strings.
 """
 import datetime
 import os
-from unittest import TestCase, TestLoader
+from vsc.install.testing import TestCase
 from vsc.utils.dateandtime import FancyMonth, date_parser, datetime_parser
 
 class DateAndTimeTest(TestCase):

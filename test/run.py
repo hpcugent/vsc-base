@@ -40,7 +40,7 @@ from unittest import TestLoader, main
 
 from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests')
@@ -54,7 +54,7 @@ class RunQAShort(RunQA):
 run_qas = RunQAShort.run
 
 
-class TestRun(EnhancedTestCase):
+class TestRun(TestCase):
     """Test for the run module."""
 
     def test_simple(self):

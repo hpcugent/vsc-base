@@ -37,7 +37,7 @@ from unittest import TestLoader, main
 
 from vsc.utils.exceptions import LoggedException, get_callers_logger
 from vsc.utils.fancylogger import getLogger, logToFile, logToScreen, getRootLoggerName, setLogFormat
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 
 def raise_loggedexception(msg, *args, **kwargs):
@@ -45,7 +45,7 @@ def raise_loggedexception(msg, *args, **kwargs):
     raise LoggedException(msg, *args, **kwargs)
 
 
-class ExceptionsTest(EnhancedTestCase):
+class ExceptionsTest(TestCase):
     """Tests for exceptions module."""
 
     def test_loggedexception_defaultlogger(self):
@@ -156,7 +156,7 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile(r"^%s :: BOOM \(at vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
+        log_re = re.compile(r"^%s :: BOOM \(at vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -170,7 +170,7 @@ class ExceptionsTest(EnhancedTestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile(r"^%s :: BOOM \(at .*/vsc/utils/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
+        log_re = re.compile(r"^%s :: BOOM \(at .*/vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 

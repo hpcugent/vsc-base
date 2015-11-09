@@ -30,7 +30,7 @@ Tests for the vsc.utils.wrapper module.
 
 @author: Stijn De Weirdt (Ghent University)
 """
-from unittest import TestCase, TestLoader
+from vsc.install.testing import TestCase
 
 from vsc.utils.wrapper import Wrapper
 
