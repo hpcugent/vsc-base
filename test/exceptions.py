@@ -156,7 +156,7 @@ class ExceptionsTest(TestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile(r"^%s :: BOOM \(at vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
+        log_re = re.compile(r"^%s :: BOOM \(at (?:.*?/)?vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
@@ -170,7 +170,7 @@ class ExceptionsTest(TestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_testexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile(r"^%s :: BOOM \(at .*/vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
+        log_re = re.compile(r"^%s :: BOOM \(at (?:.*?/)?vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
         logtxt = open(tmplog, 'r').read()
         self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
