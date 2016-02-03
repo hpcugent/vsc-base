@@ -686,7 +686,7 @@ debug=1
         cmd_list = [script, partial]
 
         pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
-        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial)))
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)
@@ -703,7 +703,7 @@ debug=1
         partial = '--deb'
         cmd_list = [script, partial]
 
-        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial)))
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)

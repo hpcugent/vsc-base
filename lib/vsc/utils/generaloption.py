@@ -43,7 +43,7 @@ import textwrap
 from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
 from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
-from optparse import _ as _gettext  # this is gettext normally
+from optparse import gettext as _gettext  # this is gettext.gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setLogLevel, getDetailsLogLevels
@@ -109,7 +109,7 @@ def check_str_list_tuple(option, opt, value):
         return klass(split)
 
 
-def get_empty_add_flex(allvalues):
+def get_empty_add_flex(allvalues, self=None):
     """Return the empty element for add_flex action for allvalues"""
     empty = None
 
@@ -119,7 +119,11 @@ def get_empty_add_flex(allvalues):
 
     if empty is None:
         msg = "get_empty_add_flex cannot determine empty element for type %s (%s)"
-        self.log.raiseException(msg % (type(allvalues), allvalues))
+        msg = msg % (type(allvalues), allvalues)
+        if self is None:
+            raise Exception(msg)
+        else:
+            self.log.raiseException(msg)
 
     return empty
 
@@ -300,7 +304,7 @@ class ExtOption(CompleterOption):
                     if not hasattr(lvalue, 'index'):
                         msg = "Unsupported type %s for action %s (requires index method)"
                         self.log.raiseException(msg % (type(lvalue), action))
-                    empty = get_empty_add_flex(lvalue)
+                    empty = get_empty_add_flex(lvalue, self=self)
                     if empty in value:
                         ind = value.index(empty)
                         lvalue = value[:ind] + default + value[ind+1:]
@@ -368,11 +372,12 @@ class PassThroughOptionParser(OptionParser):
 
                 nargs = option.nargs
                 if len(rargs) < nargs:
+                    msg = [opt, 'option requires']
                     if nargs == 1:
-                        self.error(_("%s option requires an argument") % opt)
+                        msg.append('an argument')
                     else:
-                        self.error(_("%s option requires %d arguments")
-                                   % (opt, nargs))
+                        msg.extend([nargs, 'arguments'])
+                    self.error(_gettext(" ".join(msg)))
                 elif nargs == 1:
                     value = rargs.pop(0)
                 else:
@@ -1640,7 +1645,7 @@ class GeneralOption(object):
                     if action == 'add_flex' and default:
                         for ind, elem in enumerate(opt_value):
                             if elem == default[0] and opt_value[ind:ind+len(default)] == default:
-                                empty = get_empty_add_flex(opt_value)
+                                empty = get_empty_add_flex(opt_value, self=self)
                                 # TODO: this will only work for tuples and lists
                                 opt_value = opt_value[:ind] + type(opt_value)([empty]) + opt_value[ind+len(default):]
                                 # only the first occurence

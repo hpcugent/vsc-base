@@ -441,3 +441,4 @@ class FancyLoggerTest(TestCase):
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
 
+        super(FancyLoggerTest, self).tearDown()
