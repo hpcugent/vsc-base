@@ -1199,7 +1199,7 @@ class GeneralOption(object):
                         self.log.raiseException("add_group_parser: unknown extra detail %s" % extra_detail)
 
             # add help
-            nameds['help'] = hlp
+            nameds['help'] = _gettext(hlp)
 
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                 if action in self.parser.option_class.BOOLEAN_ACTIONS:
