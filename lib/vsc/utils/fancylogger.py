@@ -84,6 +84,10 @@ from distutils.version import LooseVersion
 # constants
 TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
 DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
+DEFAULT_LOGGING_FORMAT_MPI = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
+                             ' mpi: %(mpirank)s %(threadName)-10s  %(message)s'
+MPIRANK_NO_MPI = "N/A"
+
 FANCYLOG_LOGGING_FORMAT = None
 FANCYLOG_FANCYRECORD = None
 
@@ -104,14 +108,16 @@ logging._levelNames['QUIET'] = logging.WARNING
 # mpi rank support
 try:
     from mpi4py import MPI
-    _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
-    if MPI.COMM_WORLD.Get_size() > 1:
-        # enable mpi rank when mpi is used
-        FANCYLOG_FANCYRECORD = True
-        DEFAULT_LOGGING_FORMAT = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
-                                 " mpi: %(mpirank)s %(threadName)-10s  %(message)s"
+    if MPI.Is_initialized():
+        _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
+        if MPI.COMM_WORLD.Get_size() > 1:
+            # enable mpi rank when mpi is used
+            FANCYLOG_FANCYRECORD = True
+            DEFAULT_LOGGING_FORMAT = DEFAULT_LOGGING_FORMAT_MPI
+    else:
+        _MPIRANK = MPIRANK_NO_MPI
 except ImportError:
-    _MPIRANK = "N/A"
+    _MPIRANK = MPIRANK_NO_MPI
 
 
 class MissingLevelName(KeyError):
