@@ -902,13 +902,3 @@ debug=1
         self._match_testoption1_sysexit(['--store', '--foo', '--nosuchoptiondefinedfoobar'],
                                         "Value '--foo' starts with a '-'")
 
-def suite():
-    """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(GeneralOptionTest)
-
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests
-        just uncomment the parts you need
-    """
-    main()

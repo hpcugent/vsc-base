@@ -75,6 +75,8 @@ class FancyLoggerTest(TestCase):
     fd = None
 
     def setUp(self):
+        super(FancyLoggerTest, self).setUp()
+
         (self.fd, self.logfn) = tempfile.mkstemp()
         self.handle = os.fdopen(self.fd)
 
@@ -89,7 +91,6 @@ class FancyLoggerTest(TestCase):
 
         self.orig_raise_exception_class = fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS
         self.orig_raise_exception_method = fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD
-        super(FancyLoggerTest, self).setUp()
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
@@ -368,23 +369,29 @@ class FancyLoggerTest(TestCase):
         """
         Test if just using import logging, logging.warning still works after importing fancylogger
         """
-        _stderr = sys.stderr
+
         stringfile = StringIO()
         sys.stderr = stringfile
         handler = fancylogger.logToScreen()
         import logging
-        logging.warning('this is my string')
-        self.assertTrue('this is my string' in stringfile.getvalue())
+        msg = 'this is my string'
+        logging.warning(msg)
+        self.assertTrue(msg in stringfile.getvalue(),
+                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
 
-        logging.getLogger().warning('there are many like it')
-        self.assertTrue('there are many like it' in stringfile.getvalue())
+        msg = 'there are many like it'
+        logging.getLogger().warning(msg)
+        self.assertTrue(msg in stringfile.getvalue(),
+                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
 
-        logging.getLogger('mine').warning('but this one is mine')
-        self.assertTrue('but this one is mine' in stringfile.getvalue())
+        msg = 'but this one is mine'
+        logging.getLogger('mine').warning(msg)
+        self.assertTrue(msg in stringfile.getvalue(),
+                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
+
 
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
-        sys.stderr = _stderr
 
     def test_fancyrecord(self):
         """
