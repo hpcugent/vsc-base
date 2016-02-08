@@ -34,7 +34,6 @@ import re
 import stat
 import tempfile
 import time
-from unittest import TestLoader, main
 
 from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
@@ -153,10 +152,3 @@ class TestRun(TestCase):
         # restore
         RunQAShort.CYCLE_ANSWERS = orig_cycle_answers
 
-
-def suite():
-    """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestRun)
-
-if __name__ == '__main__':
-    main()
