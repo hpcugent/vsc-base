@@ -612,10 +612,11 @@ class CmdComplete(object):
         return autocomplete(parser, completer)
 
 
-def gen_cmdline(cmd_list, partial):
+def gen_cmdline(cmd_list, partial, shebang=True):
     """Create the commandline to generate simulated tabcompletion output
     @param cmd_list: command to execute as list of strings
     @param partial: the string to autocomplete (typically, partial is an element of the cmd_list)
+    @param shebang: script has python shebang (if not, add sys.executable)
     """
     cmdline = " ".join(cmd_list)
 
@@ -625,6 +626,12 @@ def gen_cmdline(cmd_list, partial):
     env.append('COMP_WORDS=(%s)' % cmdline)
     env.append('COMP_POINT=%s' % len(cmdline))
     env.append('COMP_CWORD=%s' % cmd_list.index(partial))
+    if not shebang:
+        env.append(sys.executable)
 
-    return "%s %s" % (" ".join(env), cmd_list[0])
+        
+    # add script
+    env.append(cmd_list[0])
+
+    return " ".join(env)
 
