@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2013 Ghent University
+# Copyright 2013-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -9,7 +9,7 @@
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -37,10 +37,10 @@ import shutil
 
 from StringIO import StringIO
 import tempfile
-from unittest import TestLoader, main, TestSuite
 
 from vsc.utils import fancylogger
 from vsc.install.testing import TestCase
+
 
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
@@ -67,6 +67,37 @@ class FancyLoggerLogToFileTest(TestCase):
         shutil.rmtree(tempdir)
 
 
+class FancyLoggerLoggingTest(TestCase):
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+    
+    def xtest_fallback_logging(self):
+        """
+        Test if just using import logging, logging.warning still works after importing fancylogger
+        """
+        _stderr = sys.stderr
+        stringfile = StringIO()
+        sys.stderr = stringfile
+        handler = fancylogger.logToScreen()
+        import logging
+        logging.warning('this is my string')
+        self.assertTrue('this is my string' in stringfile.getvalue())
+
+        logging.getLogger().warning('there are many like it')
+        self.assertTrue('there are many like it' in stringfile.getvalue())
+
+        logging.getLogger('mine').warning('but this one is mine')
+        self.assertTrue('but this one is mine' in stringfile.getvalue())
+
+        # restore
+        fancylogger.logToScreen(enable=False, handler=handler)
+        sys.stderr = _stderr
+
+
 class FancyLoggerTest(TestCase):
     """Tests for fancylogger"""
 
@@ -89,7 +120,7 @@ class FancyLoggerTest(TestCase):
 
         self.orig_raise_exception_class = fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS
         self.orig_raise_exception_method = fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD
-        super(FancyLoggerTest, self).setUp()
+        #super(FancyLoggerTest, self).setUp()
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
