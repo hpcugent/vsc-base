@@ -23,14 +23,4 @@
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
-from vsc.utils import fancylogger
-#import logging
-#_old = logging.basicConfig
-
 from vsc.install.commontest import CommonTest
-#tools = ['dodgy', 'mccabe', 'pep257', 'pep8', 'profile-validator', 'pyflakes', 'pylint']
-#CommonTest.PROSPECTOR_OPTIONS.extend([])
-#CommonTest.PROSPECTOR_OPTIONS.extend(['-W', 'pyroma'])
-#import sys
-#print sys.modules['prospector.tools.pyroma']
-#logging.basicConfig = _old
