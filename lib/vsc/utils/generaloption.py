@@ -120,10 +120,11 @@ def get_empty_add_flex(allvalues, self=None):
     if empty is None:
         msg = "get_empty_add_flex cannot determine empty element for type %s (%s)"
         msg = msg % (type(allvalues), allvalues)
+        exc_class = TypeError
         if self is None:
-            raise Exception(msg)
+            raise exc_class(msg)
         else:
-            self.log.raiseException(msg)
+            self.log.raiseException(msg, exc_class)
 
     return empty
 
