@@ -37,6 +37,10 @@ It adds:
  - internal debugging through environment variables
     FANCYLOGGER_GETLOGGER_DEBUG for getLogger
     FANCYLOGGER_LOGLEVEL_DEBUG for setLogLevel
+ - set FANCYLOGGER_IGNORE_MPI4PY to disable mpi4py module import
+    mpi4py (when available) is automatically used for mpi-aware log format
+    In case mpi4py however that it is available but broken,
+    set this variable to 1 to avoid importing it.
 
 usage:
 
@@ -106,18 +110,18 @@ logging._levelNames['QUIET'] = logging.WARNING
 
 
 # mpi rank support
-try:
-    from mpi4py import MPI
-    if MPI.Is_initialized():
-        _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
-        if MPI.COMM_WORLD.Get_size() > 1:
-            # enable mpi rank when mpi is used
-            FANCYLOG_FANCYRECORD = True
-            DEFAULT_LOGGING_FORMAT = DEFAULT_LOGGING_FORMAT_MPI
-    else:
-        _MPIRANK = MPIRANK_NO_MPI
-except ImportError:
-    _MPIRANK = MPIRANK_NO_MPI
+_MPIRANK = MPIRANK_NO_MPI
+if os.environ.get('FANCYLOGGER_IGNORE_MPI4PY', '0').lower() not in ('1', 'yes', 'true', 'y'):
+    try:
+        from mpi4py import MPI
+        if MPI.Is_initialized():
+            _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
+            if MPI.COMM_WORLD.Get_size() > 1:
+                # enable mpi rank when mpi is used
+                FANCYLOG_FANCYRECORD = True
+                DEFAULT_LOGGING_FORMAT = DEFAULT_LOGGING_FORMAT_MPI
+    except ImportError:
+        pass
 
 
 class MissingLevelName(KeyError):
