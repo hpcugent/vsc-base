@@ -56,7 +56,7 @@ with optcomplete (see http://furius.ca/optcomplete for more details).
 This is a copy of optcomplete.py (changeset 17:e0a9131a94cc)
 from source: https://hg.furius.ca/public/optcomplete
 
-Modification by stdweird: 
+Modification by stdweird:
     - cleanup
 """
 
@@ -400,8 +400,8 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     completions for arguments completion (oftentimes files).
 
     'opt_completer' is the default completer to the options that require a
-    value. 
-    
+    value.
+
     'subcmd_completer' is the default completer for the subcommand
     arguments.
 
@@ -612,10 +612,11 @@ class CmdComplete(object):
         return autocomplete(parser, completer)
 
 
-def gen_cmdline(cmd_list, partial):
+def gen_cmdline(cmd_list, partial, shebang=True):
     """Create the commandline to generate simulated tabcompletion output
     @param cmd_list: command to execute as list of strings
     @param partial: the string to autocomplete (typically, partial is an element of the cmd_list)
+    @param shebang: script has python shebang (if not, add sys.executable)
     """
     cmdline = " ".join(cmd_list)
 
@@ -626,5 +627,10 @@ def gen_cmdline(cmd_list, partial):
     env.append('COMP_POINT=%s' % len(cmdline))
     env.append('COMP_CWORD=%s' % cmd_list.index(partial))
 
-    return "%s %s" % (" ".join(env), cmd_list[0])
+    if not shebang:
+        env.append(sys.executable)
 
+    # add script
+    env.append(cmd_list[0])
+
+    return " ".join(env)

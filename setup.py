@@ -36,10 +36,10 @@ vsc-base base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw
 
-VSC_INSTALL_REQ_VERSION = '0.9.8'
+VSC_INSTALL_REQ_VERSION = '0.9.17'
 
 PACKAGE = {
-    'version': '2.4.16',
+    'version': '2.4.17',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger

@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2013 Ghent University
+# Copyright 2012-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -8,7 +8,7 @@
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -686,7 +686,7 @@ debug=1
         cmd_list = [script, partial]
 
         pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
-        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial)))
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)
@@ -703,7 +703,7 @@ debug=1
         partial = '--deb'
         cmd_list = [script, partial]
 
-        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial)))
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)
@@ -902,13 +902,3 @@ debug=1
         self._match_testoption1_sysexit(['--store', '--foo', '--nosuchoptiondefinedfoobar'],
                                         "Value '--foo' starts with a '-'")
 
-def suite():
-    """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(GeneralOptionTest)
-
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests
-        just uncomment the parts you need
-    """
-    main()

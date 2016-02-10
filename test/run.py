@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# #
 #
-# Copyright 2012-2013 Ghent University
+# Copyright 2012-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -10,7 +8,7 @@
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -24,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 """
 Tests for the vsc.utils.run module.
 
@@ -34,6 +32,7 @@ import pkgutil
 import os
 import re
 import stat
+import sys
 import tempfile
 import time
 from unittest import TestLoader, main
@@ -58,12 +57,12 @@ class TestRun(TestCase):
     """Test for the run module."""
 
     def test_simple(self):
-        ec, output = run_simple([SCRIPT_SIMPLE, 'shortsleep'])
+        ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
     def test_simple_asyncloop(self):
-        ec, output = run_asyncloop([SCRIPT_SIMPLE, 'shortsleep'])
+        ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
@@ -71,7 +70,7 @@ class TestRun(TestCase):
         start = time.time()
         timeout = 3
         # longsleep is 10sec
-        ec, output = run_timeout([SCRIPT_SIMPLE, 'longsleep'], timeout=timeout)
+        ec, output = run_timeout([sys.executable, SCRIPT_SIMPLE, 'longsleep'], timeout=timeout)
         stop = time.time()
         self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE)
         self.assertTrue(RUNRUN_TIMEOUT_OUTPUT == output)
@@ -79,13 +78,13 @@ class TestRun(TestCase):
 
     def test_qa_simple(self):
         """Simple testing"""
-        ec, output = run_qas([SCRIPT_QA, 'noquestion'])
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'noquestion'])
         self.assertEqual(ec, 0)
 
         qa_dict = {
                    'Simple question:': 'simple answer',
                    }
-        ec, output = run_qas([SCRIPT_QA, 'simple'], qa=qa_dict)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'simple'], qa=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_regex(self):
@@ -93,7 +92,7 @@ class TestRun(TestCase):
         qa_dict = {
                    '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
                    }
-        ec, output = run_qas([SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_noqa(self):
@@ -102,12 +101,12 @@ class TestRun(TestCase):
         qa_dict = {
                    'Now is the time.': 'OK',
                    }
-        ec, output = run_qas([SCRIPT_QA, 'waitforit'], qa=qa_dict)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'waitforit'], qa=qa_dict)
         self.assertEqual(ec, RUNRUN_QA_MAX_MISS_EXITCODE)
 
         # this has to work
         no_qa = ['Wait for it \(\d+ seconds\)']
-        ec, output = run_qas([SCRIPT_QA, 'waitforit'], qa=qa_dict, no_qa=no_qa)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'waitforit'], qa=qa_dict, no_qa=no_qa)
         self.assertEqual(ec, 0)
 
     def test_qa_list_of_answers(self):
@@ -116,7 +115,7 @@ class TestRun(TestCase):
         qa_dict = {
             "Enter a number ('0' to stop):": ['1', '2', '4', '0'],
         }
-        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa=qa_dict)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '4'], qa=qa_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 7$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
@@ -126,7 +125,7 @@ class TestRun(TestCase):
         qa_reg_dict = {
             "Enter a number \(.*\):": ['2', '3', '5', '0'] + ['100'] * 100,
         }
-        ec, output = run_qas([SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 10$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
@@ -142,23 +141,15 @@ class TestRun(TestCase):
         self.assertTrue(RunQAShort.CYCLE_ANSWERS)
         orig_cycle_answers = RunQAShort.CYCLE_ANSWERS
         RunQAShort.CYCLE_ANSWERS = True
-        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 18$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
         # loop 3 times, no cycling => 2 + 7 + 7 + 7 = 23
         RunQAShort.CYCLE_ANSWERS = False
-        ec, output = run_qas([SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 23$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
         # restore
         RunQAShort.CYCLE_ANSWERS = orig_cycle_answers
-
-
-def suite():
-    """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestRun)
-
-if __name__ == '__main__':
-    main()
