@@ -113,7 +113,7 @@ class Run(object):
             @param input: set "simple" input
             @param startpath: directory to change to before executing command
             @param disable_log: use fake logger (won't log anything)
-            @param use_shell: use the subshell 
+            @param use_shell: use the subshell
             @param shell: change the shell
         """
         self.input = kwargs.pop('input', None)
@@ -380,29 +380,53 @@ class Run(object):
         Kill all tasks
             @param: tasks list of processids
             @param: sig, signal to use to kill
-            @apram: kill_pgid, send kill to group
+            @param: kill_pgid, send kill to group
         """
         if tasks is None:
             self.log.error("killtasks no tasks passed")
-        elif isinstance(tasks, basestring):
-            try:
-                tasks = [int(tasks)]
-            except:
-                self.log.error("killtasks failed to convert tasks string %s to int" % tasks)
+            return
+        elif not isinstance(tasks, (list, tuple,)):
+            tasks = [tasks]
 
+        pids = []
         for pid in tasks:
-            pgid = os.getpgid(pid)
+            # Try to convert as much pids as possible
             try:
-                os.kill(int(pid), sig)
-                if kill_pgid:
-                    os.killpg(pgid, sig)
-                self.log.debug("Killed %s with signal %s" % (pid, sig))
-            except OSError, err:
+                pids.append(int(pid))
+            except ValueError:
+                self.log.error("killtasks failed to convert task/pid %s to integer" % pid)
+
+        def do_something_with_pid(fn, args, msg):
+            """
+            Handle interaction with process ids gracefully
+            Does not raise anything, and handles missing pid
+            Return the result of the function call + args, or None
+            """
+            res = None
+            try:
+                res = fn(*args)
+            except Exception as err:
                 # ERSCH is no such process, so no issue
-                if not err.errno == errno.ESRCH:
-                    self.log.error("Failed to kill %s: %s" % (pid, err))
-            except Exception, err:
-                self.log.error("Failed to kill %s: %s" % (pid, err))
+                if not (isinstance(err, OSError) and err.errno == errno.ESRCH):
+                    self.log.error("Failed to %s from %s: %s" % (msg, pid, err))
+
+            return res
+
+        for pid in pids:
+
+            # Get pgid before killing it
+            pgid = None
+            if kill_pgid:
+                # This can't be fatal, whatever happens here, still try to kill the pid
+                pgid = do_something_with_pid(os.getpgid, [pid], 'find pgid')
+
+            do_something_with_pid(os.kill, [pid, sig], 'kill pid')
+
+            if kill_pgid:
+                if pgid is None:
+                    self.log.error("Can't kill pgid for pid %s, None found" % pid)
+                else:
+                    do_something_with_pid(os.kill, [pgid, sig], 'kill pgid')
 
     def stop_tasks(self):
         """Cleanup current run"""
@@ -480,7 +504,7 @@ class RunLoop(Run):
 
             # process after updating the self._process_ vars
             self._loop_process_output_final(output)
-        except RunLoopException, err:
+        except RunLoopException as err:
             self.log.debug('RunLoopException %s' % err)
             self._process_output = err.output
             self._process_exitcode = err.code
