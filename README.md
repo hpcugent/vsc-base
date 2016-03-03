@@ -61,6 +61,6 @@ vsc-base is made available under the GNU Library General Public License (LGPL) v
 # Acknowledgements
 vsc-base was created with support of [Ghent University](http://www.ugent.be/en),
 the [Flemish Supercomputer Centre (VSC)](https://vscentrum.be/nl/en),
-the [Hercules foundation and the Department of Economy](http://www.herculesstichting.be/in_English),
+the [Flemish Research Foundation (FWO)](http://www.fwo.be/en),
 and [the Department of Economy, Science and Innovation (EWI)](http://www.ewi-vlaanderen.be/en).
 
