@@ -357,7 +357,9 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     FANCYLOG_FANCYRECORD to False, or will also be disabled if a Name is set (and fancyrecord and
     module constant FANCYLOG_FANCYRECORD are also not set).
     """
-    nameparts = [getRootLoggerName()]
+    nameparts = []
+    if __debug__:
+        nameparts.append(getRootLoggerName())
 
     if fancyrecord is None:
         # Altough we could set it as default value in the function definition
