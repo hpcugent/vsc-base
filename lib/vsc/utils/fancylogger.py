@@ -442,7 +442,7 @@ def getRootLoggerName():
         return "not available in optimized mode"
 
 
-def logToScreen(enable=True, handler=None, name=None, stdout=False, color=None):
+def logToScreen(enable=True, handler=None, name=None, stdout=False, color=False):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -458,27 +458,22 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, color=None):
     The `color` parameter enables or disables log colorization using
     ANSI terminal escape sequences, according to the following values:
 
-    * when `color` is ``auto`` or ``None`` (default), then try to
+    * when `color` is ``auto``, then try to
       auto-detect whether the output stream is connected to a terminal;
     * when `color` is ``True`` or the string ``'yes'``, then turn on
       log colorization unconditionally,
-    * any other value turns off log colorization unconditionally.
+    * any other value turns off log colorization unconditionally (default).
     """
     handleropts = {'stdout': stdout}
 
-    use_color_formatter = False  # default
+    formatter = logging.Formatter  # default
     if HAVE_COLOREDLOGS_MODULE:
-        if color is None or color == 'auto':
+        if color == 'auto':
             # auto-detect
             if humanfriendly.terminal.terminal_supports_colors(sys.stdout if stdout else sys.stderr):
-                use_color_formatter = True
+                formatter = coloredlogs.ColoredFormatter
         elif color is True or color == 'yes':
-            use_color_formatter = True
-
-    if use_color_formatter:
-        formatter = coloredlogs.ColoredFormatter
-    else:
-        formatter = logging.Formatter
+            formatter = coloredlogs.ColoredFormatter
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
@@ -486,7 +481,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, color=None):
                            name=name,
                            enable=enable,
                            handler=handler,
-                           formatterclass=formatter
+                           formatterclass=formatter,
                            )
 
 
