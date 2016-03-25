@@ -444,7 +444,7 @@ def getRootLoggerName():
         return "not available in optimized mode"
 
 
-def logToScreen(enable=True, handler=None, name=None, stdout=False, color=False):
+def logToScreen(enable=True, handler=None, name=None, stdout=False, color='never'):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -462,20 +462,12 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, color=False)
 
     * when `color` is ``auto``, then try to
       auto-detect whether the output stream is connected to a terminal;
-    * when `color` is ``True`` or the string ``'yes'``, then turn on
+    * when `color` is the string ``'always'``, then turn on
       log colorization unconditionally,
     * any other value turns off log colorization unconditionally (default).
     """
     handleropts = {'stdout': stdout}
-
-    formatter = logging.Formatter  # default
-    if HAVE_COLOREDLOGS_MODULE:
-        if color == 'auto':
-            # auto-detect
-            if humanfriendly.terminal.terminal_supports_colors(sys.stdout if stdout else sys.stderr):
-                formatter = coloredlogs.ColoredFormatter
-        elif color is True or color == 'yes':
-            formatter = coloredlogs.ColoredFormatter
+    formatter = _getScreenLogFormatter((sys.stdout if stdout else sys.stderr), color)
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
@@ -596,6 +588,28 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
             logger.removeHandler(handler)
         setattr(logger, loggeroption, False)
     return handler
+
+
+def _getScreenLogFormatter(stream, colorize='never'):
+    """
+    Return a log formatter, with optional colorization features.
+
+    Second argument `colorize` controls whether the formatter
+    can use ANSI terminal escape sequences:
+
+    * ``'never'`` (default) forces use of the plain `logging.Formatter` class;
+    * ``'always'`` forces use of the colorizing formatter;
+    * ``'auto'`` selects the colorizing formatter depending on whether `stream` is connected to a terminal.
+    """
+    formatter = logging.Formatter  # default
+    if HAVE_COLOREDLOGS_MODULE:
+        if colorize == 'auto':
+            # auto-detect
+            if humanfriendly.terminal.terminal_supports_colors(stream):
+                formatter = coloredlogs.ColoredFormatter
+        elif colorize == 'always':
+            formatter = coloredlogs.ColoredFormatter
+    return formatter
 
 
 def _getSysLogFacility(name=None):
