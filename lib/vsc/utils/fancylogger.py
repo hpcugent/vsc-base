@@ -458,16 +458,12 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, color='never
     by setting the 'stdout' parameter to True
 
     The `color` parameter enables or disables log colorization using
-    ANSI terminal escape sequences, according to the following values:
-
-    * when `color` is ``auto``, then try to
-      auto-detect whether the output stream is connected to a terminal;
-    * when `color` is the string ``'always'``, then turn on
-      log colorization unconditionally,
-    * any other value turns off log colorization unconditionally (default).
+    ANSI terminal escape sequences, according to the values allowed
+    in the `colorize` parameter to function `_screenLogFormatterFactory`
+    (which see).
     """
     handleropts = {'stdout': stdout}
-    formatter = _getScreenLogFormatter((sys.stdout if stdout else sys.stderr), color)
+    formatter = _screenLogFormatterFactory(color, sys.stdout if stdout else sys.stderr)
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
@@ -540,7 +536,8 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
                     enable=True, name=None, handler=None, formatterclass=None):
     """
     internal function to enable (or disable) logging to handler named handlername
-    handleropts is options dictionary passed to create the handler instance
+    handleropts is options dictionary passed to create the handler instance;
+    `formatterclass` is the class to use to instanciate a log formatter object.
 
     returns the handler (this can be used to later disable logging to file)
 
@@ -590,16 +587,18 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
     return handler
 
 
-def _getScreenLogFormatter(stream, colorize='never'):
+def _screenLogFormatterFactory(colorize='never', stream=sys.stdout):
     """
-    Return a log formatter, with optional colorization features.
+    Return a log formatter class, with optional colorization features.
 
     Second argument `colorize` controls whether the formatter
     can use ANSI terminal escape sequences:
 
-    * ``'never'`` (default) forces use of the plain `logging.Formatter` class;
+    * ``'never'`` (default) forces use the plain `logging.Formatter` class;
     * ``'always'`` forces use of the colorizing formatter;
     * ``'auto'`` selects the colorizing formatter depending on whether `stream` is connected to a terminal.
+
+    Second argument `stream` is the stream to check in case `colorize` is ``'auto'``.
     """
     formatter = logging.Formatter  # default
     if HAVE_COLOREDLOGS_MODULE:
