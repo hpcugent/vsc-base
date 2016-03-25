@@ -543,7 +543,7 @@ def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):
 
 
 def _logToSomething(handlerclass, handleropts, loggeroption,
-                    enable=True, name=None, handler=None, formatterclass=logging.Formatter):
+                    enable=True, name=None, handler=None, formatterclass=None):
     """
     internal function to enable (or disable) logging to handler named handlername
     handleropts is options dictionary passed to create the handler instance
@@ -553,6 +553,9 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
     if you want to disable logging to the handler, pass the earlier obtained handler
     """
     logger = getLogger(name, fname=False, clsname=False)
+
+    if formatterclass is None:
+        formatterclass = logging.Formatter
 
     if not hasattr(logger, loggeroption):
         # not set.
