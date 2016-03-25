@@ -85,6 +85,13 @@ import traceback
 import weakref
 from distutils.version import LooseVersion
 
+try:
+    import coloredlogs
+    import humanfriendly
+    HAVE_COLOREDLOGS_MODULE = True
+except ImportError:
+    HAVE_COLOREDLOGS_MODULE = False
+
 # constants
 TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
 DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
@@ -435,7 +442,7 @@ def getRootLoggerName():
         return "not available in optimized mode"
 
 
-def logToScreen(enable=True, handler=None, name=None, stdout=False):
+def logToScreen(enable=True, handler=None, name=None, stdout=False, color=None):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -447,8 +454,31 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
 
     by default, logToScreen will log to stderr; logging to stdout instead can be done
     by setting the 'stdout' parameter to True
+
+    The `color` parameter enables or disables log colorization using
+    ANSI terminal escape sequences, according to the following values:
+
+    * when `color` is ``auto`` or ``None`` (default), then try to
+      auto-detect whether the output stream is connected to a terminal;
+    * when `color` is ``True`` or the string ``'yes'``, then turn on
+      log colorization unconditionally,
+    * any other value turns off log colorization unconditionally.
     """
     handleropts = {'stdout': stdout}
+
+    use_color_formatter = False  # default
+    if HAVE_COLOREDLOGS_MODULE:
+        if color is None or color == 'auto':
+            # auto-detect
+            if humanfriendly.terminal.terminal_supports_colors(sys.stdout if stdout else sys.stderr):
+                use_color_formatter = True
+        elif color is True or color == 'yes':
+            use_color_formatter = True
+
+    if use_color_formatter:
+        formatter = coloredlogs.ColoredFormatter
+    else:
+        formatter = logging.Formatter
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
@@ -456,6 +486,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
                            name=name,
                            enable=enable,
                            handler=handler,
+                           formatterclass=formatter
                            )
 
 
@@ -516,7 +547,8 @@ def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):
                            )
 
 
-def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=None, handler=None):
+def _logToSomething(handlerclass, handleropts, loggeroption,
+                    enable=True, name=None, handler=None, formatterclass=logging.Formatter):
     """
     internal function to enable (or disable) logging to handler named handlername
     handleropts is options dictionary passed to create the handler instance
@@ -538,7 +570,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
                     f_format = DEFAULT_LOGGING_FORMAT
                 else:
                     f_format = FANCYLOG_LOGGING_FORMAT
-                formatter = logging.Formatter(f_format)
+                formatter = formatterclass(f_format)
                 handler = handlerclass(**handleropts)
                 handler.setFormatter(formatter)
             logger.addHandler(handler)
