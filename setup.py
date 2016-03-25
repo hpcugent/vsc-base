@@ -44,11 +44,13 @@ PACKAGE = {
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
     # setuptools must become a requirement for shared namespaces if vsc-install is removed as requirement
-    'install_requires': [
-        'vsc-install >= %s' % VSC_INSTALL_REQ_VERSION,
-        'coloredlogs',     # automatic log colorizer
-        'humanfriendly',   # detect if terminal has colors
-    ],
+    'install_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
+    'extras_require': {
+        'coloredlogs': [
+            'coloredlogs',     # automatic log colorizer
+            'humanfriendly',   # detect if terminal has colors
+        ],
+    },
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
 }
 
