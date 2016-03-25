@@ -85,12 +85,14 @@ import traceback
 import weakref
 from distutils.version import LooseVersion
 
-try:
-    import coloredlogs
-    import humanfriendly
-    HAVE_COLOREDLOGS_MODULE = True
-except ImportError:
-    HAVE_COLOREDLOGS_MODULE = False
+HAVE_COLOREDLOGS_MODULE = False
+if os.environ.get('FANCYLOGGER_NO_COLOREDLOGS', '0').lower() not in ('1', 'yes', 'true', 'y'):
+    try:
+        import coloredlogs
+        import humanfriendly
+        HAVE_COLOREDLOGS_MODULE = True
+    except ImportError:
+        pass
 
 # constants
 TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
