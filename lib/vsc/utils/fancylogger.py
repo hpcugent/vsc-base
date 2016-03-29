@@ -85,8 +85,72 @@ import traceback
 import weakref
 from distutils.version import LooseVersion
 
+
+def _disabled_by_environ(varname, default=False):
+    """
+    Compute a boolean based on the truth value of environment variable `varname`.
+    If no variable by that name is present in `os.environ`, then return `default`.
+
+    For the purpose of this function, the string values ``'1'``,
+    ``'y'``, ``'yes'``, and ``'true'`` (case-insensitive) are all
+    mapped to the truth value ``True``::
+
+      >>> os.environ['NO_FOOBAR'] = '1'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'Y'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'Yes'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'yes'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'True'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'TRUE'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'true'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      True
+
+    Any other value is mapped to Python ``False``::
+
+      >>> os.environ['NO_FOOBAR'] = '0'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      False
+      >>> os.environ['NO_FOOBAR'] = 'no'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      False
+      >>> os.environ['NO_FOOBAR'] = 'if you please'
+      >>> _disabled_by_environ('NO_FOOBAR')
+      False
+
+    If no variable named `varname` is present in `os.environ`, then
+    return `default`::
+
+      >>> del os.environ['NO_FOOBAR']
+      >>> _disabled_by_environ('NO_FOOBAR', 42)
+      42
+
+    By default, calling `_disabled_by_environ` on an undefined
+    variable returns Python ``False``::
+
+      >>> if 'NO_FOOBAR' in os.environ: del os.environ['NO_FOOBAR']
+      >>> _disabled_by_environ('NO_FOOBAR')
+      False
+    """
+    if varname not in os.environ:
+        return default
+    else:
+        return os.environ.get(varname).lower() in ('1', 'yes', 'true', 'y')
+
+
 HAVE_COLOREDLOGS_MODULE = False
-if os.environ.get('FANCYLOGGER_NO_COLOREDLOGS', '0').lower() not in ('1', 'yes', 'true', 'y'):
+if not _disabled_by_environ('FANCYLOGGER_NO_COLOREDLOGS'):
     try:
         import coloredlogs
         import humanfriendly
@@ -120,7 +184,7 @@ logging._levelNames['QUIET'] = logging.WARNING
 
 # mpi rank support
 _MPIRANK = MPIRANK_NO_MPI
-if os.environ.get('FANCYLOGGER_IGNORE_MPI4PY', '0').lower() not in ('1', 'yes', 'true', 'y'):
+if not _disabled_by_environ('FANCYLOGGER_IGNORE_MPI4PY'):
     try:
         from mpi4py import MPI
         if MPI.Is_initialized():
@@ -392,7 +456,7 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
 
     l = logging.getLogger(fullname)
     l.fancyrecord = fancyrecord
-    if os.environ.get('FANCYLOGGER_GETLOGGER_DEBUG', '0').lower() in ('1', 'yes', 'true', 'y'):
+    if not _disabled_by_environ('FANCYLOGGER_GETLOGGER_DEBUG'):
         print 'FANCYLOGGER_GETLOGGER_DEBUG',
         print 'name', name, 'fname', fname, 'fullname', fullname,
         print "getRootLoggerName: ", getRootLoggerName()
@@ -652,7 +716,7 @@ def setLogLevel(level):
         level = getLevelInt(level)
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)
-    if os.environ.get('FANCYLOGGER_LOGLEVEL_DEBUG', '0').lower() in ('1', 'yes', 'true', 'y'):
+    if not _disabled_by_environ('FANCYLOGGER_LOGLEVEL_DEBUG'):
         print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
         print "\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG"))
         sys.stdout.flush()
