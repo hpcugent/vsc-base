@@ -86,7 +86,7 @@ import weakref
 from distutils.version import LooseVersion
 
 
-def _disabled_by_environ(varname, default=False):
+def _disabled_by_environ(varname, default=True):
     """
     Compute a boolean based on the truth value of environment variable `varname`.
     If no variable by that name is present in `os.environ`, then return `default`.
@@ -137,11 +137,11 @@ def _disabled_by_environ(varname, default=False):
       42
 
     By default, calling `_disabled_by_environ` on an undefined
-    variable returns Python ``False``::
+    variable returns Python ``True``::
 
       >>> if 'NO_FOOBAR' in os.environ: del os.environ['NO_FOOBAR']
       >>> _disabled_by_environ('NO_FOOBAR')
-      False
+      True
     """
     if varname not in os.environ:
         return default
