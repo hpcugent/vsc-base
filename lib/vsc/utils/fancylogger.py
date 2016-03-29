@@ -444,7 +444,7 @@ def getRootLoggerName():
         return "not available in optimized mode"
 
 
-def logToScreen(enable=True, handler=None, name=None, stdout=False, color='never'):
+def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize='never'):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -457,13 +457,13 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, color='never
     by default, logToScreen will log to stderr; logging to stdout instead can be done
     by setting the 'stdout' parameter to True
 
-    The `color` parameter enables or disables log colorization using
+    The `colorize` parameter enables or disables log colorization using
     ANSI terminal escape sequences, according to the values allowed
     in the `colorize` parameter to function `_screenLogFormatterFactory`
     (which see).
     """
     handleropts = {'stdout': stdout}
-    formatter = _screenLogFormatterFactory(color, sys.stdout if stdout else sys.stderr)
+    formatter = _screenLogFormatterFactory(colorize=color, stream=(sys.stdout if stdout else sys.stderr))
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
@@ -537,7 +537,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
     """
     internal function to enable (or disable) logging to handler named handlername
     handleropts is options dictionary passed to create the handler instance;
-    `formatterclass` is the class to use to instanciate a log formatter object.
+    `formatterclass` is the class to use to instantiate a log formatter object.
 
     returns the handler (this can be used to later disable logging to file)
 
@@ -608,6 +608,8 @@ def _screenLogFormatterFactory(colorize='never', stream=sys.stdout):
                 formatter = coloredlogs.ColoredFormatter
         elif colorize == 'always':
             formatter = coloredlogs.ColoredFormatter
+        else:
+            assert colorize == 'never', "Argument `colorize` must be one of 'auto', 'always', or 'never'."
     return formatter
 
 
