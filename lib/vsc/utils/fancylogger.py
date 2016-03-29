@@ -463,7 +463,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize='ne
     (which see).
     """
     handleropts = {'stdout': stdout}
-    formatter = _screenLogFormatterFactory(colorize=color, stream=(sys.stdout if stdout else sys.stderr))
+    formatter = _screenLogFormatterFactory(colorize=colorizec, stream=(sys.stdout if stdout else sys.stderr))
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
