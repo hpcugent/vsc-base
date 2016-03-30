@@ -174,6 +174,13 @@ BACKUPCOUNT = 10  # number of rotating log files to save
 
 DEFAULT_UDP_PORT = 5005
 
+# poor man's enum
+class Colorize:
+    """Allowed values for the `logToScreen`'s `colorize` parameter."""
+    AUTO = 'auto'
+    ALWAYS = 'always'
+    NEVER = 'never'
+
 # register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, 'APOCALYPTIC')
 # register QUIET, EXCEPTION and FATAL alias
@@ -508,7 +515,7 @@ def getRootLoggerName():
         return "not available in optimized mode"
 
 
-def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize='never'):
+def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Colorize.NEVER):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -651,29 +658,32 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
     return handler
 
 
-def _screenLogFormatterFactory(colorize='never', stream=sys.stdout):
+def _screenLogFormatterFactory(colorize=Colorize.NEVER, stream=sys.stdout):
     """
     Return a log formatter class, with optional colorization features.
 
     Second argument `colorize` controls whether the formatter
     can use ANSI terminal escape sequences:
 
-    * ``'never'`` (default) forces use the plain `logging.Formatter` class;
-    * ``'always'`` forces use of the colorizing formatter;
-    * ``'auto'`` selects the colorizing formatter depending on whether `stream` is connected to a terminal.
+    * ``Colorize.NEVER`` (default) forces use the plain `logging.Formatter` class;
+    * ``Colorize.ALWAYS`` forces use of the colorizing formatter;
+    * ``Colorize.AUTO`` selects the colorizing formatter depending on
+      whether `stream` is connected to a terminal.
 
-    Second argument `stream` is the stream to check in case `colorize` is ``'auto'``.
+    Second argument `stream` is the stream to check in case `colorize`
+    is ``Colorize.AUTO``.
     """
     formatter = logging.Formatter  # default
     if HAVE_COLOREDLOGS_MODULE:
-        if colorize == 'auto':
+        if colorize == Colorize.AUTO:
             # auto-detect
             if humanfriendly.terminal.terminal_supports_colors(stream):
                 formatter = coloredlogs.ColoredFormatter
-        elif colorize == 'always':
+        elif colorize == Colorize.ALWAYS:
             formatter = coloredlogs.ColoredFormatter
         else:
-            assert colorize == 'never', "Argument `colorize` must be one of 'auto', 'always', or 'never'."
+            assert colorize == Colorize.NEVER, \
+                "Argument `colorize` must be one of 'auto', 'always', or 'never'."
     return formatter
 
 
