@@ -75,6 +75,7 @@ Logging to a udp server:
 @author: Kenneth Hoste (Ghent University)
 """
 
+from collections import namedtuple
 import inspect
 import logging
 import logging.handlers
@@ -175,11 +176,7 @@ BACKUPCOUNT = 10  # number of rotating log files to save
 DEFAULT_UDP_PORT = 5005
 
 # poor man's enum
-class Colorize:
-    """Allowed values for the `logToScreen`'s `colorize` parameter."""
-    AUTO = 'auto'
-    ALWAYS = 'always'
-    NEVER = 'never'
+Colorize = namedtuple('Colorize', 'AUTO ALWAYS NEVER')('auto', 'always', 'never')
 
 # register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, 'APOCALYPTIC')
