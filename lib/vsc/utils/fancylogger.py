@@ -682,8 +682,7 @@ def _screenLogFormatterFactory(colorize=Colorize.NEVER, stream=sys.stdout):
         elif colorize == Colorize.ALWAYS:
             formatter = coloredlogs.ColoredFormatter
         else:
-            assert colorize == Colorize.NEVER, \
-                "Argument `colorize` must be one of 'auto', 'always', or 'never'."
+            raise ValueError("Argument `colorize` must be one of 'auto', 'always', or 'never'.")
     return formatter
 
 
