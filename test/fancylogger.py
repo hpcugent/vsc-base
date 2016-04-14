@@ -75,13 +75,11 @@ def _get_tty_stream():
                 stream = open(tty, 'w')
                 if os.isatty(stream.fileno()):
                     return stream
-                else:
-                    return None
             except IOError:
-                return None
-        else:
-            # give up
-            return None
+                # cannot open $TTY for writing, continue
+                pass
+        # give up
+        return None
 
 
 def classless_function():
