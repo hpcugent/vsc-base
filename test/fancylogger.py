@@ -32,6 +32,7 @@ Unit tests for fancylogger.
 """
 import logging
 import os
+from random import randint
 import re
 import sys
 import shutil
@@ -513,3 +514,62 @@ class ScreenLogFormatterFactoryTest(TestCase):
         stream = open(os.devnull, 'w')
         cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.AUTO, stream)
         self.assertEqual(cls, logging.Formatter)
+
+
+class EnvToBooleanTest(TestCase):
+
+    def setUp(self):
+        self.testvar = self._generate_var_name()
+        self.testvar_undef = self._generate_var_name()
+
+    def _generate_var_name(self):
+        while True:
+            rnd = randint(0, 0xffffff)
+            name = ('TEST_VAR_%06X' % rnd)
+            if name not in os.environ:
+                return name
+
+    def test_env_to_boolean_true(self):
+        for value in (
+                '1',
+                'Y',
+                'y',
+                'Yes',
+                'yes',
+                'YES',
+                'True',
+                'TRUE',
+                'true',
+                'TrUe', # weird capitalization but should work nonetheless
+        ):
+            os.environ[self.testvar] = value
+            self.assertTrue(fancylogger._env_to_boolean(self.testvar))
+
+    def test_env_to_boolean_false(self):
+        for value in (
+                '0',
+                'n',
+                'N',
+                'no',
+                'No',
+                'NO',
+                'false',
+                'FALSE',
+                'False',
+                'FaLsE', # weird capitalization but should work nonetheless
+                'whatever', # still maps to false
+        ):
+            os.environ[self.testvar] = value
+            self.assertFalse(fancylogger._env_to_boolean(self.testvar))
+
+    def test_env_to_boolean_undef_without_default(self):
+        self.assertEqual(fancylogger._env_to_boolean(self.testvar_undef), False)
+
+    def test_env_to_boolean_undef_with_default(self):
+        self.assertEqual(fancylogger._env_to_boolean(self.testvar_undef, 42), 42)
+
+    def tearDown(self):
+        if self.testvar in os.environ:
+            del os.environ[self.testvar]
+        del self.testvar
+        del self.testvar_undef
