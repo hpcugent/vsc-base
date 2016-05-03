@@ -187,7 +187,11 @@ class FancyLogger(logging.getLoggerClass()):
 
     # default class for raiseException method, that can be redefined by deriving loggers
     RAISE_EXCEPTION_CLASS = Exception
-    RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+
+    def log_method(self, msg):
+        self.warning(msg)
+
+    RAISE_EXCEPTION_LOG_METHOD = log_method
 
     # method definition as it is in logging, can't change this
     def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
