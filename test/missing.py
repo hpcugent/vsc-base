@@ -1,16 +1,14 @@
-#!/usr/bin/env python
-##
 #
-# Copyright 2012-2013 Ghent University
+# Copyright 2012-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -24,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-##
+#
 """
 Tests for the vsc.utils.missing module.
 
@@ -41,7 +39,7 @@ from unittest import TestLoader, main
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
 from vsc.utils.missing import avail_subclasses_in, get_class_for, get_subclasses, get_subclasses_dict, modules_in_pkg_path
 from vsc.utils.missing import nub, shell_quote, shell_unquote, topological_sort, FrozenDictKnownKeys, TryOrFail
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 
 DAG_TEST_SET = [
@@ -156,7 +154,7 @@ def disjoint_sets(s1, s2):
     return True
 
 
-class TestMissing(EnhancedTestCase):
+class TestMissing(TestCase):
     """Test for vsc.utils.missing module."""
 
     def test_nub_length(self):
@@ -269,41 +267,6 @@ class TestMissing(EnhancedTestCase):
         self.assertErrorRegex(ImportError, 'No module named .*', get_class_for, 'no.such.module', 'Test')
         self.assertErrorRegex(ImportError, 'Failed to import .*', get_class_for, 'vsc.utils', 'NoSuchClass')
 
-    def test_modules_in_pkg_path(self):
-        """Test modules_in_pkg_path function."""
-        # real example
-        import vsc.utils
-        vsc_utils_modules = ['__init__', 'affinity', 'asyncprocess', 'daemon', 'dateandtime', 'fancylogger',
-                             'frozendict', 'generaloption', 'mail', 'missing', 'optcomplete', 'patterns', 'rest',
-                             'run', 'testing', 'wrapper']
-        self.assertEqual(sorted(modules_in_pkg_path(vsc.utils.__path__[0])), vsc_utils_modules)
-        self.assertEqual(sorted(modules_in_pkg_path('vsc/utils')), vsc_utils_modules)
-
-        # toy testcase
-        testpkg = 'thisisjustatestpkg'
-        tmpdir = tempfile.mkdtemp()
-        os.mkdir(os.path.join(tmpdir, testpkg))
-        for pyfile in ['__init__.py', 'testmod.py', '_hiddenmod.py']:
-            f = open(os.path.join(tmpdir, testpkg, pyfile), 'w')
-            f.write('')  # just empty files
-            f.close()
-
-        # doesn't work via relative package path when not in sys.path
-        msg_regex = "Can't browse package via non-existing relative path '%s', not found in sys.path" % testpkg
-        self.assertErrorRegex(OSError, msg_regex, modules_in_pkg_path, testpkg)
-        # works fine via absolute path to package directory
-        self.assertEqual(sorted(modules_in_pkg_path(os.path.join(tmpdir, testpkg))), ['__init__', 'testmod'])
-        # also found via relative path when parent path is in sys.path
-        sys.path.append(tmpdir)
-        self.assertEqual(sorted(modules_in_pkg_path(testpkg)), ['__init__', 'testmod'])
-        # subdirectories with a missing __init__.py are not considered package
-        os.remove(os.path.join(tmpdir, testpkg, '__init__.py'))
-        self.assertErrorRegex(OSError, msg_regex, modules_in_pkg_path, testpkg)
-
-        # cleanup
-        sys.path = sys.path[:-1]
-        shutil.rmtree(tmpdir)
-
     def test_get_subclasses(self):
         """Test get_subclasses functions."""
         # T1
@@ -335,37 +298,6 @@ class TestMissing(EnhancedTestCase):
         self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
         self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
 
-    def test_avail_subclasses_in(self):
-        """Test avail_subclasses_in function."""
-        orig_sys_path = sys.path[:]
-        sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sandbox'))
-
-        # companion testmodulebis is purposely not imported
-        from testpkg.testmodule import TestModA, TestModA1, TestModA2
-
-        subclasses = avail_subclasses_in(TestModA, 'testpkg')
-        # verify whether all subclasses are found (not including base class itself, by default)
-        test_subclass_names = ['TestModA1', 'TestModA1B', 'TestModA1B1', 'TestModA2', 'TestModA3']
-        self.assertEqual(sorted([x.__name__ for x in subclasses]), test_subclass_names)
-
-        # verify (direct) subclasses for one of the subclasses of the original base class
-        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA1]]), ['TestModA1B'])
-
-        # check subclasses for class without subclasses
-        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA2]]), [])
-
-        # check include_base_classes named argument
-        subclasses = avail_subclasses_in(TestModA, 'testpkg', include_base_class=True)
-        self.assertEqual(sorted([x.__name__ for x in subclasses]), ['TestModA'] + test_subclass_names)
-
-        # verify (direct) subclasses for one of the subclasses of the original base class
-        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA1]]), ['TestModA1B'])
-
-        # check subclasses for class without subclasses
-        self.assertEqual(sorted([x.__name__ for x in subclasses[TestModA2]]), [])
-
-        # cleanup
-        sys.path = orig_sys_path
 
     def test_shell_quote(self):
         """Test shell_quote function"""

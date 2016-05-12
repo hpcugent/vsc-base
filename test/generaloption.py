@@ -1,14 +1,14 @@
 #
-# Copyright 2012-2013 Ghent University
+# Copyright 2012-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -32,14 +32,18 @@ import datetime
 import logging
 import os
 import re
+import sys
+import tempfile
 from tempfile import NamedTemporaryFile
-from unittest import TestCase, TestLoader, main
 
 from vsc.utils import fancylogger
-from vsc.utils.generaloption import GeneralOption
+from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS
 from vsc.utils.missing import shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
+from vsc.install.shared_setup import REPO_BASE_DIR
+from vsc.install.testing import TestCase
+
 
 _init_configfiles = ['/not/a/real/configfile']
 
@@ -53,7 +57,7 @@ class TestOption1(GeneralOption):
             "base":("Long and short base option", None, "store_true", False, 'b'),
             "longbase":("Long-only base option", None, "store_true", True),
             "justatest":("Another long based option", None, "store_true", True),
-            "store":("Store option", None, "store", None),
+            "store":("Store option", None, "store", None, 's'),
             "store-with-dash":("Store option with dash in name", None, "store", None),
             "aregexopt":("A regex option", None, "regex", None),
             }
@@ -85,6 +89,9 @@ class TestOption1(GeneralOption):
             "add-list":("Test action add", 'strlist', 'add', None),
             "add-list-default":("Test action add", 'strlist', 'add', ['now']),
             "add-list-first":("Test action add", 'strlist', 'add_first', ['now']),
+            "add-list-flex":('Test strlist type with add_flex', 'strlist', 'add_flex', ['x', 'y']),
+            "add-pathlist-flex":('Test strlist type with add_flex', 'pathlist', 'add_flex', ['p2', 'p3']),
+
             # date
             "date":('Test action datetime.date', None, 'date', None),
             "datetime":('Test action datetime.datetime', None, 'datetime', None),
@@ -110,9 +117,6 @@ class TestOption1(GeneralOption):
 class GeneralOptionTest(TestCase):
     """Tests for general option"""
 
-    def test_basic(self):
-        """Basic creation and verification of generaloption"""
-
     def test_help_short(self):
         """Generate short help message"""
         topt = TestOption1(go_args=['-h'],
@@ -121,8 +125,23 @@ class GeneralOptionTest(TestCase):
                            help_to_string=True,  # don't print to stdout, but to StingIO fh,
                            prog='optiontest1',  # generate as if called from generaloption.py
                            )
-        self.assertEqual(topt.parser.help_to_file.getvalue().find("--level-longlevel"), -1,
-                         "Long documentation not expanded in short help")
+        helptxt = topt.parser.help_to_file.getvalue()
+        self.assertEqual(helptxt.find("--level-longlevel"), -1, "Long documentation not expanded in short help")
+
+    def test_help(self):
+        """Generate (long) help message"""
+        topt = TestOption1(go_args=['--help'],
+                           go_nosystemexit=True,
+                           go_columns=100,
+                           help_to_string=True,
+                           prog='optiontest1',
+                           )
+        helptxt = topt.parser.help_to_file.getvalue()
+
+        # default format should be textual output
+        self.assertTrue(helptxt.startswith('Usage'))
+
+        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
 
     def test_help_long(self):
         """Generate long help message"""
@@ -132,8 +151,26 @@ class GeneralOptionTest(TestCase):
                            help_to_string=True,
                            prog='optiontest1',
                            )
-        self.assertTrue(topt.parser.help_to_file.getvalue().find("--level-longlevel") > -1,
-                        "Long documentation expanded in long help")
+
+        helptxt = topt.parser.help_to_file.getvalue()
+        self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help")
+
+    def test_help_outputformats(self):
+        """Generate (long) rst help message"""
+        for output_format in HELP_OUTPUT_FORMATS:
+            topt = TestOption1(go_args=['--help=%s' % output_format],
+                               go_nosystemexit=True,
+                               go_columns=100,
+                               help_to_string=True,
+                               prog='optiontest1',
+                              )
+            helptxt = topt.parser.help_to_file.getvalue()
+            if output_format == 'short':
+                self.assertEqual(helptxt.find("--level-longlevel"), -1, "Long documentation not expanded in short help")
+            elif output_format == 'config':
+                self.assertTrue(helptxt.find("#level-longlevel") > -1, "Configuration option in config help")
+            else:
+                self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help (format: %s)" % output_format)
 
     def test_help_confighelp(self):
         """Generate long help message"""
@@ -171,10 +208,13 @@ class GeneralOptionTest(TestCase):
                                     '--ext-pathliststorenone2=y2:z2',
                                     '--ext-strlist=x,y',
                                     '--ext-add-list-first=two,three',
+                                    '--ext-add-list-flex=a,,b',
+                                    '--ext-add-pathlist-flex=p1/foo::p4',
                                     '--debug',
                                     ])
         self.assertEqual(topt.options.__dict__,
                          {
+                          'help': None,
                           'store': 'some whitespace',
                           'debug': True,
                           'info': False,
@@ -183,7 +223,7 @@ class GeneralOptionTest(TestCase):
                           'longbase': True,
                           'justatest': True,
                           'level_longlevel': True,
-                          'store_with_dash':None,
+                          'store_with_dash': None,
                           'level_prefix_and_dash':'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None,
                           'configfiles': ['/not/a/real/configfile'],
@@ -196,6 +236,8 @@ class GeneralOptionTest(TestCase):
                           'ext_add_list': None,
                           'ext_add_list_default': ['now'],
                           'ext_add_list_first': ['two', 'three', 'now'],
+                          'ext_add_list_flex': ['a','x', 'y', 'b'],
+                          'ext_add_pathlist_flex': ['p1/foo','p2', 'p3', 'p4'],
                           'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
@@ -312,6 +354,100 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--ext-extenddefault=two,three'])
         self.assertEqual(topt.options.ext_extenddefault, ['zero', 'one', 'two', 'three'])
 
+        # flex
+        for args, val in [
+                (',b', ['x', 'y', 'b']),
+                ('b,', ['b', 'x', 'y']),
+                ('a,b', ['a', 'b']),
+                ('a,,b', ['a', 'x', 'y', 'b']),
+        ]:
+            cmd = '--ext-add-list-flex=%s' % args
+            topt = TestOption1(go_args=[cmd])
+            self.assertEqual(topt.options.ext_add_list_flex, val)
+            self.assertEqual(topt.generate_cmd_line(ignore=r'(?<!_flex)$'), [cmd])
+
+    def test_ext_add_multi(self):
+        """Test behaviour when 'add' options are used multiple times."""
+        fd, cfgfile = tempfile.mkstemp()
+        os.close(fd)
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-default=two')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowtwo')
+
+        # environment overrides config file
+        os.environ['TEST_EXT_ADD_DEFAULT'] = 'three'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowthree')
+
+        # command line overrides environment + config file, last value wins
+        args.extend(['--ext-add-default=four', '--ext-add-default=five'])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_default, 'nowfive')
+        del os.environ['TEST_EXT_ADD_DEFAULT']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-list-default=two,three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'two', 'three'])
+
+        os.environ['TEST_EXT_ADD_LIST_DEFAULT'] = 'four,five'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'four', 'five'])
+
+        args.extend([
+            '--ext-add-list-default=six',
+            '--ext-add-list-default=seven,eight',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_default, ['now', 'seven', 'eight'])
+        del os.environ['TEST_EXT_ADD_LIST_DEFAULT']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-list-flex=two,,three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['two', 'x', 'y', 'three'])
+
+        os.environ['TEST_EXT_ADD_LIST_FLEX'] = 'four,,five'
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['four', 'x', 'y', 'five'])
+
+        args.extend([
+            '--ext-add-list-flex=six,',
+            '--ext-add-list-flex=seven,,eight',
+            '--ext-add-list-flex=,last',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_list_flex, ['x', 'y', 'last'])
+        del os.environ['TEST_EXT_ADD_LIST_FLEX']
+
+        f = open(cfgfile, 'w')
+        f.write('[ext]\nadd-pathlist-flex=two::three')
+        f.close()
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['two', 'p2', 'p3', 'three'])
+
+        os.environ['TEST_EXT_ADD_PATHLIST_FLEX'] = 'four::five'
+        args = ['--configfiles=%s' % cfgfile]
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['four', 'p2', 'p3', 'five'])
+
+        args.extend([
+            '--ext-add-pathlist-flex=six:',
+            '--ext-add-pathlist-flex=:last',
+            '--ext-add-pathlist-flex=seven::eight',
+        ])
+        topt = TestOption1(go_args=args, envvar_prefix='TEST')
+        self.assertEqual(topt.options.ext_add_pathlist_flex, ['seven', 'p2', 'p3', 'eight'])
+        del os.environ['TEST_EXT_ADD_PATHLIST_FLEX']
 
     def test_str_list_tuple(self):
         """Test strlist / strtuple type"""
@@ -331,11 +467,11 @@ class GeneralOptionTest(TestCase):
         ign = r'^(?!ext_optional)'
         topt = TestOption1(go_args=[], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, None)
-        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , [])
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign), [])
 
         topt = TestOption1(go_args=['--ext-optional'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
-        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign) , ['--ext-optional'])
+        self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign), ['--ext-optional'])
 
         topt = TestOption1(go_args=['-o'], go_nosystemexit=True,)
         self.assertEqual(topt.options.ext_optional, 'DEFAULT')
@@ -446,10 +582,13 @@ store=%(FROMINIT)s
         tmp3.write(CONFIGFILE3)
         tmp3.flush()  # flush, otherwise empty
 
-        topt3 = TestOption1(go_configfiles=[tmp3.name], go_configfiles_initenv={'DEFAULT':{'FROMINIT' : 'woohoo'}})
+        initenv = {'DEFAULT': {'FROMINIT' : 'woohoo'}}
+        topt3 = TestOption1(go_configfiles=[tmp3.name, tmp2.name], go_args=['--ignoreconfigfiles=%s' % tmp2.name],
+                            go_configfiles_initenv=initenv)
 
         self.assertEqual(topt3.options.configfiles, _init_configfiles);
-        self.assertEqual(topt3.configfiles, [tmp3.name] + _init_configfiles);
+        self.assertEqual(topt3.configfiles, [tmp3.name, tmp2.name] + _init_configfiles);
+        self.assertEqual(topt3.options.ignoreconfigfiles, [tmp2.name])
 
         self.assertEqual(topt3.options.store, 'woohoo')
 
@@ -468,21 +607,29 @@ store=%(FROMINIT)s
 
     def test_loglevel(self):
         """Test the loglevel default setting"""
+        def _loglevel(lvl, msg):
+            lvl_int = topt.log.getEffectiveLevel()
+            lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]
+            self.assertEqual(lvl_int,
+                             fancylogger.getLevelInt(lvl),
+                             msg="%s (expected %s got %s)" % (msg, lvl, lvl_name))
+
+
         topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), fancylogger.getLevelInt(topt.DEFAULT_LOGLEVEL.upper()))
+        _loglevel(topt.DEFAULT_LOGLEVEL.upper(), 'Test default loglevel')
 
         topt = TestOption1(go_args=['--debug'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+        _loglevel('DEBUG', '--debug gives DEBUG')
 
         topt = TestOption1(go_args=['--info'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+        _loglevel('INFO', '--info gives INFO')
 
         topt = TestOption1(go_args=['--quiet'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', '--quiet gives WARNING')
 
         # last one wins
         topt = TestOption1(go_args=['--debug', '--info', '--quiet'], go_nosystemexit=True,)
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', 'last wins: --debug --info --quiet gives WARNING')
 
         CONFIGFILE1 = """
 [base]
@@ -497,7 +644,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.DEBUG)
+        _loglevel('DEBUG', 'DEBUG set via configfile')
 
         # set via environment; environment wins over cfg file
         os.environ['%s_INFO' % envvar] = '1';
@@ -506,7 +653,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.INFO)
+        _loglevel('INFO', 'env wins: debug in configfile and _INFO in env gives INFO')
 
         # commandline always wins
         topt = TestOption1(go_configfiles=[tmp1.name],
@@ -514,7 +661,7 @@ debug=1
                            go_nosystemexit=True,
                            envvar_prefix=envvar
                            )
-        self.assertEqual(topt.log.getEffectiveLevel(), logging.WARNING)
+        _loglevel('WARNING', 'commandline wins: debug in configfile, _INFO in env and --quiet gives WARNING')
 
         # remove tmp1
         del os.environ['%s_INFO' % envvar]
@@ -525,13 +672,13 @@ debug=1
 
         reg_reply = re.compile(r'^COMPREPLY=\((.*)\)$')
 
-        script_name = 'simple_option.py'
-        script_simple = os.path.join(os.path.dirname(__file__), 'runtests', script_name)
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests', 'simple_option.py')
 
         partial = '-'
-        cmd_list = [script_simple, partial]
+        cmd_list = [script, partial]
 
-        ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
+        pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)
@@ -546,9 +693,9 @@ debug=1
 
         # test --deb autocompletion
         partial = '--deb'
-        cmd_list = [script_simple, partial]
+        cmd_list = [script, partial]
 
-        ec, out = run_simple('%s; test $? == 1' % gen_cmdline(cmd_list, partial))
+        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)
@@ -590,17 +737,160 @@ debug=1
         self.assertEqual(inst1.options.configfiles, expected)
         self.assertEqual(inst2.options.configfiles, expected)
 
-        self.assertEqual(inst1.configfiles, expected);
-        self.assertEqual(inst2.configfiles, expected);
+        self.assertEqual(inst1.configfiles, expected)
+        self.assertEqual(inst2.configfiles, expected)
 
+    def test_error_env_options(self):
+        """Test log error on unknown environment option"""
+        self.reset_logcache()
+        mylogger = fancylogger.getLogger('ExtOptionParser')
+        mylogger.error = self.mock_logmethod(mylogger.error)
+        mylogger.debug = self.mock_logmethod(mylogger.debug)
 
-def suite():
-    """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(GeneralOptionTest)
+        self.assertEqual(self.count_logcache('error'), 0)
 
+        os.environ['GENERALOPTIONTEST_XYZ'] = '1'
+        topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST')
+        self.assertEqual(self.count_logcache('error'), 0,
+                         msg='no errors logged, got %s' % self.count_logcache('error'))
 
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests
-        just uncomment the parts you need
-    """
-    main()
+        topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
+        print self.LOGCACHE['error']
+        self.assertEqual(self.count_logcache('error'), 1,
+                         msg='one error should be logged, got %s' % self.count_logcache('error'))
+
+        # using a custom error method
+        def raise_error(msg, *args):
+            """Raise error with given message and string arguments to format it."""
+            raise Exception(msg % args)
+
+        self.assertErrorRegex(Exception, "Found 1 environment variable.* prefixed with GENERALOPTIONTEST", TestOption1,
+                              go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True,
+                              error_env_option_method=raise_error)
+
+    def _match_testoption1_sysexit(self, args, msg):
+        """Check whether parsing supplied arguments with TestOption1 results in SystemExit error being raised."""
+        system_exit = False
+        self.mock_stderr(True)  # reset
+        # purposely not using self.assertErrorRegex, since we're mocking stderr...
+        try:
+            TestOption1(go_args=args)
+        except SystemExit:
+            system_exit = True
+        finally:
+            stderr = self.get_stderr()
+            self.mock_stderr(False)
+        self.assertTrue(system_exit)
+        self.assertTrue(msg in stderr)
+
+    def test_nosuchoption(self):
+        """Test catching of non-existing options."""
+        self._match_testoption1_sysexit(['--nosuchoptiondefinedfoobar'],
+                                        "no such option: --nosuchoptiondefinedfoobar")
+
+    def test_is_value_a_commandline_option(self):
+        """Test ExtOptionParser is_value_a_commandline_option method"""
+        topt = TestOption1(go_args=[])
+        tp = topt.parser
+
+        self.assertEqual(tp.ALLOW_OPTION_NAME_AS_VALUE, False,
+                         msg="default do not allow option name as value")
+        self.assertEqual(tp.ALLOW_OPTION_AS_VALUE, False,
+                         msg="default do not allow option as value")
+        self.assertEqual(tp.ALLOW_DASH_AS_VALUE, False,
+                         msg="default do not allow value starting with -")
+        self.assertEqual(tp.ALLOW_TYPO_AS_VALUE, True,
+                         msg="default do allow value similar to option")
+
+        # fake commandline args
+        # this is purely to test the function, actual usage is in test_option_as_value
+        tp.commandline_arguments = ['--base', '-something', 'base', '-base']
+        def check(fail, tpl):
+            """Check whether expected failures/success occur with given message template."""
+            for idx, value in enumerate(tp.commandline_arguments):
+                msg = tpl % value
+                res = tp.is_value_a_commandline_option('--opt', value, index=idx)
+                if idx in fail:
+                    self.assertFalse(res is None, "failure should not return None for value %s" % value)
+                    self.assertTrue(msg in res, msg='%s in %s' % (msg, res))
+                else:
+                    self.assertTrue(res is None)
+
+        # anything goes
+        tp.ALLOW_OPTION_NAME_AS_VALUE = True
+        tp.ALLOW_OPTION_AS_VALUE = True
+        tp.ALLOW_DASH_AS_VALUE = True
+        tp.ALLOW_TYPO_AS_VALUE = True
+
+        check([], 'x%sx') # all ok
+
+        tp.ALLOW_OPTION_AS_VALUE = False
+        check([0], "Value '%s' is also a valid option")
+        tp.ALLOW_OPTION_AS_VALUE = True
+
+        tp.ALLOW_DASH_AS_VALUE = False
+        # options also start with a -
+        check([0, 1, 3], "Value '%s' starts with a '-'")
+        tp.ALLOW_DASH_AS_VALUE = True
+
+        tp.ALLOW_TYPO_AS_VALUE = False
+        # an option is a close match for an option, who'd guessed that...
+        check([0, 2, 3], "Value '%s' too close match to option(s) ")
+        tp.ALLOW_TYPO_AS_VALUE = True
+
+        tp.ALLOW_OPTION_NAME_AS_VALUE = False
+        check([3], "'-%s' is a valid option")
+        tp.ALLOW_OPTION_NAME_AS_VALUE = True
+
+    def test_option_as_value(self):
+        """Test how valid options being used as values are handled."""
+        # -s requires an argument
+        self._match_testoption1_sysexit(['-b', '-s'],
+                                        "-s option requires an argument")
+
+        # only valid way of specifying '-b' as a value to --store
+        topt = TestOption1(go_args=['--store=-b'])
+        self.assertEqual(topt.options.store, '-b')
+        self.assertFalse(topt.options.base)  # remain False (default value)
+
+        # when -b/--base is an option, the following are not accepted, since they're likely not what intended
+        self._match_testoption1_sysexit(['-sb'],
+                                        "'-b' is a valid option")
+        self._match_testoption1_sysexit(['-s', 'b'],
+                                        "'-b' is a valid option")
+        self._match_testoption1_sysexit(['--store', 'b'],
+                                        "'-b' is a valid option")
+        self._match_testoption1_sysexit(['--store', '-base'],
+                                        "'--base' is a valid option")
+        self._match_testoption1_sysexit(['-s', '-base'],
+                                        "'--base' is a valid option")
+        self._match_testoption1_sysexit(['-s-base'],
+                                        "'--base' is a valid option")
+
+        # -s -b is not a valid list of flags, since it's ambiguous: is '-b' a value for '-s', or an option?
+        self._match_testoption1_sysexit(['-s', '-b'],
+                                        "Value '-b' is also a valid option")
+
+        # same for --store -b
+        self._match_testoption1_sysexit(['--store', '-b'],
+                                        "Value '-b' is also a valid option")
+
+        # same for --store --base
+        self._match_testoption1_sysexit(['--store', '--base'],
+                                        "Value '--base' is also a valid option")
+
+        # including a non-existing option will result in it being treated as a value, but is not allowed
+        self._match_testoption1_sysexit(['--store', '-f'],
+                                        "Value '-f' starts with a '-'")
+
+        self._match_testoption1_sysexit(['--store', '--foo'],
+                                        "Value '--foo' starts with a '-'")
+
+        # non-existing options are still reported if they're not consumed as a value
+        self._match_testoption1_sysexit(['--nosuchoptiondefinedfoobar', '--store', '--foo'],
+                                        "no such option: --nosuchoptiondefinedfoobar")
+
+        # but first error still wins
+        self._match_testoption1_sysexit(['--store', '--foo', '--nosuchoptiondefinedfoobar'],
+                                        "Value '--foo' starts with a '-'")
+

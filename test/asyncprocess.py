@@ -1,14 +1,14 @@
-# #
-# Copyright 2012-2013 Ghent University
+#
+# Copyright 2012-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -22,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 """
 Unit tests for asyncprocess.py.
 
@@ -32,7 +32,7 @@ Unit tests for asyncprocess.py.
 
 import os
 import time
-from unittest import TestCase, TestSuite, main
+from vsc.install.testing import TestCase
 
 import vsc.utils.asyncprocess as p
 from vsc.utils.asyncprocess import Popen
@@ -51,6 +51,7 @@ class AsyncProcessTest(TestCase):
         """ setup a basic shell """
         self.shell = Popen('sh', stdin=p.PIPE, stdout=p.PIPE, shell=True, executable='/bin/bash')
         self.cwd = os.getcwd()
+        super(AsyncProcessTest, self).setUp()
 
     def runTest(self):
         """ try echoing some text and see if it comes back out """

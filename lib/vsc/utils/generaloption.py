@@ -1,15 +1,14 @@
 #
-#
-# Copyright 2011-2014 Ghent University
+# Copyright 2011-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -24,7 +23,6 @@
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
-
 """
 A class that can be used to generated options to python scripts in a general way.
 
@@ -34,6 +32,7 @@ A class that can be used to generated options to python scripts in a general way
 
 import ConfigParser
 import copy
+import difflib
 import inspect
 import operator
 import os
@@ -44,11 +43,15 @@ import textwrap
 from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
 from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
-from optparse import _ as _gettext  # this is gettext normally
+from optparse import gettext as _gettext  # this is gettext.gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
+from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
+
+
+HELP_OUTPUT_FORMATS = ['', 'rst', 'short', 'config']
 
 
 def set_columns(cols=None):
@@ -74,7 +77,7 @@ def set_columns(cols=None):
 
 def what_str_list_tuple(name):
     """Given name, return separator, class and helptext wrt separator.
-        (Currently supports strlist, strtuple, pathlist, pathtuple) 
+        (Currently supports strlist, strtuple, pathlist, pathtuple)
     """
     sep = ','
     helpsep = 'comma'
@@ -106,6 +109,26 @@ def check_str_list_tuple(option, opt, value):
         return klass(split)
 
 
+def get_empty_add_flex(allvalues, self=None):
+    """Return the empty element for add_flex action for allvalues"""
+    empty = None
+
+    if isinstance(allvalues, (list, tuple)):
+        if isinstance(allvalues[0], basestring):
+            empty = ''
+
+    if empty is None:
+        msg = "get_empty_add_flex cannot determine empty element for type %s (%s)"
+        msg = msg % (type(allvalues), allvalues)
+        exc_class = TypeError
+        if self is None:
+            raise exc_class(msg)
+        else:
+            self.log.raiseException(msg, exc_class)
+
+    return empty
+
+
 class ExtOption(CompleterOption):
     """Extended options class
         - enable/disable support
@@ -119,6 +142,15 @@ class ExtOption(CompleterOption):
              - add_first : add default to value (result is value + default)
              - extend : alias for add with strlist type
              - type must support + (__add__) and one of negate (__neg__) or slicing (__getslice__)
+         - add_flex : similar to add / add_first, but replaces the first "empty" element with the default
+             - the empty element is dependent of the type
+                 - for {str,path}{list,tuple} this is the empty string
+             - types must support the index method to determine the location of the "empty" element
+             - the replacement uses +
+             - e.g. a strlist type with value "0,,1"` and default [3,4] and action add_flex will
+                   use the empty string '' as "empty" element, and will result in [0,3,4,1] (not [0,[3,4],1])
+                   (but also a strlist with value "" and default [3,4] will result in [3,4];
+                   so you can't set an empty list with add_flex)
          - date : convert into datetime.date
          - datetime : convert into datetime.datetime
          - regex: compile str in regexp
@@ -126,9 +158,9 @@ class ExtOption(CompleterOption):
            - set default to None if no option passed,
            - set to default if option without value passed,
            - set to value if option with value passed
-           
+
         Types:
-          - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings     
+          - strlist, strtuple : convert comma-separated string in a list resp. tuple of strings
           - pathlist, pathtuple : using os.pathsep, convert pathsep-separated string in a list resp. tuple of strings
               - the path separator is OS-dependent
     """
@@ -137,10 +169,10 @@ class ExtOption(CompleterOption):
     ENABLE = 'enable'  # do nothing
     DISABLE = 'disable'  # inverse action
 
-    EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first',)
-    EXTOPTION_STORE_OR = ('store_or_None',)  # callback type
+    EXTOPTION_EXTRA_OPTIONS = ('date', 'datetime', 'regex', 'add', 'add_first', 'add_flex',)
+    EXTOPTION_STORE_OR = ('store_or_None', 'help')  # callback type
     EXTOPTION_LOG = ('store_debuglog', 'store_infolog', 'store_warninglog',)
-    EXTOPTION_HELP = ('shorthelp', 'confighelp',)
+    EXTOPTION_HELP = ('shorthelp', 'confighelp', 'help')
 
     ACTIONS = Option.ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR + EXTOPTION_LOG + EXTOPTION_HELP
     STORE_ACTIONS = Option.STORE_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_LOG + ('store_or_None',)
@@ -187,18 +219,40 @@ class ExtOption(CompleterOption):
             self.callback = store_or
             self.callback_kwargs = {
                 'orig_default': copy.deepcopy(self.default),
-                }
+            }
             self.action = 'callback'  # act as callback
-            if self.store_or == 'store_or_None':
+
+            if self.store_or in self.EXTOPTION_STORE_OR:
                 self.default = None
             else:
                 self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
+
+    def process(self, opt, value, values, parser):
+        """Handle option-as-value issues before actually processing option."""
+
+        if hasattr(parser, 'is_value_a_commandline_option'):
+            errmsg = parser.is_value_a_commandline_option(opt, value)
+            if errmsg is not None:
+                prefix = "%s=" % self._long_opts[0] if self._long_opts else self._short_opts[0]
+                self.log.raiseException("%s. Use '%s%s' if the value is correct." % (errmsg, prefix, value),
+                                        exception=OptionValueError)
+
+        return Option.process(self, opt, value, values, parser)
 
     def take_action(self, action, dest, opt, value, values, parser):
         """Extended take_action"""
         orig_action = action  # keep copy
 
-        if action == 'shorthelp':
+        # dest is None for actions like shorthelp and confighelp
+        if dest and getattr(parser._long_opt.get('--' + dest, ''), 'store_or', '') == 'help':
+            Option.take_action(self, action, dest, opt, value, values, parser)
+            fn = getattr(parser, 'print_%shelp' % values.help, None)
+            if fn is None:
+                self.log.raiseException("Unsupported output format for help: %s" % value.help, exception=ValueError)
+            else:
+                fn()
+            parser.exit()
+        elif action == 'shorthelp':
             parser.print_shorthelp()
             parser.exit()
         elif action == 'confighelp':
@@ -230,19 +284,33 @@ class ExtOption(CompleterOption):
             Option.take_action(self, action, dest, opt, value, values, parser)
 
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
-            if action in ("add", "add_first",):
+            if action in ("add", "add_first", "add_flex",):
                 # determine type from lvalue
                 # set default first
-                values.ensure_value(dest, type(value)())
-                default = getattr(values, dest)
+                default = getattr(parser.get_default_values(), dest, None)
+                if default is None:
+                    default = type(value)()
                 if not (hasattr(default, '__add__') and
                         (hasattr(default, '__neg__') or hasattr(default, '__getslice__'))):
                     msg = "Unsupported type %s for action %s (requires + and one of negate or slice)"
                     self.log.raiseException(msg % (type(default), action))
-                if action == 'add':
+                if action in ('add', 'add_flex'):
                     lvalue = default + value
                 elif action == 'add_first':
                     lvalue = value + default
+
+                if action == 'add_flex' and lvalue:
+                    # use lvalue here rather than default to make sure there is 1 element
+                    # to determine the type
+                    if not hasattr(lvalue, 'index'):
+                        msg = "Unsupported type %s for action %s (requires index method)"
+                        self.log.raiseException(msg % (type(lvalue), action))
+                    empty = get_empty_add_flex(lvalue, self=self)
+                    if empty in value:
+                        ind = value.index(empty)
+                        lvalue = value[:ind] + default + value[ind+1:]
+                    else:
+                        lvalue = value
             elif action == "date":
                 lvalue = date_parser(value)
             elif action == "datetime":
@@ -305,11 +373,12 @@ class PassThroughOptionParser(OptionParser):
 
                 nargs = option.nargs
                 if len(rargs) < nargs:
+                    msg = [opt, 'option requires']
                     if nargs == 1:
-                        self.error(_("%s option requires an argument") % opt)
+                        msg.append('an argument')
                     else:
-                        self.error(_("%s option requires %d arguments")
-                                   % (opt, nargs))
+                        msg.extend([nargs, 'arguments'])
+                    self.error(_gettext(" ".join(msg)))
                 elif nargs == 1:
                     value = rargs.pop(0)
                 else:
@@ -350,7 +419,7 @@ class ExtOptionGroup(OptionGroup):
 
 class ExtOptionParser(OptionParser):
     """
-    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,     
+    Make an option parser that limits the C{-h} / C{--shorthelp} to short opts only,
     C{-H} / C{--help} for all options.
 
     Pass options through environment. Like:
@@ -368,12 +437,40 @@ class ExtOptionParser(OptionParser):
     VALUES_CLASS = Values
     DESCRIPTION_DOCSTRING = False
 
+    ALLOW_OPTION_NAME_AS_VALUE = False  # exact match for option name (without the '-') as value
+    ALLOW_OPTION_AS_VALUE = False  # exact match for option as value
+    ALLOW_DASH_AS_VALUE = False  # any value starting with a '-'
+    ALLOW_TYPO_AS_VALUE = True  # value with similarity score from difflib.get_close_matches
+
     def __init__(self, *args, **kwargs):
+        """
+        Following named arguments are specific to ExtOptionParser
+        (the remaining ones are passed to the parent OptionParser class)
+
+            :param help_to_string: boolean, if True, the help is written
+                                   to a newly created StingIO instance
+            :param help_to_file: filehandle, help is written to this filehandle
+            :param envvar_prefix: string, specify the environment variable prefix
+                                  to use (if you don't want the default one)
+            :param process_env_options: boolean, if False, don't check the
+                                        environment for options (default: True)
+            :param error_env_options: boolean, if True, use error_env_options_method
+                                      if an environment variable with correct envvar_prefix
+                                      exists but does not correspond to an existing option
+                                      (default: False)
+            :param error_env_options_method: callable; method to use to report error
+                                             in used environment variables (see error_env_options);
+                                             accepts string value + additional
+                                             string arguments for formatting the message
+                                             (default: own log.error method)
+        """
         self.log = getLogger(self.__class__.__name__)
         self.help_to_string = kwargs.pop('help_to_string', None)
         self.help_to_file = kwargs.pop('help_to_file', None)
         self.envvar_prefix = kwargs.pop('envvar_prefix', None)
         self.process_env_options = kwargs.pop('process_env_options', True)
+        self.error_env_options = kwargs.pop('error_env_options', False)
+        self.error_env_option_method = kwargs.pop('error_env_option_method', self.log.error)
 
         # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
         self.epilog = kwargs.pop('epilog', None)
@@ -396,6 +493,67 @@ class ExtOptionParser(OptionParser):
 
         self.environment_arguments = None
         self.commandline_arguments = None
+
+    def is_value_a_commandline_option(self, opt, value, index=None):
+        """
+        Determine if value is/could be an option passed via the commandline.
+        If it is, return the reason why (can be used as message); or return None if it isn't.
+
+        opt is the option flag to which the value is passed;
+        index is the index of the value on the commandline (if None, it is determined from orig_rargs and rargs)
+
+        The method tests for possible ambiguity on the commandline when the parser
+        interprets the argument following an option as a value, whereas it is far more likely that
+        it is (intended as) an option; --longopt=value is never considered ambiguous, regardless of the value.
+        """
+        # Values that are/could be options that are passed via
+        # only --longopt=value is not a problem.
+        # When processing the enviroment and/or configfile, we always set
+        # --longopt=value, so no issues there either.
+
+        # following checks assume that value is a string (not a store_or_None)
+        if not isinstance(value, basestring):
+            return None
+
+        cmdline_index = None
+        try:
+            cmdline_index = self.commandline_arguments.index(value)
+        except ValueError:
+            # no index found for value, so not a stand-alone value
+            if opt.startswith('--'):
+                # only --longopt=value is unambigouos
+                return None
+
+        if index is None:
+            # index of last parsed arg in commandline_arguments via remainder of rargs
+            index = len(self.commandline_arguments) - len(self.rargs) - 1
+
+        if cmdline_index is not None and index != cmdline_index:
+            # This is not the value you are looking for
+            return None
+
+        if not self.ALLOW_OPTION_NAME_AS_VALUE:
+            value_as_opt = '-%s' % value
+            if value_as_opt in self._short_opt or value_as_opt in self._long_opt:
+                return "'-%s' is a valid option" % value
+
+        if (not self.ALLOW_OPTION_AS_VALUE) and (value in self._long_opt or value in self._short_opt):
+            return "Value '%s' is also a valid option" % value
+
+        if not self.ALLOW_DASH_AS_VALUE and value.startswith('-'):
+            return "Value '%s' starts with a '-'" % value
+
+        if not self.ALLOW_TYPO_AS_VALUE:
+            possibilities = self._long_opt.keys() + self._short_opt.keys()
+            # also on optionnames, i.e. without the -- / -
+            possibilities.extend([x.lstrip('-') for x in possibilities])
+            # max 3 options; minimum score is taken from EB experience
+            matches = difflib.get_close_matches(value, possibilities, 3, 0.85)
+
+            if matches:
+                return "Value '%s' too close match to option(s) %s" % (value, ', '.join(matches))
+
+        return None
 
     def set_description_docstring(self):
         """Try to find the main docstring and add it if description is not None"""
@@ -453,7 +611,7 @@ class ExtOptionParser(OptionParser):
     def get_default_values(self):
         """Introduce the ExtValues class with class constant
             - make it dynamic, otherwise the class constant is shared between multiple instances
-            - class constant is used to avoid _action_taken as option in the __dict__ 
+            - class constant is used to avoid _action_taken as option in the __dict__
                 - only works by using reference to object
                 - same for _logaction_taken
         """
@@ -506,8 +664,8 @@ class ExtOptionParser(OptionParser):
 
         self.print_help(fh)
 
-    def print_help(self, fh=None):
-        """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
+    def check_help(self, fh):
+        """Checks filehandle for help functions"""
         if self.help_to_string:
             self.help_to_file = StringIO.StringIO()
         if fh is None:
@@ -522,8 +680,53 @@ class ExtOptionParser(OptionParser):
             for opt in self._get_all_options():
                 # remove all long_opts with ENABLE/DISABLE naming
                 opt._long_opts = [x for x in opt._long_opts if not _is_enable_disable(x)]
+        return fh
 
+    def print_help(self, fh=None):
+        """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
+        fh = self.check_help(fh)
         OptionParser.print_help(self, fh)
+
+    def print_rsthelp(self, fh=None):
+        """ Print help in rst format """
+        fh = self.check_help(fh)
+        result = []
+        if self.usage:
+            title = "Usage"
+            result.extend([title, '-' * len(title), '', '``%s``' % self.get_usage().replace("Usage: ", '').strip(), ''])
+        if self.description:
+            title = "Description"
+            result.extend([title, '-' * len(title), '', self.description, ''])
+
+        result.append(self.format_option_rsthelp())
+
+        rsthelptxt = '\n'.join(result)
+        if fh is None:
+            fh = sys.stdout
+        fh.write(rsthelptxt)
+
+
+    def format_option_rsthelp(self, formatter=None):
+        """ Formatting for help in rst format """
+        if not formatter:
+            formatter = self.formatter
+        formatter.store_option_strings(self)
+
+        res = []
+        titles = ["Option flag", "Option description"]
+
+        all_opts = [("Help options", self.option_list)] + [(group.title, group.option_list) for group in self.option_groups]
+        for title, opts in all_opts:
+            values = []
+            res.extend([title, '-' * len(title)])
+            for opt in opts:
+                if not opt.help is nohelp:
+                    values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
+
+            res.extend(mk_rst_table(titles, map(list, zip(*values))))
+            res.append('')
+
+        return '\n'.join(res)
 
     def print_confighelp(self, fh=None):
         """Print help as a configfile."""
@@ -573,6 +776,10 @@ class ExtOptionParser(OptionParser):
         self.add_option("-%s" % self.longhelp[0],
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
+                        type="choice",
+                        choices=HELP_OUTPUT_FORMATS,
+                        default=HELP_OUTPUT_FORMATS[0],
+                        metavar='OUTPUT_FORMAT',
                         help=_gettext("show full help message and exit"))
         self.add_option("--confighelp",
                         action="confighelp",
@@ -607,6 +814,8 @@ class ExtOptionParser(OptionParser):
         epilogprefixtxt += "eg. --some-opt is same as setting %(prefix)s_SOME_OPT in the environment."
         self.epilog.append(epilogprefixtxt % {'prefix': self.envvar_prefix})
 
+        candidates = dict([(k, v) for k, v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
+
         for opt in self._get_all_options():
             if opt._long_opts is None:
                 continue
@@ -614,7 +823,7 @@ class ExtOptionParser(OptionParser):
                 if len(lo) == 0:
                     continue
                 env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').replace('-', '_').upper())
-                val = os.environ.get(env_opt_name, None)
+                val = candidates.pop(env_opt_name, None)
                 if not val is None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
                         self.environment_arguments.append("%s=%s" % (lo, val))
@@ -624,6 +833,14 @@ class ExtOptionParser(OptionParser):
                             self.environment_arguments.append("%s" % lo)
                 else:
                     self.log.debug("Environment variable %s is not set" % env_opt_name)
+
+        if candidates:
+            msg = "Found %s environment variable(s) that are prefixed with %s but do not match valid option(s): %s"
+            if self.error_env_options:
+                logmethod = self.error_env_option_method
+            else:
+                logmethod = self.log.debug
+            logmethod(msg, len(candidates), self.envvar_prefix, ','.join(candidates))
 
         self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, self.environment_arguments))
         return self.environment_arguments
@@ -654,7 +871,7 @@ class GeneralOption(object):
             if True, an option --configfiles will be added
         - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
         - go_configfiles_initenv : section dict of key/value dict; inserted before configfileparsing
-            As a special case, using all uppercase key in DEFAULT section with a case-sensitive 
+            As a special case, using all uppercase key in DEFAULT section with a case-sensitive
             configparser can be used to set "constants" for easy interpolation in all sections.
         - go_loggername : name of logger, default classname
         - go_mainbeforedefault : set the main options before the default ones
@@ -721,6 +938,7 @@ class GeneralOption(object):
             'usage': kwargs.get('usage', self.USAGE),
             'version': self.VERSION,
         })
+
         self.parser = self.PARSER(**kwargs)
         self.parser.allow_interspersed_args = self.INTERSPERSED
 
@@ -982,7 +1200,7 @@ class GeneralOption(object):
                         self.log.raiseException("add_group_parser: unknown extra detail %s" % extra_detail)
 
             # add help
-            nameds['help'] = hlp
+            nameds['help'] = _gettext(hlp)
 
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                 if action in self.parser.option_class.BOOLEAN_ACTIONS:
@@ -1027,12 +1245,7 @@ class GeneralOption(object):
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
         except SystemExit, err:
-            try:
-                msg = err.message
-            except AttributeError:
-                # py2.4
-                msg = str(err)
-            self.log.debug("parseoptions: parse_args err %s code %s" % (msg, err.code))
+            self.log.debug("parseoptions: parse_args err %s code %s" % (err, err.code))
             if self.no_system_exit:
                 return
             else:
@@ -1051,11 +1264,11 @@ class GeneralOption(object):
 
     def configfile_parser_init(self, initenv=None):
         """
-        Initialise the confgiparser to use.
-        
-            @params initenv: insert initial environment into the configparser. 
-                It is a dict of dicts; the first level key is the section name; 
-                the 2nd level key,value is the key=value. 
+        Initialise the configparser to use.
+
+            @params initenv: insert initial environment into the configparser.
+                It is a dict of dicts; the first level key is the section name;
+                the 2nd level key,value is the key=value.
                 All section names, keys and values are converted to strings.
         """
         self.configfile_parser = self.CONFIGFILE_PARSER()
@@ -1116,7 +1329,7 @@ class GeneralOption(object):
                     self.log.debug("parseconfigfiles: configfile %s not found, will be skipped" % fn)
 
             if fn in option_ignoreconfigfiles:
-                self.log.debug("parseconfigfiles: configfile %s will be ignored %s" % fn)
+                self.log.debug("parseconfigfiles: configfile %s will be ignored", fn)
             else:
                 configfiles.append(fn)
 
@@ -1357,6 +1570,10 @@ class GeneralOption(object):
         opt_dests.sort()
 
         for opt_dest in opt_dests:
+            # help is store_or_None, but is not a processed option, so skip it
+            if opt_dest in ExtOption.EXTOPTION_HELP:
+                continue
+
             opt_value = self.options.__dict__[opt_dest]
             # this is the action as parsed by the class, not the actual action set in option
             # (eg action store_or_None is shown here as store_or_None, not as callback)
@@ -1387,7 +1604,7 @@ class GeneralOption(object):
                                (opt_name, opt_value))
                 continue
 
-            if action in ('store_or_None',):
+            if action in ExtOption.EXTOPTION_STORE_OR:
                 if opt_value == default:
                     self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" %
                                    (action, opt_name, opt_value))
@@ -1424,9 +1641,17 @@ class GeneralOption(object):
                                            (opt_name, action, default))
                     else:
                         args.append("--%s" % opt_name)
-            elif action in ("add", "add_first"):
+            elif action in ("add", "add_first", "add_flex"):
                 if default is not None:
-                    if hasattr(opt_value, '__neg__'):
+                    if action == 'add_flex' and default:
+                        for ind, elem in enumerate(opt_value):
+                            if elem == default[0] and opt_value[ind:ind+len(default)] == default:
+                                empty = get_empty_add_flex(opt_value, self=self)
+                                # TODO: this will only work for tuples and lists
+                                opt_value = opt_value[:ind] + type(opt_value)([empty]) + opt_value[ind+len(default):]
+                                # only the first occurence
+                                break
+                    elif hasattr(opt_value, '__neg__'):
                         if action == 'add_first':
                             opt_value = opt_value + -default
                         else:

@@ -1,15 +1,14 @@
-#!/usr/bin/env python
-# #
-# Copyright 2011-2013 Ghent University
+#
+# Copyright 2011-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -23,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 """
 This module implements a fancy logger on top of python logging
 
@@ -38,6 +37,10 @@ It adds:
  - internal debugging through environment variables
     FANCYLOGGER_GETLOGGER_DEBUG for getLogger
     FANCYLOGGER_LOGLEVEL_DEBUG for setLogLevel
+ - set FANCYLOGGER_IGNORE_MPI4PY to disable mpi4py module import
+    mpi4py (when available) is automatically used for mpi-aware log format
+    In case mpi4py however that it is available but broken,
+    set this variable to 1 to avoid importing it.
 
 usage:
 
@@ -85,7 +88,12 @@ from distutils.version import LooseVersion
 # constants
 TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
 DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
+DEFAULT_LOGGING_FORMAT_MPI = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
+                             ' mpi: %(mpirank)s %(threadName)-10s  %(message)s'
+MPIRANK_NO_MPI = "N/A"
+
 FANCYLOG_LOGGING_FORMAT = None
+FANCYLOG_FANCYRECORD = None
 
 # DEFAULT_LOGGING_FORMAT= '%(asctime)-15s %(levelname)-10s %(module)-15s %(threadName)-10s %(message)s'
 MAX_BYTES = 100 * 1024 * 1024  # max bytes in a file with rotating file handler
@@ -102,15 +110,18 @@ logging._levelNames['QUIET'] = logging.WARNING
 
 
 # mpi rank support
-try:
-    from mpi4py import MPI
-    _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
-    if MPI.COMM_WORLD.Get_size() > 1:
-        # enable mpi rank when mpi is used
-        DEFAULT_LOGGING_FORMAT = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
-                                 " mpi: %(mpirank)s %(threadName)-10s  %(message)s"
-except ImportError:
-    _MPIRANK = "N/A"
+_MPIRANK = MPIRANK_NO_MPI
+if os.environ.get('FANCYLOGGER_IGNORE_MPI4PY', '0').lower() not in ('1', 'yes', 'true', 'y'):
+    try:
+        from mpi4py import MPI
+        if MPI.Is_initialized():
+            _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
+            if MPI.COMM_WORLD.Get_size() > 1:
+                # enable mpi rank when mpi is used
+                FANCYLOG_FANCYRECORD = True
+                DEFAULT_LOGGING_FORMAT = DEFAULT_LOGGING_FORMAT_MPI
+    except ImportError:
+        pass
 
 
 class MissingLevelName(KeyError):
@@ -174,6 +185,10 @@ class FancyLogger(logging.getLoggerClass()):
     # this attribute can be checked to know if the logger is thread aware
     _thread_aware = True
 
+    # default class for raiseException method, that can be redefined by deriving loggers
+    RAISE_EXCEPTION_CLASS = Exception
+    RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+
     # method definition as it is in logging, can't change this
     def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
         """
@@ -188,14 +203,22 @@ class FancyLogger(logging.getLoggerClass()):
             new_msg = msg.encode('utf8', 'replace')
         return logrecordcls(name, level, pathname, lineno, new_msg, args, excinfo)
 
+    def fail(self, message, *args):
+        """Log error message and raise exception."""
+        formatted_message = message % args
+        self.RAISE_EXCEPTION_LOG_METHOD(formatted_message)
+        raise self.RAISE_EXCEPTION_CLASS(formatted_message)
+
     def raiseException(self, message, exception=None, catch=False):
         """
-        logs an exception (as warning, since it can be caught higher up and handled)
+        logs message and raises an exception (since it can be caught higher up and handled)
         and raises it afterwards
-            catch: boolean, try to catch raised exception and add relevant info to message
-                (this will also happen if exception is not specified)
+        @param exception: subclass of Exception to use for raising
+        @param catch: boolean, try to catch raised exception and add relevant info to message
+                      (this will also happen if exception is not specified)
         """
         fullmessage = message
+        tb = None
 
         if catch or exception is None:
             # assumes no control by codemonkey
@@ -211,10 +234,10 @@ class FancyLogger(logging.getLoggerClass()):
                 fullmessage += " (%s\n%s)" % (detail, tb_text)
 
         if exception is None:
-            exception = Exception
+            exception = self.RAISE_EXCEPTION_CLASS
 
-        self.warning(fullmessage)
-        raise exception(message)
+        self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
+        raise exception, message, tb
 
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
@@ -330,15 +353,22 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     if fname is True, the loggers name will be 'name[.classname].functionname'
     if clsname is True the loggers name will be 'name.classname[.functionname]'
     This will return a logger with a fancylog record, which includes the className template for the logformat
-    This can make your code a lot slower, so this can be dissabled by setting fancyrecord to False, and
-    will also be disabled if a Name is set, and fancyrecord is not set to True
+    This can make your code a lot slower, so this can be dissabled by setting fancyrecord or class module
+    FANCYLOG_FANCYRECORD to False, or will also be disabled if a Name is set (and fancyrecord and
+    module constant FANCYLOG_FANCYRECORD are also not set).
     """
     nameparts = [getRootLoggerName()]
 
+    if fancyrecord is None:
+        # Altough we could set it as default value in the function definition
+        # it's easier to explain if we do it this way
+        fancyrecord = FANCYLOG_FANCYRECORD
+
     if name:
         nameparts.append(name)
-    elif fancyrecord is None or fancyrecord:  # only be fancy if fancyrecord is True or no name is given
+    elif fancyrecord is None:  # only be fancy if fancyrecord is True or no name is given
         fancyrecord = True
+
     fancyrecord = bool(fancyrecord)  # make sure fancyrecord is a nice bool, not None
 
     if clsname:
@@ -365,22 +395,26 @@ def _getCallingFunctionName():
     returns the name of the function calling the function calling this function
     (for internal use only)
     """
-    try:
-        return inspect.stack()[2][3]
-    except Exception:
-        return "?"
-
+    if __debug__:
+        try:
+            return inspect.stack()[2][3]
+        except Exception:
+            return "?"
+    else:
+        return "not available in optimized mode"
 
 def _getCallingClassName(depth=2):
     """
     returns the name of the class calling the function calling this function
     (for internal use only)
     """
-    try:
-        return inspect.stack()[depth][0].f_locals['self'].__class__.__name__
-
-    except Exception:
-        return "?"
+    if __debug__:
+        try:
+            return inspect.stack()[depth][0].f_locals['self'].__class__.__name__
+        except Exception:
+            return "?"
+    else:
+        return "not available in optimized mode"
 
 
 def getRootLoggerName():
@@ -388,10 +422,13 @@ def getRootLoggerName():
     returns the name of the root module
     this is the module that is actually running everything and so doing the logging
     """
-    try:
-        return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
-    except Exception:
-        return "?"
+    if __debug__:
+        try:
+            return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
+        except Exception:
+            return "?"
+    else:
+        return "not available in optimized mode"
 
 
 def logToScreen(enable=True, handler=None, name=None, stdout=False):
@@ -430,18 +467,29 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
 
     if you want to disable logging to file, pass the earlier obtained filehandler
     """
-    handleropts = {'filename': filename,
-                   'mode': 'a',
-                   'maxBytes': max_bytes,
-                   'backupCount': backup_count,
-                   }
-    return _logToSomething(logging.handlers.RotatingFileHandler,
-                           handleropts,
-                           loggeroption='logtofile_%s' % filename,
-                           name=name,
-                           enable=enable,
-                           handler=filehandler,
-                           )
+    handleropts = {
+        'filename': filename,
+        'mode': 'a',
+        'maxBytes': max_bytes,
+        'backupCount': backup_count,
+    }
+    # logging to a file is going to create the file later on, so let's try to be helpful and create the path if needed
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        try:
+            os.makedirs(directory)
+        except Exception as ex:
+            exc, detail, tb = sys.exc_info()
+            raise exc, "Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail), tb
+
+    return _logToSomething(
+        logging.handlers.RotatingFileHandler,
+        handleropts,
+        loggeroption='logtofile_%s' % filename,
+        name=name,
+        enable=enable,
+        handler=filehandler,
+    )
 
 
 def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):

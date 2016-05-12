@@ -1,5 +1,9 @@
 *.py[co]
 *.swp
+*~
+
+# ok to ignore generated file in vsc-base
+setup.cfg
 
 # Packages
 *.egg

@@ -1,15 +1,14 @@
-#!/usr/bin/env python
-# #
-# Copyright 2012-2013 Ghent University
+#
+# Copyright 2012-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -23,7 +22,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 """
 Various functions that are missing from the default Python library.
 
@@ -40,10 +39,7 @@ Various functions that are missing from the default Python library.
 @author: Andy Georges (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
-import os
-import re
 import shlex
-import sys
 import time
 
 from vsc.utils import fancylogger
@@ -331,68 +327,6 @@ def get_subclasses_dict(klass, include_base_class=False):
 def get_subclasses(klass, include_base_class=False):
     """Get list of all subclasses, recursively from the specified base class."""
     return get_subclasses_dict(klass, include_base_class=include_base_class).keys()
-
-
-def modules_in_pkg_path(pkg_path):
-    """Return list of module files in specified package path."""
-    # if the specified (relative) package path doesn't exist, try and determine the absolute path via sys.path
-    if not os.path.isabs(pkg_path) and not os.path.isdir(pkg_path):
-        _log.debug("Obtained non-existing relative package path '%s', will try to figure out absolute path" % pkg_path)
-        newpath = None
-        for sys_path_dir in sys.path:
-            abspath = os.path.join(sys_path_dir, pkg_path)
-            if os.path.isdir(abspath):
-                _log.debug("Found absolute path %s for package path %s, verifying it" % (abspath, pkg_path))
-                # also make sure an __init__.py is in place in every subdirectory
-                is_pkg = True
-                subdir = ''
-                for pkg_path_dir in pkg_path.split(os.path.sep):
-                    subdir = os.path.join(subdir, pkg_path_dir)
-                    if not os.path.isfile(os.path.join(sys_path_dir, subdir, '__init__.py')):
-                        is_pkg = False
-                        tup = (subdir, abspath, pkg_path)
-                        _log.debug("No __init__.py found in %s, %s is not a valid absolute path for pkg_path %s" % tup)
-                        break
-                if is_pkg:
-                    newpath = abspath
-                    break
-
-        if newpath is None:
-            # give up if we couldn't find an absolute path for the imported package
-            tup = (pkg_path, sys.path)
-            raise OSError("Can't browse package via non-existing relative path '%s', not found in sys.path (%s)" % tup)
-        else:
-            pkg_path = newpath
-            _log.debug("Found absolute package path %s" % pkg_path)
-
-    module_regexp = re.compile(r"^(?P<modname>[^_].*|__init__)\.py$")
-    modules = [res.group('modname') for res in map(module_regexp.match, os.listdir(pkg_path)) if res]
-    _log.debug("List of modules for package in %s: %s" % (pkg_path, modules))
-    return modules
-
-
-def avail_subclasses_in(base_class, pkg_name, include_base_class=False):
-    """Determine subclasses for specificied base classes in modules in (only) specified packages."""
-
-    def try_import(name):
-        """Try import the specified package/module."""
-        try:
-            # don't use return value of __import__ since it may not be the package itself but it's parent
-            __import__(name, globals())
-            return sys.modules[name]
-        except ImportError, err:
-            raise ImportError("avail_subclasses_in: failed to import %s: %s" % (name, err))
-
-    # import all modules in package path(s) before determining subclasses
-    pkg = try_import(pkg_name)
-    for pkg_path in pkg.__path__:
-        for mod in modules_in_pkg_path(pkg_path):
-            # no need to directly import __init__ (already done by importing package)
-            if not mod.startswith('__init__'):
-                _log.debug("Importing module '%s' from package '%s'" % (mod, pkg_name))
-                try_import('%s.%s' % (pkg_name, mod))
-
-    return get_subclasses_dict(base_class, include_base_class=include_base_class)
 
 
 class TryOrFail(object):

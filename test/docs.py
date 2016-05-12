@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2016 Ghent University
+# Copyright 2015-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -23,3 +23,45 @@
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+Unit tests for the docs module.
+
+@author: Kenneth Hoste (Ghent University)
+@author: Caroline De Brouwer (Ghent University)
+"""
+import os
+from vsc.install.testing import TestCase
+
+from vsc.utils.docs import mk_rst_table
+
+
+class DocsTest(TestCase):
+    """Tests for docs functions."""
+
+    def test_mk_rst_table(self):
+        """Test mk_rst_table function."""
+        entries = [['one', 'two', 'three']]
+        t = 'This title is longer than the entries in the column'
+        titles = [t]
+
+        # small table
+        table = mk_rst_table(titles, entries)
+        check = [
+            '=' * len(t),
+            t,
+            '=' * len(t),
+            'one' + ' ' * (len(t) - 3),
+            'two' + ' ' * (len(t) -3),
+            'three' + ' ' * (len(t) - 5),
+            '=' * len(t),
+            '',
+        ]
+
+        self.assertEqual(table, check)
+
+def suite():
+    """ returns all the testcases in this module """
+    return TestLoader().loadTestsFromTestCase(DocsTest)
+
+if __name__ == '__main__':
+    main()

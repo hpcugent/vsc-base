@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2013 Ghent University
+# Copyright 2013-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -30,16 +30,17 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
-import logging
 import os
 import re
 import sys
+import shutil
+
 from StringIO import StringIO
 import tempfile
-from unittest import TestLoader, main
+from unittest import TestLoader, main, TestSuite
 
 from vsc.utils import fancylogger
-from vsc.utils.testing import EnhancedTestCase
+from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
@@ -51,7 +52,22 @@ def classless_function():
     logger.warn("from classless_function")
 
 
-class FancyLoggerTest(EnhancedTestCase):
+class FancyLoggerLogToFileTest(TestCase):
+    """
+    Tests for fancylogger, specific for logToFile
+    These dont' fit in the FancyLoggerTest class because they don't work with the setUp and tearDown used there.
+    """
+
+    def test_logtofile(self):
+        """Test to see if logtofile doesn't fail when logging to a non existing file /directory"""
+        tempdir = tempfile.mkdtemp()
+        non_dir = os.path.join(tempdir, 'verytempdir')
+        fancylogger.logToFile(os.path.join(non_dir, 'nosuchfile'))
+        # clean up temp dir
+        shutil.rmtree(tempdir)
+
+
+class FancyLoggerTest(TestCase):
     """Tests for fancylogger"""
 
     logfn = None
@@ -59,6 +75,8 @@ class FancyLoggerTest(EnhancedTestCase):
     fd = None
 
     def setUp(self):
+        super(FancyLoggerTest, self).setUp()
+
         (self.fd, self.logfn) = tempfile.mkstemp()
         self.handle = os.fdopen(self.fd)
 
@@ -70,6 +88,9 @@ class FancyLoggerTest(EnhancedTestCase):
 
         # disable default ones (with default format)
         fancylogger.disableDefaultHandlers()
+
+        self.orig_raise_exception_class = fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS
+        self.orig_raise_exception_method = fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
@@ -182,6 +203,56 @@ class FancyLoggerTest(EnhancedTestCase):
         txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
 
+    def test_fail(self):
+        """Test fail log method."""
+        # truncate the logfile
+        open(self.logfn, 'w')
+
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(Exception, 'failtest', logger.fail, 'failtest')
+        self.assertTrue(re.match("^WARNING.*failtest$", open(self.logfn, 'r').read()))
+        self.assertErrorRegex(Exception, 'failtesttemplatingworkstoo', logger.fail, 'failtest%s', 'templatingworkstoo')
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(KeyError, 'failkeytest', logger.fail, 'failkeytest')
+        self.assertTrue(re.match("^WARNING.*failkeytest$", open(self.logfn, 'r').read()))
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(KeyError, 'failkeytestagain', logger.fail, 'failkeytestagain')
+        self.assertTrue(re.match("^WARNING.*failkeytestagain$", open(self.logfn, 'r').read()))
+
+    def test_raiseException(self):
+        """Test raiseException log method."""
+        # truncate the logfile
+        open(self.logfn, 'w')
+
+        def test123(exception, msg):
+            """Utility function for testing raiseException."""
+            try:
+                raise exception(msg)
+            except:
+                logger.raiseException('HIT')
+
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(Exception, 'failtest', test123, Exception, 'failtest')
+        self.assertTrue(re.match("^WARNING.*HIT.*failtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(KeyError, 'failkeytest', test123, KeyError, 'failkeytest')
+        self.assertTrue(re.match("^WARNING.*HIT.*'failkeytest'\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
+        open(self.logfn, 'w')
+        fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+        logger = fancylogger.getLogger('fail_test')
+        self.assertErrorRegex(AttributeError, 'attrtest', test123, AttributeError, 'attrtest')
+        self.assertTrue(re.match("^WARNING.*HIT.*attrtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
     def _stream_stdouterr(self, isstdout=True, expect_match=True):
         """Log to stdout or stderror, check stdout or stderror"""
         fd, logfn = tempfile.mkstemp()
@@ -271,7 +342,7 @@ class FancyLoggerTest(EnhancedTestCase):
         logger.warn("blabla")
         print stringfile.getvalue()
         # this will only hold in debug mode, so also disable the test
-        if  __debug__:
+        if __debug__:
             self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
@@ -298,35 +369,83 @@ class FancyLoggerTest(EnhancedTestCase):
         """
         Test if just using import logging, logging.warning still works after importing fancylogger
         """
-        _stderr = sys.stderr
+
         stringfile = StringIO()
         sys.stderr = stringfile
         handler = fancylogger.logToScreen()
         import logging
-        logging.warning('this is my string')
-        self.assertTrue('this is my string' in stringfile.getvalue())
+        msg = 'this is my string'
+        logging.warning(msg)
+        self.assertTrue(msg in stringfile.getvalue(),
+                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
 
-        logging.getLogger().warning('there are many like it')
-        self.assertTrue('there are many like it' in stringfile.getvalue())
+        msg = 'there are many like it'
+        logging.getLogger().warning(msg)
+        self.assertTrue(msg in stringfile.getvalue(),
+                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
 
-        logging.getLogger('mine').warning('but this one is mine')
-        self.assertTrue('but this one is mine' in stringfile.getvalue())
+        msg = 'but this one is mine'
+        logging.getLogger('mine').warning(msg)
+        self.assertTrue(msg in stringfile.getvalue(),
+                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
+
 
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
-        sys.stderr = _stderr
 
+    def test_fancyrecord(self):
+        """
+        Test fancyrecord usage
+        """
+        logger = fancylogger.getLogger()
+        self.assertEqual(logger.fancyrecord, True)
+
+        logger = fancylogger.getLogger(fancyrecord=True)
+        self.assertEqual(logger.fancyrecord, True)
+
+        logger = fancylogger.getLogger(fancyrecord=False)
+        self.assertEqual(logger.fancyrecord, False)
+
+        logger = fancylogger.getLogger('myname')
+        self.assertEqual(logger.fancyrecord, False)
+
+        logger = fancylogger.getLogger('myname', fancyrecord=True)
+        self.assertEqual(logger.fancyrecord, True)
+
+        orig = fancylogger.FANCYLOG_FANCYRECORD
+        fancylogger.FANCYLOG_FANCYRECORD = False
+
+        logger = fancylogger.getLogger()
+        self.assertEqual(logger.fancyrecord, False)
+
+        logger = fancylogger.getLogger('myname', fancyrecord=True)
+        self.assertEqual(logger.fancyrecord, True)
+
+        fancylogger.FANCYLOG_FANCYRECORD = True
+
+        logger = fancylogger.getLogger()
+        self.assertEqual(logger.fancyrecord, True)
+
+        logger = fancylogger.getLogger('myname')
+        self.assertEqual(logger.fancyrecord, True)
+
+        logger = fancylogger.getLogger('myname', fancyrecord=False)
+        self.assertEqual(logger.fancyrecord, False)
+
+        logger = fancylogger.getLogger('myname', fancyrecord='yes')
+        self.assertEqual(logger.fancyrecord, True)
+
+        logger = fancylogger.getLogger('myname', fancyrecord=0)
+        self.assertEqual(logger.fancyrecord, False)
+
+        fancylogger.FANCYLOG_FANCYRECORD = orig
 
     def tearDown(self):
         fancylogger.logToFile(self.logfn, enable=False)
         self.handle.close()
         os.remove(self.logfn)
 
+        fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
+        fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
 
-def suite():
-    """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(FancyLoggerTest)
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests"""
-    main()
+        super(FancyLoggerTest, self).tearDown()

@@ -7,7 +7,7 @@
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
 # http://github.com/hpcugent/vsc-base
@@ -30,34 +30,22 @@ vsc-base base distribution setup.py
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
-import os
-import sys
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
 
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, jt, sdw
+from vsc.install.shared_setup import ag, kh, jt, sdw
 
-def remove_bdist_rpm_source_file():
-    """List of files to remove from the (source) RPM."""
-    return []
-
-shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
-shared_setup.SHARED_TARGET.update({
-    'url': 'https://github.com/hpcugent/vsc-base',
-    'download_url': 'https://github.com/hpcugent/vsc-base'
-})
-
+VSC_INSTALL_REQ_VERSION = '0.9.19'
 
 PACKAGE = {
-    'name': 'vsc-base',
-    'version': '2.0.0',
-    'author': [sdw, jt, ag],
-    'maintainer': [sdw, jt, ag],
-    'packages': ['vsc', 'vsc.utils', 'vsc.install'],
-    'scripts': ['bin/logdaemon.py', 'bin/startlogdaemon.sh', 'bin/bdist_rpm.sh', 'bin/optcomplete.bash'],
-    'install_requires' : ['setuptools'],
+    'version': '2.4.18',
+    'author': [sdw, jt, ag, kh],
+    'maintainer': [sdw, jt, ag, kh],
+    # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
+    # setuptools must become a requirement for shared namespaces if vsc-install is removed as requirement
+    'install_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
+    'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
 }
 
 if __name__ == '__main__':
