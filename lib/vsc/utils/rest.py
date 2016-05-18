@@ -168,6 +168,7 @@ class Client(object):
         return self.request(self.PATCH, url, json.dumps(body), headers)
 
     def request(self, method, url, body, headers):
+        """Low-level networking. All HTTP-method methods call this"""
         if headers is None:
             headers = {}
         if self.auth_header is not None:
