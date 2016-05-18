@@ -70,7 +70,8 @@ class Client(object):
 
     USER_AGENT = 'vsc-rest-client'
 
-    def __init__(self, url, username=None, password=None, token=None, token_type='Token', user_agent=None, append_slash=False):
+    def __init__(self, url, username=None, password=None, token=None, token_type='Token', user_agent=None,
+                 append_slash=False):
         """
         Create a Client object,
         this client can consume a REST api hosted at host/endpoint
@@ -124,15 +125,18 @@ class Client(object):
         url += self.urlencode(params)
         return self.request(self.HEAD, url, None, headers)
 
-    def delete(self, url, headers=None, **params):
+    def delete(self, url, headers=None, body=None, **params):
         """
-        Do a http delete request on the given url with given headers and parameters
+        Do a http delete request on the given url with given headers, body and parameters
         Parameters is a dictionary that will will be urlencoded
         """
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
-        return self.request(self.DELETE, url, None, headers)
+        if headers is None:
+            headers = {}
+        headers['Content-Type'] = 'application/json'
+        return self.request(self.DELETE, url, json.dumps(body), headers)
 
     def post(self, url, body=None, headers=None, **params):
         """
@@ -142,6 +146,8 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
+        if headers is None:
+            headers = {}
         headers['Content-Type'] = 'application/json'
         return self.request(self.POST, url, json.dumps(body), headers)
 
@@ -153,6 +159,8 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
+        if headers is None:
+            headers = {}
         headers['Content-Type'] = 'application/json'
         return self.request(self.PUT, url, json.dumps(body), headers)
 
@@ -164,6 +172,8 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
+        if headers is None:
+            headers = {}
         headers['Content-Type'] = 'application/json'
         return self.request(self.PATCH, url, json.dumps(body), headers)
 
@@ -175,7 +185,7 @@ class Client(object):
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent
         fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers)
-        #TODO: in recent python: Context manager
+        # TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
         status = conn.code
         body = conn.read()
@@ -290,3 +300,5 @@ class RestClient(object):
     def __getattr__(self, key):
         """Get an attribute, we will build a request with it"""
         return RequestBuilder(self.client).__getattr__(key)
+
+    __getitem__ = __getattr__

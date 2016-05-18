@@ -29,6 +29,7 @@ Unit tests for the rest client.
 @author: Jens Timmerman (Ghent University)
 """
 import os
+from urllib2 import HTTPError
 
 from vsc.install.testing import TestCase
 
@@ -68,9 +69,17 @@ class RestClientTest(TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body['merge_commit_sha'], u'fba3e13815f3d2a9dfbd2f89f1cf678dd58bb1f1')
 
-def suite():
-    """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(RestClientTest)
-
-if __name__ == '__main__':
-    main()
+    def test_request_methods(self):
+        """Test all request methods"""
+        status, body = self.client.head()
+        self.assertEqual(status, 200)
+        try:
+            status, body = self.client.user.emails.post(body='jens.timmerman@ugent.be')
+            self.assertTrue(False, 'posting to unauthorized endpoint did not trhow a http error')
+        except HTTPError:
+            pass
+        try:
+            status, body = self.client.user.emails.delete(body='jens.timmerman@ugent.be')
+            self.assertTrue(False, 'deleting to unauthorized endpoint did not trhow a http error')
+        except HTTPError:
+            pass
