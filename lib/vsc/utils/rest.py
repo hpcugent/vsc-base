@@ -104,7 +104,7 @@ class Client(object):
         elif token is not None:
             self.auth_header = '%s %s' % (token_type, token)
 
-    def get(self, url, headers={}, **params):
+    def get(self, url, headers=None, **params):
         """
         Do a http get request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
@@ -114,7 +114,7 @@ class Client(object):
         url += self.urlencode(params)
         return self.request(self.GET, url, None, headers)
 
-    def head(self, url, headers={}, **params):
+    def head(self, url, headers=None, **params):
         """
         Do a http head request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
@@ -124,7 +124,7 @@ class Client(object):
         url += self.urlencode(params)
         return self.request(self.HEAD, url, None, headers)
 
-    def delete(self, url, headers={}, **params):
+    def delete(self, url, headers=None, **params):
         """
         Do a http delete request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
@@ -134,7 +134,7 @@ class Client(object):
         url += self.urlencode(params)
         return self.request(self.DELETE, url, None, headers)
 
-    def post(self, url, body=None, headers={}, **params):
+    def post(self, url, body=None, headers=None, **params):
         """
         Do a http post request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
@@ -145,7 +145,7 @@ class Client(object):
         headers['Content-Type'] = 'application/json'
         return self.request(self.POST, url, json.dumps(body), headers)
 
-    def put(self, url, body=None, headers={}, **params):
+    def put(self, url, body=None, headers=None, **params):
         """
         Do a http put request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
@@ -156,7 +156,7 @@ class Client(object):
         headers['Content-Type'] = 'application/json'
         return self.request(self.PUT, url, json.dumps(body), headers)
 
-    def patch(self, url, body=None, headers={}, **params):
+    def patch(self, url, body=None, headers=None, **params):
         """
         Do a http patch request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
@@ -168,6 +168,9 @@ class Client(object):
         return self.request(self.PATCH, url, json.dumps(body), headers)
 
     def request(self, method, url, body, headers):
+        """Low-level networking. All HTTP-method methods call this"""
+        if headers is None:
+            headers = {}
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent

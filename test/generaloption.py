@@ -4,7 +4,7 @@
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -41,7 +41,7 @@ from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
-from vsc.install.shared_setup import REPO_BASE_DIR
+from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
 
 
@@ -116,6 +116,10 @@ class TestOption1(GeneralOption):
 
 class GeneralOptionTest(TestCase):
     """Tests for general option"""
+
+    def setUp(self):
+        super(GeneralOptionTest, self).setUp()
+        self.setup = vsc_setup()
 
     def test_help_short(self):
         """Generate short help message"""
@@ -685,7 +689,7 @@ debug=1
         partial = '-'
         cmd_list = [script, partial]
 
-        pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
+        pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(self.setup.REPO_BASE_DIR)])
         ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message

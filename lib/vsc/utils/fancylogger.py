@@ -4,7 +4,7 @@
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -187,7 +187,11 @@ class FancyLogger(logging.getLoggerClass()):
 
     # default class for raiseException method, that can be redefined by deriving loggers
     RAISE_EXCEPTION_CLASS = Exception
-    RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
+
+    def log_method(self, msg):
+        self.warning(msg)
+
+    RAISE_EXCEPTION_LOG_METHOD = log_method
 
     # method definition as it is in logging, can't change this
     def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
