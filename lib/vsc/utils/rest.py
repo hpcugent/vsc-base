@@ -300,5 +300,3 @@ class RestClient(object):
     def __getattr__(self, key):
         """Get an attribute, we will build a request with it"""
         return RequestBuilder(self.client).__getattr__(key)
-
-    __getitem__ = __getattr__
