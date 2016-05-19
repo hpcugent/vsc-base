@@ -105,14 +105,18 @@ class Client(object):
         elif token is not None:
             self.auth_header = '%s %s' % (token_type, token)
 
+    def _append_slash_to(self, url):
+        """Append slash to specified URL, if desired and needed."""
+        if self.append_slash and not url.endswith('/'):
+            url += '/'
+        return url
+
     def get(self, url, headers=None, **params):
         """
         Do a http get request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash and not url.endswith('/'):
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.GET, url, None, headers)
 
     def head(self, url, headers=None, **params):
@@ -120,9 +124,7 @@ class Client(object):
         Do a http head request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.HEAD, url, None, headers)
 
     def delete(self, url, headers=None, body=None, **params):
@@ -130,9 +132,7 @@ class Client(object):
         Do a http delete request on the given url with given headers, body and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.DELETE, url, json.dumps(body), headers, content_type='application/json')
 
     def post(self, url, body=None, headers=None, **params):
@@ -140,9 +140,7 @@ class Client(object):
         Do a http post request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.POST, url, json.dumps(body), headers, content_type='application/json')
 
     def put(self, url, body=None, headers=None, **params):
@@ -150,9 +148,7 @@ class Client(object):
         Do a http put request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.PUT, url, json.dumps(body), headers, content_type='application/json')
 
     def patch(self, url, body=None, headers=None, **params):
@@ -160,9 +156,7 @@ class Client(object):
         Do a http patch request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.PATCH, url, json.dumps(body), headers, content_type='application/json')
 
     def request(self, method, url, body, headers, content_type=None):
