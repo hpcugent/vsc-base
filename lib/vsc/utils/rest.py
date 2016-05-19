@@ -70,7 +70,8 @@ class Client(object):
 
     USER_AGENT = 'vsc-rest-client'
 
-    def __init__(self, url, username=None, password=None, token=None, token_type='Token', user_agent=None, append_slash=False):
+    def __init__(self, url, username=None, password=None, token=None, token_type='Token', user_agent=None,
+                 append_slash=False):
         """
         Create a Client object,
         this client can consume a REST api hosted at host/endpoint
@@ -104,14 +105,18 @@ class Client(object):
         elif token is not None:
             self.auth_header = '%s %s' % (token_type, token)
 
+    def _append_slash_to(self, url):
+        """Append slash to specified URL, if desired and needed."""
+        if self.append_slash and not url.endswith('/'):
+            url += '/'
+        return url
+
     def get(self, url, headers=None, **params):
         """
         Do a http get request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.GET, url, None, headers)
 
     def head(self, url, headers=None, **params):
@@ -119,63 +124,54 @@ class Client(object):
         Do a http head request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
+        url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.HEAD, url, None, headers)
 
-    def delete(self, url, headers=None, **params):
+    def delete(self, url, headers=None, body=None, **params):
         """
-        Do a http delete request on the given url with given headers and parameters
+        Do a http delete request on the given url with given headers, body and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
-        return self.request(self.DELETE, url, None, headers)
+        url = self._append_slash_to(url) + self.urlencode(params)
+        return self.request(self.DELETE, url, json.dumps(body), headers, content_type='application/json')
 
     def post(self, url, body=None, headers=None, **params):
         """
         Do a http post request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
-        headers['Content-Type'] = 'application/json'
-        return self.request(self.POST, url, json.dumps(body), headers)
+        url = self._append_slash_to(url) + self.urlencode(params)
+        return self.request(self.POST, url, json.dumps(body), headers, content_type='application/json')
 
     def put(self, url, body=None, headers=None, **params):
         """
         Do a http put request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
-        headers['Content-Type'] = 'application/json'
-        return self.request(self.PUT, url, json.dumps(body), headers)
+        url = self._append_slash_to(url) + self.urlencode(params)
+        return self.request(self.PUT, url, json.dumps(body), headers, content_type='application/json')
 
     def patch(self, url, body=None, headers=None, **params):
         """
         Do a http patch request on the given url with given body, headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
-            url += '/'
-        url += self.urlencode(params)
-        headers['Content-Type'] = 'application/json'
-        return self.request(self.PATCH, url, json.dumps(body), headers)
+        url = self._append_slash_to(url) + self.urlencode(params)
+        return self.request(self.PATCH, url, json.dumps(body), headers, content_type='application/json')
 
-    def request(self, method, url, body, headers):
+    def request(self, method, url, body, headers, content_type=None):
         """Low-level networking. All HTTP-method methods call this"""
         if headers is None:
             headers = {}
+
+        if content_type is not None:
+            headers['Content-Type'] = content_type
+
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent
         fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers)
-        #TODO: in recent python: Context manager
+        # TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
         status = conn.code
         body = conn.read()
