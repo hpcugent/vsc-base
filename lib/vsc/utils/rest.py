@@ -110,7 +110,7 @@ class Client(object):
         Do a http get request on the given url with given headers and parameters
         Parameters is a dictionary that will will be urlencoded
         """
-        if self.append_slash:
+        if self.append_slash and not url.endswith('/'):
             url += '/'
         url += self.urlencode(params)
         return self.request(self.GET, url, None, headers)
@@ -133,10 +133,7 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
-        if headers is None:
-            headers = {}
-        headers['Content-Type'] = 'application/json'
-        return self.request(self.DELETE, url, json.dumps(body), headers)
+        return self.request(self.DELETE, url, json.dumps(body), headers, content_type='application/json')
 
     def post(self, url, body=None, headers=None, **params):
         """
@@ -146,10 +143,7 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
-        if headers is None:
-            headers = {}
-        headers['Content-Type'] = 'application/json'
-        return self.request(self.POST, url, json.dumps(body), headers)
+        return self.request(self.POST, url, json.dumps(body), headers, content_type='application/json')
 
     def put(self, url, body=None, headers=None, **params):
         """
@@ -159,10 +153,7 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
-        if headers is None:
-            headers = {}
-        headers['Content-Type'] = 'application/json'
-        return self.request(self.PUT, url, json.dumps(body), headers)
+        return self.request(self.PUT, url, json.dumps(body), headers, content_type='application/json')
 
     def patch(self, url, body=None, headers=None, **params):
         """
@@ -172,15 +163,16 @@ class Client(object):
         if self.append_slash:
             url += '/'
         url += self.urlencode(params)
-        if headers is None:
-            headers = {}
-        headers['Content-Type'] = 'application/json'
-        return self.request(self.PATCH, url, json.dumps(body), headers)
+        return self.request(self.PATCH, url, json.dumps(body), headers, content_type='application/json')
 
-    def request(self, method, url, body, headers):
+    def request(self, method, url, body, headers, content_type=None):
         """Low-level networking. All HTTP-method methods call this"""
         if headers is None:
             headers = {}
+
+        if content_type is not None:
+            headers['Content-Type'] = content_type
+
         if self.auth_header is not None:
             headers['Authorization'] = self.auth_header
         headers['User-Agent'] = self.user_agent
