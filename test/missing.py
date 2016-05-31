@@ -37,8 +37,8 @@ from random import randint, seed
 from unittest import TestLoader, main
 
 from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
-from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
-from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+from vsc.utils.missing import avail_subclasses_in, get_class_for, get_subclasses, get_subclasses_dict, modules_in_pkg_path
+from vsc.utils.missing import nub, shell_quote, shell_unquote, topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.install.testing import TestCase
 
 
@@ -298,6 +298,30 @@ class TestMissing(TestCase):
         self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
         self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
 
+
+    def test_shell_quote(self):
+        """Test shell_quote function"""
+        values = [
+            (123, "'123'", True),
+            ('foo', "'foo'", True),
+            ('value with whitespace', "'value with whitespace'", True),
+            ('foo\tbar', "'foo\tbar'", True),
+            ('(value)', "'(value)'", True),
+            ('$value', "'$value'", True),
+            ('value with (foo)', "'value with (foo)'", True),
+            ('value with $foo', "'value with $foo'", True),
+            # check that escaped single quotes aren't escaped again
+            # shell_unqoute can't unquote a single-quoted string with (single) quotes in it (ValueError: No closing quotation)
+            ("foo'bar\\'baz", "'foo\\'bar\\'baz'", False),
+            ("'", "'\\''", False),
+            ("\'", "'\\''", False),
+            ("\\'", "'\\''", False),
+            ("''", "'\\'\\''", False),
+        ]
+        for orig_value, quoted_value, test_unquote in values:
+            self.assertEqual(shell_quote(orig_value), quoted_value)
+            if test_unquote:
+                self.assertEqual(str(orig_value), shell_unquote(shell_quote(orig_value)))
 
 def suite():
     """ return all the tests"""

@@ -40,7 +40,6 @@ Various functions that are missing from the default Python library.
 @author: Stijn De Weirdt (Ghent University)
 """
 import shlex
-import subprocess
 import time
 
 from vsc.utils import fancylogger
@@ -278,11 +277,13 @@ class FrozenDictKnownKeys(FrozenDict):
                 raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % tup)
 
 
-def shell_quote(x):
-    """Add quotes so it can be apssed to shell"""
-    # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
-    # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
-    return subprocess.list2cmdline([str(x)])
+def shell_quote(token):
+    """
+    Wrap provided token in single quotes (to escape space and characters with special meaning in a shell),
+    so it can be used in a shell command. This results in token that are not expanded/interpolated by the shell.
+    """
+    # escape any non-escaped single quotes, and wrap entire token in single quotes
+    return "'%s'" % re.sub(r"(?<!\\)'", r"\'", str(token))
 
 
 def shell_unquote(x):

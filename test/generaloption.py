@@ -38,7 +38,7 @@ from tempfile import NamedTemporaryFile
 
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS
-from vsc.utils.missing import shell_quote, shell_unquote
+from vsc.utils.missing import shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
 from vsc.install.shared_setup import vsc_setup
@@ -198,14 +198,6 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(topt.options.store_with_dash, 'XX')
         self.assertEqual(topt.options.level_prefix_and_dash, 'YY')
 
-    def test_quote(self):
-        """Test quote/unquote"""
-        value = 'value with whitespace'
-        txt = '--option=%s' % value
-        # this looks strange, but is correct
-        self.assertEqual(str(txt), '--option=value with whitespace')
-        self.assertEqual(txt , shell_unquote(shell_quote(txt)))
-
     def test_generate_cmdline(self):
         """Test the creation of cmd_line args to match options"""
         self.maxDiff = None
@@ -265,14 +257,14 @@ class GeneralOptionTest(TestCase):
         # cmdline is ordered alphabetically
         self.assertEqual(topt.generate_cmd_line(ignore=ign),
                          [
-                          '--ext-add-list-first=two,three',
-                          '--ext-pathlist=x:y',
-                          '--ext-pathliststorenone',
-                          '--ext-pathliststorenone2=y2:z2',
-                          '--ext-strlist=x,y',
-                          '--level-level',
-                          '--level-prefix-and-dash=YY',
-                          '--store="some whitespace"',
+                          "--ext-add-list-first='two,three'",
+                          "--ext-pathlist='x:y'",
+                          "--ext-pathliststorenone",
+                          "--ext-pathliststorenone2='y2:z2'",
+                          "--ext-strlist='x,y'",
+                          "--level-level",
+                          "--level-prefix-and-dash='YY'",
+                          "--store='some whitespace'",
                           ])
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
         self.assertEqual([shell_unquote(x) for x in all_args],
@@ -293,24 +285,24 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=[shell_unquote(x) for x in all_args], go_nosystemexit=True)
         self.assertEqual(topt.generate_cmd_line(add_default=True, ignore=ign),
                          [
-                          '--ext-add-list-first=two,three',
-                          '--ext-pathlist=x:y',
-                          '--ext-pathliststorenone',
-                          '--ext-pathliststorenone2=y2:z2',
-                          '--ext-strlist=x,y',
-                          '--justatest',
-                          '--level-level',
-                          '--level-longlevel',
-                          '--level-prefix-and-dash=YY',
-                          '--longbase',
-                          '--store="some whitespace"',
+                          "--ext-add-list-first='two,three'",
+                          "--ext-pathlist='x:y'",
+                          "--ext-pathliststorenone",
+                          "--ext-pathliststorenone2='y2:z2'",
+                          "--ext-strlist='x,y'",
+                          "--justatest",
+                          "--level-level",
+                          "--level-longlevel",
+                          "--level-prefix-and-dash='YY'",
+                          "--longbase",
+                          "--store='some whitespace'",
                           ])
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
-        topt = TestOption1(go_args=["--aregexopt='^foo.*bar$'"])
+        topt = TestOption1(go_args=["--aregexopt=%s" % '^foo.*bar$'])
         self.assertTrue("--aregexopt='^foo.*bar$'" in topt.generate_cmd_line())
         self.assertTrue(topt.options.aregexopt is not None)
-        self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
+        self.assertEqual(topt.options.aregexopt.pattern, "^foo.*bar$")
 
     def test_enable_disable(self):
         """Test the enable/disable prefix
