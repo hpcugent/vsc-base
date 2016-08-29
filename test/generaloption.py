@@ -693,9 +693,12 @@ debug=1
         ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
-        self.assertEqual(ec, 0)
+        self.assertEqual(ec, 0, msg="simple_option.py test script ran success")
 
-        compl_opts = reg_reply.search(out).group(1).split()
+        reply_match = reg_reply.search(out)
+        self.assertTrue(reply_match, msg="COMPREPLY in output %s" % out)
+
+        compl_opts = reply_match.group(1).split()
         basic_opts = ['--debug', '--enable-debug', '--disable-debug', '-d',
                       '--help', '-h', '-H', '--shorthelp',
                       '--configfiles', '--info',
@@ -905,4 +908,3 @@ debug=1
         # but first error still wins
         self._match_testoption1_sysexit(['--store', '--foo', '--nosuchoptiondefinedfoobar'],
                                         "Value '--foo' starts with a '-'")
-

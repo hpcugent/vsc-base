@@ -71,7 +71,7 @@ import signal
 import sys
 import time
 
-from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
+from vsc.utils.fancylogger import getLogger
 
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
@@ -87,7 +87,7 @@ SHELL = BASH
 
 class DummyFunction(object):
     def __getattr__(self, name):
-        def dummy(*args, **kwargs):
+        def dummy(*args, **kwargs): # pylint: disable=unused-argument
             pass
         return dummy
 
@@ -253,7 +253,7 @@ class Run(object):
                 try:
                     self._cwd_before_startpath = os.getcwd()  # store it some one can return to it
                     os.chdir(self.startpath)
-                except:
+                except OSError:
                     self.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
                                         (self._cwd_before_startpath, self.startpath))
             else:
@@ -272,11 +272,11 @@ class Run(object):
             if os.path.isdir(self._cwd_before_startpath):
                 try:
                     currentpath = os.getcwd()
-                    if not currentpath == self.startpath:
+                    if currentpath != self.startpath:
                         self.log.warning(("_return_to_previous_start_in_path: current diretory %s does not match "
                                           "startpath %s") % (currentpath, self.startpath))
                     os.chdir(self._cwd_before_startpath)
-                except:
+                except OSError:
                     self.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
                                          "to previous path %s") % (currentpath, self._cwd_before_startpath))
             else:
@@ -325,7 +325,7 @@ class Run(object):
         if self.input is not None:  # allow empty string (whatever it may mean)
             try:
                 self._process.stdin.write(self.input)
-            except:
+            except Exception:
                 self.log.raiseException("_init_input: Failed write input %s to process" % self.input)
 
         if self.INIT_INPUT_CLOSE:
@@ -341,7 +341,7 @@ class Run(object):
         try:
             self._process_exitcode = self._process.wait()
             self._process_output = self._read_process(-1)  # -1 is read all
-        except:
+        except Exception:
             self.log.raiseException("_wait_for_process: problem during wait exitcode %s output %s" %
                                     (self._process_exitcode, self._process_output))
 
@@ -433,7 +433,7 @@ class Run(object):
         self._killtasks(tasks=[self._process.pid])
         try:
             os.waitpid(-1, os.WNOHANG)
-        except:
+        except OSError:
             pass
 
 
@@ -610,13 +610,13 @@ class RunFile(Run):
                 if dirname and not os.path.isdir(dirname):
                     try:
                         os.makedirs(dirname)
-                    except:
+                    except OSError:
                         self.log.raiseException(("_make_popen_named_args: dirname %s for file %s does not exists. "
                                                  "Creating it failed.") % (dirname, self.filename))
 
             try:
                 self.filehandle = open(self.filename, 'w')
-            except:
+            except OSError:
                 self.log.raiseException("_make_popen_named_args: failed to open filehandle for file %s" % self.filename)
 
             others = {
@@ -629,7 +629,7 @@ class RunFile(Run):
         """Close the filehandle"""
         try:
             self.filehandle.close()
-        except:
+        except OSError:
             self.log.raiseException("_cleanup_process: failed to close filehandle for filename %s" % self.filename)
 
     def _read_process(self, readsize=None):
@@ -645,7 +645,7 @@ class RunPty(Run):
 
     def _make_popen_named_args(self, others=None):
         if others is None:
-            (master, slave) = pty.openpty()
+            (_, slave) = pty.openpty()
             others = {
                 'stdin': slave,
                 'stdout': slave,

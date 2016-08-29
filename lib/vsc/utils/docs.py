@@ -45,7 +45,6 @@ def mk_rst_table(titles, columns):
         msg = "Number of titles/columns should be equal, found %d titles and %d columns" % (title_cnt, col_cnt)
         raise LengthNotEqualException, msg
     table = []
-    col_widths = []
     tmpl = []
     line= []
 

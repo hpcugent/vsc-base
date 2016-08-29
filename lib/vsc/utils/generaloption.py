@@ -40,8 +40,8 @@ import re
 import StringIO
 import sys
 import textwrap
-from optparse import OptionParser, OptionGroup, Option, Values, HelpFormatter
-from optparse import BadOptionError, SUPPRESS_USAGE, NO_DEFAULT, OptionValueError
+from optparse import OptionParser, OptionGroup, Option, Values
+from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import gettext as _gettext  # this is gettext.gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
@@ -67,7 +67,7 @@ def set_columns(cols=None):
         if os.path.exists(stty):
             try:
                 cols = int(os.popen('%s size 2>/dev/null' % stty).read().strip().split(' ')[1])
-            except:
+            except (ValueError, OSError, AttributeError):
                 # do nothing
                 pass
 
@@ -93,7 +93,7 @@ def what_str_list_tuple(name):
 
     return sep, klass, helpsep
 
-def check_str_list_tuple(option, opt, value):
+def check_str_list_tuple(option, opt, value): # pylint: disable=unused-argument
     """
     check function for strlist and strtuple type
         assumes value is comma-separated list
@@ -199,7 +199,7 @@ class ExtOption(CompleterOption):
         elif self.action in self.EXTOPTION_STORE_OR:
             setattr(self, 'store_or', self.action)
 
-            def store_or(option, opt_str, value, parser, *args, **kwargs):
+            def store_or(option, opt_str, value, parser, *args, **kwargs): # pylint: disable=unused-argument
                 """Callback for supporting options with optional values."""
                 # see http://stackoverflow.com/questions/1229146/parsing-empty-options-in-python
                 # ugly code, optparse is crap
@@ -475,7 +475,7 @@ class ExtOptionParser(OptionParser):
         # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
         self.epilog = kwargs.pop('epilog', None)
 
-        if not 'option_class' in kwargs:
+        if 'option_class' not in kwargs:
             kwargs['option_class'] = ExtOption
         OptionParser.__init__(self, *args, **kwargs)
 
@@ -560,7 +560,7 @@ class ExtOptionParser(OptionParser):
         stack = inspect.stack()[-1]
         try:
             docstr = stack[0].f_globals.get('__doc__', None)
-        except:
+        except (IndexError, ValueError, AttributeError):
             self.log.debug("set_description_docstring: no docstring found in latest stack globals")
             docstr = None
 
@@ -577,7 +577,7 @@ class ExtOptionParser(OptionParser):
                 # default textwrap width
                 try:
                     kwargs['width'] = int(width)
-                except:
+                except ValueError:
                     pass
 
             # deal with newlines in docstring
@@ -738,7 +738,7 @@ class ExtOptionParser(OptionParser):
         for gr in self.option_groups:
             section = gr.section_name
             if not (section is None or section == ExtOptionGroup.NO_SECTION):
-                if not section in sections:
+                if section not in sections:
                     sections.append(section)
                 ag = all_groups.setdefault(section, [])
                 ag.extend(gr.section_options)
@@ -762,8 +762,9 @@ class ExtOptionParser(OptionParser):
             txt += "\n"
 
         # overwrite the format_help to be able to use the the regular print_help
-        def format_help(*args, **kwargs):
+        def format_help(*args, **kwargs): # pylint: disable=unused-argument
             return txt
+
         self.format_help = format_help
         self.print_help(fh)
 
@@ -829,7 +830,7 @@ class ExtOptionParser(OptionParser):
                         self.environment_arguments.append("%s=%s" % (lo, val))
                     else:
                         # interpretation of values: 0/no/false means: don't set it
-                        if not ("%s" % val).lower() in ("0", "no", "false",):
+                        if ("%s" % val).lower() not in ("0", "no", "false",):
                             self.environment_arguments.append("%s" % lo)
                 else:
                     self.log.debug("Environment variable %s is not set" % env_opt_name)
@@ -1050,7 +1051,7 @@ class GeneralOption(object):
                         fn()
                         self.auto_section_name = None  # reset it
 
-    def make_option_metavar(self, longopt, details):
+    def make_option_metavar(self, longopt, details): # pylint: disable=unused-argument
         """Generate the metavar for option longopt
         @type longopt: str
         @type details: tuple
@@ -1164,7 +1165,7 @@ class GeneralOption(object):
 
             # this has to match PROCESSED_OPTIONS_PROPERTIES
             self.processed_options[opt_dest] = [typ, default, action, opt_name, prefix, section_name]  # add longopt
-            if not len(self.processed_options[opt_dest]) == len(self.PROCESSED_OPTIONS_PROPERTIES):
+            if len(self.processed_options[opt_dest]) != len(self.PROCESSED_OPTIONS_PROPERTIES):
                 self.log.raiseException("PROCESSED_OPTIONS_PROPERTIES length mismatch")
 
             nameds = {
@@ -1218,7 +1219,7 @@ class GeneralOption(object):
 
         # map between prefix and sectionnames
         prefix_section_names = self.config_prefix_sectionnames_map.setdefault(prefix, [])
-        if not section_name in prefix_section_names:
+        if section_name not in prefix_section_names:
             prefix_section_names.append(section_name)
             self.log.debug("Added prefix %s to list of sectionnames for %s" % (prefix, section_name))
 
@@ -1335,12 +1336,12 @@ class GeneralOption(object):
 
         try:
             parsed_files = self.configfile_parser.read(configfiles)
-        except:
+        except Exception:
             self.log.raiseException("parseconfigfiles: problem during read")
 
         self.log.debug("parseconfigfiles: following files were parsed %s" % parsed_files)
         self.log.debug("parseconfigfiles: following files were NOT parsed %s" %
-                       [x for x in configfiles if not x in parsed_files])
+                       [x for x in configfiles if x not in parsed_files])
         self.log.debug("parseconfigfiles: sections (w/o %s) %s" %
                        (self.DEFAULTSECT, self.configfile_parser.sections()))
 
@@ -1354,7 +1355,7 @@ class GeneralOption(object):
         # won't parse
         cfg_sections = self.config_prefix_sectionnames_map.values()  # without DEFAULT
         for section in cfg_sections:
-            if not section in self.config_prefix_sectionnames_map.values():
+            if section not in self.config_prefix_sectionnames_map.values():
                 self.log.warning("parseconfigfiles: found section %s, won't be parsed" % section)
                 continue
 
@@ -1417,7 +1418,7 @@ class GeneralOption(object):
                             newval = self.configfile_parser.getboolean(section, opt)
                             self.log.debug(('parseconfigfiles: getboolean for option %s value %s '
                                             'in section %s returned %s') % (opt, val, section, newval))
-                        except:
+                        except Exception:
                             self.log.raiseException(('parseconfigfiles: failed to getboolean for option %s value %s '
                                                      'in section %s') % (opt, val, section))
                         if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
@@ -1443,7 +1444,7 @@ class GeneralOption(object):
             self.parser.process_env_options = False
             (parsed_configfile_options, parsed_configfile_args) = self.parser.parse_args(configfile_cmdline)
             self.parser.process_env_options = True
-        except:
+        except Exception:
             self.log.raiseException('parseconfigfiles: failed to parse options through cmdline %s' %
                                     configfile_cmdline)
 
@@ -1456,7 +1457,7 @@ class GeneralOption(object):
         for opt_dest in configfile_cmdline_dest:
             try:
                 configfile_values[opt_dest] = getattr(parsed_configfile_options, opt_dest)
-            except:
+            except AttributeError:
                 self.log.raiseException('parseconfigfiles: failed to retrieve dest %s from parsed_configfile_options' %
                                         opt_dest)
 
@@ -1494,7 +1495,7 @@ class GeneralOption(object):
 
     def _get_options_by_property(self, prop_type, prop_value):
         """Return all options with property type equal to value"""
-        if not prop_type in self.PROCESSED_OPTIONS_PROPERTIES:
+        if prop_type not in self.PROCESSED_OPTIONS_PROPERTIES:
             self.log.raiseException('Invalid prop_type %s for PROCESSED_OPTIONS_PROPERTIES %s' %
                                     (prop_type, self.PROCESSED_OPTIONS_PROPERTIES))
         prop_idx = self.PROCESSED_OPTIONS_PROPERTIES.index(prop_type)
@@ -1705,7 +1706,7 @@ class SimpleOptionParser(ExtOptionParser):
 class SimpleOption(GeneralOption):
     PARSER = SimpleOptionParser
 
-    def __init__(self, go_dict=None, descr=None, short_groupdescr=None, long_groupdescr=None, config_files=None):
+    def __init__(self, go_dict=None, short_groupdescr=None, long_groupdescr=None, config_files=None):
         """Initialisation
         @param go_dict : General Option option dict
         @param short_descr : short description of main options
@@ -1740,7 +1741,7 @@ class SimpleOption(GeneralOption):
             self.add_group_parser(self.go_dict, self.descr, prefix=prefix)
 
 
-def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdescr=None, config_files=None):
+def simple_option(go_dict=None, short_groupdescr=None, long_groupdescr=None, config_files=None):
     """A function that returns a single level GeneralOption option parser
 
     @param go_dict : General Option option dict
@@ -1754,4 +1755,4 @@ def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdes
 
     the generated help will include the docstring
     """
-    return SimpleOption(go_dict, descr, short_groupdescr, long_groupdescr, config_files)
+    return SimpleOption(go_dict=go_dict, short_groupdescr=short_groupdescr, long_groupdescr=long_groupdescr, config_files=config_files)

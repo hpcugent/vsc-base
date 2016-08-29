@@ -194,7 +194,7 @@ class FancyLogger(logging.getLoggerClass()):
     RAISE_EXCEPTION_LOG_METHOD = log_method
 
     # method definition as it is in logging, can't change this
-    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
+    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None): # pylint: disable=unused-argument
         """
         overwrite make record to use a fancy record (with more options)
         """
@@ -243,7 +243,7 @@ class FancyLogger(logging.getLoggerClass()):
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
         raise exception, message, tb
 
-    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
+    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs): # pylint: disable=unused-argument
         """
         Log deprecation message, throw error if current version is passed given threshold.
 
@@ -718,7 +718,7 @@ def _enable_disable_default_handlers(enable):
 
         try:
             _default_logTo(enable=enable, handler=handler)
-        except:
+        except Exception:
             pass
 
 

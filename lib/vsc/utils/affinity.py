@@ -120,7 +120,7 @@ class cpu_set_t(ctypes.Structure):
         for rng in txt.split(','):
             indices = [int(x) for x in rng.split('-')] * 2  # always at least 2 elements: twice the same or start,end,start,end
 
-            ## sanity check
+            # sanity check
             if indices[1] < indices[0]:
                 self.log.raiseException("convert_hr_bits: end is lower then start in '%s'" % rng)
             elif indices[0] < 0:
@@ -153,7 +153,7 @@ class cpu_set_t(ctypes.Structure):
         """
         self.cpus = []
         for bitmask in getattr(self, '__bits'):
-            for idx in xrange(NCPUBITS):
+            for _ in range(NCPUBITS):
                 self.cpus.append(bitmask & 1)
                 bitmask >>= 1
         return self.cpus
@@ -179,12 +179,12 @@ class cpu_set_t(ctypes.Structure):
         for idx in xrange(NMASKBITS):
             cpus = [2 ** cpuidx for cpuidx, val in enumerate(self.cpus[idx * NCPUBITS:(idx + 1) * NCPUBITS]) if val == 1]
             __bits[idx] = cpu_mask_t(sum(cpus))
-        ## sanity check
-        if not prev_cpus == self.get_cpus():
-            ## get_cpus() rescans
-            self.log.raiseException("set_bits: something went wrong: previous cpus %s; current ones %s" % (prev_cpus[:20], self.cpus[:20]))
-        else:
+        # sanity check
+        if prev_cpus == self.get_cpus():
             self.log.debug("set_bits: new set to %s" % self.convert_bits_hr())
+        else:
+            # get_cpus() rescans
+            self.log.raiseException("set_bits: something went wrong: previous cpus %s; current ones %s" % (prev_cpus[:20], self.cpus[:20]))
 
     def str_cpus(self):
         """Return a string representation of the cpus"""
@@ -238,7 +238,7 @@ def sched_getcpu():
 #    tobin not used anymore
 def tobin(s):
     """Convert integer to binary format"""
-    ## bin() missing in 2.4
+    # bin() missing in 2.4
     # eg: self.cpus.extend([int(x) for x in tobin(bitmask).zfill(NCPUBITS)[::-1]])
     if s <= 1:
         return str(s)
@@ -260,7 +260,7 @@ def getpriority(which=None, who=None):
     """Get the priority"""
     if which is None:
         which = PRIO_PROCESS
-    elif not which in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
+    elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
         _logger.raiseException("getpriority: which %s not in correct range" % which)
     if who is None:
         who = 0  # current which-ever
@@ -275,13 +275,14 @@ def setpriority(prio, which=None, who=None):
     """Set the priority (aka nice)"""
     if which is None:
         which = PRIO_PROCESS
-    elif not which in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
+    elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
         _logger.raiseException("setpriority: which %s not in correct range" % which)
     if who is None:
         who = 0  # current which-ever
+
     try:
         prio = int(prio)
-    except:
+    except ValueError:
         _logger.raiseException("setpriority: failed to convert priority %s into int" % prio)
 
     if prio < PRIO_MIN or prio > PRIO_MAX:
@@ -298,7 +299,7 @@ def setpriority(prio, which=None, who=None):
 
 
 if __name__ == '__main__':
-    ## some examples of usage
+    # some examples of usage
     setLogLevelDebug()
 
     cs = cpu_set_t()
@@ -323,8 +324,8 @@ if __name__ == '__main__':
 
     print sched_getcpu()
 
-    ## resources
-    ## nice -n 5 python affinity.py prints 5 here
+    # resources
+    # nice -n 5 python affinity.py prints 5 here
     currentprio = getpriority()
     print "getpriority", currentprio
     newprio = 10

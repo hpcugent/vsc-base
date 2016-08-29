@@ -149,12 +149,13 @@ class VscMail(object):
         """
         self.log.info("Sending mail [%s] to %s." % (mail_subject, mail_to))
 
-        if reply_to is None:
-            reply_to = mail_from
         msg = MIMEText(message)
         msg['Subject'] = mail_subject
         msg['From'] = mail_from
         msg['To'] = mail_to
+
+        if reply_to is None:
+            reply_to = mail_from
         msg['Reply-to'] = reply_to
 
         self._send(mail_from, mail_to, mail_subject, msg)
@@ -217,6 +218,10 @@ class VscMail(object):
         msg_root['Subject'] = mail_subject
         msg_root['From'] = mail_from
         msg_root['To'] = mail_to
+
+        if reply_to is None:
+            reply_to = mail_from
+        msg_root['Reply-to'] = reply_to
 
         msg_root.preamble = 'This is a multi-part message in MIME format. If your email client does not support this (correctly), the first part is the plain text version.'
 

@@ -30,7 +30,7 @@ class Wrapper(object):
         def __init__(cls, name, bases, dct):
 
             def make_proxy(name):
-                def proxy(self, *args):
+                def proxy(self, *args): # pylint:disable=unused-argument
                     return getattr(self._obj, name)
                 return proxy
 

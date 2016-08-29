@@ -34,11 +34,6 @@ import re
 import time as _time
 from datetime import tzinfo, timedelta, datetime, date
 
-try:
-    any([0, 1])
-except:
-    from vsc.utils.missing import any
-
 
 class FancyMonth:
     """Convenience class for month math"""
@@ -152,7 +147,7 @@ class FancyMonth:
             raise(Exception(msg))
         else:
             nr = self.number(otherdate)
-            startdate, enddate = self.get_start_end(otherdate)
+            startdate, _ = self.get_start_end(otherdate)
 
             start = self.__class__(startdate)
             all_dates = [start.get_other(m) for m in range(nr)]
@@ -250,7 +245,7 @@ def datetime_parser(txt):
 
         try:
             sects = tmpts[1].split(':')[2].split('.')
-        except:
+        except (AttributeError, IndexError):
             sects = [0]
         # add seconds
         datetuple.append(int(sects[0]))
@@ -280,13 +275,13 @@ HOUR = timedelta(hours=1)
 class UTC(tzinfo):
     """UTC"""
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt): # pylint:disable=unused-argument
         return ZERO
 
-    def tzname(self, dt):
+    def tzname(self, dt): # pylint:disable=unused-argument
         return "UTC"
 
-    def dst(self, dt):
+    def dst(self, dt): # pylint:disable=unused-argument
         return ZERO
 
 utc = UTC()
@@ -303,13 +298,13 @@ class FixedOffset(tzinfo):
         self.__offset = timedelta(minutes=offset)
         self.__name = name
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt): # pylint:disable=unused-argument
         return self.__offset
 
-    def tzname(self, dt):
+    def tzname(self, dt): # pylint:disable=unused-argument
         return self.__name
 
-    def dst(self, dt):
+    def dst(self, dt): # pylint:disable=unused-argument
         return ZERO
 
 
