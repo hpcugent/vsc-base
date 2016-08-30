@@ -97,6 +97,7 @@ class Run(object):
     INIT_INPUT_CLOSE = True
     USE_SHELL = True
     SHELL = SHELL  # set the shell via the module constant
+    KILL_PGID = False
 
     @classmethod
     def run(cls, cmd, **kwargs):
@@ -375,13 +376,16 @@ class Run(object):
         """What to return"""
         return self._process_exitcode, self._process_output
 
-    def _killtasks(self, tasks=None, sig=signal.SIGKILL, kill_pgid=False):
+    def _killtasks(self, tasks=None, sig=signal.SIGKILL, kill_pgid=None):
         """
         Kill all tasks
             @param: tasks list of processids
             @param: sig, signal to use to kill
             @param: kill_pgid, send kill to group
         """
+        if kill_pgid is None:
+            kill_pgid = self.KILL_PGID
+
         if tasks is None:
             self.log.error("killtasks no tasks passed")
             return
@@ -655,7 +659,7 @@ class RunPty(Run):
 
 
 class RunTimeout(RunLoop, RunAsync):
-    """Question/Answer processing"""
+    """Run for maximum timeout seconds"""
 
     def __init__(self, cmd, **kwargs):
         self.timeout = float(kwargs.pop('timeout', None))

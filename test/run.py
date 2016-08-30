@@ -35,9 +35,10 @@ import stat
 import sys
 import tempfile
 import time
+import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA
+from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -45,6 +46,7 @@ from vsc.install.testing import TestCase
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests')
 SCRIPT_SIMPLE = os.path.join(SCRIPTS_DIR, 'simple.py')
 SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
+SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
 
 class RunQAShort(RunQA):
@@ -55,6 +57,14 @@ run_qas = RunQAShort.run
 
 class TestRun(TestCase):
     """Test for the run module."""
+
+    def setUp(self):
+        super(TestCase, self).setUp()
+        self.tempdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        super(TestCase, self).tearDown()
+        shutil.rmtree(self.tempdir)
 
     def test_simple(self):
         ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
@@ -67,14 +77,79 @@ class TestRun(TestCase):
         self.assertTrue('shortsleep' in output.lower())
 
     def test_timeout(self):
-        start = time.time()
         timeout = 3
+
         # longsleep is 10sec
+        start = time.time()
         ec, output = run_timeout([sys.executable, SCRIPT_SIMPLE, 'longsleep'], timeout=timeout)
         stop = time.time()
-        self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE)
-        self.assertTrue(RUNRUN_TIMEOUT_OUTPUT == output)
-        self.assertTrue(stop - start < timeout + 1)  # give 1 sec margin
+        self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg='longsleep stopped due to timeout')
+        self.assertEqual(RUNRUN_TIMEOUT_OUTPUT, output, msg='longsleep expected output')
+        self.assertTrue(stop - start < timeout + 1, msg='longsleep timeout within margin')  # give 1 sec margin
+
+        # run_nested is also 10 seconds sleep
+        # 1st arg depth: 2 recursive starts
+        # 2nd arg file: output file: format 'depth pid' (only other processes are sleep)
+
+        def check_pid(pid):
+            """ Check For the existence of a unix pid. """
+            try:
+                os.kill(pid, 0)
+            except OSError:
+                return False
+            else:
+                return True
+
+        default = RunTimeout.KILL_PGID
+
+        def do_test(kill_pgid):
+            depth = 2 # this is the parent
+            res_fn = os.path.join(self.tempdir, 'nested_kill_pgid_%s' % kill_pgid)
+            start = time.time()
+            RunTimeout.KILL_PGID = kill_pgid
+            ec, output = run_timeout([SCRIPT_NESTED, str(depth), res_fn], timeout=timeout)
+            # reset it to default
+            RunTimeout.KILL_PGID = default
+            stop = time.time()
+            self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg='run_nested kill_pgid %s stopped due to timeout'  % kill_pgid)
+            self.assertTrue(stop - start < timeout + 1, msg='run_nested kill_pgid %s timeout within margin' % kill_pgid)  # give 1 sec margin
+            # make it's not too fast
+            time.sleep(1)
+            # there's now 5 seconds to complete the remainder
+            pids = range(depth+1)
+            # normally this is ordered output, but you never know
+            for line in open(res_fn).readlines():
+                dep, pid, _ = line.strip().split(" ") # 3rd is PPID
+                pids[int(dep)] = int(pid)
+
+            # pids[0] should be killed
+            self.assertFalse(check_pid(pids[depth]), "main depth=%s pid (pids %s) is killed by timeout" % (depth, pids,))
+
+            if kill_pgid:
+                # others should be killed as well
+                test_fn = self.assertFalse
+                msg = ""
+            else:
+                # others should be running
+                test_fn = self.assertTrue
+                msg = " not"
+
+            for dep, pid in enumerate(pids[:depth]):
+                test_fn(check_pid(pid), "depth=%s pid (pids %s) is%s killed kill_pgid %s" % (dep, pids, msg, kill_pgid))
+
+            # clean them all
+            for pid in pids:
+                try:
+                    os.kill(pid, 0) # test first
+                    os.kill(pid, 9)
+                except OSError:
+                    pass
+
+        do_test(False)
+        # TODO: find a way to change the pid group before starting this test
+        #       now it kills the test process too ;)
+        #       It's ok not to test, as it is not the default, and it's not easy to change it
+        #do_test(True)
 
     def test_qa_simple(self):
         """Simple testing"""
