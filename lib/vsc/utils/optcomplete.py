@@ -154,7 +154,7 @@ class Completer(object):
         if self.CALL_ARGS is not None:
             for arg in self.CALL_ARGS:
                 all_args.append(arg)
-                if not arg in kwargs:
+                if arg not in kwargs:
                     msg = "%s __call__ missing mandatory arg %s" % (self.__class__.__name__, arg)
                     raise CompleterMissingCallArgument(msg)
 
@@ -162,13 +162,13 @@ class Completer(object):
             all_args.extend(self.CALL_ARGS_OPTIONAL)
 
         for arg in kwargs.keys():
-            if not arg in all_args:
+            if arg not in all_args:
                 # remove it
                 kwargs.pop(arg)
 
         return self._call(**kwargs)
 
-    def _call(self, **kwargs):
+    def _call(self, **kwargs): # pylint: disable=unused-argument
         """Return empty list"""
         return []
 
@@ -343,7 +343,7 @@ def extract_word(line, point):
 def error_override(self, msg):
     """Hack to keep OptionParser from writing to sys.stderr when
     calling self.exit from self.error"""
-    self.exit(2, msg=None)
+    self.exit(2, msg=msg)
 
 
 def guess_first_nonoption(gparser, subcmds_map):
@@ -352,9 +352,8 @@ def guess_first_nonoption(gparser, subcmds_map):
     subcommand syntax, so that we can generate the appropriate completions for
     the subcommand."""
 
-
     gparser = copy.deepcopy(gparser)
-    def print_usage_nousage (self, *args, **kwargs):
+    def print_usage_nousage (self, *args, **kwargs): # pylint: disable=unused-argument
         pass
     gparser.print_usage = print_usage_nousage
 

@@ -114,7 +114,7 @@ class LogDaemon(Daemon):
                 self.logger.handle(logrecord)
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except:
+            except Exception:
                 traceback.print_exc()
 
 

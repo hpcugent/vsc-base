@@ -6,6 +6,7 @@
 setup.cfg
 
 # Packages
+.eggs
 *.egg
 *.egg-info
 dist

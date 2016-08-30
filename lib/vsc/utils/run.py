@@ -71,7 +71,7 @@ import signal
 import sys
 import time
 
-from vsc.utils.fancylogger import getLogger, getAllExistingLoggers
+from vsc.utils.fancylogger import getLogger
 
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
@@ -87,7 +87,7 @@ SHELL = BASH
 
 class DummyFunction(object):
     def __getattr__(self, name):
-        def dummy(*args, **kwargs):
+        def dummy(*args, **kwargs): # pylint: disable=unused-argument
             pass
         return dummy
 
@@ -97,6 +97,7 @@ class Run(object):
     INIT_INPUT_CLOSE = True
     USE_SHELL = True
     SHELL = SHELL  # set the shell via the module constant
+    KILL_PGID = False
 
     @classmethod
     def run(cls, cmd, **kwargs):
@@ -113,7 +114,7 @@ class Run(object):
             @param input: set "simple" input
             @param startpath: directory to change to before executing command
             @param disable_log: use fake logger (won't log anything)
-            @param use_shell: use the subshell 
+            @param use_shell: use the subshell
             @param shell: change the shell
         """
         self.input = kwargs.pop('input', None)
@@ -253,7 +254,7 @@ class Run(object):
                 try:
                     self._cwd_before_startpath = os.getcwd()  # store it some one can return to it
                     os.chdir(self.startpath)
-                except:
+                except OSError:
                     self.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
                                         (self._cwd_before_startpath, self.startpath))
             else:
@@ -272,11 +273,11 @@ class Run(object):
             if os.path.isdir(self._cwd_before_startpath):
                 try:
                     currentpath = os.getcwd()
-                    if not currentpath == self.startpath:
+                    if currentpath != self.startpath:
                         self.log.warning(("_return_to_previous_start_in_path: current diretory %s does not match "
                                           "startpath %s") % (currentpath, self.startpath))
                     os.chdir(self._cwd_before_startpath)
-                except:
+                except OSError:
                     self.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
                                          "to previous path %s") % (currentpath, self._cwd_before_startpath))
             else:
@@ -325,7 +326,7 @@ class Run(object):
         if self.input is not None:  # allow empty string (whatever it may mean)
             try:
                 self._process.stdin.write(self.input)
-            except:
+            except Exception:
                 self.log.raiseException("_init_input: Failed write input %s to process" % self.input)
 
         if self.INIT_INPUT_CLOSE:
@@ -341,7 +342,7 @@ class Run(object):
         try:
             self._process_exitcode = self._process.wait()
             self._process_output = self._read_process(-1)  # -1 is read all
-        except:
+        except Exception:
             self.log.raiseException("_wait_for_process: problem during wait exitcode %s output %s" %
                                     (self._process_exitcode, self._process_output))
 
@@ -375,41 +376,68 @@ class Run(object):
         """What to return"""
         return self._process_exitcode, self._process_output
 
-    def _killtasks(self, tasks=None, sig=signal.SIGKILL, kill_pgid=False):
+    def _killtasks(self, tasks=None, sig=signal.SIGKILL, kill_pgid=None):
         """
         Kill all tasks
             @param: tasks list of processids
             @param: sig, signal to use to kill
-            @apram: kill_pgid, send kill to group
+            @param: kill_pgid, send kill to group
         """
+        if kill_pgid is None:
+            kill_pgid = self.KILL_PGID
+
         if tasks is None:
             self.log.error("killtasks no tasks passed")
-        elif isinstance(tasks, basestring):
-            try:
-                tasks = [int(tasks)]
-            except:
-                self.log.error("killtasks failed to convert tasks string %s to int" % tasks)
+            return
+        elif not isinstance(tasks, (list, tuple,)):
+            tasks = [tasks]
 
+        pids = []
         for pid in tasks:
-            pgid = os.getpgid(pid)
+            # Try to convert as much pids as possible
             try:
-                os.kill(int(pid), sig)
-                if kill_pgid:
-                    os.killpg(pgid, sig)
-                self.log.debug("Killed %s with signal %s" % (pid, sig))
-            except OSError, err:
+                pids.append(int(pid))
+            except ValueError:
+                self.log.error("killtasks failed to convert task/pid %s to integer" % pid)
+
+        def do_something_with_pid(fn, args, msg):
+            """
+            Handle interaction with process ids gracefully
+            Does not raise anything, and handles missing pid
+            Return the result of the function call + args, or None
+            """
+            res = None
+            try:
+                res = fn(*args)
+            except Exception as err:
                 # ERSCH is no such process, so no issue
-                if not err.errno == errno.ESRCH:
-                    self.log.error("Failed to kill %s: %s" % (pid, err))
-            except Exception, err:
-                self.log.error("Failed to kill %s: %s" % (pid, err))
+                if not (isinstance(err, OSError) and err.errno == errno.ESRCH):
+                    self.log.error("Failed to %s from %s: %s" % (msg, pid, err))
+
+            return res
+
+        for pid in pids:
+
+            # Get pgid before killing it
+            pgid = None
+            if kill_pgid:
+                # This can't be fatal, whatever happens here, still try to kill the pid
+                pgid = do_something_with_pid(os.getpgid, [pid], 'find pgid')
+
+            do_something_with_pid(os.kill, [pid, sig], 'kill pid')
+
+            if kill_pgid:
+                if pgid is None:
+                    self.log.error("Can't kill pgid for pid %s, None found" % pid)
+                else:
+                    do_something_with_pid(os.kill, [pgid, sig], 'kill pgid')
 
     def stop_tasks(self):
         """Cleanup current run"""
         self._killtasks(tasks=[self._process.pid])
         try:
             os.waitpid(-1, os.WNOHANG)
-        except:
+        except OSError:
             pass
 
 
@@ -480,7 +508,7 @@ class RunLoop(Run):
 
             # process after updating the self._process_ vars
             self._loop_process_output_final(output)
-        except RunLoopException, err:
+        except RunLoopException as err:
             self.log.debug('RunLoopException %s' % err)
             self._process_output = err.output
             self._process_exitcode = err.code
@@ -586,13 +614,13 @@ class RunFile(Run):
                 if dirname and not os.path.isdir(dirname):
                     try:
                         os.makedirs(dirname)
-                    except:
+                    except OSError:
                         self.log.raiseException(("_make_popen_named_args: dirname %s for file %s does not exists. "
                                                  "Creating it failed.") % (dirname, self.filename))
 
             try:
                 self.filehandle = open(self.filename, 'w')
-            except:
+            except OSError:
                 self.log.raiseException("_make_popen_named_args: failed to open filehandle for file %s" % self.filename)
 
             others = {
@@ -605,7 +633,7 @@ class RunFile(Run):
         """Close the filehandle"""
         try:
             self.filehandle.close()
-        except:
+        except OSError:
             self.log.raiseException("_cleanup_process: failed to close filehandle for filename %s" % self.filename)
 
     def _read_process(self, readsize=None):
@@ -621,7 +649,7 @@ class RunPty(Run):
 
     def _make_popen_named_args(self, others=None):
         if others is None:
-            (master, slave) = pty.openpty()
+            (_, slave) = pty.openpty()
             others = {
                 'stdin': slave,
                 'stdout': slave,
@@ -631,7 +659,7 @@ class RunPty(Run):
 
 
 class RunTimeout(RunLoop, RunAsync):
-    """Question/Answer processing"""
+    """Run for maximum timeout seconds"""
 
     def __init__(self, cmd, **kwargs):
         self.timeout = float(kwargs.pop('timeout', None))

@@ -66,18 +66,9 @@ def partial(func, *args, **keywords):
     newfunc.keywords = keywords
     return newfunc
 
-
-def any(ls):
-    """Reimplementation of 'any' function, which is not available in Python 2.4 yet."""
-
-    return sum([bool(x) for x in ls]) != 0
-
-
-def all(ls):
-    """Reimplementation of 'all' function, which is not available in Python 2.4 yet."""
-
-    return sum([bool(x) for x in ls]) == len(ls)
-
+# Placeholder, used to have implementations for any and all that were missing in py24
+any = any # pylint: disable=redefined-builtin
+all = all # pylint: disable=redefined-builtin
 
 def nub(list_):
     """Returns the unique items of a list of hashables, while preserving order of
@@ -253,7 +244,7 @@ class FrozenDictKnownKeys(FrozenDict):
 
         # handle unknown keys: either ignore them or raise an exception
         tmpdict = dict(*args, **kwargs)
-        unknown_keys = [key for key in tmpdict.keys() if not key in self.KNOWN_KEYS]
+        unknown_keys = [key for key in tmpdict.keys() if key not in self.KNOWN_KEYS]
         if unknown_keys:
             if ignore_unknown_keys:
                 for key in unknown_keys:
@@ -373,6 +364,6 @@ def topological_sort(graph):
     visited = set()
     for root in graph:
         for node in post_order(graph, root):
-            if not node in visited:
+            if node not in visited:
                 yield node
                 visited.add(node)
