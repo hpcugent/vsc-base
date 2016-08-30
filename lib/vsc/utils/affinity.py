@@ -234,18 +234,6 @@ def sched_getcpu():
     """Get currently used cpu"""
     return _libc.sched_getcpu()
 
-#Utility function
-#    tobin not used anymore
-def tobin(s):
-    """Convert integer to binary format"""
-    # bin() missing in 2.4
-    # eg: self.cpus.extend([int(x) for x in tobin(bitmask).zfill(NCPUBITS)[::-1]])
-    if s <= 1:
-        return str(s)
-    else:
-        return tobin(s >> 1) + str(s & 1)
-
-
 #/* Return the highest priority of any process specified by WHICH and WHO
 #   (see above); if WHO is zero, the current process, process group, or user
 #   (as specified by WHO) is used.  A lower priority number means higher
