@@ -87,7 +87,7 @@ class TestRun(TestCase):
         self.assertEqual(RUNRUN_TIMEOUT_OUTPUT, output, msg='longsleep expected output')
         self.assertTrue(stop - start < timeout + 1, msg='longsleep timeout within margin')  # give 1 sec margin
 
-        # run_nested is also 10 seconds sleep
+        # run_nested is 15 seconds sleep
         # 1st arg depth: 2 recursive starts
         # 2nd arg file: output file: format 'depth pid' (only other processes are sleep)
 
@@ -114,8 +114,8 @@ class TestRun(TestCase):
             self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg='run_nested kill_pgid %s stopped due to timeout'  % kill_pgid)
             self.assertTrue(stop - start < timeout + 1, msg='run_nested kill_pgid %s timeout within margin' % kill_pgid)  # give 1 sec margin
             # make it's not too fast
-            time.sleep(1)
-            # there's now 5 seconds to complete the remainder
+            time.sleep(5)
+            # there's now 6 seconds to complete the remainder
             pids = range(depth+1)
             # normally this is ordered output, but you never know
             for line in open(res_fn).readlines():

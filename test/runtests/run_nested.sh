@@ -3,7 +3,7 @@
 depth=${1:-1}
 path=${2:-/dev/null}
 
-mysleep=10
+mysleep=15
 
 echo "$depth $$ $PPID" >> $path
 
