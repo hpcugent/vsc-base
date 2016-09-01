@@ -30,7 +30,9 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+import logging
 import os
+from random import randint
 import re
 import sys
 import shutil
@@ -38,6 +40,20 @@ import shutil
 from StringIO import StringIO
 import tempfile
 from unittest import TestLoader, main, TestSuite
+try:
+    from unittest import skipUnless
+except ImportError:
+    # Python 2.6 does not have `skipIf`/`skipUnless`
+    def skipUnless(condition, reason):
+        if condition:
+            def deco(fn):
+                return fn
+        else:
+            def deco(fn):
+                return (lambda *args, **kwargs: True)
+        return deco
+
+import coloredlogs
 
 from vsc.utils import fancylogger
 from vsc.install.testing import TestCase
@@ -45,6 +61,26 @@ from vsc.install.testing import TestCase
 MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
 MSGRE_TPL = r"%%s.*%s" % MSG
+
+
+def _get_tty_stream():
+    """Try to open and return a stream connected to a TTY device."""
+    if os.isatty(sys.stdout.fileno()):
+        return sys.stdout
+    elif os.isatty(sys.stderr.fileno()):
+        return sys.stderr
+    else:
+        if 'TTY' in os.environ:
+            try:
+                tty = os.environ['TTY']
+                stream = open(tty, 'w')
+                if os.isatty(stream.fileno()):
+                    return stream
+            except IOError:
+                # cannot open $TTY for writing, continue
+                pass
+        # give up
+        return None
 
 
 def classless_function():
@@ -449,3 +485,91 @@ class FancyLoggerTest(TestCase):
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
 
         super(FancyLoggerTest, self).tearDown()
+
+
+class ScreenLogFormatterFactoryTest(TestCase):
+    """Test `_screenLogFormatterFactory`"""
+
+    def test_colorize_never(self):
+        # with colorize=Colorize.NEVER, return plain old formatter
+        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.NEVER)
+        self.assertEqual(cls, logging.Formatter)
+
+    def test_colorize_always(self):
+        # with colorize=Colorize.ALWAYS, return colorizing formatter
+        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.ALWAYS)
+        self.assertEqual(cls, coloredlogs.ColoredFormatter)
+
+    @skipUnless(_get_tty_stream(), "cannot get a stream connected to a TTY")
+    def test_colorize_auto_tty(self):
+        # with colorize=Colorize.AUTO on a stream connected to a TTY,
+        # return colorizing formatter
+        stream = _get_tty_stream()
+        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.AUTO, stream)
+        self.assertEqual(cls, coloredlogs.ColoredFormatter)
+
+    def test_colorize_auto_nontty(self):
+        # with colorize=Colorize.AUTO on a stream *not* connected to a TTY,
+        # return colorizing formatter
+        stream = open(os.devnull, 'w')
+        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.AUTO, stream)
+        self.assertEqual(cls, logging.Formatter)
+
+
+class EnvToBooleanTest(TestCase):
+
+    def setUp(self):
+        self.testvar = self._generate_var_name()
+        self.testvar_undef = self._generate_var_name()
+
+    def _generate_var_name(self):
+        while True:
+            rnd = randint(0, 0xffffff)
+            name = ('TEST_VAR_%06X' % rnd)
+            if name not in os.environ:
+                return name
+
+    def test_env_to_boolean_true(self):
+        for value in (
+                '1',
+                'Y',
+                'y',
+                'Yes',
+                'yes',
+                'YES',
+                'True',
+                'TRUE',
+                'true',
+                'TrUe', # weird capitalization but should work nonetheless
+        ):
+            os.environ[self.testvar] = value
+            self.assertTrue(fancylogger._env_to_boolean(self.testvar))
+
+    def test_env_to_boolean_false(self):
+        for value in (
+                '0',
+                'n',
+                'N',
+                'no',
+                'No',
+                'NO',
+                'false',
+                'FALSE',
+                'False',
+                'FaLsE', # weird capitalization but should work nonetheless
+                'whatever', # still maps to false
+        ):
+            os.environ[self.testvar] = value
+            self.assertFalse(fancylogger._env_to_boolean(self.testvar))
+
+    def test_env_to_boolean_undef_without_default(self):
+        self.assertEqual(fancylogger._env_to_boolean(self.testvar_undef), False)
+
+    def test_env_to_boolean_undef_with_default(self):
+        self.assertEqual(fancylogger._env_to_boolean(self.testvar_undef, 42), 42)
+
+    def tearDown(self):
+        if self.testvar in os.environ:
+            del os.environ[self.testvar]
+        del self.testvar
+        del self.testvar_undef

@@ -75,6 +75,7 @@ Logging to a udp server:
 @author: Kenneth Hoste (Ghent University)
 """
 
+from collections import namedtuple
 import inspect
 import logging
 import logging.handlers
@@ -84,6 +85,79 @@ import threading
 import traceback
 import weakref
 from distutils.version import LooseVersion
+
+
+def _env_to_boolean(varname, default=False):
+    """
+    Compute a boolean based on the truth value of environment variable `varname`.
+    If no variable by that name is present in `os.environ`, then return `default`.
+
+    For the purpose of this function, the string values ``'1'``,
+    ``'y'``, ``'yes'``, and ``'true'`` (case-insensitive) are all
+    mapped to the truth value ``True``::
+
+      >>> os.environ['NO_FOOBAR'] = '1'
+      >>> _env_to_boolean('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'Y'
+      >>> _env_to_boolean('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'Yes'
+      >>> _env_to_boolean('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'yes'
+      >>> _env_to_boolean('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'True'
+      >>> _env_to_boolean('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'TRUE'
+      >>> _env_to_boolean('NO_FOOBAR')
+      True
+      >>> os.environ['NO_FOOBAR'] = 'true'
+      >>> _env_to_boolean('NO_FOOBAR')
+      True
+
+    Any other value is mapped to Python ``False``::
+
+      >>> os.environ['NO_FOOBAR'] = '0'
+      >>> _env_to_boolean('NO_FOOBAR')
+      False
+      >>> os.environ['NO_FOOBAR'] = 'no'
+      >>> _env_to_boolean('NO_FOOBAR')
+      False
+      >>> os.environ['NO_FOOBAR'] = 'if you please'
+      >>> _env_to_boolean('NO_FOOBAR')
+      False
+
+    If no variable named `varname` is present in `os.environ`, then
+    return `default`::
+
+      >>> del os.environ['NO_FOOBAR']
+      >>> _env_to_boolean('NO_FOOBAR', 42)
+      42
+
+    By default, calling `_env_to_boolean` on an undefined
+    variable returns Python ``False``::
+
+      >>> if 'NO_FOOBAR' in os.environ: del os.environ['NO_FOOBAR']
+      >>> _env_to_boolean('NO_FOOBAR')
+      False
+    """
+    if varname not in os.environ:
+        return default
+    else:
+        return os.environ.get(varname).lower() in ('1', 'yes', 'true', 'y')
+
+
+HAVE_COLOREDLOGS_MODULE = False
+if not _env_to_boolean('FANCYLOGGER_NO_COLOREDLOGS'):
+    try:
+        import coloredlogs
+        import humanfriendly
+        HAVE_COLOREDLOGS_MODULE = True
+    except ImportError:
+        pass
 
 # constants
 TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
@@ -101,6 +175,9 @@ BACKUPCOUNT = 10  # number of rotating log files to save
 
 DEFAULT_UDP_PORT = 5005
 
+# poor man's enum
+Colorize = namedtuple('Colorize', 'AUTO ALWAYS NEVER')('auto', 'always', 'never')
+
 # register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, 'APOCALYPTIC')
 # register QUIET, EXCEPTION and FATAL alias
@@ -111,7 +188,7 @@ logging._levelNames['QUIET'] = logging.WARNING
 
 # mpi rank support
 _MPIRANK = MPIRANK_NO_MPI
-if os.environ.get('FANCYLOGGER_IGNORE_MPI4PY', '0').lower() not in ('1', 'yes', 'true', 'y'):
+if not _env_to_boolean('FANCYLOGGER_IGNORE_MPI4PY'):
     try:
         from mpi4py import MPI
         if MPI.Is_initialized():
@@ -383,7 +460,7 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
 
     l = logging.getLogger(fullname)
     l.fancyrecord = fancyrecord
-    if os.environ.get('FANCYLOGGER_GETLOGGER_DEBUG', '0').lower() in ('1', 'yes', 'true', 'y'):
+    if _env_to_boolean('FANCYLOGGER_GETLOGGER_DEBUG'):
         print 'FANCYLOGGER_GETLOGGER_DEBUG',
         print 'name', name, 'fname', fname, 'fullname', fullname,
         print "getRootLoggerName: ", getRootLoggerName()
@@ -435,7 +512,7 @@ def getRootLoggerName():
         return "not available in optimized mode"
 
 
-def logToScreen(enable=True, handler=None, name=None, stdout=False):
+def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Colorize.NEVER):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -447,8 +524,14 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
 
     by default, logToScreen will log to stderr; logging to stdout instead can be done
     by setting the 'stdout' parameter to True
+
+    The `colorize` parameter enables or disables log colorization using
+    ANSI terminal escape sequences, according to the values allowed
+    in the `colorize` parameter to function `_screenLogFormatterFactory`
+    (which see).
     """
     handleropts = {'stdout': stdout}
+    formatter = _screenLogFormatterFactory(colorize=colorize, stream=(sys.stdout if stdout else sys.stderr))
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
@@ -456,6 +539,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False):
                            name=name,
                            enable=enable,
                            handler=handler,
+                           formatterclass=formatter,
                            )
 
 
@@ -516,16 +600,21 @@ def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):
                            )
 
 
-def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=None, handler=None):
+def _logToSomething(handlerclass, handleropts, loggeroption,
+                    enable=True, name=None, handler=None, formatterclass=None):
     """
     internal function to enable (or disable) logging to handler named handlername
-    handleropts is options dictionary passed to create the handler instance
+    handleropts is options dictionary passed to create the handler instance;
+    `formatterclass` is the class to use to instantiate a log formatter object.
 
     returns the handler (this can be used to later disable logging to file)
 
     if you want to disable logging to the handler, pass the earlier obtained handler
     """
     logger = getLogger(name, fname=False, clsname=False)
+
+    if formatterclass is None:
+        formatterclass = logging.Formatter
 
     if not hasattr(logger, loggeroption):
         # not set.
@@ -538,7 +627,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
                     f_format = DEFAULT_LOGGING_FORMAT
                 else:
                     f_format = FANCYLOG_LOGGING_FORMAT
-                formatter = logging.Formatter(f_format)
+                formatter = formatterclass(f_format)
                 handler = handlerclass(**handleropts)
                 handler.setFormatter(formatter)
             logger.addHandler(handler)
@@ -564,6 +653,36 @@ def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=N
             logger.removeHandler(handler)
         setattr(logger, loggeroption, False)
     return handler
+
+
+def _screenLogFormatterFactory(colorize=Colorize.NEVER, stream=sys.stdout):
+    """
+    Return a log formatter class, with optional colorization features.
+
+    Second argument `colorize` controls whether the formatter
+    can use ANSI terminal escape sequences:
+
+    * ``Colorize.NEVER`` (default) forces use the plain `logging.Formatter` class;
+    * ``Colorize.ALWAYS`` forces use of the colorizing formatter;
+    * ``Colorize.AUTO`` selects the colorizing formatter depending on
+      whether `stream` is connected to a terminal.
+
+    Second argument `stream` is the stream to check in case `colorize`
+    is ``Colorize.AUTO``.
+    """
+    formatter = logging.Formatter  # default
+    if HAVE_COLOREDLOGS_MODULE:
+        if colorize == Colorize.AUTO:
+            # auto-detect
+            if humanfriendly.terminal.terminal_supports_colors(stream):
+                formatter = coloredlogs.ColoredFormatter
+        elif colorize == Colorize.ALWAYS:
+            formatter = coloredlogs.ColoredFormatter
+        elif colorize == Colorize.NEVER:
+            pass
+        else:
+            raise ValueError("Argument `colorize` must be one of 'auto', 'always', or 'never'.")
+    return formatter
 
 
 def _getSysLogFacility(name=None):
@@ -605,7 +724,7 @@ def setLogLevel(level):
         level = getLevelInt(level)
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)
-    if os.environ.get('FANCYLOGGER_LOGLEVEL_DEBUG', '0').lower() in ('1', 'yes', 'true', 'y'):
+    if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
         print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
         print "\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG"))
         sys.stdout.flush()

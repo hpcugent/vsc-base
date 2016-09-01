@@ -38,14 +38,23 @@ from vsc.install.shared_setup import ag, kh, jt, sdw
 
 VSC_INSTALL_REQ_VERSION = '0.10.1'
 
+_coloredlogs_pkgs = [
+    'coloredlogs',     # automatic log colorizer
+    'humanfriendly',   # detect if terminal has colors
+]
+
 PACKAGE = {
-    'version': '2.5.2',
+    'version': '2.5.3',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
     # setuptools must become a requirement for shared namespaces if vsc-install is removed as requirement
     'install_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
+    'extras_require': {
+        'coloredlogs': _coloredlogs_pkgs,
+    },
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
+    'tests_require': ['prospector'] + _coloredlogs_pkgs,
 }
 
 if __name__ == '__main__':
