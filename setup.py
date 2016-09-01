@@ -38,6 +38,11 @@ from vsc.install.shared_setup import ag, kh, jt, sdw
 
 VSC_INSTALL_REQ_VERSION = '0.10.1'
 
+_coloredlogs_pkgs = [
+    'coloredlogs',     # automatic log colorizer
+    'humanfriendly',   # detect if terminal has colors
+]
+
 PACKAGE = {
     'version': '2.5.3',
     'author': [sdw, jt, ag, kh],
@@ -46,12 +51,10 @@ PACKAGE = {
     # setuptools must become a requirement for shared namespaces if vsc-install is removed as requirement
     'install_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
     'extras_require': {
-        'coloredlogs': [
-            'coloredlogs',     # automatic log colorizer
-            'humanfriendly',   # detect if terminal has colors
-        ],
+        'coloredlogs': _coloredlogs_pkgs,
     },
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
+    'tests_require': _coloredlogs_pkgs,
 }
 
 if __name__ == '__main__':
