@@ -54,7 +54,7 @@ PACKAGE = {
         'coloredlogs': _coloredlogs_pkgs,
     },
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
-    'tests_require': _coloredlogs_pkgs,
+    'tests_require': ['prospector'] + _coloredlogs_pkgs,
 }
 
 if __name__ == '__main__':
