@@ -38,7 +38,7 @@ import tempfile
 from tempfile import NamedTemporaryFile
 
 from vsc.utils import fancylogger
-from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS
+from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS, set_columns
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
