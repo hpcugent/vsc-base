@@ -28,6 +28,7 @@ Unit tests for generaloption
 
 @author: Stijn De Weirdt (Ghent University)
 """
+import copy
 import datetime
 import logging
 import os
@@ -121,7 +122,7 @@ class GeneralOptionTest(TestCase):
         """Prepare for running test."""
         super(GeneralOptionTest, self).setUp()
         self.setup = vsc_setup()
-        self.orig_environ = os.environ[:]
+        self.orig_environ = copy.deepcopy(os.environ)
 
     def tearDown(self):
         """Clean up after running test."""
