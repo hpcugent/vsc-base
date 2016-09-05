@@ -936,4 +936,5 @@ debug=1
         self.assertEqual(os.environ['COLUMNS'], '10')
 
         del os.environ['COLUMNS']
+        set_columns(cols=99)
         self.assertEqual(os.environ['COLUMNS'], '99')
