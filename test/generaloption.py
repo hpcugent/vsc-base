@@ -118,8 +118,14 @@ class GeneralOptionTest(TestCase):
     """Tests for general option"""
 
     def setUp(self):
+        """Prepare for running test."""
         super(GeneralOptionTest, self).setUp()
         self.setup = vsc_setup()
+        self.orig_environ = os.environ[:]
+
+    def tearDown(self):
+        """Clean up after running test."""
+        os.environ = self.orig_environ
 
     def test_help_short(self):
         """Generate short help message"""
@@ -908,3 +914,25 @@ debug=1
         # but first error still wins
         self._match_testoption1_sysexit(['--store', '--foo', '--nosuchoptiondefinedfoobar'],
                                         "Value '--foo' starts with a '-'")
+
+    def test_set_columns(self):
+        """Test set_columns function."""
+        def reset_columns():
+            """Reset environment to run another test case for set_columns."""
+            if 'COLUMNS' in os.environ:
+                del os.environ['COLUMNS']
+
+        reset_columns()
+        set_columns()
+        cols = os.environ.get('COLUMNS')
+        self.assertTrue(cols is None or isinstance(cols, basestring))
+
+        set_columns(cols=10)
+        self.assertEqual(os.environ['COLUMNS'], '10')
+
+        # $COLUMNS wins
+        set_columns(cols=99)
+        self.assertEqual(os.environ['COLUMNS'], '10')
+
+        del os.environ['COLUMNS']
+        self.assertEqual(os.environ['COLUMNS'], '99')
