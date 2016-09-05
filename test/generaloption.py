@@ -126,6 +126,7 @@ class GeneralOptionTest(TestCase):
 
     def tearDown(self):
         """Clean up after running test."""
+        super(GeneralOptionTest, self).tearDown()
         os.environ = self.orig_environ
 
     def test_help_short(self):
