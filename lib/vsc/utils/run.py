@@ -318,7 +318,7 @@ class Run(object):
         """Initialise the self._process"""
         try:
             self._process = self._process_module.Popen(self._shellcmd, **self._popen_named_args)
-        except OSError, err:
+        except OSError as err:
             self.log.raiseException("_init_process: init Popen shellcmd %s failed: %s" % (self._shellcmd, err))
 
     def _init_input(self):
