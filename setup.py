@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 #
-# Copyright 2009-2014 Ghent University
+# Copyright 2009-2016 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -44,7 +44,7 @@ _coloredlogs_pkgs = [
 ]
 
 PACKAGE = {
-    'version': '2.5.4',
+    'version': '2.5.5',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
