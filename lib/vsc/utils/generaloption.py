@@ -275,11 +275,10 @@ class ExtOption(CompleterOption):
 
             if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 newloglevel = orig_action.split('_')[1][:-3].upper()
-                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels() + getDetailsLogLevels(fancy=False)])
+                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels()])
                 self.log.debug("changing loglevel to %s, current state: %s" % (newloglevel, logstate))
                 setLogLevel(newloglevel, logger=logging.getLogger())
-                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels() + getDetailsLogLevels(fancy=False)])
-                self.log.debug("changed loglevel to %s, new state: %s" % (newloglevel, logstate))
+                self.log.debug("changing loglevel to %s, current state: %s" % (newloglevel, logstate))
                 if hasattr(values, '_logaction_taken'):
                     values._logaction_taken[dest] = True
 
