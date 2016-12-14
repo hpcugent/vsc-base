@@ -37,7 +37,8 @@ Historical overview of existing equivalent code
     - returns exitcode and stdout+stderr (mixed)
     - no input though stdin
     - if C{log_ok} or C{log_all} are set -> will C{log.error} if non-zero exit-code
-    - if C{simple} is C{True} -> instead of returning a tuple (output, ec) it will just return C{True} or C{False} signifying succes
+    - if C{simple} is C{True} -> instead of returning a tuple (output, ec) it will just return C{True} or C{False}
+      signifying succes
     - C{regexp} -> Regex used to check the output for errors. If C{True} will use default (see C{parselogForError})
     - if log_output is True -> all output of command will be logged to a tempfile
     - path is the path run_cmd should chdir to before doing anything
@@ -87,7 +88,7 @@ SHELL = BASH
 
 class DummyFunction(object):
     def __getattr__(self, name):
-        def dummy(*args, **kwargs): # pylint: disable=unused-argument
+        def dummy(*args, **kwargs):  # pylint: disable=unused-argument
             pass
         return dummy
 
@@ -312,7 +313,8 @@ class Run(object):
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = " ".join(self.cmd)
         else:
-            self.log.raiseException("Failed to convert cmd %s (type %s) into shell command" % (self.cmd, type(self.cmd)))
+            self.log.raiseException("Failed to convert cmd %s (type %s) into shell command" %
+                                    (self.cmd, type(self.cmd)))
 
     def _init_process(self):
         """Initialise the self._process"""
@@ -579,7 +581,7 @@ class RunAsync(Run):
             return ''
 
         try:
-            if readsize is not None  and readsize < 0:
+            if readsize is not None and readsize < 0:
                 # read all blocking (it's not why we should use async
                 out = self._process.stdout.read()
             else:
@@ -670,7 +672,7 @@ class RunTimeout(RunLoop, RunAsync):
     def _loop_process_output(self, output):
         """"""
         time_passed = time.time() - self.start
-        if self.timeout is not None and  time_passed > self.timeout:
+        if self.timeout is not None and time_passed > self.timeout:
             self.log.debug("Time passed %s > timeout %s." % (time_passed, self.timeout))
             self.stop_tasks()
 
@@ -816,7 +818,7 @@ class RunQA(RunLoop, RunAsync):
         else:
             self._loop_miss_count = 0  # rreset miss counter on hit
 
-        if  self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
+        if self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
             self.log.debug("loop_process_output: max misses LOOP_MAX_MISS_COUNT %s reached. End of output: %s" %
                            (self.LOOP_MAX_MISS_COUNT, self._process_output[-500:]))
             self.stop_tasks()

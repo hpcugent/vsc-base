@@ -223,7 +223,8 @@ class VscMail(object):
             reply_to = mail_from
         msg_root['Reply-to'] = reply_to
 
-        msg_root.preamble = 'This is a multi-part message in MIME format. If your email client does not support this (correctly), the first part is the plain text version.'
+        msg_root.preamble = 'This is a multi-part message in MIME format. If your email client does not support this' \
+                            '(correctly), the first part is the plain text version.'
 
         # Create the body of the message (a plain-text and an HTML version).
         if images is not None:

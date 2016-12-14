@@ -198,7 +198,8 @@ def date_parser(txt):
 
     @param txt: date to be parsed. Usually in C{YYYY-MM-DD} format,
     but also C{(BEGIN|END)(THIS|LAST|NEXT)MONTH}, or even
-    C{(BEGIN | END)(JANUARY | FEBRUARY | MARCH | APRIL | MAY | JUNE | JULY | AUGUST | SEPTEMBER | OCTOBER | NOVEMBER | DECEMBER)}
+    C{(BEGIN | END)(JANUARY | FEBRUARY | MARCH | APRIL | MAY | JUNE | JULY | AUGUST | SEPTEMBER | OCTOBER | NOVEMBER |
+    DECEMBER)}
     """
 
     reserveddate = ('TODAY',)
@@ -208,7 +209,7 @@ def date_parser(txt):
         m = FancyMonth()
         res = m.parser(txt)
     elif any(testsupportedmonths):
-        # set day=1 or this will fail on day's with an index more then the count of days then the month you want to parse
+        # set day=1 or this will fail on days with an index more then the count of days then the month you want to parse
         # e.g. will fail on 31'st when trying to parse april
         m = FancyMonth(month=testsupportedmonths.index(True) + 1, day=1)
         res = m.parser(txt)

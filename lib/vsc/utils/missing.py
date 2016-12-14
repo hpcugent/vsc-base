@@ -132,7 +132,8 @@ class Monoid(object):
     def __init__(self, null, mappend):
         """Initialise.
 
-        @type null: default element of some data type, e.g., [] for list or 0 for int (identity element in an Abelian group)
+        @type null: default element of some data type, e.g., [] for list or 0 for int
+            (identity element in an Abelian group)
         @type op: mappend operation to combine two elements of the target datatype
         """
         self.null = null
