@@ -844,7 +844,8 @@ class ExtOptionParser(OptionParser):
                 logmethod = self.log.debug
             logmethod(msg, len(candidates), self.envvar_prefix, ','.join(candidates))
 
-        self.log.debug("Environment variable options with prefix %s: %s", self.envvar_prefix, self.environment_arguments)
+        self.log.debug("Environment variable options with prefix %s: %s",
+                       self.envvar_prefix, self.environment_arguments)
         return self.environment_arguments
 
     def get_option_by_long_name(self, name):
