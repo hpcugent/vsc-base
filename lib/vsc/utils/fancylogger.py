@@ -722,7 +722,7 @@ def setLogLevel(level):
     """
     if isinstance(level, basestring):
         level = getLevelInt(level)
-    logger = getLogger(fname=False, clsname=False)
+    logger = logging.getLogger()
     logger.setLevel(level)
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
         print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
