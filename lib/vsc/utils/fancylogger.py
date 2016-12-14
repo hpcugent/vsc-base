@@ -716,13 +716,14 @@ def logToDevLog(enable=True, name=None, handler=None):
 
 
 #  Change loglevel
-def setLogLevel(level):
+def setLogLevel(level, logger=None):
     """
     set a global log level (for this root logger)
     """
     if isinstance(level, basestring):
         level = getLevelInt(level)
-    logger = getLogger(fname=False, clsname=False)
+    if not logger:
+        logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
         print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
