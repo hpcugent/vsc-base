@@ -34,6 +34,7 @@ import ConfigParser
 import copy
 import difflib
 import inspect
+import logging
 import operator
 import os
 import re
@@ -274,10 +275,11 @@ class ExtOption(CompleterOption):
 
             if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 newloglevel = orig_action.split('_')[1][:-3].upper()
-                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels()])
+                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels() + getDetailsLogLevels(fancy=False)])
                 self.log.debug("changing loglevel to %s, current state: %s" % (newloglevel, logstate))
-                setLogLevel(newloglevel)
-                self.log.debug("changed loglevel to %s, previous state: %s" % (newloglevel, logstate))
+                setLogLevel(newloglevel, logger=logging.getLogger())
+                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels() + getDetailsLogLevels(fancy=False)])
+                self.log.debug("changed loglevel to %s, new state: %s" % (newloglevel, logstate))
                 if hasattr(values, '_logaction_taken'):
                     values._logaction_taken[dest] = True
 
