@@ -929,13 +929,19 @@ debug=1
         cols = os.environ.get('COLUMNS')
         self.assertTrue(cols is None or isinstance(cols, basestring))
 
+        reset_columns()
         set_columns(cols=10)
-        self.assertEqual(os.environ['COLUMNS'], '10')
+        self.assertEqual(os.environ['COLUMNS'], '10',
+                         msg='env COLUMNS equals set_columns, no previous COLUMNS')
 
         # $COLUMNS wins
         set_columns(cols=99)
-        self.assertEqual(os.environ['COLUMNS'], '10')
+        self.assertEqual(os.environ['COLUMNS'], '10',
+                         msg='env COLUMNS equals previous COLUMNS')
 
-        del os.environ['COLUMNS']
+        reset_columns()
         set_columns(cols=99)
-        self.assertEqual(os.environ['COLUMNS'], '99')
+        self.assertEqual(os.environ['COLUMNS'], '99',
+                         msg='env COLUMNS equals set_columns, no previous COLUMNS (99)')
+
+        reset_columns()
