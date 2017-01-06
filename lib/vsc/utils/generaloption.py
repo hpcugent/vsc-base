@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Ghent University
+# Copyright 2011-2017 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -93,7 +93,8 @@ def what_str_list_tuple(name):
 
     return sep, klass, helpsep
 
-def check_str_list_tuple(option, opt, value): # pylint: disable=unused-argument
+
+def check_str_list_tuple(option, opt, value):  # pylint: disable=unused-argument
     """
     check function for strlist and strtuple type
         assumes value is comma-separated list
@@ -179,7 +180,7 @@ class ExtOption(CompleterOption):
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
-    TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path'] ]
+    TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path']]
     TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + Option.TYPE_CHECKER.items())
     TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
@@ -199,7 +200,7 @@ class ExtOption(CompleterOption):
         elif self.action in self.EXTOPTION_STORE_OR:
             setattr(self, 'store_or', self.action)
 
-            def store_or(option, opt_str, value, parser, *args, **kwargs): # pylint: disable=unused-argument
+            def store_or(option, opt_str, value, parser, *args, **kwargs):  # pylint: disable=unused-argument
                 """Callback for supporting options with optional values."""
                 # see http://stackoverflow.com/questions/1229146/parsing-empty-options-in-python
                 # ugly code, optparse is crap
@@ -705,7 +706,6 @@ class ExtOptionParser(OptionParser):
             fh = sys.stdout
         fh.write(rsthelptxt)
 
-
     def format_option_rsthelp(self, formatter=None):
         """ Formatting for help in rst format """
         if not formatter:
@@ -715,12 +715,13 @@ class ExtOptionParser(OptionParser):
         res = []
         titles = ["Option flag", "Option description"]
 
-        all_opts = [("Help options", self.option_list)] + [(group.title, group.option_list) for group in self.option_groups]
+        all_opts = [("Help options", self.option_list)] + \
+                   [(group.title, group.option_list) for group in self.option_groups]
         for title, opts in all_opts:
             values = []
             res.extend([title, '-' * len(title)])
             for opt in opts:
-                if not opt.help is nohelp:
+                if opt.help is not nohelp:
                     values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
 
             res.extend(mk_rst_table(titles, map(list, zip(*values))))
@@ -762,7 +763,7 @@ class ExtOptionParser(OptionParser):
             txt += "\n"
 
         # overwrite the format_help to be able to use the the regular print_help
-        def format_help(*args, **kwargs): # pylint: disable=unused-argument
+        def format_help(*args, **kwargs):  # pylint: disable=unused-argument
             return txt
 
         self.format_help = format_help
@@ -825,7 +826,7 @@ class ExtOptionParser(OptionParser):
                     continue
                 env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').replace('-', '_').upper())
                 val = candidates.pop(env_opt_name, None)
-                if not val is None:
+                if val is not None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
                         self.environment_arguments.append("%s=%s" % (lo, val))
                     else:
@@ -843,7 +844,8 @@ class ExtOptionParser(OptionParser):
                 logmethod = self.log.debug
             logmethod(msg, len(candidates), self.envvar_prefix, ','.join(candidates))
 
-        self.log.debug("Environment variable options with prefix %s: %s" % (self.envvar_prefix, self.environment_arguments))
+        self.log.debug("Environment variable options with prefix %s: %s",
+                       self.envvar_prefix, self.environment_arguments)
         return self.environment_arguments
 
     def get_option_by_long_name(self, name):
@@ -976,7 +978,7 @@ class GeneralOption(object):
 
         self.parseoptions(options_list=go_args)
 
-        if not self.options is None:
+        if self.options is not None:
             # None for eg usage/help
             self.configfile_parser_init(initenv=configfiles_initenv)
             self.parseconfigfiles()
@@ -1051,7 +1053,7 @@ class GeneralOption(object):
                         fn()
                         self.auto_section_name = None  # reset it
 
-    def make_option_metavar(self, longopt, details): # pylint: disable=unused-argument
+    def make_option_metavar(self, longopt, details):  # pylint: disable=unused-argument
         """Generate the metavar for option longopt
         @type longopt: str
         @type details: tuple
@@ -1623,7 +1625,7 @@ class GeneralOption(object):
                 self.log.debug("generate_cmd_line adding %s value %s. store action found" %
                                (opt_name, opt_value))
                 if (action in ('store_true',) + ExtOption.EXTOPTION_LOG and default is True and opt_value is False) or \
-                    (action in ('store_false',) and default is False and opt_value is True):
+                   (action in ('store_false',) and default is False and opt_value is True):
                     if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                         args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
                     else:
@@ -1631,10 +1633,11 @@ class GeneralOption(object):
                                         "with missing ENABLE/DISABLE in option_class") %
                                        (opt_name, default, action))
                 else:
-                    if opt_value == default and ((action in ('store_true',) + ExtOption.EXTOPTION_LOG and default is False)
-                                                 or (action in ('store_false',) and default is True)):
+                    if opt_value == default and ((action in ('store_true',) +
+                                                 ExtOption.EXTOPTION_LOG and default is False) or
+                                                 (action in ('store_false',) and default is True)):
                         if hasattr(self.parser.option_class, 'ENABLE') and \
-                            hasattr(self.parser.option_class, 'DISABLE'):
+                           hasattr(self.parser.option_class, 'DISABLE'):
                             args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
                         else:
                             self.log.debug(("generate_cmd_line: %s : action %s can only set to inverse of default %s "
@@ -1760,4 +1763,5 @@ def simple_option(go_dict=None, descr=None, short_groupdescr=None, long_groupdes
 
     the generated help will include the docstring
     """
-    return SimpleOption(go_dict=go_dict, descr=descr, short_groupdescr=short_groupdescr, long_groupdescr=long_groupdescr, config_files=config_files)
+    return SimpleOption(go_dict=go_dict, descr=descr, short_groupdescr=short_groupdescr,
+                        long_groupdescr=long_groupdescr, config_files=config_files)

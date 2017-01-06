@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Ghent University
+# Copyright 2012-2017 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -118,7 +118,8 @@ class cpu_set_t(ctypes.Structure):
         """Convert human readable text into bits"""
         self.cpus = [0] * CPU_SETSIZE
         for rng in txt.split(','):
-            indices = [int(x) for x in rng.split('-')] * 2  # always at least 2 elements: twice the same or start,end,start,end
+            # always at least 2 elements: twice the same or start,end,start,end
+            indices = [int(x) for x in rng.split('-')] * 2
 
             # sanity check
             if indices[1] < indices[0]:
@@ -177,14 +178,16 @@ class cpu_set_t(ctypes.Structure):
         __bits = getattr(self, '__bits')
         prev_cpus = map(long, self.cpus)
         for idx in xrange(NMASKBITS):
-            cpus = [2 ** cpuidx for cpuidx, val in enumerate(self.cpus[idx * NCPUBITS:(idx + 1) * NCPUBITS]) if val == 1]
+            cpus = [2 ** cpuidx for cpuidx, val in
+                    enumerate(self.cpus[idx * NCPUBITS:(idx + 1) * NCPUBITS]) if val == 1]
             __bits[idx] = cpu_mask_t(sum(cpus))
         # sanity check
         if prev_cpus == self.get_cpus():
             self.log.debug("set_bits: new set to %s" % self.convert_bits_hr())
         else:
             # get_cpus() rescans
-            self.log.raiseException("set_bits: something went wrong: previous cpus %s; current ones %s" % (prev_cpus[:20], self.cpus[:20]))
+            self.log.raiseException("set_bits: something went wrong: previous cpus %s; current ones %s" %
+                                    (prev_cpus[:20], self.cpus[:20]))
 
     def str_cpus(self):
         """Return a string representation of the cpus"""
@@ -192,8 +195,9 @@ class cpu_set_t(ctypes.Structure):
             self.get_cpus()
         return "".join(["%d" % x for x in self.cpus])
 
-#/* Get the CPU affinity for a task */
-#extern int sched_getaffinity (pid_t __pid, size_t __cpusetsize,
+
+# /* Get the CPU affinity for a task */
+# extern int sched_getaffinity (pid_t __pid, size_t __cpusetsize,
 #                              cpu_set_t *__cpuset);
 def sched_getaffinity(cs=None, pid=None):
     """Get the affinity"""
@@ -202,9 +206,7 @@ def sched_getaffinity(cs=None, pid=None):
     if pid is None:
         pid = os.getpid()
 
-    ec = _libc.sched_getaffinity(pid_t(pid),
-                              ctypes.sizeof(cpu_set_t),
-                              ctypes.pointer(cs))
+    ec = _libc.sched_getaffinity(pid_t(pid), ctypes.sizeof(cpu_set_t), ctypes.pointer(cs))
     if ec == 0:
         _logger.debug("sched_getaffinity for pid %s returned cpuset %s" % (pid, cs))
     else:
@@ -212,37 +214,37 @@ def sched_getaffinity(cs=None, pid=None):
     return cs
 
 
-#/* Set the CPU affinity for a task */
-#extern int sched_setaffinity (pid_t __pid, size_t __cpusetsize,
+# /* Set the CPU affinity for a task */
+# extern int sched_setaffinity (pid_t __pid, size_t __cpusetsize,
 #                              cpu_set_t *__cpuset);
 def sched_setaffinity(cs, pid=None):
     """Set the affinity"""
     if pid is None:
         pid = os.getpid()
 
-    ec = _libc.sched_setaffinity(pid_t(pid),
-                              ctypes.sizeof(cpu_set_t),
-                              ctypes.pointer(cs))
+    ec = _libc.sched_setaffinity(pid_t(pid), ctypes.sizeof(cpu_set_t), ctypes.pointer(cs))
     if ec == 0:
         _logger.debug("sched_setaffinity for pid %s and cpuset %s" % (pid, cs))
     else:
         _logger.error("sched_setaffinity failed for pid %s cpuset %s ec %s" % (pid, cs, ec))
 
-#/* Get index of currently used CPU.  */
-#extern int sched_getcpu (void) __THROW;
+
+# /* Get index of currently used CPU.  */
+# extern int sched_getcpu (void) __THROW;
 def sched_getcpu():
     """Get currently used cpu"""
     return _libc.sched_getcpu()
 
-#/* Return the highest priority of any process specified by WHICH and WHO
+
+# /* Return the highest priority of any process specified by WHICH and WHO
 #   (see above); if WHO is zero, the current process, process group, or user
 #   (as specified by WHO) is used.  A lower priority number means higher
 #   priority.  Priorities range from PRIO_MIN to PRIO_MAX (above).  */
-#extern int getpriority (__priority_which_t __which, id_t __who) __THROW;
+# extern int getpriority (__priority_which_t __which, id_t __who) __THROW;
 #
-#/* Set the priority of all processes specified by WHICH and WHO (see above)
+# /* Set the priority of all processes specified by WHICH and WHO (see above)
 #   to PRIO.  Returns 0 on success, -1 on errors.  */
-#extern int setpriority (__priority_which_t __which, id_t __who, int __prio)
+# extern int setpriority (__priority_which_t __which, id_t __who, int __prio)
 #     __THROW;
 def getpriority(which=None, who=None):
     """Get the priority"""
@@ -258,6 +260,7 @@ def getpriority(which=None, who=None):
     _logger.debug("getpriority prio %s for which %s who %s" % (prio, which, who))
 
     return prio
+
 
 def setpriority(prio, which=None, who=None):
     """Set the priority (aka nice)"""

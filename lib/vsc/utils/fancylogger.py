@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Ghent University
+# Copyright 2011-2017 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -271,7 +271,8 @@ class FancyLogger(logging.getLoggerClass()):
     RAISE_EXCEPTION_LOG_METHOD = log_method
 
     # method definition as it is in logging, can't change this
-    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None): # pylint: disable=unused-argument
+    # pylint: disable=unused-argument
+    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
         """
         overwrite make record to use a fancy record (with more options)
         """
@@ -320,7 +321,8 @@ class FancyLogger(logging.getLoggerClass()):
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
         raise exception, message, tb
 
-    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs): # pylint: disable=unused-argument
+    # pylint: disable=unused-argument
+    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
         """
         Log deprecation message, throw error if current version is passed given threshold.
 
@@ -483,6 +485,7 @@ def _getCallingFunctionName():
             return "?"
     else:
         return "not available in optimized mode"
+
 
 def _getCallingClassName(depth=2):
     """
