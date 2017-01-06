@@ -110,8 +110,21 @@ class FancyLoggerTest(TestCase):
     handle = None
     fd = None
 
+    def _reset_fancylogger(self):
+        fancylogger.resetroot()
+
+        # delete all fancyloggers
+        loggers = logging.Logger.manager.loggerDict
+        for name, lgr in loggers.items():
+            if isinstance(lgr, fancylogger.FancyLogger):
+                del loggers[name]
+        # reset root handlers; mimic clean import logging
+        logging.root.handlers = []
+
     def setUp(self):
         super(FancyLoggerTest, self).setUp()
+
+        self._reset_fancylogger()
 
         (self.fd, self.logfn) = tempfile.mkstemp()
         self.handle = os.fdopen(self.fd)
@@ -120,7 +133,7 @@ class FancyLoggerTest(TestCase):
         fancylogger.setTestLogFormat()
 
         # make new logger
-        fancylogger.logToFile(self.logfn)
+        self.handler = fancylogger.logToFile(self.logfn)
 
         # disable default ones (with default format)
         fancylogger.disableDefaultHandlers()
@@ -365,7 +378,7 @@ class FancyLoggerTest(TestCase):
         sys.stderr = stringfile
         handler = fancylogger.logToScreen()
         classless_function()
-        self.assertTrue('?.classless_function' in stringfile.getvalue())
+        self.assertTrue('unknown__getCallingClassName.classless_function' in stringfile.getvalue())
 
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
@@ -401,15 +414,20 @@ class FancyLoggerTest(TestCase):
                          [name for name, _ in fancylogger.getDetailsLogLevels()],
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
-    def test_normal_logging(self):
+        res = fancylogger.getDetailsLogLevels(fancy=True)
+        self.assertTrue(isinstance(res[0][1], basestring), msg='getDetailsLogLevels returns loglevel names by default')
+        res = fancylogger.getDetailsLogLevels(fancy=True, numeric=True)
+        self.assertTrue(isinstance(res[0][1], int), msg='getDetailsLogLevels returns loglevel values with numeric=True')
+
+    def test_normal_warning_logging(self):
         """
         Test if just using import logging, logging.warning still works after importing fancylogger
+        (take this literally; this does not imply the root logging logger is a fancylogger)
         """
 
         stringfile = StringIO()
         sys.stderr = stringfile
-        handler = fancylogger.logToScreen()
-        import logging
+
         msg = 'this is my string'
         logging.warning(msg)
         self.assertTrue(msg in stringfile.getvalue(),
@@ -425,6 +443,62 @@ class FancyLoggerTest(TestCase):
         self.assertTrue(msg in stringfile.getvalue(),
                         msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
 
+
+    def test_fancylogger_as_rootlogger_logging(self):
+        """
+        Test if just using import logging, logging with logging uses fancylogger
+        after setting the root logger
+        """
+
+        # test logging.root is loggin root logger
+        # this is an assumption made to make the fancyrootlogger code work
+        orig_root = logging.getLogger()
+        self.assertEqual(logging.root, orig_root,
+                         msg='logging.root is the root logger')
+        self.assertFalse(isinstance(logging.root, fancylogger.FancyLogger),
+                         msg='logging.root is not a FancyLogger')
+
+
+        stringfile = StringIO()
+        sys.stderr = stringfile
+        handler = fancylogger.logToScreen()
+        fancylogger.setLogLevelDebug()
+        logger = fancylogger.getLogger()
+
+        self.assertEqual(logger.handlers, [self.handler, handler],
+                         msg='active handler for root fancylogger')
+        self.assertEqual(logger.level, fancylogger.getLevelInt('DEBUG'), msg='debug level set')
+
+        msg = 'this is my string'
+        logging.debug(msg)
+        self.assertEqual(stringfile.getvalue(), '',
+                         msg="logging.debug reports nothing when fancylogger loglevel is debug")
+
+        fancylogger.setroot()
+        self.assertTrue(isinstance(logging.root, fancylogger.FancyLogger),
+                         msg='logging.root is a FancyLogger after setRootLogger')
+        self.assertEqual(logging.root.level, fancylogger.getLevelInt('DEBUG'), msg='debug level set for root')
+        self.assertEqual(logger.level, logging.NOTSET, msg='original root fancylogger level set to NOTSET')
+
+        self.assertEqual(logging.root.handlers, [self.handler, handler],
+                         msg='active handler for root logger from previous root fancylogger')
+        self.assertEqual(logger.handlers, [], msg='no active handlers on previous root fancylogger')
+
+        root_logger = logging.getLogger('')
+        self.assertEqual(root_logger, logging.root,
+                        msg='logging.getLogger() returns logging.root FancyLogger')
+
+        frl = fancylogger.getLogger()
+        self.assertEqual(frl, logging.root,
+                        msg='fancylogger.getLogger() returns logging.root FancyLogger')
+
+        logging.debug(msg)
+        self.assertTrue(msg in stringfile.getvalue(),
+                         msg="logging.debug reports when fancylogger loglevel is debug")
+
+        fancylogger.resetroot()
+        self.assertEqual(logging.root, orig_root,
+                         msg='logging.root is the original root logger after resetroot')
 
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
@@ -483,6 +557,8 @@ class FancyLoggerTest(TestCase):
 
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = self.orig_raise_exception_class
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = self.orig_raise_exception_method
+
+        self._reset_fancylogger()
 
         super(FancyLoggerTest, self).tearDown()
 
