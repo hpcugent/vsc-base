@@ -38,7 +38,7 @@ import tempfile
 from tempfile import NamedTemporaryFile
 
 from vsc.utils import fancylogger
-from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS, set_columns
+from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS, set_columns, SimpleOption
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
@@ -121,13 +121,22 @@ class GeneralOptionTest(TestCase):
     def setUp(self):
         """Prepare for running test."""
         super(GeneralOptionTest, self).setUp()
+        fancylogger.resetroot()
         self.setup = vsc_setup()
         self.orig_environ = copy.deepcopy(os.environ)
 
     def tearDown(self):
         """Clean up after running test."""
         super(GeneralOptionTest, self).tearDown()
+        fancylogger.resetroot()
         os.environ = self.orig_environ
+
+    def test_loggers(self):
+        """Test getloggers"""
+        self.assertFalse(GeneralOption.SETROOTLOGGER,
+                         msg='GeneralOption does not setroot')
+        self.assertTrue(SimpleOption.SETROOTLOGGER,
+                         msg='SimpleOption does setroot')
 
     def test_help_short(self):
         """Generate short help message"""

@@ -34,7 +34,7 @@ python examples/simple_option.py --info -L itjustworks
 
 @author: Stijn De Weirdt (Ghent University)
 """
-
+import logging
 from vsc.utils.generaloption import simple_option
 
 # dict = {longopt:(help_description,type,action,default_value,shortopt),}
@@ -45,3 +45,5 @@ go = simple_option(options)
 go.log.info("1st option %s" % go.options.long1)
 go.log.debug("DEBUG 1st option %s" % go.options.long1)
 
+logging.info("logging from logging.info (eg from 3rd party module)")
+logging.debug("logging with logging.root root %s", logging.root)
