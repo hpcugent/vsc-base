@@ -86,7 +86,6 @@ import traceback
 import weakref
 from distutils.version import LooseVersion
 
-
 def _env_to_boolean(varname, default=False):
     """
     Compute a boolean based on the truth value of environment variable `varname`.
@@ -150,6 +149,8 @@ def _env_to_boolean(varname, default=False):
         return os.environ.get(varname).lower() in ('1', 'yes', 'true', 'y')
 
 
+OPTIMIZED_ANSWER = "not available in optimized mode"
+
 HAVE_COLOREDLOGS_MODULE = False
 if not _env_to_boolean('FANCYLOGGER_NO_COLOREDLOGS'):
     try:
@@ -166,6 +167,10 @@ DEFAULT_LOGGING_FORMAT_MPI = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
                              ' mpi: %(mpirank)s %(threadName)-10s  %(message)s'
 MPIRANK_NO_MPI = "N/A"
 
+# keep the original logging root logger around for reset purposes
+# rootlogger always has a loglevel
+_orig_logging_root = [logging.root, logging.root.level, logging.root.handlers[:]]
+
 FANCYLOG_LOGGING_FORMAT = None
 FANCYLOG_FANCYRECORD = None
 
@@ -178,8 +183,10 @@ DEFAULT_UDP_PORT = 5005
 # poor man's enum
 Colorize = namedtuple('Colorize', 'AUTO ALWAYS NEVER')('auto', 'always', 'never')
 
+
+APOCALYPTIC = 'APOCALYPTIC'
 # register new loglevelname
-logging.addLevelName(logging.CRITICAL * 2 + 1, 'APOCALYPTIC')
+logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
 # register QUIET, EXCEPTION and FATAL alias
 logging._levelNames['EXCEPTION'] = logging.ERROR
 logging._levelNames['FATAL'] = logging.CRITICAL
@@ -432,15 +439,19 @@ def thread_name():
 
 def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     """
-    returns a fancylogger
+    Returns a Fancylogger instance
     if fname is True, the loggers name will be 'name[.classname].functionname'
     if clsname is True the loggers name will be 'name.classname[.functionname]'
+
     This will return a logger with a fancylog record, which includes the className template for the logformat
-    This can make your code a lot slower, so this can be dissabled by setting fancyrecord or class module
+    This can make your code a lot slower, so this can be disabled by setting fancyrecord or class module
     FANCYLOG_FANCYRECORD to False, or will also be disabled if a Name is set (and fancyrecord and
     module constant FANCYLOG_FANCYRECORD are also not set).
     """
-    nameparts = [getRootLoggerName()]
+    nameparts = []
+
+    if not is_fancyroot():
+        nameparts.append(getRootLoggerName())
 
     if fancyrecord is None:
         # Altough we could set it as default value in the function definition
@@ -482,9 +493,9 @@ def _getCallingFunctionName():
         try:
             return inspect.stack()[2][3]
         except Exception:
-            return "?"
+            return "unknown__getCallingFunctionName"
     else:
-        return "not available in optimized mode"
+        return OPTIMIZED_ANSWER
 
 
 def _getCallingClassName(depth=2):
@@ -496,9 +507,9 @@ def _getCallingClassName(depth=2):
         try:
             return inspect.stack()[depth][0].f_locals['self'].__class__.__name__
         except Exception:
-            return "?"
+            return "unknown__getCallingClassName"
     else:
-        return "not available in optimized mode"
+        return OPTIMIZED_ANSWER
 
 
 def getRootLoggerName():
@@ -510,9 +521,9 @@ def getRootLoggerName():
         try:
             return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
         except Exception:
-            return "?"
+            return "unknown_getRootLoggerName"
     else:
-        return "not available in optimized mode"
+        return OPTIMIZED_ANSWER
 
 
 def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Colorize.NEVER):
@@ -646,7 +657,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
                 # so we will just make it quiet by setting the loglevel extremely high
                 zerohandler = logger.handlers[0]
                 # no logging should be done with APOCALYPTIC, so silence happens
-                zerohandler.setLevel(getLevelInt('APOCALYPTIC'))
+                zerohandler.setLevel(getLevelInt(APOCALYPTIC))
             else:  # remove the handler set with this loggeroption
                 handler = getattr(logger, loggeroption)
                 logger.removeHandler(handler)
@@ -711,9 +722,10 @@ def _getSysLogFacility(name=None):
 def logToDevLog(enable=True, name=None, handler=None):
     """Log to syslog through /dev/log"""
     devlog = '/dev/log'
-    syslogoptions = {'address': devlog,
-                     'facility': _getSysLogFacility()
-                     }
+    syslogoptions = {
+        'address': devlog,
+        'facility': _getSysLogFacility()
+    }
     return _logToSomething(logging.handlers.SysLogHandler,
                            syslogoptions, 'logtodevlog', enable=enable, name=name, handler=handler)
 
@@ -721,11 +733,13 @@ def logToDevLog(enable=True, name=None, handler=None):
 #  Change loglevel
 def setLogLevel(level):
     """
-    set a global log level (for this root logger)
+    Set a global log level for all FancyLoggers
     """
     if isinstance(level, basestring):
         level = getLevelInt(level)
+
     logger = getLogger(fname=False, clsname=False)
+
     logger.setLevel(level)
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
         print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
@@ -765,14 +779,9 @@ def getAllExistingLoggers():
     """
     @return: the existing loggers, in a list of C{(name, logger)} tuples
     """
-    rootlogger = logging.getLogger(name=False)
-    # undocumented manager (in 2.4 and later)
-    manager = rootlogger.manager
-
-    loggerdict = getattr(manager, 'loggerDict')
-
+    # not-so-well documented manager (in 2.6 and later)
     # return list of (name,logger) tuple
-    return [x for x in loggerdict.items()]
+    return [x for x in logging.Logger.manager.loggerDict.items()]+[(logging.root.name, logging.root)]
 
 
 def getAllNonFancyloggers():
@@ -798,6 +807,97 @@ def setLogFormat(f_format):
 def setTestLogFormat():
     """Set the log format to the test format (i.e. without timestamp)."""
     setLogFormat(TEST_LOGGING_FORMAT)
+
+
+def is_fancyroot():
+    """
+    Return if the logging.root logger is a FancyLogger
+    """
+    return isinstance(logging.root, FancyLogger)
+
+
+def setroot(fancyrecord=FANCYLOG_FANCYRECORD):
+    """
+    Set a FancyLogger instance as the logging root logger
+    with (effective)loglevel of current root FancyLogger
+
+    @param fancyrecord is enabled or not (default FANCYLOG_FANCYRECORD module constant)
+
+    Detecting the loglevel is best-effort, better to set the loglevel after setroot()
+    """
+    if is_fancyroot():
+        return
+
+    class FancyRootLogger(FancyLogger, logging.RootLogger):
+        __init__ = logging.RootLogger.__init__
+
+    # current root FancyLogger
+    logger = getLogger(fname=False, clsname=False)
+
+    lvl = logger.getEffectiveLevel()
+    # Disable dedicated level, follows root level now
+    logger.level = logging.NOTSET
+
+    root = FancyRootLogger(lvl)
+    root.fancyrecord = fancyrecord
+
+    # make copy, instead of the reference, because we are going to delete stuff
+    handlers = getattr(logger, 'handlers', [])[:]
+    if handlers:
+        # Move all existing handlers from root fancylogger to new root
+        # getLogger() call used in logToSomething will retrun the root
+        for hndlr in handlers:
+            root.addHandler(hndlr)
+            logger.removeHandler(hndlr)
+    else:
+        handlers = getattr(logging.root, 'handlers', [])
+        # only copy the logging.root handlers
+        for hndlr in handlers:
+            root.addHandler(hndlr)
+
+    # Swap out logging.root parent for all existing loggers
+    for lgr in getAllExistingLoggers():
+        # PlaceHolders have no parent
+        if hasattr(lgr[1], 'parent') and lgr[1].parent == logging.root:
+            lgr[1].parent = root
+
+    if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
+        print "FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ", lvl, logging.getLevelName(lvl)
+        print "\n".join(root.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT "))
+        sys.stdout.flush()
+
+    # silence the root logger
+    _orig_logging_root[1] = logging.root.level
+    _orig_logging_root[2] = logging.root.handlers[:]
+
+    logging.root.setLevel(getLevelInt(APOCALYPTIC))
+
+    logging.root = root
+    logging.Logger.root = root
+    # Do not re-init the manager
+    logging.Logger.manager.root = root
+
+
+def resetroot():
+    """
+    Restore the original logging.root logger
+    """
+    if not is_fancyroot():
+        return
+
+    root = _orig_logging_root[0]
+    root.setLevel(_orig_logging_root[1])
+    root.handlers = _orig_logging_root[2]
+
+    # Swap out logging.root parent for all existing loggers
+    for lgr in getAllExistingLoggers():
+        # PlaceHolders have no parent
+        if hasattr(lgr[1], 'parent') and lgr[1].parent == logging.root:
+            lgr[1].parent = root
+
+    logging.root = root
+    logging.Logger.root = root
+    logging.Logger.manager.root = root
 
 
 # Register our logger
@@ -856,12 +956,13 @@ def enableDefaultHandlers():
     _enable_disable_default_handlers(True)
 
 
-def getDetailsLogLevels(fancy=True):
+def getDetailsLogLevels(fancy=True, numeric=False):
     """
     Return list of (name,loglevelname) pairs of existing loggers
 
     @param fancy: if True, returns only Fancylogger; if False, returns non-FancyLoggers,
                   anything else, return all loggers
+    @param numeric: if True, return the numeric value instead of the name
     """
     func_map = {
         True: getAllFancyloggers,
@@ -871,6 +972,10 @@ def getDetailsLogLevels(fancy=True):
     res = []
     for name, logger in func():
         # PlaceHolder instances have no level attribute set
-        level_name = logging.getLevelName(getattr(logger, 'level', logging.NOTSET))
+        level_value = getattr(logger, 'level', logging.NOTSET)
+        if numeric:
+            level_name = level_value
+        else:
+            level_name = logging.getLevelName(level_value)
         res.append((name, level_name))
     return res

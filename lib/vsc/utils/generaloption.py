@@ -46,7 +46,7 @@ from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python 
 from optparse import gettext as _gettext  # this is gettext.gettext normally
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
-from vsc.utils.fancylogger import getLogger, setLogLevel, getDetailsLogLevels
+from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import shell_quote, nub
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
@@ -276,9 +276,9 @@ class ExtOption(CompleterOption):
             if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 newloglevel = orig_action.split('_')[1][:-3].upper()
                 logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels()])
-                self.log.debug("changing loglevel to %s, current state: %s" % (newloglevel, logstate))
+                self.log.debug("changing loglevel to %s, current state: %s", newloglevel, logstate)
                 setLogLevel(newloglevel)
-                self.log.debug("changed loglevel to %s, previous state: %s" % (newloglevel, logstate))
+                self.log.debug("changed loglevel to %s, previous state: %s", newloglevel, logstate)
                 if hasattr(values, '_logaction_taken'):
                     values._logaction_taken[dest] = True
 
@@ -924,6 +924,8 @@ class GeneralOption(object):
     DEFAULT_CONFIGFILES = None
     DEFAULT_IGNORECONFIGFILES = None
 
+    SETROOTLOGGER = False
+
     def __init__(self, **kwargs):
         go_args = kwargs.pop('go_args', None)
         self.no_system_exit = kwargs.pop('go_nosystemexit', None)  # unit test option
@@ -933,6 +935,9 @@ class GeneralOption(object):
         prefixloggername = kwargs.pop('go_prefixloggername', False)  # name of logger is same as envvar prefix
         mainbeforedefault = kwargs.pop('go_mainbeforedefault', False)  # Set the main options before the default ones
         autocompleter = kwargs.pop('go_autocompleter', {})  # Pass these options to the autocomplete call
+
+        if self.SETROOTLOGGER:
+            setroot()
 
         set_columns(kwargs.pop('go_columns', None))
 
@@ -954,7 +959,7 @@ class GeneralOption(object):
             if prefix is not None and len(prefix) > 0:
                 loggername = prefix.replace('.', '_')  # . indicate hierarchy in logging land
 
-        self.log = getLogger(loggername)
+        self.log = getLogger(name=loggername)
         self.options = None
         self.args = None
 
@@ -1708,6 +1713,7 @@ class SimpleOptionParser(ExtOptionParser):
 
 class SimpleOption(GeneralOption):
     PARSER = SimpleOptionParser
+    SETROOTLOGGER = True
 
     def __init__(self, go_dict=None, descr=None, short_groupdescr=None, long_groupdescr=None, config_files=None):
         """Initialisation
