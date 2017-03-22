@@ -852,6 +852,9 @@ class RunAsyncLoopStdout(RunLoopStdout, RunAsync):
     """Async read, flush to stdout"""
     pass
 
+class RunAsyncToFile(RunAsync, RunFile):
+    """Async read, write to file"""
+    pass
 
 # convenient names
 # eg: from vsc.utils.run import trivial
@@ -865,6 +868,7 @@ run_timeout = RunTimeout.run
 
 run_to_file = RunFile.run
 run_async_to_stdout = RunAsyncLoopStdout.run
+run_async_to_file = RunAsyncToFile.run
 
 run_qa = RunQA.run
 run_qalog = RunQALog.run
