@@ -329,12 +329,15 @@ class FancyLogger(logging.getLoggerClass()):
         raise exception, message, tb
 
     # pylint: disable=unused-argument
-    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, *args, **kwargs):
+    def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
         """
         Log deprecation message, throw error if current version is passed given threshold.
 
         Checks only major/minor version numbers (MAJ.MIN.x) by default, controlled by 'depth' argument.
         """
+        if log_callback is None:
+            log_callback = self.warning
+
         loose_cv = LooseVersion(cur_ver)
         loose_mv = LooseVersion(max_ver)
 
@@ -345,7 +348,7 @@ class FancyLogger(logging.getLoggerClass()):
             self.raiseException("DEPRECATED (since v%s) functionality used: %s" % (max_ver, msg), exception=exception)
         else:
             deprecation_msg = "Deprecated functionality, will no longer work in v%s: %s" % (max_ver, msg)
-            self.warning(deprecation_msg)
+            log_callback(deprecation_msg)
 
     def _handleFunction(self, function, levelno, **kwargs):
         """

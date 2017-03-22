@@ -236,19 +236,42 @@ class FancyLoggerTest(TestCase):
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.1", max_ver)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.0", max_ver)
 
+        open(self.logfn, 'w').write('')
+
         # test whether deprecated warning works
         # no deprecation if current version is lower than max version
         logger.deprecated(MSG, "0.9", max_ver)
-        msgre_tpl_warning = r"WARNING.*DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
-        msgre_warning = re.compile(msgre_tpl_warning)
+
+        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*%s" % (max_ver, MSG))
         txt = open(self.logfn, 'r').read()
-        self.assertTrue(msgre_warning.search(txt))
+        self.assertTrue(msgre_warning.search(txt), "Pattern '%s' found in: %s" % (msgre_warning.pattern, txt))
+
+        # wipe log to start over
+        open(self.logfn, 'w').write('')
+
+        callback_cache = []
+        def test_log_callback(msg, cache=callback_cache):
+            """Log callback function to log warning message and print to stderr."""
+            cache.append(msg)
+
+        # test use of log_callback
+        logger.deprecated("test callback", "0.9", max_ver, log_callback=test_log_callback)
+        self.assertEqual(callback_cache[-1], "Deprecated functionality, will no longer work in v1.0: test callback")
+
+        # wipe log to start over
+        open(self.logfn, 'w').write('')
 
         # test handling of non-UTF8 chars
         msg = MSG + u"\x81"
         msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
+        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\xc2\x81" % max_ver)
+
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
+
+        open(self.logfn, 'w').write('')
+
         logger.deprecated(msg, "0.9", max_ver)
+
         txt = open(self.logfn, 'r').read()
         self.assertTrue(msgre_warning.search(txt))
 
