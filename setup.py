@@ -39,12 +39,12 @@ from vsc.install.shared_setup import ag, kh, jt, sdw
 VSC_INSTALL_REQ_VERSION = '0.10.1'
 
 _coloredlogs_pkgs = [
-    'coloredlogs',     # automatic log colorizer
+    'coloredlogs<6.0',     # automatic log colorizer
     'humanfriendly',   # detect if terminal has colors
 ]
 
 PACKAGE = {
-    'version': '2.5.7',
+    'version': '2.5.8',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
