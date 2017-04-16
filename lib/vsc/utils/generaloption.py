@@ -953,7 +953,7 @@ class GeneralOption(object):
         self.configfile_parser = None
         self.configfile_remainder = {}
 
-        loggername = self.__class__.__name__
+        loggername = ''
         if prefixloggername:
             prefix = self.parser.get_env_options_prefix()
             if prefix is not None and len(prefix) > 0:
