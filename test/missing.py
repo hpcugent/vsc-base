@@ -297,14 +297,3 @@ class TestMissing(TestCase):
         # get_subclasses
         self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
         self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
-
-
-def suite():
-    """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestMissing)
-
-
-if __name__ == '__main__':
-    #logToScreen(enable=True)
-    #setLogLevelDebug()
-    main()

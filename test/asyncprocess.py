@@ -71,12 +71,3 @@ class AsyncProcessTest(TestCase):
     def tearDown(self):
         """cleanup"""
         os.chdir(self.cwd)
-
-
-def suite():
-    """ returns all the testcases in this module """
-    return TestSuite([AsyncProcessTest()])
-
-
-if __name__ == '__main__':
-    main()

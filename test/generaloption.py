@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Ghent University
+# Copyright 2012-2018 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -706,6 +706,7 @@ debug=1
         partial = '-'
         cmd_list = [script, partial]
 
+        os.environ['SHELL'] = "bash"
         pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(self.setup.REPO_BASE_DIR)])
         ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
@@ -713,7 +714,7 @@ debug=1
         self.assertEqual(ec, 0, msg="simple_option.py test script ran success")
 
         reply_match = reg_reply.search(out)
-        self.assertTrue(reply_match, msg="COMPREPLY in output %s" % out)
+        self.assertTrue(reply_match, msg="COMPREPLY %s in output %s" % (reg_reply.pattern, out))
 
         compl_opts = reply_match.group(1).split()
         basic_opts = ['--debug', '--enable-debug', '--disable-debug', '-d',
