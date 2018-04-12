@@ -617,14 +617,14 @@ def gen_cmdline(cmd_list, partial, shebang=True):
     @param partial: the string to autocomplete (typically, partial is an element of the cmd_list)
     @param shebang: script has python shebang (if not, add sys.executable)
     """
-    cmdline = " ".join(cmd_list)
+    cmdline = ' '.join(['"%s"' % cmd for cmd in cmd_list])
 
     env = []
     env.append("%s=1" % OPTCOMPLETE_ENVIRONMENT)
-    env.append('COMP_LINE="%s"' % cmdline)
-    env.append('COMP_WORDS="(%s)"' % cmdline)
-    env.append('COMP_POINT=%s' % len(cmdline))
-    env.append('COMP_CWORD=%s' % cmd_list.index(partial))
+    env.append("COMP_LINE='%s'" % cmdline)
+    env.append("COMP_WORDS='(%s)'" % cmdline)
+    env.append("COMP_POINT=%s" % len(cmdline))
+    env.append("COMP_CWORD=%s" % cmd_list.index(partial))
 
     if not shebang:
         env.append(sys.executable)
