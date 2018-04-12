@@ -630,6 +630,6 @@ def gen_cmdline(cmd_list, partial, shebang=True):
         env.append(sys.executable)
 
     # add script
-    env.append(cmd_list[0])
+    env.append('"%s"' % cmd_list[0])
 
     return " ".join(env)
