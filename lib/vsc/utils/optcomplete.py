@@ -622,7 +622,7 @@ def gen_cmdline(cmd_list, partial, shebang=True):
     env = []
     env.append("%s=1" % OPTCOMPLETE_ENVIRONMENT)
     env.append('COMP_LINE="%s"' % cmdline)
-    env.append('COMP_WORDS=(%s)' % cmdline)
+    env.append('COMP_WORDS="(%s)"' % cmdline)
     env.append('COMP_POINT=%s' % len(cmdline))
     env.append('COMP_CWORD=%s' % cmd_list.index(partial))
 
