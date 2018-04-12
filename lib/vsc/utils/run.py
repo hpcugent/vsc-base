@@ -311,7 +311,8 @@ class Run(object):
         if isinstance(self.cmd, basestring):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
-            self._shellcmd = " ".join(self.cmd)
+            self._shellcmd = "%s %s" % (self.cmd[0],
+                                        " ".join(['"%s"' % arg.replace('"', '"\\""') for arg in self.cmd[1:]]))
         else:
             self.log.raiseException("Failed to convert cmd %s (type %s) into shell command" %
                                     (self.cmd, type(self.cmd)))
