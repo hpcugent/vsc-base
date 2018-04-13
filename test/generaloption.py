@@ -707,7 +707,7 @@ debug=1
         cmd_list = [script, partial]
 
         os.environ['SHELL'] = "bash"
-        pythonpath = 'PYTHONPATH=%s' % os.pathsep.join([p for p in sys.path if p.startswith(self.setup.REPO_BASE_DIR)])
+        pythonpath = 'PYTHONPATH="%s"' % os.pathsep.join([p for p in sys.path if p.startswith(self.setup.REPO_BASE_DIR)])
         ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
