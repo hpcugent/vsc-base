@@ -311,8 +311,7 @@ class Run(object):
         if isinstance(self.cmd, basestring):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
-            self._shellcmd = "%s %s" % (self.cmd[0],
-                                        " ".join(['"%s"' % arg.replace('"', '"\\""') for arg in self.cmd[1:]]))
+            self._shellcmd = " ".join(['"%s"' % arg.replace('"', '\\"') for arg in self.cmd])
         else:
             self.log.raiseException("Failed to convert cmd %s (type %s) into shell command" %
                                     (self.cmd, type(self.cmd)))
@@ -367,9 +366,8 @@ class Run(object):
     def _post_exitcode(self):
         """Postprocess the exitcode in self._process_exitcode"""
         if not self._process_exitcode == 0:
-            self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: output %s" %
-                                            (self.cmd, self._process_output))
-            self.log.debug("self.shellcmd %s" % (self.shellcmd))
+            self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: (shellcmd %s) output %s" %
+                                            (self.cmd, self._shellcmd, self._process_output))
         else:
             self.log.debug("_post_exitcode: success cmd %s: output %s" % (self.cmd, self._process_output))
 
