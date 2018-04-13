@@ -98,6 +98,7 @@ import glob
 import logging
 import os
 import re
+import shlex
 import sys
 import types
 
@@ -360,7 +361,7 @@ def guess_first_nonoption(gparser, subcmds_map):
     prev_interspersed = gparser.allow_interspersed_args  # save state to restore
     gparser.disable_interspersed_args()
 
-    cwords = os.environ.get('COMP_WORDS', '').split()
+    cwords = shlex.split(os.environ.get('COMP_WORDS', '').strip('() '))
 
     # save original error_func so we can put it back after the hack
     error_func = gparser.error
@@ -446,7 +447,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     if not os.environ.has_key('COMP_WORDS'):
         os.environ['COMP_WORDS'] = os.environ['COMP_LINE']
 
-    cwords = os.environ.get('COMP_WORDS', '').split()
+    cwords = shlex.split(os.environ.get('COMP_WORDS', '').strip('() '))
     cline = os.environ.get('COMP_LINE', '')
     cpoint = int(os.environ.get('COMP_POINT', 0))
     cword = int(os.environ.get('COMP_CWORD', 0))
@@ -575,7 +576,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
             'Long options',
             pformat(parser._long_opt),
             'Prefix %s' % prefix,
-            'Suffix %s', suffix,
+            'Suffix %s' % suffix,
             'completions %s' % completions,
             ])
         if isinstance(debugfn, logging.Logger):
