@@ -105,6 +105,8 @@ import types
 from optparse import OptionParser, Option
 from pprint import pformat
 
+from vsc.utils.missing import shell_quote
+
 debugfn = None  # for debugging only
 
 OPTCOMPLETE_ENVIRONMENT = 'OPTPARSE_AUTO_COMPLETE'
@@ -361,6 +363,7 @@ def guess_first_nonoption(gparser, subcmds_map):
     prev_interspersed = gparser.allow_interspersed_args  # save state to restore
     gparser.disable_interspersed_args()
 
+    # interpret cwords like a shell would interpret it
     cwords = shlex.split(os.environ.get('COMP_WORDS', '').strip('() '))
 
     # save original error_func so we can put it back after the hack
@@ -577,6 +580,8 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
             pformat(parser._long_opt),
             'Prefix %s' % prefix,
             'Suffix %s' % suffix,
+            'completer_kwargs%s' % str(completer_kwargs),
+            #'completer_completions %s' % completer_completions,
             'completions %s' % completions,
             ])
         if isinstance(debugfn, logging.Logger):
@@ -618,12 +623,12 @@ def gen_cmdline(cmd_list, partial, shebang=True):
     @param partial: the string to autocomplete (typically, partial is an element of the cmd_list)
     @param shebang: script has python shebang (if not, add sys.executable)
     """
-    cmdline = ' '.join(['"%s"' % cmd for cmd in cmd_list])
+    cmdline = ' '.join([shell_quote(cmd) for cmd in cmd_list])
 
     env = []
     env.append("%s=1" % OPTCOMPLETE_ENVIRONMENT)
-    env.append("COMP_LINE='%s'" % cmdline)
-    env.append("COMP_WORDS='(%s)'" % cmdline)
+    env.append('COMP_LINE="%s"' % cmdline)
+    env.append('COMP_WORDS="(%s)"' % cmdline)
     env.append("COMP_POINT=%s" % len(cmdline))
     env.append("COMP_CWORD=%s" % cmd_list.index(partial))
 

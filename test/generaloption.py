@@ -231,7 +231,7 @@ class GeneralOptionTest(TestCase):
         topt = TestOption1(go_args=['--level-level',
                                     '--longbase',
                                     '--level-prefix-and-dash=YY',
-                                    shell_unquote('--store="some whitespace"'),
+                                    shell_unquote("--store='some whitespace'"),
                                     '--ext-pathlist=x:y',
                                     '--ext-pathliststorenone',
                                     '--ext-pathliststorenone2=y2:z2',
@@ -289,7 +289,7 @@ class GeneralOptionTest(TestCase):
                           '--ext-strlist=x,y',
                           '--level-level',
                           '--level-prefix-and-dash=YY',
-                          '--store="some whitespace"',
+                          "--store='some whitespace'",
                           ])
         all_args = topt.generate_cmd_line(add_default=True, ignore=ign)
         self.assertEqual([shell_unquote(x) for x in all_args],
@@ -320,12 +320,15 @@ class GeneralOptionTest(TestCase):
                           '--level-longlevel',
                           '--level-prefix-and-dash=YY',
                           '--longbase',
-                          '--store="some whitespace"',
+                          "--store='some whitespace'",
                           ])
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
         topt = TestOption1(go_args=["--aregexopt='^foo.*bar$'"])
-        self.assertTrue("--aregexopt='^foo.*bar$'" in topt.generate_cmd_line())
+        print topt.generate_cmd_line()
+        self.assertTrue(topt.options.aregexopt is not None)
+        self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
+        self.assertTrue('--aregexopt=\'\'"\'"\'^foo.*bar$\'"\'"\'\'' in topt.generate_cmd_line())
         self.assertTrue(topt.options.aregexopt is not None)
         self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
 
@@ -713,6 +716,7 @@ debug=1
         # avoids run.log.error message
         self.assertEqual(ec, 0, msg="simple_option.py test script ran success")
 
+        print out
         reply_match = reg_reply.search(out)
         self.assertTrue(reply_match, msg="COMPREPLY %s in output %s" % (reg_reply.pattern, out))
 

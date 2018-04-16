@@ -68,12 +68,12 @@ import logging
 import os
 import pty
 import re
-import shlex
 import signal
 import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
+from vsc.utils.missing import shell_quote
 
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
@@ -312,7 +312,7 @@ class Run(object):
         if isinstance(self.cmd, basestring):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
-            self._shellcmd = " ".join([shlex.quote(arg) for arg in self.cmd])
+            self._shellcmd = " ".join([shell_quote(arg) for arg in self.cmd])
         else:
             self.log.raiseException("Failed to convert cmd %s (type %s) into shell command" %
                                     (self.cmd, type(self.cmd)))
