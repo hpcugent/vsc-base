@@ -86,12 +86,11 @@ class TestRun(TestCase):
 
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
-        self.assertEqual(ec, 0)
-        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        self.assertEqual(ec, 127)
+        self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
-
 
     def test_timeout(self):
         timeout = 3

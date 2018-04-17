@@ -68,13 +68,12 @@ import logging
 import os
 import pty
 import re
+import shlex
 import signal
 import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.missing import shell_quote
-
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -470,9 +469,11 @@ class RunNoWorries(Run):
         super(RunNoWorries, self).__init__(cmd, **kwargs)
         self._post_exitcode_log_failure = self.log.debug
 
-class RunNoWorries(RunNoShell, RunNoWorries):
+
+class RunNoShellNoWorries(RunNoShell, RunNoWorries):
     """When the exitcode is >0, log.debug instead of log.error"""
     pass
+
 
 class RunLoopException(Exception):
     def __init__(self, code, output):
@@ -481,14 +482,6 @@ class RunLoopException(Exception):
 
     def __str__(self):
         return "%s code %s output %s" % (self.__class__.__name__, self.code, self.output)
-
-
-class RunNoShellLoop(RunNoShell, RunLoop)
-    """Main process is a while loop which reads the output in blocks
-        need to read from time to time.
-        otherwise the stdout/stderr buffer gets filled and it all stops working
-    """
-    pass
 
 
 class RunLoop(Run):
@@ -564,7 +557,11 @@ class RunLoop(Run):
         self._loop_process_output(output)
 
 
-class RunNoShellLoopLog(RunNoShell, RunLoopLog):
+class RunNoShellLoop(RunNoShell, RunLoop):
+    """Main process is a while loop which reads the output in blocks
+        need to read from time to time.
+        otherwise the stdout/stderr buffer gets filled and it all stops working
+    """
     pass
 
 
@@ -584,7 +581,7 @@ class RunLoopLog(RunLoop):
         super(RunLoopLog, self)._loop_process_output(output)
 
 
-class RunNoShellLoopStdout(RunNoShell, RunLoop):
+class RunNoShellLoopLog(RunNoShell, RunLoopLog):
     pass
 
 
@@ -599,8 +596,7 @@ class RunLoopStdout(RunLoop):
         super(RunLoopStdout, self)._loop_process_output(output)
 
 
-class RunNoShellAsync(RunNoShell, RunAsync):
-    """Async process class"""
+class RunNoShellLoopStdout(RunNoShell, RunLoop):
     pass
 
 
@@ -638,8 +634,8 @@ class RunAsync(Run):
             return ''
 
 
-class RunNoShellFile(RunNoShell, RunFile):
-    """Popen to filehandle"""
+class RunNoShellAsync(RunNoShell, RunAsync):
+    """Async process class"""
     pass
 
 
@@ -692,9 +688,11 @@ class RunFile(Run):
         """Meaningless for filehandle"""
         return ''
 
-class RunNoShellPty(RunNoShell, RunPty):
-    """Pty support (eg for screen sessions)"""
+
+class RunNoShellFile(RunNoShell, RunFile):
+    """Popen to filehandle"""
     pass
+
 
 class RunPty(Run):
     """Pty support (eg for screen sessions)"""
@@ -713,8 +711,8 @@ class RunPty(Run):
         super(RunPty, self)._make_popen_named_args(others=others)
 
 
-class RunNoShellTimout(RunNoShell, RunTimeout):
-    """Run for maximum timeout seconds"""
+class RunNoShellPty(RunNoShell, RunPty):
+    """Pty support (eg for screen sessions)"""
     pass
 
 
@@ -738,8 +736,8 @@ class RunTimeout(RunLoop, RunAsync):
         super(RunTimeout, self)._loop_process_output(output)
 
 
-class RunNoShellQA(RunNoShellLoop, RunNoShellAsync):
-    """Question/Answer processing"""
+class RunNoShellTimout(RunNoShell, RunTimeout):
+    """Run for maximum timeout seconds"""
     pass
 
 class RunQA(RunLoop, RunAsync):
@@ -838,6 +836,7 @@ class RunQA(RunLoop, RunAsync):
         self._loop_miss_count = 0
         self._loop_previous_ouput_length = 0
 
+
     def _loop_process_output(self, output):
         """Process the output that is read in blocks
             check the output passed to questions available
@@ -889,8 +888,8 @@ class RunQA(RunLoop, RunAsync):
         super(RunQA, self)._loop_process_output(output)
 
 
-class RunNoShellAsyncLoop(RunNoShellLoop, RunNoShellAsync):
-    """Async read in loop"""
+class RunNoShellQA(RunNoShellLoop, RunNoShellAsync):
+    """Question/Answer processing"""
     pass
 
 
@@ -898,9 +897,8 @@ class RunAsyncLoop(RunLoop, RunAsync):
     """Async read in loop"""
     pass
 
-
-class RunNoShellAsyncLoopLog(RunNoShellLoopLog, RunNoShellAsync):
-    """Async read, log to logger"""
+class RunNoShellAsyncLoop(RunNoShellLoop, RunNoShellAsync):
+    """Async read in loop"""
     pass
 
 
@@ -908,12 +906,17 @@ class RunAsyncLoopLog(RunLoopLog, RunAsync):
     """Async read, log to logger"""
     pass
 
-class RunNoShellQALog(RunNoShellLoopLog, RunNoShellQA):
+
+class RunNoShellAsyncLoopLog(RunNoShellLoopLog, RunNoShellAsync):
+    """Async read, log to logger"""
+    pass
+
+class RunQALog(RunLoopLog, RunQA):
     """Async loop QA with LoopLog"""
     pass
 
 
-class RunQALog(RunLoopLog, RunQA):
+class RunNoShellQALog(RunNoShellLoopLog, RunNoShellQA):
     """Async loop QA with LoopLog"""
     pass
 
@@ -932,7 +935,7 @@ class RunAsyncLoopStdout(RunLoopStdout, RunAsync):
     """Async read, flush to stdout"""
     pass
 
-class RunNoShellAsyncLoopStdout(RunNoShellLoopStdout, RunNoShelAsync):
+class RunNoShellAsyncLoopStdout(RunNoShellLoopStdout, RunNoShellAsync):
     """Async read, flush to stdout"""
     pass
 
@@ -947,7 +950,7 @@ run_simple = Run.run
 # deprecated
 run_simple_noworries = RunNoWorries.run
 
-async_run = RunNoShelAsync.run
+async_run = RunNoShellAsync.run
 asyncloop = RunNoShellAsyncLoop.run
 timeout = RunNoShellTimout
 # deprecated
