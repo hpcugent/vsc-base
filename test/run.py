@@ -76,6 +76,14 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
+    def test_simple_glob(self):
+        ec, output = run_simple('ls test/sandbox/testpkg/*')
+        self.assertEqual(ec, 0)
+        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
+        self.assertEqual(ec, 0)
+        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+
     def test_timeout(self):
         timeout = 3
 
