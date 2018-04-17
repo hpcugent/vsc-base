@@ -38,7 +38,7 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
+from vsc.utils.run import run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -83,6 +83,15 @@ class TestRun(TestCase):
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+
+    def test_noshell_glob(self):
+        ec, output = run('ls test/sandbox/testpkg/*')
+        self.assertEqual(ec, 0)
+        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
+        self.assertEqual(ec, 0)
+        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+
 
     def test_timeout(self):
         timeout = 3

@@ -306,13 +306,15 @@ class Run(object):
 
     def _make_shell_command(self):
         """Convert cmd into shell command"""
+        self.log.warning("using potentialy unsafe shell commands, use run.run or run.RunNoShell.run \
+                         instead of run.run_simple or run.Run.run")
         if self.cmd is None:
             self.log.raiseExcpetion("_make_shell_command: no cmd set.")
 
         if isinstance(self.cmd, basestring):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
-            self._shellcmd = " ".join([shell_quote(arg) for arg in self.cmd])
+            self._shellcmd = " ".join([str(arg).replace(' ', '\ ') for arg in self.cmd])
         else:
             self.log.raiseException("Failed to convert cmd %s (type %s) into shell command" %
                                     (self.cmd, type(self.cmd)))
@@ -445,12 +447,32 @@ class Run(object):
             pass
 
 
+class RunNoShell(Run):
+    USE_SHELL = False
+
+    def _make_shell_command(self):
+        """Convert cmd into a list of command to be sent to popen, without a shell"""
+        if self.cmd is None:
+            self.log.raiseExcpetion("_make_shell_command: no cmd set.")
+
+        if isinstance(self.cmd, basestring):
+            self._shellcmd = shlex.split(self.cmd)
+        elif isinstance(self.cmd, (list, tuple,)):
+            self._shellcmd = self.cmd
+        else:
+            self.log.raiseException("Failed to convert cmd %s (type %s) into non shell command" %
+                                    (self.cmd, type(self.cmd)))
+
+
 class RunNoWorries(Run):
     """When the exitcode is >0, log.debug instead of log.error"""
     def __init__(self, cmd, **kwargs):
         super(RunNoWorries, self).__init__(cmd, **kwargs)
         self._post_exitcode_log_failure = self.log.debug
 
+class RunNoWorries(RunNoShell, RunNoWorries):
+    """When the exitcode is >0, log.debug instead of log.error"""
+    pass
 
 class RunLoopException(Exception):
     def __init__(self, code, output):
@@ -459,6 +481,14 @@ class RunLoopException(Exception):
 
     def __str__(self):
         return "%s code %s output %s" % (self.__class__.__name__, self.code, self.output)
+
+
+class RunNoShellLoop(RunNoShell, RunLoop)
+    """Main process is a while loop which reads the output in blocks
+        need to read from time to time.
+        otherwise the stdout/stderr buffer gets filled and it all stops working
+    """
+    pass
 
 
 class RunLoop(Run):
@@ -534,6 +564,10 @@ class RunLoop(Run):
         self._loop_process_output(output)
 
 
+class RunNoShellLoopLog(RunNoShell, RunLoopLog):
+    pass
+
+
 class RunLoopLog(RunLoop):
     LOOP_LOG_LEVEL = logging.INFO
 
@@ -550,6 +584,10 @@ class RunLoopLog(RunLoop):
         super(RunLoopLog, self)._loop_process_output(output)
 
 
+class RunNoShellLoopStdout(RunNoShell, RunLoop):
+    pass
+
+
 class RunLoopStdout(RunLoop):
 
     def _loop_process_output(self, output):
@@ -559,6 +597,11 @@ class RunLoopStdout(RunLoop):
         sys.stdout.write(output)
         sys.stdout.flush()
         super(RunLoopStdout, self)._loop_process_output(output)
+
+
+class RunNoShellAsync(RunNoShell, RunAsync):
+    """Async process class"""
+    pass
 
 
 class RunAsync(Run):
@@ -593,6 +636,11 @@ class RunAsync(Run):
             # recv_some may throw Exception
             self.log.exception("_read_process: read failed")
             return ''
+
+
+class RunNoShellFile(RunNoShell, RunFile):
+    """Popen to filehandle"""
+    pass
 
 
 class RunFile(Run):
@@ -644,6 +692,9 @@ class RunFile(Run):
         """Meaningless for filehandle"""
         return ''
 
+class RunNoShellPty(RunNoShell, RunPty):
+    """Pty support (eg for screen sessions)"""
+    pass
 
 class RunPty(Run):
     """Pty support (eg for screen sessions)"""
@@ -660,6 +711,11 @@ class RunPty(Run):
                 'stderr': slave
                 }
         super(RunPty, self)._make_popen_named_args(others=others)
+
+
+class RunNoShellTimout(RunNoShell, RunTimeout):
+    """Run for maximum timeout seconds"""
+    pass
 
 
 class RunTimeout(RunLoop, RunAsync):
@@ -681,6 +737,10 @@ class RunTimeout(RunLoop, RunAsync):
             raise RunLoopException(RUNRUN_TIMEOUT_EXITCODE, RUNRUN_TIMEOUT_OUTPUT)
         super(RunTimeout, self)._loop_process_output(output)
 
+
+class RunNoShellQA(RunNoShellLoop, RunNoShellAsync):
+    """Question/Answer processing"""
+    pass
 
 class RunQA(RunLoop, RunAsync):
     """Question/Answer processing"""
@@ -829,13 +889,27 @@ class RunQA(RunLoop, RunAsync):
         super(RunQA, self)._loop_process_output(output)
 
 
+class RunNoShellAsyncLoop(RunNoShellLoop, RunNoShellAsync):
+    """Async read in loop"""
+    pass
+
+
 class RunAsyncLoop(RunLoop, RunAsync):
     """Async read in loop"""
     pass
 
 
+class RunNoShellAsyncLoopLog(RunNoShellLoopLog, RunNoShellAsync):
+    """Async read, log to logger"""
+    pass
+
+
 class RunAsyncLoopLog(RunLoopLog, RunAsync):
     """Async read, log to logger"""
+    pass
+
+class RunNoShellQALog(RunNoShellLoopLog, RunNoShellQA):
+    """Async loop QA with LoopLog"""
     pass
 
 
@@ -849,7 +923,16 @@ class RunQAStdout(RunLoopStdout, RunQA):
     pass
 
 
+class RunNoShellQAStdout(RunNoShellLoopStdout, RunNoShellQA):
+    """Async loop QA with LoopLogStdout"""
+    pass
+
+
 class RunAsyncLoopStdout(RunLoopStdout, RunAsync):
+    """Async read, flush to stdout"""
+    pass
+
+class RunNoShellAsyncLoopStdout(RunNoShellLoopStdout, RunNoShelAsync):
     """Async read, flush to stdout"""
     pass
 
@@ -857,19 +940,39 @@ class RunAsyncLoopStdout(RunLoopStdout, RunAsync):
 # convenient names
 # eg: from vsc.utils.run import trivial
 
+run = RunNoShell.run
+noworries = RunNoShellNoWorries.run
+# deprecated
 run_simple = Run.run
+# deprecated
 run_simple_noworries = RunNoWorries.run
 
+async_run = RunNoShelAsync.run
+asyncloop = RunNoShellAsyncLoop.run
+timeout = RunNoShellTimout
+# deprecated
 run_async = RunAsync.run
+# deprecated
 run_asyncloop = RunAsyncLoop.run
+# deprecated
 run_timeout = RunTimeout.run
 
+run_file = RunNoShellFile.run
+async_to_stdout = RunNoShellAsyncLoopStdout.run
+# deprecated
 run_to_file = RunFile.run
+# deprecated
 run_async_to_stdout = RunAsyncLoopStdout.run
 
+qa = RunNoShellQA.run
+qa_log = RunNoShellQALog.run
+qastdout = RunNoShellQAStdout.run
+# deprecated
 run_qa = RunQA.run
+# deprecated
 run_qalog = RunQALog.run
+# deprecated
 run_qastdout = RunQAStdout.run
 
 if __name__ == "__main__":
-    run_simple('echo ok')
+    run('echo ok')

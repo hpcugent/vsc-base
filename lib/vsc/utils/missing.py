@@ -274,7 +274,7 @@ class FrozenDictKnownKeys(FrozenDict):
 
 
 def shell_quote(x):
-    """Add quotes so it can be apssed to shell"""
+    """Add quotes so it can be passed to shell"""
     return quote(str(x))
 
 
