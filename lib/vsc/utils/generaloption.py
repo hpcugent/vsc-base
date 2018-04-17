@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2017 Ghent University
+# Copyright 2011-2018 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -683,6 +683,7 @@ class ExtOptionParser(OptionParser):
                 opt._long_opts = [x for x in opt._long_opts if not _is_enable_disable(x)]
         return fh
 
+    # pylint: disable=arguments-differ
     def print_help(self, fh=None):
         """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
         fh = self.check_help(fh)
