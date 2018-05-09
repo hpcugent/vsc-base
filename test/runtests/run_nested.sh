@@ -8,7 +8,7 @@ mysleep=15
 echo "$depth $$ $PPID" >> $path
 
 if [ $depth -ne 0 ]; then
-    $0 $(($depth -1)) $path &
+    "$0" $(($depth -1)) "$path" &
 fi
 
 sleep $mysleep

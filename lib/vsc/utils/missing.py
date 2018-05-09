@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Ghent University
+# Copyright 2012-2018 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -40,8 +40,11 @@ Various functions that are missing from the default Python library.
 @author: Stijn De Weirdt (Ghent University)
 """
 import shlex
-import subprocess
 import time
+try:
+    from shlex import quote  # python 3.3
+except ImportError:
+    from pipes import quote  # python 2.7
 
 from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
@@ -257,12 +260,12 @@ class FrozenDictKnownKeys(FrozenDict):
                 self.log.raiseException(msg, exception=KeyError)
 
         super(FrozenDictKnownKeys, self).__init__(tmpdict)
-
+    # pylint: disable=arguments-differ
     def __getitem__(self, key, *args, **kwargs):
         """Redefine __getitem__ to provide a better KeyError message."""
         try:
             return super(FrozenDictKnownKeys, self).__getitem__(key, *args, **kwargs)
-        except KeyError, err:
+        except KeyError as err:
             if key in self.KNOWN_KEYS:
                 raise KeyError(err)
             else:
@@ -271,16 +274,14 @@ class FrozenDictKnownKeys(FrozenDict):
 
 
 def shell_quote(x):
-    """Add quotes so it can be apssed to shell"""
-    # use undocumented subprocess API call to quote whitespace (executed with Popen(shell=True))
-    # (see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split for alternatives if needed)
-    return subprocess.list2cmdline([str(x)])
+    """Add quotes so it can be passed to shell"""
+    return quote(str(x))
 
 
 def shell_unquote(x):
     """Take a literal string, remove the quotes as if it were passed by shell"""
     # it expects a string
-    return shlex.split(str(x))[0]
+    return ' '.join(shlex.split(str(x)))
 
 
 def get_class_for(modulepath, class_name):
@@ -293,12 +294,12 @@ def get_class_for(modulepath, class_name):
     # try to import specified module path, reraise ImportError if it occurs
     try:
         module = __import__(modulepath, globals(), locals(), [''])
-    except ImportError, err:
+    except ImportError as err:
         raise ImportError(err)
     # try to import specified class name from specified module path, throw ImportError if this fails
     try:
         klass = getattr(module, class_name)
-    except AttributeError, err:
+    except AttributeError as err:
         raise ImportError("Failed to import %s from %s: %s" % (class_name, modulepath, err))
     return klass
 
@@ -335,7 +336,7 @@ class TryOrFail(object):
             for i in xrange(0, self.n):
                 try:
                     return function(*args, **kwargs)
-                except self.exceptions, err:
+                except self.exceptions as err:
                     if i == self.n - 1:
                         raise
                     _log.exception("try_or_fail caught an exception - attempt %d: %s" % (i, err))
