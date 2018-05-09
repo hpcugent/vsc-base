@@ -187,10 +187,12 @@ Colorize = namedtuple('Colorize', 'AUTO ALWAYS NEVER')('auto', 'always', 'never'
 APOCALYPTIC = 'APOCALYPTIC'
 # register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
+
 # register QUIET, EXCEPTION and FATAL alias
-logging._levelNames['EXCEPTION'] = logging.ERROR
-logging._levelNames['FATAL'] = logging.CRITICAL
-logging._levelNames['QUIET'] = logging.WARNING
+if hasattr(logging,'_levelNames'):
+    logging._levelNames['EXCEPTION'] = logging.ERROR
+    logging._levelNames['FATAL'] = logging.CRITICAL
+    logging._levelNames['QUIET'] = logging.WARNING
 
 
 # mpi rank support
@@ -326,7 +328,7 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-        raise exception, message, tb
+        raise exception(message)
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
@@ -477,12 +479,12 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     l = logging.getLogger(fullname)
     l.fancyrecord = fancyrecord
     if _env_to_boolean('FANCYLOGGER_GETLOGGER_DEBUG'):
-        print 'FANCYLOGGER_GETLOGGER_DEBUG',
-        print 'name', name, 'fname', fname, 'fullname', fullname,
-        print "getRootLoggerName: ", getRootLoggerName()
+        print('FANCYLOGGER_GETLOGGER_DEBUG'),
+        print('name', name, 'fname', fname, 'fullname', fullname),
+        print("getRootLoggerName: ", getRootLoggerName())
         if hasattr(l, 'get_parent_info'):
-            print 'parent_info verbose'
-            print "\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG"))
+            print('parent_info verbose')
+            print("\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
         sys.stdout.flush()
     return l
 
@@ -585,7 +587,7 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
             os.makedirs(directory)
         except Exception as ex:
             exc, detail, tb = sys.exc_info()
-            raise exc, "Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail), tb
+            raise exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
@@ -745,8 +747,8 @@ def setLogLevel(level):
 
     logger.setLevel(level)
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
-        print "FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level)
-        print "\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG"))
+        print("FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level))
+        print("\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG")))
         sys.stdout.flush()
 
 
@@ -865,8 +867,8 @@ def setroot(fancyrecord=FANCYLOG_FANCYRECORD):
             lgr[1].parent = root
 
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
-        print "FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ", lvl, logging.getLevelName(lvl)
-        print "\n".join(root.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT "))
+        print("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ", lvl, logging.getLevelName(lvl))
+        print("\n".join(root.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ")))
         sys.stdout.flush()
 
     # silence the root logger

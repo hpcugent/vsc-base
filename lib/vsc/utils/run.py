@@ -63,6 +63,11 @@ Historical overview of existing equivalent code
 @author: Stijn De Weirdt (Ghent University)
 """
 
+try:
+    basestring
+except:
+    basestring = str
+
 import errno
 import logging
 import os
