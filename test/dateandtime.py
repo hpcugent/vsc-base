@@ -110,8 +110,8 @@ if __name__ == '__main__':
     today = datetime.date.today()
     endapril = datetime.date(today.year, 4, 10)
     f = FancyMonth(endapril)
-    print f.nrdays, 30  # nr days in month
+    print(f.nrdays, 30)  # nr days in month
 
     may2nd = datetime.date(today.year, 5, 2)
-    print f.number(may2nd), 2  # spans 2 months
-    print [x.nrdays for x in f.interval(may2nd)], [30, 31]  # interval returns FancyMonth instances
+    print(f.number(may2nd), 2)  # spans 2 months
+    print([x.nrdays for x in f.interval(may2nd)], [30, 31])  # interval returns FancyMonth instances

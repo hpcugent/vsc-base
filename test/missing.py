@@ -115,7 +115,7 @@ def generate_random_dag():
     """
     myseed = randint(0, sys.maxint)
     seed(myseed)
-    print "testing with random seed", myseed
+    print("testing with random seed", myseed)
     edge_probability = randint(10, 30)
     ranks = randint(3, 10)
     graph = {}

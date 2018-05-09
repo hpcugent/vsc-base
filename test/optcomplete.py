@@ -81,7 +81,7 @@ class OptcompleteTest(TestCase):
         # missing mandatory CALL_ARGS
         try:
             nc()
-        except Exception, e:
+        except Exception as e:
             pass
 
         self.assertEqual(e.__class__, CompleterMissingCallArgument)

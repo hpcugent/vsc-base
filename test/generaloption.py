@@ -787,7 +787,7 @@ debug=1
                          msg='no errors logged, got %s' % self.count_logcache('error'))
 
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
-        print self.LOGCACHE['error']
+        print(self.LOGCACHE['error'])
         self.assertEqual(self.count_logcache('error'), 1,
                          msg='one error should be logged, got %s' % self.count_logcache('error'))
 

@@ -91,9 +91,9 @@ class LogDaemon(Daemon):
 
         # get socket
         self.socket_.bind((self.hostname, self.port))
-        print "FANCYLOG_SERVER_PID=%s" % self.pidfile
-        print "FANCYLOG_SERVER=%s:%d" % (socket.gethostname(), self.socket_.getsockname()[-1])
-        print "FANCYLOG_SERVER_LOGFILE=%s" % self.logfile
+        print("FANCYLOG_SERVER_PID=%s" % self.pidfile)
+        print("FANCYLOG_SERVER=%s:%d" % (socket.gethostname(), self.socket_.getsockname()[-1]))
+        print("FANCYLOG_SERVER_LOGFILE=%s" % self.logfile)
         sys.stdout.flush()
 
         # Start the daemon
