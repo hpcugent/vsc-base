@@ -189,10 +189,12 @@ APOCALYPTIC = 'APOCALYPTIC'
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
 
 # register QUIET, EXCEPTION and FATAL alias
-if hasattr(logging,'_levelNames'):
-    logging._levelNames['EXCEPTION'] = logging.ERROR
-    logging._levelNames['FATAL'] = logging.CRITICAL
-    logging._levelNames['QUIET'] = logging.WARNING
+if not hasattr(logging,'_levelNames'):
+    logging._levelNames = dict()
+
+logging._levelNames['EXCEPTION'] = logging.ERROR
+logging._levelNames['FATAL'] = logging.CRITICAL
+logging._levelNames['QUIET'] = logging.WARNING
 
 
 # mpi rank support
@@ -281,7 +283,7 @@ class FancyLogger(logging.getLoggerClass()):
 
     # method definition as it is in logging, can't change this
     # pylint: disable=unused-argument
-    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
+    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None, sinfo=None):
         """
         overwrite make record to use a fancy record (with more options)
         """
@@ -587,6 +589,7 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
             os.makedirs(directory)
         except Exception as ex:
             exc, detail, tb = sys.exc_info()
+            print(tb)
             raise exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))
 
     return _logToSomething(

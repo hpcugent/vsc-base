@@ -65,8 +65,8 @@ Historical overview of existing equivalent code
 
 try:
     basestring
-except:
-    basestring = str
+except NameError:
+    from past.builtins import basestring
 
 import errno
 import logging
@@ -535,7 +535,7 @@ class RunLoop(Run):
             # read remaining data (all of it)
             output = self._read_process(-1)
 
-            self._process_output += output
+            self._process_output += str(output)
             self._process_exitcode = ec
 
             # process after updating the self._process_ vars

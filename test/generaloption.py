@@ -325,7 +325,7 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
         topt = TestOption1(go_args=["--aregexopt='^foo.*bar$'"])
-        print topt.generate_cmd_line()
+        print(topt.generate_cmd_line())
         self.assertTrue(topt.options.aregexopt is not None)
         self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
         self.assertTrue('--aregexopt=\'\'"\'"\'^foo.*bar$\'"\'"\'\'' in topt.generate_cmd_line())
@@ -716,7 +716,7 @@ debug=1
         # avoids run.log.error message
         self.assertEqual(ec, 0, msg="simple_option.py test script ran success")
 
-        print out
+        print(out)
         reply_match = reg_reply.search(out)
         self.assertTrue(reply_match, msg="COMPREPLY %s in output %s" % (reg_reply.pattern, out))
 

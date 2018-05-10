@@ -21,8 +21,11 @@ frozendict is an immutable wrapper around dictionaries that implements the compl
 It can be used as a drop-in replacement for dictionaries where immutability is desired.
 """
 import operator
-from UserDict import DictMixin
 
+try:
+    from UserDict import DictMixin
+except ImportError:
+    DictMixin = dict
 
 # minor adjustments:
 # * renamed to FrozenDict
