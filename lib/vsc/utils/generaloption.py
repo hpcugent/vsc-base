@@ -35,13 +35,18 @@ try:
 except ImportError:
     import configparser as ConfigParser
 
+
+try:
+    import StringIO
+except ImportError:
+    from io import StringIO
+
 import copy
 import difflib
 import inspect
 import operator
 import os
 import re
-import StringIO
 import sys
 import textwrap
 from optparse import OptionParser, OptionGroup, Option, Values
@@ -185,7 +190,7 @@ class ExtOption(CompleterOption):
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
     TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path']]
-    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + Option.TYPE_CHECKER.items())
+    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + list(Option.TYPE_CHECKER.items()))
     TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
