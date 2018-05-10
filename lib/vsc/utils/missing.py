@@ -241,6 +241,7 @@ class FrozenDictKnownKeys(FrozenDict):
 
     def __init__(self, *args, **kwargs):
         """Constructor, only way to define the contents."""
+
         self.log = fancylogger.getLogger(self.__class__.__name__, fname=False)
 
         # support ignoring of unknown keys
@@ -259,19 +260,17 @@ class FrozenDictKnownKeys(FrozenDict):
                 msg = "Encountered unknown keys %s (known keys: %s)" % (unknown_keys, self.KNOWN_KEYS)
                 self.log.raiseException(msg, exception=KeyError)
 
-        super(FrozenDictKnownKeys, self).__init__(tmpdict)
+        FrozenDict.__init__(self, **tmpdict)
+
+
     # pylint: disable=arguments-differ
     def __getitem__(self, key, *args, **kwargs):
         """Redefine __getitem__ to provide a better KeyError message."""
-        try:
-            return super(FrozenDictKnownKeys, self).__getitem__(key, *args, **kwargs)
-        except KeyError as err:
-            if key in self.KNOWN_KEYS:
-                raise KeyError(err)
-            else:
-                tup = (key, self.__class__.__name__, self.KNOWN_KEYS)
-                raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % tup)
-
+        if key not in self.KNOWN_KEYS:
+            tup = (key, self.__class__.__name__, self.KNOWN_KEYS)
+            raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % tup)
+        else:
+            return FrozenDict.__getitem__(self, key)
 
 def shell_quote(x):
     """Add quotes so it can be passed to shell"""

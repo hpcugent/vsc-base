@@ -189,13 +189,14 @@ APOCALYPTIC = 'APOCALYPTIC'
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
 
 # register QUIET, EXCEPTION and FATAL alias
+# Python 2 we just add them to _levelNames
+# I'm not sure this is used anywhere?
 if not hasattr(logging,'_levelNames'):
     logging._levelNames = dict()
 
 logging._levelNames['EXCEPTION'] = logging.ERROR
 logging._levelNames['FATAL'] = logging.CRITICAL
 logging._levelNames['QUIET'] = logging.WARNING
-
 
 # mpi rank support
 _MPIRANK = MPIRANK_NO_MPI
@@ -301,6 +302,7 @@ class FancyLogger(logging.getLoggerClass()):
         formatted_message = message % args
         self.RAISE_EXCEPTION_LOG_METHOD(formatted_message)
         raise self.RAISE_EXCEPTION_CLASS(formatted_message)
+
 
     def raiseException(self, message, exception=None, catch=False):
         """
