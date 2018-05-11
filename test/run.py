@@ -38,10 +38,9 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
+from vsc.utils.run import RunQA, RunTimeout
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
-
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests')
 SCRIPT_SIMPLE = os.path.join(SCRIPTS_DIR, 'simple.py')
@@ -51,6 +50,7 @@ SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
 class RunQAShort(RunQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
+
 
 run_qas = RunQAShort.run
 
@@ -67,24 +67,25 @@ class TestRun(TestCase):
         shutil.rmtree(self.tempdir)
 
     def test_simple(self):
+        from vsc.utils.run import run_simple
         ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
     def test_simple_asyncloop(self):
+        from vsc.utils.run import run_asyncloop
         ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
     def test_simple_glob(self):
+        from vsc.utils.run import run_simple
         ec, output = run_simple('ls test/sandbox/testpkg/*')
-        self.assertEqual(ec, 0)
-        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
-        ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
 
     def test_noshell_glob(self):
+        from vsc.utils.run import run, run_simple
         ec, output = run('ls test/sandbox/testpkg/*')
         self.assertEqual(ec, 127)
         self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in str(output))
@@ -93,7 +94,7 @@ class TestRun(TestCase):
         self.assertTrue(all(x in str(output.lower()) for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
 
     def test_timeout(self):
-
+        from vsc.utils.run import run_timeout
         # longsleep is 10sec
         start = time.time()
         ec, output = run_timeout([sys.executable, SCRIPT_SIMPLE, 'longsleep'], timeout=3)
