@@ -517,7 +517,7 @@ class RunLoop(Run):
         time.sleep(self.LOOP_TIMEOUT_INIT)
         ec = self._process.poll()
         try:
-            while self._loop_continue and ec < 0:
+            while self._loop_continue or (ec < 0 or ec == None):
                 output = self._read_process()
                 self._process_output += output
                 # process after updating the self._process_ vars

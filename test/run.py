@@ -87,21 +87,20 @@ class TestRun(TestCase):
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
         self.assertEqual(ec, 127)
-        self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
+        self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in str(output))
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
-        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        self.assertTrue(all(x in str(output.lower()) for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
 
     def test_timeout(self):
-        timeout = 3
 
         # longsleep is 10sec
         start = time.time()
-        ec, output = run_timeout([sys.executable, SCRIPT_SIMPLE, 'longsleep'], timeout=timeout)
+        ec, output = run_timeout([sys.executable, SCRIPT_SIMPLE, 'longsleep'], timeout=3)
         stop = time.time()
         self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg='longsleep stopped due to timeout')
         self.assertEqual(RUNRUN_TIMEOUT_OUTPUT, output, msg='longsleep expected output')
-        self.assertTrue(stop - start < timeout + 1, msg='longsleep timeout within margin')  # give 1 sec margin
+        self.assertTrue(stop - start < 4, msg='longsleep timeout within margin')  # give 1 sec margin
 
         # run_nested is 15 seconds sleep
         # 1st arg depth: 2 recursive starts
@@ -123,12 +122,12 @@ class TestRun(TestCase):
             res_fn = os.path.join(self.tempdir, 'nested_kill_pgid_%s' % kill_pgid)
             start = time.time()
             RunTimeout.KILL_PGID = kill_pgid
-            ec, output = run_timeout([SCRIPT_NESTED, str(depth), res_fn], timeout=timeout)
+            ec, output = run_timeout([SCRIPT_NESTED, str(depth), res_fn], timeout=3)
             # reset it to default
             RunTimeout.KILL_PGID = default
             stop = time.time()
             self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg='run_nested kill_pgid %s stopped due to timeout'  % kill_pgid)
-            self.assertTrue(stop - start < timeout + 1, msg='run_nested kill_pgid %s timeout within margin' % kill_pgid)  # give 1 sec margin
+            self.assertTrue(stop - start < 4, msg='run_nested kill_pgid %s timeout within margin' % kill_pgid)  # give 1 sec margin
             # make it's not too fast
             time.sleep(5)
             # there's now 6 seconds to complete the remainder

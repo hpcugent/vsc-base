@@ -175,7 +175,7 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
             else:
                 break
         elif r:
-            y.append(r)
+            y.append(str(r))
             len_y += len(r)
         else:
             time.sleep(max((x - time.time()) / tr, 0))

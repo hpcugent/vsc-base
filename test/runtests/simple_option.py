@@ -42,4 +42,3 @@ go = simple_option(options)
 
 go.log.info("1st option %s" % go.options.long1)
 go.log.debug("DEBUG 1st option %s" % go.options.long1)
-
