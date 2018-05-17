@@ -70,19 +70,19 @@ class TestRun(TestCase):
         from vsc.utils.run import run_simple
         ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
-        self.assertTrue('shortsleep' in output.lower())
+        self.assertTrue('shortsleep' in str(output.lower()))
 
     def test_simple_asyncloop(self):
         from vsc.utils.run import run_asyncloop
         ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
-        self.assertTrue('shortsleep' in output.lower())
+        self.assertTrue('shortsleep' in str(output.lower()))
 
     def test_simple_glob(self):
         from vsc.utils.run import run_simple
         ec, output = run_simple('ls test/sandbox/testpkg/*')
         self.assertEqual(ec, 0)
-        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        self.assertTrue(all(x in str(output.lower()) for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
 
     def test_noshell_glob(self):
         from vsc.utils.run import run, run_simple

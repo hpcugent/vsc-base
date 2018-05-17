@@ -1,5 +1,6 @@
 include README.md LICENSE
 recursive-include lib vsc * *
 recursive-include bin *
+recursive-include test *
 global-exclude *.py[co]
 global-exclude __pycache__

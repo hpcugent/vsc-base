@@ -101,8 +101,11 @@ class OptcompleteTest(TestCase):
         """Test ListCompleter class"""
         # return list of strings
         initlist = ['original', 'list', 1]
-        lc = ListCompleter(initlist)
-        self.assertEqual(lc(), map(str, initlist))
+        lc = ListCompleter(initlist)()
+        comparator = map(str, initlist)
+        for i in range(len(lc)):
+            self.assertEqual(lc[i], comparator[i])
+
 
     def test_all_completer(self):
         """Test the AllCompleter class"""

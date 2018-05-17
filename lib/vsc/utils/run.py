@@ -168,6 +168,8 @@ class Run(object):
         self._process_modulepath = modulepath
 
         self._process_module = __import__(self._process_modulepath, globals(), locals(), fromlist)
+        print(self._process_module)
+
 
     def _run(self):
         """actual method
@@ -515,9 +517,10 @@ class RunLoop(Run):
         self._loop_initialise()
 
         time.sleep(self.LOOP_TIMEOUT_INIT)
-        ec = self._process.poll()
+        ec = self._process.poll() or -255
         try:
-            while self._loop_continue or (ec < 0 or ec == None):
+            while self._loop_continue and ec < 0:
+
                 output = self._read_process()
                 self._process_output += output
                 # process after updating the self._process_ vars
@@ -526,7 +529,7 @@ class RunLoop(Run):
                 if len(output) == 0:
                     time.sleep(self.LOOP_TIMEOUT_MAIN)
                 ec = self._process.poll()
-
+       
                 self._loop_count += 1
 
             self.log.debug("_wait_for_process: loop stopped after %s iterations (ec %s loop_continue %s)" %
@@ -609,9 +612,11 @@ class RunAsync(Run):
     """Async process class"""
 
     def _prep_module(self, modulepath=None, extendfromlist=None):
+
         # these will provide the required Popen, PIPE and STDOUT
         if modulepath is None:
             modulepath = PROCESS_MODULE_ASYNCPROCESS_PATH
+            print(modulepath)
         if extendfromlist is None:
             extendfromlist = ['send_all', 'recv_some']
         super(RunAsync, self)._prep_module(modulepath=modulepath, extendfromlist=extendfromlist)
@@ -632,11 +637,14 @@ class RunAsync(Run):
             else:
                 # non-blocking read (readsize is a maximum to return !
                 out = self._process_module.recv_some(self._process, maxread=readsize)
+
             return out
         except (IOError, Exception):
             # recv_some may throw Exception
             self.log.exception("_read_process: read failed")
             return ''
+        except Exception as err:
+            print(err)
 
 
 class RunNoShellAsync(RunNoShell, RunAsync):
@@ -852,7 +860,14 @@ class RunQA(RunLoop, RunAsync):
 
         # qa first and then qa_reg
         nr_qa = len(self.qa)
-        for idx, (question, answers) in enumerate(self.qa.items() + self.qa_reg.items()):
+
+        # Merge two dictionaries
+        for key in self.qa_reg.keys():
+            value = self.qa_reg[key]
+            self.qa[key] = value
+
+        idx = 0
+        for question, answers in self.qa.items():
             res = question.search(self._process_output)
             if output and res:
                 answer = answers[0] % res.groupdict()
@@ -866,6 +881,8 @@ class RunQA(RunLoop, RunAsync):
                 self._process_module.send_all(self._process, answer)
                 hit = True
                 break
+            idx+=1
+
 
         if not hit:
             curoutlen = len(self._process_output)
@@ -982,5 +999,5 @@ run_qalog = RunQALog.run
 # deprecated
 run_qastdout = RunQAStdout.run
 
-if __name__ == "__main__":
-    run('echo ok')
+#if __name__ == "__main__":
+#    run('echo ok')

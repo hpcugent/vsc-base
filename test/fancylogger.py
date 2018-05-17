@@ -37,12 +37,13 @@ import re
 import sys
 import shutil
 
-from StringIO import StringIO
 import tempfile
 from unittest import TestLoader, main, TestSuite
 try:
     from unittest import skipUnless
+    from StringIO import StringIO
 except ImportError:
+    from io import StringIO
     # Python 2.6 does not have `skipIf`/`skipUnless`
     def skipUnless(condition, reason):
         if condition:

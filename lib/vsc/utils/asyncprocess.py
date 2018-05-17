@@ -71,8 +71,14 @@ import fcntl  # @UnresolvedImport
 import os
 import select  # @UnresolvedImport
 import subprocess
+import sys
 import time
 
+# Test for python 3
+PYTHON3 = False
+if sys.version_info >= (3, 0):
+    PYTHON3= True
+    
 
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
@@ -108,6 +114,8 @@ class Popen(subprocess.Popen):
             return 0
 
         try:
+            if PYTHON3 is True:
+                inp = bytes(inp.encode('utf-8'))
             written = os.write(self.stdin.fileno(), inp)
 
         except OSError as why:

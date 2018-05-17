@@ -27,11 +27,12 @@ try:
 except ImportError:
     DictMixin = dict
 
+
 # minor adjustments:
 # * renamed to FrozenDict
 # * deriving from DictMixin instead of collections.Mapping to make it Python 2.4 compatible
 #   see also http://docs.python.org/2/library/userdict.html#UserDict.DictMixin
-class FrozenDict(DictMixin):
+class FrozenDict(object, DictMixin):
 
     def __init__(self, *args, **kwargs):
         self.__dict = dict(*args, **kwargs)
@@ -39,14 +40,6 @@ class FrozenDict(DictMixin):
 
     def __getitem__(self, key):
         return self.__dict[key]
-
-    def __setitem__(self, key, value=None):
-        if hasattr(self, 'KNOWN_KEYS'):
-
-            if key not in self.KNOWN_KEYS:
-                raise KeyError('FrozenDictKnownKeys does not have %s' % key)
-
-        self.__dict[key] = value
 
     def copy(self, **add_or_replace):
         return FrozenDict(self, **add_or_replace)
