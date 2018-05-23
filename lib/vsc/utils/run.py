@@ -760,6 +760,7 @@ class RunQA(RunLoop, RunAsync):
         no_qa = kwargs.pop('no_qa', [])
         self._loop_miss_count = None  # maximum number of misses
         self._loop_previous_ouput_length = None  # track length of output through loop
+        self.hit_position = 0
 
         super(RunQA, self).__init__(cmd, **kwargs)
 
@@ -848,7 +849,7 @@ class RunQA(RunLoop, RunAsync):
         # qa first and then qa_reg
         nr_qa = len(self.qa)
         for idx, (question, answers) in enumerate(self.qa.items() + self.qa_reg.items()):
-            res = question.search(self._process_output)
+            res = question.search(self._process_output[self.hit_position:])
             if output and res:
                 answer = answers[0] % res.groupdict()
                 if len(answers) > 1:
@@ -856,10 +857,11 @@ class RunQA(RunLoop, RunAsync):
                     if self.CYCLE_ANSWERS:
                         answers.append(prev_answer)
                     self.log.debug("New answers list for question %s: %s" % (question.pattern, answers))
-                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" %
-                               (answer, question.pattern, idx >= nr_qa, self._process_output[-50:]))
+                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s process_output %s" %
+                               (answer, question.pattern, idx >= nr_qa, output, self._process_output[-50:]))
                 self._process_module.send_all(self._process, answer)
                 hit = True
+                self.hit_position = len(self._process_output)  # position of next possible match
                 break
 
         if not hit:
