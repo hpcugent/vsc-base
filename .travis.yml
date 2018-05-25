@@ -4,7 +4,12 @@ python:
   - "2.7"
 install:
   - easy_install vsc-install
+  # docutils to run "python setup.py check"
+  - pip install docutils
+  # collective.dist is required  to run "python setup.py check" with Python 2.6
+  - if [ "x$TRAVIS_PYTHON_VERSION" == 'x2.6' ]; then pip install collective.dist; fi
 script:
   # 'hpcugent' is a mandatory remote for setup.py to work (because of vsc-install)
   - git remote add hpcugent https://github.com/hpcugent/vsc-base.git
   - python setup.py test
+  - python setup.py check -r -s
