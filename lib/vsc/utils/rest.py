@@ -39,8 +39,10 @@ import urllib
 
 try:
     from urllib2 import HTTPSHandler, build_opener, Request
+    PYTHON2 = True
 except ImportError:
     from urllib.request import ( HTTPSHandler, build_opener, Request )
+    PYTHON2 = False
 
 try:
     import json
@@ -180,6 +182,11 @@ class Client(object):
         conn = self.get_connection(method, url, body, headers)
         status = conn.code
         body = conn.read()
+
+        # Python 3 body is bytes
+        if isinstance(body, bytes):
+           body = body.decode('utf-8')
+
         try:
             pybody = json.loads(body)
         except ValueError:
@@ -203,8 +210,13 @@ class Client(object):
             sep = '/'
         else:
             sep = ''
+
+        # Python 3 body is bytes
+        if PYTHON2 is False and isinstance(body, str):
+           body = bytes(body.encode('utf-8'))
+
         request = Request(self.url + sep + url, data=body)
-        for header, value in headers.iteritems():
+        for header, value in headers.items():
             request.add_header(header, value)
         request.get_method = lambda: method
         fancylogger.getLogger().debug('opening request:  %s%s%s', self.url, sep, url)
