@@ -53,7 +53,7 @@ cpu_mask_t = ctypes.c_ulong
 ##define __NCPUBITS     (8 * sizeof(__cpu_mask))
 CPU_SETSIZE = 1024
 NCPUBITS = 8 * ctypes.sizeof(cpu_mask_t)
-NMASKBITS = CPU_SETSIZE / NCPUBITS
+NMASKBITS = int(CPU_SETSIZE / NCPUBITS)
 
 #/* Priority limits.  */
 ##define PRIO_MIN        -20     /* Minimum priority a process can have.  */
