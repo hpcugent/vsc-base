@@ -44,7 +44,7 @@ _coloredlogs_pkgs = [
 ]
 
 PACKAGE = {
-    'version': '2.7.0',
+    'version': '2.7.1',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
@@ -55,6 +55,7 @@ PACKAGE = {
     },
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
     'tests_require': ['prospector'] + _coloredlogs_pkgs,
+    'long_description_content_type': 'text/markdown',
 }
 
 if __name__ == '__main__':
