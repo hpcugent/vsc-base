@@ -32,7 +32,7 @@ except ImportError:
 # * renamed to FrozenDict
 # * deriving from DictMixin instead of collections.Mapping to make it Python 2.4 compatible
 #   see also http://docs.python.org/2/library/userdict.html#UserDict.DictMixin
-class FrozenDict(object, DictMixin):
+class FrozenDict(DictMixin):
 
     def __init__(self, *args, **kwargs):
         self.__dict = dict(*args, **kwargs)
