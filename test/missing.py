@@ -29,16 +29,12 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
-import os
-import shutil
 import sys
-import tempfile
 from random import randint, seed
-from unittest import TestLoader, main
 
-from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
 from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+from vsc.utils.missing import namedtuple_with_defaults
 from vsc.install.testing import TestCase
 
 
@@ -297,3 +293,10 @@ class TestMissing(TestCase):
         # get_subclasses
         self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
         self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
+
+    def test_namedtuple_with_defaults(self):
+
+        fields = ["field1", "field2", "field3"]
+        MyTuple = namedtuple_with_defaults("MyTuple", fields, [1,2,3])
+
+        self.assertEqual(MyTuple(field2=42), MyTuple(field1=1,field2=42,field3=3))
