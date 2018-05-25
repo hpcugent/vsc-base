@@ -35,6 +35,7 @@ from vsc.utils.wrapper import Wrapper
 
 class TestWrapper(TestCase):
     """Test for the Wrapper class."""
+
     def test_wrapper(self):
         """Use the tests provided by the stackoverflow page"""
         class DictWrapper(Wrapper):
