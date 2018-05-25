@@ -6,7 +6,6 @@ python:
   - "3.6"
 install:
   - easy_install vsc-install
-  - pip install future
 script:
   # 'hpcugent' is a mandatory remote for setup.py to work (because of vsc-install)
   - git remote add hpcugent https://github.com/hpcugent/vsc-base.git

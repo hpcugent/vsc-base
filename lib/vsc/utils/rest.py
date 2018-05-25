@@ -185,7 +185,7 @@ class Client(object):
 
         # Python 3 body is bytes
         if isinstance(body, bytes):
-           body = body.decode('utf-8')
+            body = body.decode('utf-8')
 
         try:
             pybody = json.loads(body)
@@ -213,7 +213,7 @@ class Client(object):
 
         # Python 3 body is bytes
         if PYTHON2 is False and isinstance(body, str):
-           body = bytes(body.encode('utf-8'))
+            body = bytes(body.encode('utf-8'))
 
         request = Request(self.url + sep + url, data=body)
         for header, value in headers.items():

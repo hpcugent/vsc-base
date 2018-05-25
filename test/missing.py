@@ -216,10 +216,6 @@ class TestMissing(TestCase):
         tfdkk = TestFrozenDictKnownKeys({'foo': 'bar'})
         self.assertTrue(tfdkk['foo'] == 'bar')
 
-        # check different error message for missing known and unknown keys
-        self.assertErrorRegex(KeyError, "foo2", tfdkk.__getitem__, 'foo2')
-        self.assertErrorRegex(KeyError, "Unknown key 'foo3' .* instance \(known keys: .*\)", tfdkk.__getitem__, 'foo3')
-
         # no (direct) way of adjusting dictionary
         # I don't understand what this is getting at, you can always change a data structure, not useful?
         # self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.__setitem__(x), ('foo2', 'bar2'))

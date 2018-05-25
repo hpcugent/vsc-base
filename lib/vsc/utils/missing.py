@@ -233,7 +233,7 @@ class RUDict(dict):
             self[key] = other_dict[key]
 
 
-class FrozenDictKnownKeys(FrozenDict):
+class FrozenDictKnownKeys(FrozenDict, object):
     """A frozen dictionary only allowing known keys."""
 
     # list of known keys
@@ -244,33 +244,40 @@ class FrozenDictKnownKeys(FrozenDict):
         self.log = fancylogger.getLogger(self.__class__.__name__, fname=False)
 
         # support ignoring of unknown keys
-        ignore_unknown_keys = kwargs.pop('ignore_unknown_keys', False)
+        self.ignore_unknown_keys = kwargs.pop('ignore_unknown_keys', False)
 
         # handle unknown keys: either ignore them or raise an exception
         tmpdict = dict(*args, **kwargs)
+        finaldict = tmpdict.copy()
+
         unknown_keys = [key for key in tmpdict.keys() if key not in self.KNOWN_KEYS]
         if unknown_keys:
-            if ignore_unknown_keys:
+
+            print("Unknown keys are %s" %unknown_keys)
+
+            # Don't add them to the dictionary
+            if self.ignore_unknown_keys is True:
+
                 for key in unknown_keys:
                     self.log.debug("Ignoring unknown key '%s' (value '%s')" % (key, args[0][key]))
                     # filter key out of dictionary before creating instance
-                    del tmpdict[key]
+                    del finaldict[key]
             else:
                 msg = "Encountered unknown keys %s (known keys: %s)" % (unknown_keys, self.KNOWN_KEYS)
                 self.log.raiseException(msg, exception=KeyError)
 
-        super(FrozenDictKnownKeys, self).__init__(tmpdict)
+        super(FrozenDictKnownKeys, self).__init__(*args, **kwargs)
+        self.__dict = finaldict
+
     # pylint: disable=arguments-differ
     def __getitem__(self, key, *args, **kwargs):
+
         """Redefine __getitem__ to provide a better KeyError message."""
-        try:
+        if self.ignore_unknown_keys is True and key not in self.KNOWN_KEYS:
+            known_keys = ','.join(self.KNOWN_KEYS)
+            raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % (key, known_keys))
+        else:
             return super(FrozenDictKnownKeys, self).__getitem__(key, *args, **kwargs)
-        except KeyError as err:
-            if key in self.KNOWN_KEYS:
-                raise KeyError(err)
-            else:
-                tup = (key, self.__class__.__name__, self.KNOWN_KEYS)
-                raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % tup)
 
 
 def shell_quote(x):
