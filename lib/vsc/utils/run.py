@@ -65,8 +65,11 @@ Historical overview of existing equivalent code
 
 try:
     basestring
+    PYTHON2=True
 except NameError:
     from past.builtins import basestring
+    PYTHON2=False
+
 
 import errno
 import logging
@@ -168,8 +171,6 @@ class Run(object):
         self._process_modulepath = modulepath
 
         self._process_module = __import__(self._process_modulepath, globals(), locals(), fromlist)
-        print(self._process_module)
-
 
     def _run(self):
         """actual method
@@ -517,18 +518,34 @@ class RunLoop(Run):
         self._loop_initialise()
 
         time.sleep(self.LOOP_TIMEOUT_INIT)
+
+        # Process.poll returns None if the process is not complete yet
         ec = self._process.poll() or -255
+
         try:
+            # Comparison between different types is removed from Python 3
             while self._loop_continue and ec < 0:
 
                 output = self._read_process()
-                self._process_output += output
+                self._process_output += str(output)
                 # process after updating the self._process_ vars
+
+                if PYTHON2:
+                    ec = self._process.poll()
+                else:
+                    # Polling the process will return None, we need to get
+                    # the returncode from the process object for python 3
+                    ec = self._process.returncode
+
+                # If we are still waiting, ec will return as None
+                # BUG here for python 3 and running the async loop - it loops forever
+                if ec is None:
+                    ec = -255
+
                 self._loop_process_output(output)
 
                 if len(output) == 0:
                     time.sleep(self.LOOP_TIMEOUT_MAIN)
-                ec = self._process.poll()
        
                 self._loop_count += 1
 
@@ -547,6 +564,7 @@ class RunLoop(Run):
             self.log.debug('RunLoopException %s' % err)
             self._process_output = err.output
             self._process_exitcode = err.code
+
 
     def _loop_initialise(self):
         """Initialisation before the loop starts"""
@@ -612,11 +630,9 @@ class RunAsync(Run):
     """Async process class"""
 
     def _prep_module(self, modulepath=None, extendfromlist=None):
-
         # these will provide the required Popen, PIPE and STDOUT
         if modulepath is None:
             modulepath = PROCESS_MODULE_ASYNCPROCESS_PATH
-            print(modulepath)
         if extendfromlist is None:
             extendfromlist = ['send_all', 'recv_some']
         super(RunAsync, self)._prep_module(modulepath=modulepath, extendfromlist=extendfromlist)
@@ -637,14 +653,11 @@ class RunAsync(Run):
             else:
                 # non-blocking read (readsize is a maximum to return !
                 out = self._process_module.recv_some(self._process, maxread=readsize)
-
             return out
         except (IOError, Exception):
             # recv_some may throw Exception
             self.log.exception("_read_process: read failed")
             return ''
-        except Exception as err:
-            print(err)
 
 
 class RunNoShellAsync(RunNoShell, RunAsync):
@@ -999,5 +1012,5 @@ run_qalog = RunQALog.run
 # deprecated
 run_qastdout = RunQAStdout.run
 
-#if __name__ == "__main__":
-#    run('echo ok')
+if __name__ == "__main__":
+    run('echo ok')

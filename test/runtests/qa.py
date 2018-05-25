@@ -51,14 +51,14 @@ for k, v in qa.items():
         else:
             loop_cnt = 1
             if k == 'waitforit':
-                print 'Wait for it (%d seconds)' % TIMEOUT,
+                print('Wait for it (%d seconds)' % TIMEOUT),
                 sys.stdout.flush()
                 time.sleep(TIMEOUT)
             elif k == 'ask_number':
                 if len(sys.argv) == 3:
                     loop_cnt = int(sys.argv[2])
             for i in range(0, loop_cnt):
-                print v[0],
+                print(v[0]),
                 sys.stdout.flush()
                 a = sys.stdin.readline().rstrip('\n')
                 a_re = re.compile(v[1])
@@ -77,11 +77,11 @@ if __name__ == '__main__':
 
     for k, v in res.items():
         if 'ask_number' in k and v[0]:
-            print "Answer: %s" % v[1]
+            print("Answer: %s" % v[1])
         elif v[0]:
-            print "Test %s OK" % k
+            print("Test %s OK" % k)
         else:
             failed += 1
-            print "Test %s NOT OK expected answer '%s', received '%s'" % (k, qa[k][1], v[1])
+            print("Test %s NOT OK expected answer '%s', received '%s'" % (k, qa[k][1], v[1]))
 
     sys.exit(failed)

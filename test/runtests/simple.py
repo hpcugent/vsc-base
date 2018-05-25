@@ -30,23 +30,18 @@ import time
 import os
 import sys
 
-EC_SUCCES = 0
-EC_NOARGS = 1
-
-txt = []
-ec = EC_SUCCES
 
 if 'shortsleep' in sys.argv:
     time.sleep(0.1)
-    txt.append("Shortsleep completed")
+    sys.stdout.write("Shortsleep completed")
+    sys.exit(0)
 
 if 'longsleep' in sys.argv:
     time.sleep(10)
-    txt.append("Longsleep completed")
+    sys.stdout.write("Longsleep completed")
+    sys.exit(0)
 
-if __name__ == '__main__':
-    if len(txt) == 0:
-        txt.append('Nothing passed')
-        ec = EC_NOARGS
-    print("\n".join(txt))
-    sys.exit(ec)
+else:
+    sys.stdout.write('Nothing passed')
+
+sys.exit(1)

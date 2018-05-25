@@ -38,9 +38,10 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import RunQA, RunTimeout
+from vsc.utils.run import run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
+
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'runtests')
 SCRIPT_SIMPLE = os.path.join(SCRIPTS_DIR, 'simple.py')
@@ -50,7 +51,6 @@ SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
 class RunQAShort(RunQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
-
 
 run_qas = RunQAShort.run
 
@@ -67,41 +67,41 @@ class TestRun(TestCase):
         shutil.rmtree(self.tempdir)
 
     def test_simple(self):
-        from vsc.utils.run import run_simple
         ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
-        self.assertTrue('shortsleep' in str(output.lower()))
+        self.assertTrue('shortsleep' in output.lower())
 
     def test_simple_asyncloop(self):
-        from vsc.utils.run import run_asyncloop
         ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
-        self.assertTrue('shortsleep' in str(output.lower()))
+        self.assertTrue('shortsleep' in output.lower())
 
     def test_simple_glob(self):
-        from vsc.utils.run import run_simple
         ec, output = run_simple('ls test/sandbox/testpkg/*')
+        self.assertEqual(ec, 0)
+        self.assertTrue(all(x in str(output.lower()) for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in str(output.lower()) for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
 
     def test_noshell_glob(self):
-        from vsc.utils.run import run, run_simple
         ec, output = run('ls test/sandbox/testpkg/*')
         self.assertEqual(ec, 127)
-        self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in str(output))
+        self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in str(output.lower()) for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
 
     def test_timeout(self):
-        from vsc.utils.run import run_timeout
+        timeout = 3
+
         # longsleep is 10sec
         start = time.time()
-        ec, output = run_timeout([sys.executable, SCRIPT_SIMPLE, 'longsleep'], timeout=3)
+        ec, output = run_timeout([sys.executable, SCRIPT_SIMPLE, 'longsleep'], timeout=timeout)
         stop = time.time()
         self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg='longsleep stopped due to timeout')
         self.assertEqual(RUNRUN_TIMEOUT_OUTPUT, output, msg='longsleep expected output')
-        self.assertTrue(stop - start < 4, msg='longsleep timeout within margin')  # give 1 sec margin
+        self.assertTrue(stop - start < timeout + 1, msg='longsleep timeout within margin')  # give 1 sec margin
 
         # run_nested is 15 seconds sleep
         # 1st arg depth: 2 recursive starts
@@ -123,12 +123,12 @@ class TestRun(TestCase):
             res_fn = os.path.join(self.tempdir, 'nested_kill_pgid_%s' % kill_pgid)
             start = time.time()
             RunTimeout.KILL_PGID = kill_pgid
-            ec, output = run_timeout([SCRIPT_NESTED, str(depth), res_fn], timeout=3)
+            ec, output = run_timeout([SCRIPT_NESTED, str(depth), res_fn], timeout=timeout)
             # reset it to default
             RunTimeout.KILL_PGID = default
             stop = time.time()
             self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg='run_nested kill_pgid %s stopped due to timeout'  % kill_pgid)
-            self.assertTrue(stop - start < 4, msg='run_nested kill_pgid %s timeout within margin' % kill_pgid)  # give 1 sec margin
+            self.assertTrue(stop - start < timeout + 1, msg='run_nested kill_pgid %s timeout within margin' % kill_pgid)  # give 1 sec margin
             # make it's not too fast
             time.sleep(5)
             # there's now 6 seconds to complete the remainder

@@ -183,6 +183,11 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
             else:
                 break
         elif r:
+
+            # Python 3 will have bytes, if we just convert to string
+            # the user will get "b'result\\n'
+            if isinstance(r, bytes):
+                r = r.decode('utf-8')
             y.append(str(r))
             len_y += len(r)
         else:
@@ -198,4 +203,8 @@ def send_all(p, data):
         sent = p.send(data)
         if sent is None:
             raise Exception(MESSAGE)
-        data = buffer(data, sent)
+        else: 
+            break
+        # https://docs.python.org/3.0/whatsnew/2.6.html#pep-3118
+        # I don't know what this is trying to accomplish
+        #data = buffer(data, sent)
