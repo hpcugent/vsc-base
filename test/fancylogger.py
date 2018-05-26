@@ -116,9 +116,13 @@ class FancyLoggerTest(TestCase):
 
         # delete all fancyloggers
         loggers = logging.Logger.manager.loggerDict
+        keepers = {}
         for name, lgr in loggers.items():
-            if isinstance(lgr, fancylogger.FancyLogger):
-                del loggers[name]
+            if not isinstance(lgr, fancylogger.FancyLogger):
+                keepers[name] = lgr
+
+        logging.Logger.manager.loggerDict = keepers
+
         # reset root handlers; mimic clean import logging
         logging.root.handlers = []
 
@@ -216,7 +220,7 @@ class FancyLoggerTest(TestCase):
             logger.info(msg)
             logger.warning(msg)
             logger.warn(msg)
-            if isinstance(msg, unicode):
+            if not isinstance(msg, str):
                 regex = msg.encode('utf8', 'replace')
             else:
                 regex = str(msg)

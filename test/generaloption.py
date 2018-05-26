@@ -28,6 +28,7 @@ Unit tests for generaloption
 
 @author: Stijn De Weirdt (Ghent University)
 """
+
 import copy
 import datetime
 import logging
@@ -941,6 +942,7 @@ debug=1
         reset_columns()
         set_columns()
         cols = os.environ.get('COLUMNS')
+        from past.builtins import basestring
         self.assertTrue(cols is None or isinstance(cols, basestring))
 
         reset_columns()

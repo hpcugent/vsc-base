@@ -121,11 +121,11 @@ def generate_random_dag():
     graph = {}
     node_max = 0
 
-    for r in xrange(ranks):
+    for r in range(ranks):
         new_nodes = randint(2, 20)
 
-        for old_node in xrange(node_max):
-            for n in xrange(new_nodes):
+        for old_node in range(node_max):
+            for n in range(new_nodes):
                 node = node_max + n
                 if randint(0, 100) < edge_probability:
                     somenode = graph.get(old_node, [])
@@ -136,7 +136,7 @@ def generate_random_dag():
 
         node_max += new_nodes
 
-    for n in xrange(new_nodes):
+    for n in range(new_nodes):
         graph[node_max - n - 1] = []
 
     return graph
@@ -186,7 +186,7 @@ class TestMissing(TestCase):
             else:
                 return i
 
-        for n in xrange(0, 2 * raise_boundary):
+        for n in range(0, 2 * raise_boundary):
             try:
                 v = f(n)
                 self.assertFalse(n < raise_boundary)
@@ -248,7 +248,7 @@ class TestMissing(TestCase):
         the key invariant should be that if a appears before b in the resulting sort, there is no way to reach
         b from a in the DAG.
         """
-        for i in xrange(10):
+        for i in range(10):
             g = generate_random_dag()
             sorting = list(topological_sort(g))
             visited = set()

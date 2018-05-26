@@ -118,7 +118,7 @@ def find_sublist_index(ls, sub_ls):
     @return: index of the matching location or None if no match can be made.
     """
     sub_length = len(sub_ls)
-    for i in xrange(len(ls)):
+    for i in range(len(ls)):
         if ls[i:(i + sub_length)] == sub_ls:
             return i
 
@@ -340,7 +340,7 @@ class TryOrFail(object):
 
     def __call__(self, function):
         def new_function(*args, **kwargs):
-            for i in xrange(0, self.n):
+            for i in range(0, self.n):
                 try:
                     return function(*args, **kwargs)
                 except self.exceptions as err:

@@ -82,9 +82,7 @@ class OptcompleteTest(TestCase):
         try:
             nc()
         except Exception as e:
-            pass
-
-        self.assertEqual(e.__class__, CompleterMissingCallArgument)
+            self.assertEqual(e.__class__, CompleterMissingCallArgument)
 
         # proper usage : strip any non-mandatory or optional argument from kwargs
         res = nc(x=1, y=2, z=3)
@@ -103,7 +101,7 @@ class OptcompleteTest(TestCase):
         initlist = ['original', 'list', 1]
         lc = ListCompleter(initlist)()
         comparator = map(str, initlist)
-        for i in range(len(lc)):
+        for i in range(len(initlist)):
             self.assertEqual(lc[i], comparator[i])
 
 

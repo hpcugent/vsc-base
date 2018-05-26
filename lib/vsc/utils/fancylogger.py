@@ -75,6 +75,7 @@ Logging to a udp server:
 @author: Kenneth Hoste (Ghent University)
 """
 
+from past.builtins import basestring
 from collections import namedtuple
 import inspect
 import logging
