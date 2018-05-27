@@ -134,9 +134,10 @@ class TestRun(TestCase):
             # there's now 6 seconds to complete the remainder
             pids = list(range(depth+1))
             # normally this is ordered output, but you never know
-            for line in open(res_fn).readlines():
-                dep, pid, _ = line.strip().split(" ") # 3rd is PPID
-                pids[int(dep)] = int(pid)
+            with open(res_fn, 'r') as fh:
+                for line in fh.readlines():
+                    dep, pid, _ = line.strip().split(" ") # 3rd is PPID
+                    pids[int(dep)] = int(pid)
 
             # pids[0] should be killed
             self.assertFalse(check_pid(pids[depth]), "main depth=%s pid (pids %s) is killed by timeout" % (depth, pids,))

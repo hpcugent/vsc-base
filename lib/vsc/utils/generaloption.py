@@ -679,7 +679,7 @@ class ExtOptionParser(OptionParser):
     def check_help(self, fh):
         """Checks filehandle for help functions"""
         if self.help_to_string:
-            self.help_to_file = StringIO.StringIO()
+            self.help_to_file = StringIO()
         if fh is None:
             fh = self.help_to_file
 

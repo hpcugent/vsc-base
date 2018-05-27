@@ -99,8 +99,11 @@ class OptcompleteTest(TestCase):
         """Test ListCompleter class"""
         # return list of strings
         initlist = ['original', 'list', 1]
-        lc = ListCompleter(initlist)()
-        comparator = map(str, initlist)
+
+        # Map is not subscriptable in python 3 (it's an iterator)
+        lc = list(ListCompleter(initlist)())
+        comparator = list(map(str, initlist))
+
         for i in range(len(initlist)):
             self.assertEqual(lc[i], comparator[i])
 

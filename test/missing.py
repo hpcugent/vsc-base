@@ -113,7 +113,7 @@ def generate_random_dag():
     """
     Based on http://stackoverflow.com/questions/12790337/generating-a-random-dag
     """
-    myseed = randint(0, sys.maxint)
+    myseed = randint(0, sys.maxsize)
     seed(myseed)
     print("testing with random seed", myseed)
     edge_probability = randint(10, 30)
@@ -298,6 +298,6 @@ class TestMissing(TestCase):
             self.assertTrue(sklass in [T12, T123, T13])
 
         # get subclasses (including base)
-        subclasses_T1_with_base = get_subclasses(T2, include_base_class=True)
+        subclasses_T1_with_base = get_subclasses(T1, include_base_class=True)
         for sklass in subclasses_T1_with_base:
             self.assertTrue(sklass in [T1, T12, T123, T13])

@@ -544,7 +544,8 @@ strlist=x,y
 opt1=value1
 
 """
-        tmp1 = NamedTemporaryFile()
+        # We must specify write mode for Python3, otherwise will expect binary
+        tmp1 = NamedTemporaryFile(mode='w')
         tmp1.write(CONFIGFILE1)
         tmp1.flush()  # flush, otherwise empty
 
@@ -583,7 +584,7 @@ justatest=0
 debug=1
 
 """
-        tmp2 = NamedTemporaryFile()
+        tmp2 = NamedTemporaryFile(mode='w')
         tmp2.write(CONFIGFILE2)
         tmp2.flush()  # flush, otherwise empty
 
@@ -611,7 +612,7 @@ debug=1
 [base]
 store=%(FROMINIT)s
 """
-        tmp3 = NamedTemporaryFile()
+        tmp3 = NamedTemporaryFile(mode='w')
         tmp3.write(CONFIGFILE3)
         tmp3.flush()  # flush, otherwise empty
 
@@ -668,7 +669,7 @@ store=%(FROMINIT)s
 [base]
 debug=1
 """
-        tmp1 = NamedTemporaryFile()
+        tmp1 = NamedTemporaryFile(mode='w')
         tmp1.write(CONFIGFILE1)
         tmp1.flush()  # flush, otherwise empty
         envvar = 'logactionoptiontest'.upper()

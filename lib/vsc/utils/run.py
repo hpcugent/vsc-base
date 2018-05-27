@@ -237,7 +237,6 @@ class Run(object):
             self._make_popen_named_args()
 
         self._init_process()
-
         self._init_input()
 
     def _run_post(self):
@@ -387,6 +386,8 @@ class Run(object):
 
     def _run_return(self):
         """What to return"""
+        if isinstance(self._process_output, bytes):
+            self._process_output = self._process_output.decode('utf-8')
         return self._process_exitcode, self._process_output
 
     def _killtasks(self, tasks=None, sig=signal.SIGKILL, kill_pgid=None):

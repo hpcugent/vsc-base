@@ -102,6 +102,11 @@ import shlex
 import sys
 import types
 
+try:
+    basestring
+except NameError:
+    from past.builtins import basestring
+
 from optparse import OptionParser, Option
 from pprint import pformat
 
@@ -164,12 +169,12 @@ class Completer(object):
         if self.CALL_ARGS_OPTIONAL is not None:
             all_args.extend(self.CALL_ARGS_OPTIONAL)
 
-        for arg in kwargs.keys():
-            if arg not in all_args:
-                # remove it
-                kwargs.pop(arg)
+        updates = {}
+        for arg,val in kwargs.items():
+            if arg in all_args:
+                updates[arg] = val
 
-        return self._call(**kwargs)
+        return self._call(**updates)
 
     def _call(self, **kwargs): # pylint: disable=unused-argument
         """Return empty list"""
@@ -422,7 +427,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
     # If we are not requested for complete, simply return silently, let the code
     # caller complete. This is the normal path of execution.
-    if not os.environ.has_key(OPTCOMPLETE_ENVIRONMENT):
+    if not OPTCOMPLETE_ENVIRONMENT in os.environ:
         return
     # After this point we should never return, only sys.exit(1)
 
@@ -447,7 +452,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
     # zsh's bashcompinit does not pass COMP_WORDS, replace with
     # COMP_LINE for now...
-    if not os.environ.has_key('COMP_WORDS'):
+    if not 'COMP_WORDS' in os.environ:
         os.environ['COMP_WORDS'] = os.environ['COMP_LINE']
 
     cwords = shlex.split(os.environ.get('COMP_WORDS', '').strip('() '))
