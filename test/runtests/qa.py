@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #
 # Copyright 2016-2017 Ghent University
 #
@@ -36,13 +38,11 @@ now = time.time()
 
 res = {}
 
-qa = {
-    'ask_number': ("Enter a number ('0' to stop):", r'^\d+$'),
-    'noquestion': (None, None),
-    'simple': ('Simple question: ', 'simple answer'),
-    'whattime': ('Now it is %s. What time is it? ' % now, "%s" % now),
-    'waitforit': ('Now is the time.', 'OK'),
-}
+qa = { 'ask_number': ("Enter a number ('0' to stop):", r'^\d+$'),
+       'noquestion': (None, None),
+       'simple': ('Simple question: ', 'simple answer'),
+       'whattime': ('Now it is %s. What time is it? ' % now, "%s" % now),
+       'waitforit': ('Now is the time.', 'OK')}
 
 for k, v in qa.items():
     if k == sys.argv[1]:
@@ -62,6 +62,7 @@ for k, v in qa.items():
                 sys.stdout.flush()
                 a = sys.stdin.readline().rstrip('\n')
                 a_re = re.compile(v[1])
+                print(a_re)
                 if k == 'ask_number':
                     if a == '0':
                         # '0' means stop
@@ -83,5 +84,4 @@ if __name__ == '__main__':
         else:
             failed += 1
             print("Test %s NOT OK expected answer '%s', received '%s'" % (k, qa[k][1], v[1]))
-
     sys.exit(failed)

@@ -173,9 +173,7 @@ class TestRun(TestCase):
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'noquestion'])
         self.assertEqual(ec, 0)
 
-        qa_dict = {
-                   'Simple question:': 'simple answer',
-                   }
+        qa_dict = {'Simple question:': 'simple answer'}
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'simple'], qa=qa_dict)
         self.assertEqual(ec, 0)
 

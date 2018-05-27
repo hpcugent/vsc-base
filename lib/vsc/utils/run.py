@@ -220,6 +220,7 @@ class Run(object):
         """
         self._run_pre()
         self._wait_for_process()
+
         return self._run_post()
 
     def _run_pre(self):
@@ -355,12 +356,18 @@ class Run(object):
             self._process_exitcode = self._process.wait()
             self._process_output = self._read_process(-1)  # -1 is read all
         except Exception:
+            print('DERP!_')
             self.log.raiseException("_wait_for_process: problem during wait exitcode %s output %s" %
                                     (self._process_exitcode, self._process_output))
 
     def _cleanup_process(self):
         """Cleanup any leftovers from the process"""
-        pass
+
+        # Close the process!
+        if self._process is not None:
+            if self._process.stdout is not None:
+                self._process.stdout.close()
+
 
     def _read_process(self, readsize=None):
         """Read from process, return out"""
@@ -448,6 +455,8 @@ class Run(object):
 
     def stop_tasks(self):
         """Cleanup current run"""
+        if self._process is not None:
+            self._process.stdout.close()
         self._killtasks(tasks=[self._process.pid])
         try:
             os.waitpid(-1, os.WNOHANG)
@@ -531,12 +540,7 @@ class RunLoop(Run):
                 self._process_output += str(output)
                 # process after updating the self._process_ vars
 
-                if PYTHON2:
-                    ec = self._process.poll()
-                else:
-                    # Polling the process will return None, we need to get
-                    # the returncode from the process object for python 3
-                    ec = self._process.returncode
+                ec = self._process.poll()
 
                 # If we are still waiting, ec will return as None
                 # BUG here for python 3 and running the async loop - it loops forever
@@ -912,7 +916,7 @@ class RunQA(RunLoop, RunAsync):
                 if not noqa:
                     self._loop_miss_count += 1
         else:
-            self._loop_miss_count = 0  # rreset miss counter on hit
+            self._loop_miss_count = 0  # reset miss counter on hit
 
         if self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
             self.log.debug("loop_process_output: max misses LOOP_MAX_MISS_COUNT %s reached. End of output: %s" %
