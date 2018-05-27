@@ -30,6 +30,8 @@ A class that can be used to generated options to python scripts in a general way
 @author: Jens Timmerman (Ghent University)
 """
 
+from past.builtins import basestring
+
 try:
     import ConfigParser
 except ImportError:

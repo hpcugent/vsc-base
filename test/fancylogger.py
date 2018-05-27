@@ -431,6 +431,8 @@ class FancyLoggerTest(TestCase):
         (and also the getAllExistingLoggers, getAllFancyloggers and
         getAllNonFancyloggers function call)
         """
+        from past.builtins import basestring
+
         # logger names are unique
         for fancy, func in [(False, fancylogger.getAllNonFancyloggers),
                             (True, fancylogger.getAllFancyloggers),

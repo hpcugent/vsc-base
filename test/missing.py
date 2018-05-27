@@ -292,6 +292,12 @@ class TestMissing(TestCase):
         })
         self.assertEqual(get_subclasses_dict(T1, include_base_class=True), expected)
 
-        # get_subclasses
-        self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
-        self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
+        # get subclasses (without base)
+        subclasses_T1 = get_subclasses(T1)
+        for sklass in subclasses_T1:
+            self.assertTrue(sklass in [T12, T123, T13])
+
+        # get subclasses (including base)
+        subclasses_T1_with_base = get_subclasses(T2, include_base_class=True)
+        for sklass in subclasses_T1_with_base:
+            self.assertTrue(sklass in [T1, T12, T123, T13])
