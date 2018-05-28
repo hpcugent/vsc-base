@@ -71,6 +71,7 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
+#TODO: Fix this test
 #    def test_simple_asyncloop(self):
 #        ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
 #        self.assertEqual(ec, 0)
@@ -207,8 +208,8 @@ class TestRun(TestCase):
         }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '4'], qa=qa_dict)
         self.assertEqual(ec, 0)
-        answer_re = re.compile(".*Answer: 7$")
-        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
+        answer_re = re.compile(".*Answer: 7$") # this is the LAST line
+        self.assertTrue(answer_re.search(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
 
         # test multple answers in qa_reg
         # and test premature exit on 0 while we're at it
@@ -218,7 +219,7 @@ class TestRun(TestCase):
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 10$")
-        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
+        self.assertTrue(answer_re.search(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
 
         # verify type checking on answers
         self.assertErrorRegex(TypeError, "Invalid type for answer", run_qas, [], qa={'q': 1})
@@ -234,12 +235,12 @@ class TestRun(TestCase):
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 18$")
-        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
+        self.assertTrue(answer_re.search(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
         # loop 3 times, no cycling => 2 + 7 + 7 + 7 = 23
         RunQAShort.CYCLE_ANSWERS = False
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '4'], qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 23$")
-        self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
+        self.assertTrue(answer_re.search(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
         # restore
         RunQAShort.CYCLE_ANSWERS = orig_cycle_answers

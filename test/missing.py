@@ -199,7 +199,9 @@ class TestMissing(TestCase):
 
         class TestFrozenDictKnownKeys(FrozenDictKnownKeys):
             """Inner test class derived from FrozenDictKnownKeys."""
-            KNOWN_KEYS = ['foo', 'foo2']
+            def __init__(self, *args, **kwargs):
+                self.KNOWN_KEYS = ['foo', 'foo2']
+                FrozenDictKnownKeys.__init__(self, *args, **kwargs)
 
         # initializing instance with options supported by dict type works
         for (fdkk, ref) in [

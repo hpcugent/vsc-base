@@ -38,6 +38,14 @@ class FrozenDict(DictMixin):
         self.__dict = dict(*args, **kwargs)
         self.__hash = None
 
+        # If user supplied known keys, update
+        if hasattr(self, 'KNOWN_KEYS'):
+            holder = self.__dict.copy()
+            for key,val in self.__dict.items():
+                if key in self.KNOWN_KEYS:
+                    holder[key] = val
+                self.__dict = holder
+
     def __getitem__(self, key):
         return self.__dict[key]
 
@@ -62,3 +70,6 @@ class FrozenDict(DictMixin):
     # minor adjustment: define missing keys() method
     def keys(self):
         return self.__dict.keys()
+
+    def items(self):
+        return self.__dict.items()

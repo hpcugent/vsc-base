@@ -99,6 +99,7 @@ class TestTesting(TestCase):
         # There shouldn't be any yet
         self.assertEqual(self.count_logcache('error'), 0)
 
+        # I just have no idea what this is...
         myerror = self.mock_logmethod(logging.error)
 
         myerror("Error")
