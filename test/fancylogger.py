@@ -37,7 +37,6 @@ import re
 import sys
 import shutil
 
-from StringIO import StringIO
 import tempfile
 from unittest import TestLoader, main, TestSuite
 try:
@@ -52,6 +51,13 @@ except ImportError:
             def deco(fn):
                 return (lambda *args, **kwargs: True)
         return deco
+
+try:
+    # Python 2
+    from StringIO import StringIO
+except ImportError:
+    # Python 3
+    from io import StringIO
 
 import coloredlogs
 
@@ -412,7 +418,7 @@ class FancyLoggerTest(TestCase):
         handler = fancylogger.logToScreen()
         logger = fancylogger.getLogger(fname=False, clsname=False)
         logger.warn("blabla")
-        print stringfile.getvalue()
+        print(stringfile.getvalue())
         # this will only hold in debug mode, so also disable the test
         if __debug__:
             self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
