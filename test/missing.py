@@ -218,7 +218,7 @@ class TestMissing(TestCase):
 
         # no (direct) way of adjusting dictionary
         self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.__setitem__(x), ('foo2', 'bar2'))
-        self.assertErrorRegex(TypeError, ".*not support item assignment.*", lambda x: tfdkk.update(x), {'foo2': 'bar2'})
+        self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.update(x), {'foo2': 'bar2'})
         # unknown keys are not allowed
         self.assertErrorRegex(KeyError, 'Encountered unknown keys', TestFrozenDictKnownKeys, {'foo3': 'bar3'})
 
