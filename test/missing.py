@@ -35,6 +35,7 @@ from random import randint, seed
 from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.missing import namedtuple_with_defaults
+from vsc.utils.patterns import Singleton
 from vsc.install.testing import TestCase
 
 
@@ -225,6 +226,25 @@ class TestMissing(TestCase):
         # test ignoring of unknown keys
         tfdkk = TestFrozenDictKnownKeys({'foo': 'bar', 'foo2': 'bar2', 'foo3': 'bar3'}, ignore_unknown_keys=True)
         self.assertEqual(sorted(tfdkk.keys()), ['foo', 'foo2'])
+
+    def test_frozendictknownkeys_singleton(self):
+        """
+        Test use of a FrozenDictKnownKeys class that is also a singleton.
+        This is a use case from EasyBuild (see ConfigurationVariables class in easybuild.tools.config).
+        """
+
+        class TestFrozenDictKnownKeysSingleton(FrozenDictKnownKeys):
+            """Inner test class derived from FrozenDictKnownKeys."""
+            __metaclass__ = Singleton
+            KNOWN_KEYS = ['foo', 'foo2']
+
+        td = TestFrozenDictKnownKeysSingleton({'foo': 'bar'})
+        self.assertEqual(td, {'foo': 'bar'})
+
+        # singleton aspect ensures that we get same instance again later (even if unknown keys are provided)
+        td_bis = TestFrozenDictKnownKeysSingleton({'foo3': 'bar3'})
+        self.assertEqual(td_bis, {'foo': 'bar'})
+        self.assertTrue(td is td_bis)
 
     def test_fixed_topological_sort(self):
         """
