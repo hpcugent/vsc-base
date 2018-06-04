@@ -29,16 +29,13 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
-import os
-import shutil
 import sys
-import tempfile
 from random import randint, seed
-from unittest import TestLoader, main
 
-from vsc.utils.fancylogger import setLogLevelDebug, logToScreen
 from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
+from vsc.utils.missing import namedtuple_with_defaults
+from vsc.utils.patterns import Singleton
 from vsc.install.testing import TestCase
 
 
@@ -222,13 +219,32 @@ class TestMissing(TestCase):
 
         # no (direct) way of adjusting dictionary
         self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.__setitem__(x), ('foo2', 'bar2'))
-        self.assertErrorRegex(TypeError, ".*not support item assignment.*", lambda x: tfdkk.update(x), {'foo2': 'bar2'})
+        self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.update(x), {'foo2': 'bar2'})
         # unknown keys are not allowed
         self.assertErrorRegex(KeyError, 'Encountered unknown keys', TestFrozenDictKnownKeys, {'foo3': 'bar3'})
 
         # test ignoring of unknown keys
         tfdkk = TestFrozenDictKnownKeys({'foo': 'bar', 'foo2': 'bar2', 'foo3': 'bar3'}, ignore_unknown_keys=True)
         self.assertEqual(sorted(tfdkk.keys()), ['foo', 'foo2'])
+
+    def test_frozendictknownkeys_singleton(self):
+        """
+        Test use of a FrozenDictKnownKeys class that is also a singleton.
+        This is a use case from EasyBuild (see ConfigurationVariables class in easybuild.tools.config).
+        """
+
+        class TestFrozenDictKnownKeysSingleton(FrozenDictKnownKeys):
+            """Inner test class derived from FrozenDictKnownKeys."""
+            __metaclass__ = Singleton
+            KNOWN_KEYS = ['foo', 'foo2']
+
+        td = TestFrozenDictKnownKeysSingleton({'foo': 'bar'})
+        self.assertEqual(td, {'foo': 'bar'})
+
+        # singleton aspect ensures that we get same instance again later (even if unknown keys are provided)
+        td_bis = TestFrozenDictKnownKeysSingleton({'foo3': 'bar3'})
+        self.assertEqual(td_bis, {'foo': 'bar'})
+        self.assertTrue(td is td_bis)
 
     def test_fixed_topological_sort(self):
         """
@@ -297,3 +313,10 @@ class TestMissing(TestCase):
         # get_subclasses
         self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
         self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
+
+    def test_namedtuple_with_defaults(self):
+
+        fields = ["field1", "field2", "field3"]
+        MyTuple = namedtuple_with_defaults("MyTuple", fields, [1,2,3])
+
+        self.assertEqual(MyTuple(field2=42), MyTuple(field1=1,field2=42,field3=3))
