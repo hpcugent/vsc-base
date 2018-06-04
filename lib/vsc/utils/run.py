@@ -296,8 +296,11 @@ class Run(object):
                                   'stdin': self._process_module.PIPE,
                                   'close_fds': True,
                                   'shell': self.use_shell,
-                                  'executable': self.shell,
                                   }
+        # don't set executable to shell if we don't want a shell
+        if self.use_shell:
+            self._popen_named_args['executable'] = self.shell
+
         if others is not None:
             self._popen_named_args.update(others)
 
