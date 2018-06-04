@@ -102,11 +102,11 @@ class TestRun(TestCase):
         self.assertTrue('(foo bar)' in output)
 
         # to run Python command, it's required to use the right executable (Python shell rather than default)
-        ec, output = run("""%s -c 'print ("foo")'""" % sys.executable, shell=sys.executable)
+        ec, output = run("""%s -c 'print ("foo")'""" % sys.executable)
         self.assertEqual(ec, 0)
         self.assertTrue('foo' in output)
 
-        ec, output = run([sys.executable, '-c', 'print ("foo")'], use_shell=False, shell=sys.executable)
+        ec, output = run([sys.executable, '-c', 'print ("foo")'])
         self.assertEqual(ec, 0)
         self.assertTrue('foo' in output)
 
