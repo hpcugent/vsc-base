@@ -291,13 +291,14 @@ class Run(object):
     def _make_popen_named_args(self, others=None):
         """Create the named args for Popen"""
         self._popen_named_args = {
-                                  'stdout': self._process_module.PIPE,
-                                  'stderr': self._process_module.STDOUT,
-                                  'stdin': self._process_module.PIPE,
-                                  'close_fds': True,
-                                  'shell': self.use_shell,
-                                  'executable': self.shell,
-                                  }
+            'stdout': self._process_module.PIPE,
+            'stderr': self._process_module.STDOUT,
+            'stdin': self._process_module.PIPE,
+            'close_fds': True,
+            'shell': self.use_shell,
+            'executable': self.shell,
+        }
+
         if others is not None:
             self._popen_named_args.update(others)
 
@@ -448,6 +449,7 @@ class Run(object):
 
 class RunNoShell(Run):
     USE_SHELL = False
+    SHELL = None
 
     def _make_shell_command(self):
         """Convert cmd into a list of command to be sent to popen, without a shell"""

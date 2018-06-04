@@ -86,11 +86,30 @@ class TestRun(TestCase):
 
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
-        self.assertEqual(ec, 127)
+        self.assertTrue(ec > 0)
         self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+
+    def test_noshell_executable(self):
+        ec, output = run("echo '(foo bar)'")
+        self.assertEqual(ec, 0)
+        self.assertTrue('(foo bar)' in output)
+
+        ec, output = run(['echo', "(foo bar)"])
+        self.assertEqual(ec, 0)
+        self.assertTrue('(foo bar)' in output)
+
+        # to run Python command, it's required to use the right executable (Python shell rather than default)
+        ec, output = run("""%s -c 'print ("foo")'""" % sys.executable, shell=sys.executable)
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+
+        ec, output = run([sys.executable, '-c', 'print ("foo")'], use_shell=False, shell=sys.executable)
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+
 
     def test_timeout(self):
         timeout = 3
