@@ -92,6 +92,15 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
 
+    def test_noshell_executable(self):
+        ec, output = run("""%s -c 'print ("foo")'""" % sys.executable)
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+        ec, output = run_simple([sys.executable, '-c', 'print ("foo")'])
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+
+
     def test_timeout(self):
         timeout = 3
 
