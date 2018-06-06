@@ -55,6 +55,11 @@ from vsc.utils.frozendict import FrozenDict
 _log = fancylogger.getLogger('vsc.utils.missing')
 
 
+def is_string(item):
+    """Check whether specified value is a string or not."""
+    return isinstance(item, basestring)
+
+
 def partial(func, *args, **keywords):
     """
     Return a new partial object which when called will behave like func called with the positional arguments args
