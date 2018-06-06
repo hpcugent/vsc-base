@@ -342,3 +342,7 @@ class TestRun(TestCase):
         # can also start with a list
         cmd = CmdList(['echo', "hello world"])
         self.assertEqual(cmd, ['echo', "hello world"])
+
+        # adding non-string items yields an error
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add_opts_args, 1)
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add_opts_args, None)

@@ -109,12 +109,15 @@ class CmdList(list):
         :param item: option/argument to add to command
         :param tmpl_vals: template values for item
         """
-        if isinstance(items, basestring):
+        if not isinstance(items, list):
             items = [items]
 
         for item in items:
             if tmpl_vals:
                 item = item % tmpl_vals
+
+            if not isinstance(item, basestring):
+                raise ValueError("Non-string item %s (type %s) being added to command %s" % (item, type(item), self))
 
             if not allow_spaces and ' ' in item:
                 raise ValueError("Found one or more spaces in item '%s' being added to command %s" % (item, self))
