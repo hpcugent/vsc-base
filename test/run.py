@@ -71,6 +71,27 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
+    def test_startpath(self):
+        cwd = os.getcwd()
+
+        cmd = "echo foo > bar"
+
+        self.assertErrorRegex(ValueError, '.*', run_simple, cmd, startpath='/no/such/directory')
+
+        ec, out = run_simple(cmd, startpath=self.tempdir)
+
+        # successfull command, no output
+        self.assertEqual(ec, 0)
+        self.assertEqual(out, '')
+
+        # command was actually executed, in specified directory
+        self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'bar')))
+        txt = open(os.path.join(self.tempdir, 'bar')).read()
+        self.assertEqual(txt, 'foo\n')
+
+        # we should still be in directory we were in originally
+        self.assertEqual(cwd, os.getcwd())
+
     def test_simple_asyncloop(self):
         ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
@@ -86,11 +107,30 @@ class TestRun(TestCase):
 
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
-        self.assertEqual(ec, 127)
+        self.assertTrue(ec > 0)
         self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+
+    def test_noshell_executable(self):
+        ec, output = run("echo '(foo bar)'")
+        self.assertEqual(ec, 0)
+        self.assertTrue('(foo bar)' in output)
+
+        ec, output = run(['echo', "(foo bar)"])
+        self.assertEqual(ec, 0)
+        self.assertTrue('(foo bar)' in output)
+
+        # to run Python command, it's required to use the right executable (Python shell rather than default)
+        ec, output = run("""%s -c 'print ("foo")'""" % sys.executable)
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+
+        ec, output = run([sys.executable, '-c', 'print ("foo")'])
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+
 
     def test_timeout(self):
         timeout = 3

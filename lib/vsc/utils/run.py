@@ -256,13 +256,13 @@ class Run(object):
                     self._cwd_before_startpath = os.getcwd()  # store it some one can return to it
                     os.chdir(self.startpath)
                 except OSError:
-                    self.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
+                    self.log.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
                                         (self._cwd_before_startpath, self.startpath))
             else:
-                self.log.raiseExcpetion("_start_in_path: provided startpath %s exists but is no directory" %
+                self.log.raiseException("_start_in_path: provided startpath %s exists but is no directory" %
                                         self.startpath)
         else:
-            self.raiseException("_start_in_path: startpath %s does not exist" % self.startpath)
+            self.log.raiseException("_start_in_path: startpath %s does not exist" % self.startpath)
 
     def _return_to_previous_start_in_path(self):
         """Change to original path before the change to startpath"""
@@ -279,25 +279,26 @@ class Run(object):
                                           "startpath %s") % (currentpath, self.startpath))
                     os.chdir(self._cwd_before_startpath)
                 except OSError:
-                    self.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
+                    self.log.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
                                          "to previous path %s") % (currentpath, self._cwd_before_startpath))
             else:
-                self.log.raiseExcpetion(("_return_to_previous_start_in_path: provided previous cwd path %s exists "
+                self.log.raiseException(("_return_to_previous_start_in_path: provided previous cwd path %s exists "
                                          "but is no directory") % self._cwd_before_startpath)
         else:
-            self.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
+            self.log.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
                                 self._cwd_before_startpath)
 
     def _make_popen_named_args(self, others=None):
         """Create the named args for Popen"""
         self._popen_named_args = {
-                                  'stdout': self._process_module.PIPE,
-                                  'stderr': self._process_module.STDOUT,
-                                  'stdin': self._process_module.PIPE,
-                                  'close_fds': True,
-                                  'shell': self.use_shell,
-                                  'executable': self.shell,
-                                  }
+            'stdout': self._process_module.PIPE,
+            'stderr': self._process_module.STDOUT,
+            'stdin': self._process_module.PIPE,
+            'close_fds': True,
+            'shell': self.use_shell,
+            'executable': self.shell,
+        }
+
         if others is not None:
             self._popen_named_args.update(others)
 
@@ -308,7 +309,7 @@ class Run(object):
         self.log.warning("using potentialy unsafe shell commands, use run.run or run.RunNoShell.run \
                          instead of run.run_simple or run.Run.run")
         if self.cmd is None:
-            self.log.raiseExcpetion("_make_shell_command: no cmd set.")
+            self.log.raiseException("_make_shell_command: no cmd set.")
 
         if isinstance(self.cmd, basestring):
             self._shellcmd = self.cmd
@@ -448,11 +449,12 @@ class Run(object):
 
 class RunNoShell(Run):
     USE_SHELL = False
+    SHELL = None
 
     def _make_shell_command(self):
         """Convert cmd into a list of command to be sent to popen, without a shell"""
         if self.cmd is None:
-            self.log.raiseExcpetion("_make_shell_command: no cmd set.")
+            self.log.raiseException("_make_shell_command: no cmd set.")
 
         if isinstance(self.cmd, basestring):
             self._shellcmd = shlex.split(self.cmd)
@@ -652,11 +654,11 @@ class RunFile(Run):
                 if os.path.isfile(self.filename):
                     self.log.warning("_make_popen_named_args: going to overwrite existing file %s" % self.filename)
                 elif os.path.isdir(self.filename):
-                    self.raiseException(("_make_popen_named_args: writing to filename %s impossible. Path exists and "
-                                         "is a directory.") % self.filename)
+                    self.log.raiseException(("_make_popen_named_args: writing to filename %s impossible. "
+                                             "Path exists and is a directory.") % self.filename)
                 else:
-                    self.raiseException("_make_popen_named_args: path exists and is not a file or directory %s" %
-                                        self.filename)
+                    self.log.raiseException("_make_popen_named_args: path exists and is not a file or directory %s" %
+                                            self.filename)
             else:
                 dirname = os.path.dirname(self.filename)
                 if dirname and not os.path.isdir(dirname):
