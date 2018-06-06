@@ -354,4 +354,5 @@ class TestRun(TestCase):
         # starting with non-string stuff also fails
         self.assertErrorRegex(ValueError, "Non-string item", CmdList, 1)
         self.assertErrorRegex(ValueError, "Non-string item", CmdList, ['foo', None])
+        self.assertErrorRegex(ValueError, "Non-string item", CmdList, ['foo', ['bar', 'baz']])
         self.assertErrorRegex(ValueError, "Found one or more spaces", CmdList, 'this has spaces', allow_spaces=False)
