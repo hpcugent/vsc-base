@@ -38,7 +38,7 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
+from vsc.utils.run import CmdList, run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -284,3 +284,61 @@ class TestRun(TestCase):
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
         # restore
         RunQAShort.CYCLE_ANSWERS = orig_cycle_answers
+
+    def test_cmdlist(self):
+        """Tests for CmdList."""
+
+        # starting with empty command is supported
+        # this is mainly useful when parts of a command are put together separately (cfr. mympirun)
+        cmd = CmdList()
+        self.assertEqual(cmd, [])
+        cmd.add_opts_args('-x')
+        self.assertEqual(cmd, ['-x'])
+
+        cmd = CmdList('test')
+        self.assertEqual(cmd, ['test'])
+
+        # can add options/arguments via string or list of strings
+        cmd.add_opts_args('-t')
+        cmd.add_opts_args(['--opt', 'foo', '-o', 'bar', '--optbis=baz'])
+
+        expected = ['test', '-t', '--opt', 'foo', '-o', 'bar', '--optbis=baz']
+        self.assertEqual(cmd, ['test', '-t', '--opt', 'foo', '-o', 'bar', '--optbis=baz'])
+
+        # add options/arguments via a template
+        cmd.add_opts_args('%(name)s', tmpl_vals={'name': 'namegoeshere'})
+        cmd.add_opts_args(['%(two)s', '%(one)s'], tmpl_vals={'one': 1, 'two': 2})
+        cmd.add_opts_args('%(three)s%(five)s%(one)s', tmpl_vals={'one': '1', 'three': '3', 'five': '5'})
+        cmd.add_opts_args('%s %s %s', tmpl_vals=('foo', 'bar', 'baz'))
+
+        expected.extend(['namegoeshere', '2', '1', '351', 'foo bar baz'])
+        self.assertEqual(cmd, expected)
+
+        # .append and .extend are broken, on purpose, to force use of add_opts_args
+        self.assertErrorRegex(NotImplementedError, "Use add_opts_args", cmd.append, 'test')
+        self.assertErrorRegex(NotImplementedError, "Use add_opts_args", cmd.extend, ['test1', 'test2'])
+
+        # occurence of spaces can be disallowed (but is allowed by default)
+        cmd.add_opts_args('this has spaces')
+
+        err = "Found one or more spaces"
+        self.assertErrorRegex(ValueError, err, cmd.add_opts_args, 'this has spaces', allow_spaces=False)
+
+        kwargs = {
+            'tmpl_vals': {'foo': 'this has spaces'},
+            'allow_spaces': False,
+        }
+        self.assertErrorRegex(ValueError, err, cmd.add_opts_args, '%(foo)s', **kwargs)
+
+        kwargs = {
+            'tmpl_vals': {'one': 'one ', 'two': 'two'},
+            'allow_spaces': False,
+        }
+        self.assertErrorRegex(ValueError, err, cmd.add_opts_args, '%(one)s%(two)s', **kwargs)
+
+        expected.append('this has spaces')
+        self.assertEqual(cmd, expected)
+
+        # can also start with a list
+        cmd = CmdList(['echo', "hello world"])
+        self.assertEqual(cmd, ['echo', "hello world"])

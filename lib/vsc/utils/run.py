@@ -86,6 +86,48 @@ BASH = '/bin/bash'
 SHELL = BASH
 
 
+class CmdList(list):
+    """Wrapper for 'list' type to be used for constructing a list of options & arguments for a command."""
+
+    def __init__(self, cmd=None):
+        """
+        Create CmdList instance to construct command
+
+        :param cmd: actual command to run (first item in list)
+        """
+        super(CmdList, self).__init__()
+        if cmd is not None:
+            if isinstance(cmd, list):
+                super(CmdList, self).extend(cmd)
+            else:
+                super(CmdList, self).append(cmd)
+
+    def add_opts_args(self, items, tmpl_vals=None, allow_spaces=True):
+        """
+        Add options/arguments to command
+
+        :param item: option/argument to add to command
+        :param tmpl_vals: template values for item
+        """
+        if isinstance(items, basestring):
+            items = [items]
+
+        for item in items:
+            if tmpl_vals:
+                item = item % tmpl_vals
+
+            if not allow_spaces and ' ' in item:
+                raise ValueError("Found one or more spaces in item '%s' being added to command %s" % (item, self))
+
+            super(CmdList, self).append(item)
+
+    def append(self, *args, **kwargs):
+        raise NotImplementedError("Use add_opts_args rather than append")
+
+    def extend(self, *args, **kwargs):
+        raise NotImplementedError("Use add_opts_args rather than extend")
+
+
 class DummyFunction(object):
     def __getattr__(self, name):
         def dummy(*args, **kwargs):  # pylint: disable=unused-argument
