@@ -292,57 +292,66 @@ class TestRun(TestCase):
         # this is mainly useful when parts of a command are put together separately (cfr. mympirun)
         cmd = CmdList()
         self.assertEqual(cmd, [])
-        cmd.add_opts_args('-x')
+        cmd.add('-x')
         self.assertEqual(cmd, ['-x'])
 
         cmd = CmdList('test')
         self.assertEqual(cmd, ['test'])
 
         # can add options/arguments via string or list of strings
-        cmd.add_opts_args('-t')
-        cmd.add_opts_args(['--opt', 'foo', '-o', 'bar', '--optbis=baz'])
+        cmd.add('-t')
+        cmd.add(['--opt', 'foo', '-o', 'bar', '--optbis=baz'])
 
         expected = ['test', '-t', '--opt', 'foo', '-o', 'bar', '--optbis=baz']
         self.assertEqual(cmd, ['test', '-t', '--opt', 'foo', '-o', 'bar', '--optbis=baz'])
 
         # add options/arguments via a template
-        cmd.add_opts_args('%(name)s', tmpl_vals={'name': 'namegoeshere'})
-        cmd.add_opts_args(['%(two)s', '%(one)s'], tmpl_vals={'one': 1, 'two': 2})
-        cmd.add_opts_args('%(three)s%(five)s%(one)s', tmpl_vals={'one': '1', 'three': '3', 'five': '5'})
-        cmd.add_opts_args('%s %s %s', tmpl_vals=('foo', 'bar', 'baz'))
+        cmd.add('%(name)s', tmpl_vals={'name': 'namegoeshere'})
+        cmd.add(['%(two)s', '%(one)s'], tmpl_vals={'one': 1, 'two': 2})
+        cmd.add('%(three)s%(five)s%(one)s', tmpl_vals={'one': '1', 'three': '3', 'five': '5'})
+        cmd.add('%s %s %s', tmpl_vals=('foo', 'bar', 'baz'))
 
         expected.extend(['namegoeshere', '2', '1', '351', 'foo bar baz'])
         self.assertEqual(cmd, expected)
 
-        # .append and .extend are broken, on purpose, to force use of add_opts_args
-        self.assertErrorRegex(NotImplementedError, "Use add_opts_args", cmd.append, 'test')
-        self.assertErrorRegex(NotImplementedError, "Use add_opts_args", cmd.extend, ['test1', 'test2'])
+        # .append and .extend are broken, on purpose, to force use of add
+        self.assertErrorRegex(NotImplementedError, "Use add", cmd.append, 'test')
+        self.assertErrorRegex(NotImplementedError, "Use add", cmd.extend, ['test1', 'test2'])
 
         # occurence of spaces can be disallowed (but is allowed by default)
-        cmd.add_opts_args('this has spaces')
+        cmd.add('this has spaces')
 
         err = "Found one or more spaces"
-        self.assertErrorRegex(ValueError, err, cmd.add_opts_args, 'this has spaces', allow_spaces=False)
+        self.assertErrorRegex(ValueError, err, cmd.add, 'this has spaces', allow_spaces=False)
 
         kwargs = {
             'tmpl_vals': {'foo': 'this has spaces'},
             'allow_spaces': False,
         }
-        self.assertErrorRegex(ValueError, err, cmd.add_opts_args, '%(foo)s', **kwargs)
+        self.assertErrorRegex(ValueError, err, cmd.add, '%(foo)s', **kwargs)
 
         kwargs = {
             'tmpl_vals': {'one': 'one ', 'two': 'two'},
             'allow_spaces': False,
         }
-        self.assertErrorRegex(ValueError, err, cmd.add_opts_args, '%(one)s%(two)s', **kwargs)
+        self.assertErrorRegex(ValueError, err, cmd.add, '%(one)s%(two)s', **kwargs)
 
         expected.append('this has spaces')
         self.assertEqual(cmd, expected)
 
-        # can also start with a list
-        cmd = CmdList(['echo', "hello world"])
-        self.assertEqual(cmd, ['echo', "hello world"])
+        # can also init with multiple arguments
+        cmd = CmdList('echo', "hello world", 'test')
+        self.assertEqual(cmd, ['echo', "hello world", 'test'])
+
+        # can also create via template
+        self.assertEqual(CmdList('%(one)s', tmpl_vals={'one': 1}), ['1'])
 
         # adding non-string items yields an error
-        self.assertErrorRegex(ValueError, "Non-string item", cmd.add_opts_args, 1)
-        self.assertErrorRegex(ValueError, "Non-string item", cmd.add_opts_args, None)
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add, 1)
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add, None)
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add, ['foo', None])
+
+        # starting with non-string stuff also fails
+        self.assertErrorRegex(ValueError, "Non-string item", CmdList, 1)
+        self.assertErrorRegex(ValueError, "Non-string item", CmdList, ['foo', None])
+        self.assertErrorRegex(ValueError, "Found one or more spaces", CmdList, 'this has spaces', allow_spaces=False)

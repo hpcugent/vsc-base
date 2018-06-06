@@ -74,6 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
+from vsc.utils.missing import is_string
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -89,34 +90,30 @@ SHELL = BASH
 class CmdList(list):
     """Wrapper for 'list' type to be used for constructing a list of options & arguments for a command."""
 
-    def __init__(self, cmd=None):
+    def __init__(self, *args, **kwargs):
         """
         Create CmdList instance to construct command
 
         :param cmd: actual command to run (first item in list)
         """
         super(CmdList, self).__init__()
-        if cmd is not None:
-            if isinstance(cmd, list):
-                super(CmdList, self).extend(cmd)
-            else:
-                super(CmdList, self).append(cmd)
+        self.add(args, **kwargs)
 
-    def add_opts_args(self, items, tmpl_vals=None, allow_spaces=True):
+    def add(self, items, tmpl_vals=None, allow_spaces=True):
         """
         Add options/arguments to command
 
         :param item: option/argument to add to command
         :param tmpl_vals: template values for item
         """
-        if not isinstance(items, list):
+        if not isinstance(items, (list, tuple)):
             items = [items]
 
         for item in items:
             if tmpl_vals:
                 item = item % tmpl_vals
 
-            if not isinstance(item, basestring):
+            if not is_string(item):
                 raise ValueError("Non-string item %s (type %s) being added to command %s" % (item, type(item), self))
 
             if not allow_spaces and ' ' in item:
@@ -125,10 +122,10 @@ class CmdList(list):
             super(CmdList, self).append(item)
 
     def append(self, *args, **kwargs):
-        raise NotImplementedError("Use add_opts_args rather than append")
+        raise NotImplementedError("Use add rather than append")
 
     def extend(self, *args, **kwargs):
-        raise NotImplementedError("Use add_opts_args rather than extend")
+        raise NotImplementedError("Use add rather than extend")
 
 
 class DummyFunction(object):
@@ -356,7 +353,7 @@ class Run(object):
         if self.cmd is None:
             self.log.raiseException("_make_shell_command: no cmd set.")
 
-        if isinstance(self.cmd, basestring):
+        if is_string(self.cmd):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = " ".join([str(arg).replace(' ', '\ ') for arg in self.cmd])
@@ -501,7 +498,7 @@ class RunNoShell(Run):
         if self.cmd is None:
             self.log.raiseException("_make_shell_command: no cmd set.")
 
-        if isinstance(self.cmd, basestring):
+        if is_string(self.cmd):
             self._shellcmd = shlex.split(self.cmd)
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = self.cmd
@@ -833,7 +830,7 @@ class RunQA(RunLoop, RunAsync):
 
         def process_answers(answers):
             """Construct list of newline-terminated answers (as strings)."""
-            if isinstance(answers, basestring):
+            if is_string(answers):
                 answers = [answers]
             elif isinstance(answers, list):
                 # list is manipulated when answering matching question, so take a copy
