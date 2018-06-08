@@ -667,6 +667,12 @@ class EnvToBooleanTest(TestCase):
     def test_env_to_boolean_undef_with_default(self):
         self.assertEqual(fancylogger._env_to_boolean(self.testvar_undef, 42), 42)
 
+    def test_log_to_syslog(self):
+        fancylogger.logToDevLog(True)
+        fancylogger.setLogLevelInfo()
+        logging.warn("test_log_to_syslog - This is just a test, nothing to be alarm about")
+        logging.warn("test_log_to_syslog - Another test, please ignore")
+
     def tearDown(self):
         if self.testvar in os.environ:
             del os.environ[self.testvar]

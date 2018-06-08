@@ -724,11 +724,13 @@ def _getSysLogFacility(name=None):
 
 def logToDevLog(enable=True, name=None, handler=None):
     """Log to syslog through /dev/log"""
+
+    syslogoptions = {'facility': _getSysLogFacility()}
+
     devlog = '/dev/log'
-    syslogoptions = {
-        'address': devlog,
-        'facility': _getSysLogFacility()
-    }
+    if os.path.exists(devlog):
+        syslogoptions['address'] = devlog
+
     return _logToSomething(logging.handlers.SysLogHandler,
                            syslogoptions, 'logtodevlog', enable=enable, name=name, handler=handler)
 
