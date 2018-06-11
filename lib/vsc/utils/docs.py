@@ -46,7 +46,7 @@ def mk_rst_table(titles, columns):
         raise LengthNotEqualException, msg
     table = []
     tmpl = []
-    line= []
+    line = []
 
     # figure out column widths
     for i, title in enumerate(titles):
