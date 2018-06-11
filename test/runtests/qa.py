@@ -42,6 +42,7 @@ qa = {
     'whattime': ('Now it is %s. What time is it? ' % now, "%s" % now),
     'waitforit': ('Now is the time.', 'OK'),
     'nonewline': ('Do NOT give me a newline', 'Sure'),
+    'emptyline': ('Slurm\n(N/y):', 'y'),
 }
 
 for k, v in qa.items():
@@ -83,6 +84,9 @@ for k, v in qa.items():
                     a = str(prev + int(a))
 
                 res[k] = [a_re.match(a), a]
+            if k == 'emptyline':
+                print ""
+                sys.stdout.flush()
 
 
 if __name__ == '__main__':

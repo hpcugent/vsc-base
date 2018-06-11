@@ -293,6 +293,13 @@ class TestRun(TestCase):
         ec, _ = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
         self.assertEqual(ec, 0)
 
+    def test_qa_hit_position(self):
+        """Tests for QA with extra newline after giving the answer."""
+        qa_dict = {
+            "(N/y):": "y"
+        }
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'emptyline'], qa=qa_dict)
+
     def test_cmdlist(self):
         """Tests for CmdList."""
 
