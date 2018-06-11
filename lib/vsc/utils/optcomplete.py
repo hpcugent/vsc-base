@@ -356,7 +356,7 @@ def guess_first_nonoption(gparser, subcmds_map):
     the subcommand."""
 
     gparser = copy.deepcopy(gparser)
-    def print_usage_nousage (self, *args, **kwargs): # pylint: disable=unused-argument
+    def print_usage_nousage(self, *args, **kwargs): # pylint: disable=unused-argument
         pass
     gparser.print_usage = print_usage_nousage
 

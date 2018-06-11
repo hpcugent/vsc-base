@@ -126,7 +126,7 @@ class cpu_set_t(ctypes.Structure):
                 self.log.raiseException("convert_hr_bits: end is lower then start in '%s'" % rng)
             elif indices[0] < 0:
                 self.log.raiseException("convert_hr_bits: negative start in '%s'" % rng)
-            elif indices[1] > CPU_SETSIZE + 1 :  # also covers start, since end > start
+            elif indices[1] > CPU_SETSIZE + 1:  # also covers start, since end > start
                 self.log.raiseException("convert_hr_bits: end larger then max %s in '%s'" % (CPU_SETSIZE, rng))
 
             self.cpus[indices[0]:indices[1] + 1] = [1] * (indices[1] + 1 - indices[0])
@@ -164,7 +164,7 @@ class cpu_set_t(ctypes.Structure):
         nr_cpus = len(cpus_list)
         if  nr_cpus > CPU_SETSIZE:
             self.log.warning("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
-                           (nr_cpus , CPU_SETSIZE))
+                           (nr_cpus, CPU_SETSIZE))
             cpus_list = cpus_list[:CPU_SETSIZE]
         elif nr_cpus < CPU_SETSIZE:
             cpus_list.extend([0] * (CPU_SETSIZE - nr_cpus))
