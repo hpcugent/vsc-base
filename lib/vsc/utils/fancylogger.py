@@ -76,6 +76,7 @@ Logging to a udp server:
 """
 
 from collections import namedtuple
+import copy
 import inspect
 import logging
 import logging.handlers
@@ -433,6 +434,16 @@ class FancyLogger(logging.getLoggerClass()):
         return self.__copy__()
 
 
+class MultilineFormatter(logging.Formatter):
+    def format(self, record=logging.LogRecord):
+        temprecord = copy.copy(record)
+        output = []
+        for line in record.msg.splitlines():
+            temprecord.msg = line
+            output += [super(MultilineFormatter, self).format(temprecord)]
+        return '\n'.join(output)
+
+
 def thread_name():
     """
     returns the current threads name
@@ -631,7 +642,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
     logger = getLogger(name, fname=False, clsname=False)
 
     if formatterclass is None:
-        formatterclass = logging.Formatter
+        formatterclass = MultilineFormatter
 
     if not hasattr(logger, loggeroption):
         # not set.
@@ -687,7 +698,7 @@ def _screenLogFormatterFactory(colorize=Colorize.NEVER, stream=sys.stdout):
     Second argument `stream` is the stream to check in case `colorize`
     is ``Colorize.AUTO``.
     """
-    formatter = logging.Formatter  # default
+    formatter = MultilineFormatter
     if HAVE_COLOREDLOGS_MODULE:
         if colorize == Colorize.AUTO:
             # auto-detect
