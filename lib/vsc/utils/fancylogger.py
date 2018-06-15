@@ -434,14 +434,23 @@ class FancyLogger(logging.getLoggerClass()):
         return self.__copy__()
 
 
+def reformat(record, superformatter):
+    temprecord = copy.copy(record)
+    output = []
+    for line in record.msg.splitlines():
+        temprecord.msg = line
+        output += [superformatter.format(temprecord)]
+    return '\n'.join(output)
+
+
 class MultilineFormatter(logging.Formatter):
     def format(self, record=logging.LogRecord):
-        temprecord = copy.copy(record)
-        output = []
-        for line in record.msg.splitlines():
-            temprecord.msg = line
-            output += [super(MultilineFormatter, self).format(temprecord)]
-        return '\n'.join(output)
+        return reformat(record, super(MultilineFormatter, self))
+
+
+class MultilineColoredFormatter(coloredlogs.ColoredFormatter):
+    def format(self, record=logging.LogRecord):
+        return reformat(record, super(MultilineColoredFormatterFormatter, self))
 
 
 def thread_name():
@@ -690,22 +699,22 @@ def _screenLogFormatterFactory(colorize=Colorize.NEVER, stream=sys.stdout):
     Second argument `colorize` controls whether the formatter
     can use ANSI terminal escape sequences:
 
-    * ``Colorize.NEVER`` (default) forces use the plain `logging.Formatter` class;
-    * ``Colorize.ALWAYS`` forces use of the colorizing formatter;
+    * ``Colorize.NEVER`` (default) forces use the MultilineFormatter class;
+    * ``Colorize.ALWAYS`` forces use of the colorizing formatter MultilineColoredFormatter;
     * ``Colorize.AUTO`` selects the colorizing formatter depending on
       whether `stream` is connected to a terminal.
 
     Second argument `stream` is the stream to check in case `colorize`
     is ``Colorize.AUTO``.
     """
-    formatter = MultilineFormatter
+    formatter = MultilineFormatter  # default
     if HAVE_COLOREDLOGS_MODULE:
         if colorize == Colorize.AUTO:
             # auto-detect
             if humanfriendly.terminal.terminal_supports_colors(stream):
-                formatter = coloredlogs.ColoredFormatter
+                formatter = MultilineColoredFormatter
         elif colorize == Colorize.ALWAYS:
-            formatter = coloredlogs.ColoredFormatter
+            formatter = MultilineColoredFormatter
         elif colorize == Colorize.NEVER:
             pass
         else:
