@@ -434,23 +434,30 @@ class FancyLogger(logging.getLoggerClass()):
         return self.__copy__()
 
 
-def reformat(record, superformatter):
+def multilineformat(record, formatter):
+    """
+    Returns a log string with formatting applied on each line.
+    record = logging.LogRecord
+    formatter = a Formatter class
+    """
     temprecord = copy.copy(record)
     output = []
     for line in record.msg.splitlines():
         temprecord.msg = line
-        output += [superformatter.format(temprecord)]
+        output += [formatter.format(temprecord)]
     return '\n'.join(output)
 
 
 class MultilineFormatter(logging.Formatter):
+    """Custom logging.Formatter class that applies formatting to each line of a multiline log string"""
     def format(self, record=logging.LogRecord):
-        return reformat(record, super(MultilineFormatter, self))
+        return multilineformat(record, super(MultilineFormatter, self))
 
 
 class MultilineColoredFormatter(coloredlogs.ColoredFormatter):
+    """Custom coloredlogs.ColoredFormatter class that applies formatting to each line of a multiline log string"""
     def format(self, record=logging.LogRecord):
-        return reformat(record, super(MultilineColoredFormatterFormatter, self))
+        return multilineformat(record, super(MultilineColoredFormatterFormatter, self))
 
 
 def thread_name():
