@@ -457,7 +457,7 @@ class MultilineFormatter(logging.Formatter):
 class MultilineColoredFormatter(coloredlogs.ColoredFormatter):
     """Custom coloredlogs.ColoredFormatter class that applies formatting to each line of a multiline log string"""
     def format(self, record=logging.LogRecord):
-        return multilineformat(record, super(MultilineColoredFormatterFormatter, self))
+        return multilineformat(record, super(MultilineColoredFormatter, self))
 
 
 def thread_name():
