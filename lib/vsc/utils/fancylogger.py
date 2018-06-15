@@ -87,6 +87,7 @@ import traceback
 import weakref
 from distutils.version import LooseVersion
 
+
 def _env_to_boolean(varname, default=False):
     """
     Compute a boolean based on the truth value of environment variable `varname`.
