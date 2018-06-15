@@ -76,6 +76,7 @@ Logging to a udp server:
 """
 
 from collections import namedtuple
+import copy
 import inspect
 import logging
 import logging.handlers
@@ -85,6 +86,7 @@ import threading
 import traceback
 import weakref
 from distutils.version import LooseVersion
+
 
 def _env_to_boolean(varname, default=False):
     """
@@ -433,6 +435,32 @@ class FancyLogger(logging.getLoggerClass()):
         return self.__copy__()
 
 
+def multilineformat(record, formatter):
+    """
+    Returns a log string with formatting applied on each line.
+    record = logging.LogRecord
+    formatter = a Formatter class
+    """
+    temprecord = copy.copy(record)
+    output = []
+    for line in record.msg.splitlines():
+        temprecord.msg = line
+        output += [formatter.format(temprecord)]
+    return '\n'.join(output)
+
+
+class MultilineFormatter(logging.Formatter):
+    """Custom logging.Formatter class that applies formatting to each line of a multiline log string"""
+    def format(self, record=logging.LogRecord):
+        return multilineformat(record, super(MultilineFormatter, self))
+
+
+class MultilineColoredFormatter(coloredlogs.ColoredFormatter):
+    """Custom coloredlogs.ColoredFormatter class that applies formatting to each line of a multiline log string"""
+    def format(self, record=logging.LogRecord):
+        return multilineformat(record, super(MultilineColoredFormatter, self))
+
+
 def thread_name():
     """
     returns the current threads name
@@ -631,7 +659,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
     logger = getLogger(name, fname=False, clsname=False)
 
     if formatterclass is None:
-        formatterclass = logging.Formatter
+        formatterclass = MultilineFormatter
 
     if not hasattr(logger, loggeroption):
         # not set.
@@ -679,22 +707,22 @@ def _screenLogFormatterFactory(colorize=Colorize.NEVER, stream=sys.stdout):
     Second argument `colorize` controls whether the formatter
     can use ANSI terminal escape sequences:
 
-    * ``Colorize.NEVER`` (default) forces use the plain `logging.Formatter` class;
-    * ``Colorize.ALWAYS`` forces use of the colorizing formatter;
+    * ``Colorize.NEVER`` (default) forces use the MultilineFormatter class;
+    * ``Colorize.ALWAYS`` forces use of the colorizing formatter MultilineColoredFormatter;
     * ``Colorize.AUTO`` selects the colorizing formatter depending on
       whether `stream` is connected to a terminal.
 
     Second argument `stream` is the stream to check in case `colorize`
     is ``Colorize.AUTO``.
     """
-    formatter = logging.Formatter  # default
+    formatter = MultilineFormatter  # default
     if HAVE_COLOREDLOGS_MODULE:
         if colorize == Colorize.AUTO:
             # auto-detect
             if humanfriendly.terminal.terminal_supports_colors(stream):
-                formatter = coloredlogs.ColoredFormatter
+                formatter = MultilineColoredFormatter
         elif colorize == Colorize.ALWAYS:
-            formatter = coloredlogs.ColoredFormatter
+            formatter = MultilineColoredFormatter
         elif colorize == Colorize.NEVER:
             pass
         else:
