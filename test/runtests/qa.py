@@ -67,8 +67,9 @@ for k, v in qa.items():
                 # for all regular cases, we do not care if there was a newline
                 # but for the case where no newline is added to the answer, we
                 # better not strip it :)
+                a = sys.stdin.readline()
                 if k != 'nonewline':
-                    a = sys.stdin.readline().rstrip('\n')
+                    a = a.rstrip('\n')
                 a_re = re.compile(v[1])
 
                 if k == 'ask_number':
