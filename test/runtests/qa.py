@@ -42,6 +42,7 @@ qa = {
     'simple': ('Simple question: ', 'simple answer'),
     'whattime': ('Now it is %s. What time is it? ' % now, "%s" % now),
     'waitforit': ('Now is the time.', 'OK'),
+    'nonewline': ('Do NOT give me a newline', 'Sure'),
 }
 
 for k, v in qa.items():
@@ -72,12 +73,17 @@ for k, v in qa.items():
                     a = str(prev + int(a))
                 res[k] = [a_re.match(a), a]
 
+
 if __name__ == '__main__':
     failed = 0
 
     for k, v in res.items():
         if 'ask_number' in k and v[0]:
             print "Answer: %s" % v[1]
+        elif 'nonewline' in k:
+            if v[1][-1] == '\n':
+                failed += 1
+                print "Test %s NOT OK, did not expect a newline in the answer" % (k,)
         elif v[0]:
             print "Test %s OK" % k
         else:
