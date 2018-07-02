@@ -802,6 +802,7 @@ class RunQA(RunLoop, RunAsync):
         qa = kwargs.pop('qa', {})
         qa_reg = kwargs.pop('qa_reg', {})
         no_qa = kwargs.pop('no_qa', [])
+        self.add_newline = kwargs.pop('add_newline', True)
         self._loop_miss_count = None  # maximum number of misses
         self._loop_previous_ouput_length = None  # track length of output through loop
         self.hit_position = 0
@@ -840,8 +841,9 @@ class RunQA(RunLoop, RunAsync):
                 msg_tmpl = "Invalid type for answer, not a string or list: %s (%s)"
                 self.log.raiseException(msg_tmpl % (type(answers), answers), exception=TypeError)
             # add optional split at the end
-            for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
-                answers[i] += '\n'
+            if self.add_newline:
+                for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
+                    answers[i] += '\n'
             return answers
 
         def process_question(question):
