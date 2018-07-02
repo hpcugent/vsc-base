@@ -291,9 +291,8 @@ class TestRun(TestCase):
                    'Do NOT give me a newline': 'Sure',
                    }
         qas = RunQAShort(add_newline=False)
-        ec, output = qas.run([sys.executable, SCRIPT_QA, 'waitforit'], qa=qa_dict)
-        self.assertEqual(ec, RUNRUN_QA_MAX_MISS_EXITCODE)
-
+        ec, _ = qas.run([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict)
+        self.assertEqual(ec, 0)
 
 
     def test_cmdlist(self):
