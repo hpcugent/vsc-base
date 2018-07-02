@@ -290,8 +290,7 @@ class TestRun(TestCase):
         qa_dict = {
                    'Do NOT give me a newline': 'Sure',
                    }
-        qas = RunQAShort(add_newline=False)
-        ec, _ = qas.run([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict)
+        ec, _ = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
         self.assertEqual(ec, 0)
 
 
