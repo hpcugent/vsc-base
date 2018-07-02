@@ -27,7 +27,6 @@
 Simple, ugly test script for QA
 """
 import time
-import os
 import re
 import sys
 
@@ -47,6 +46,8 @@ qa = {
 
 for k, v in qa.items():
     if k == sys.argv[1]:
+
+        # sanity case: no answer and no question
         if v[0] is None:
             res[k] = [True, None]
         else:
@@ -58,11 +59,18 @@ for k, v in qa.items():
             elif k == 'ask_number':
                 if len(sys.argv) == 3:
                     loop_cnt = int(sys.argv[2])
+
             for i in range(0, loop_cnt):
                 print v[0],
                 sys.stdout.flush()
-                a = sys.stdin.readline().rstrip('\n')
+
+                # for all regular cases, we do not care if there was a newline
+                # but for the case where no newline is added to the answer, we
+                # better not strip it :)
+                if k != 'nonewline':
+                    a = sys.stdin.readline().rstrip('\n')
                 a_re = re.compile(v[1])
+
                 if k == 'ask_number':
                     if a == '0':
                         # '0' means stop
@@ -71,6 +79,7 @@ for k, v in qa.items():
                     if k in res:
                         prev = int(res[k][1])
                     a = str(prev + int(a))
+
                 res[k] = [a_re.match(a), a]
 
 
