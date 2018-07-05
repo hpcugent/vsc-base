@@ -67,9 +67,10 @@ for k, v in qa.items():
                 # for all regular cases, we do not care if there was a newline
                 # but for the case where no newline is added to the answer, we
                 # better not strip it :)
-                a = sys.stdin.readline()
-                if k != 'nonewline':
-                    a = a.rstrip('\n')
+                if k == 'nonewline':
+                    a = sys.stdin.read(len(v[1]))
+                else:
+                    a = sys.stdin.readline().rstrip('\n')
                 a_re = re.compile(v[1])
 
                 if k == 'ask_number':
@@ -88,16 +89,22 @@ if __name__ == '__main__':
     failed = 0
 
     for k, v in res.items():
-        if 'ask_number' in k and v[0]:
-            print "Answer: %s" % v[1]
-        elif 'nonewline' in k:
-            if v[1][-1] == '\n':
-                failed += 1
-                print "Test %s NOT OK, did not expect a newline in the answer" % (k,)
-        elif v[0]:
-            print "Test %s OK" % k
+        if k == 'nonewline':
+            sys.exit(0)
+        if v[0]:
+            if k == 'nonewline':
+                if v[1][-1] == '\n':
+                    failed += 1
+                    print "Test %s NOT OK, did not expect a newline in the answer" % (k,)
+                    sys.exit(57)
+                else:
+                    sys.exit(0)
+            if 'ask_number' in k:
+                print "Answer: %s" % v[1]
+            else:
+                print "Test %s OK" % k
         else:
-            failed += 1
+            failed += 2
             print "Test %s NOT OK expected answer '%s', received '%s'" % (k, qa[k][1], v[1])
 
     sys.exit(failed)

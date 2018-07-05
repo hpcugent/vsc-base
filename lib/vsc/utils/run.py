@@ -784,6 +784,7 @@ class RunNoShellTimout(RunNoShell, RunTimeout):
     """Run for maximum timeout seconds"""
     pass
 
+
 class RunQA(RunLoop, RunAsync):
     """Question/Answer processing"""
     LOOP_MAX_MISS_COUNT = 20
@@ -883,7 +884,6 @@ class RunQA(RunLoop, RunAsync):
         self._loop_miss_count = 0
         self._loop_previous_ouput_length = 0
 
-
     def _loop_process_output(self, output):
         """Process the output that is read in blocks
             check the output passed to questions available
@@ -924,7 +924,7 @@ class RunQA(RunLoop, RunAsync):
                 if not noqa:
                     self._loop_miss_count += 1
         else:
-            self._loop_miss_count = 0  # rreset miss counter on hit
+            self._loop_miss_count = 0  # reset miss counter on hit
 
         if self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
             self.log.debug("loop_process_output: max misses LOOP_MAX_MISS_COUNT %s reached. End of output: %s" %

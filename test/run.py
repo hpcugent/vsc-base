@@ -290,9 +290,8 @@ class TestRun(TestCase):
         qa_dict = {
                    'Do NOT give me a newline': 'Sure',
                    }
-        ec, _ = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
+        ec, output = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
         self.assertEqual(ec, 0)
-
 
     def test_cmdlist(self):
         """Tests for CmdList."""
