@@ -38,7 +38,7 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
+from vsc.utils.run import CmdList, run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -71,6 +71,27 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
+    def test_startpath(self):
+        cwd = os.getcwd()
+
+        cmd = "echo foo > bar"
+
+        self.assertErrorRegex(ValueError, '.*', run_simple, cmd, startpath='/no/such/directory')
+
+        ec, out = run_simple(cmd, startpath=self.tempdir)
+
+        # successfull command, no output
+        self.assertEqual(ec, 0)
+        self.assertEqual(out, '')
+
+        # command was actually executed, in specified directory
+        self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'bar')))
+        txt = open(os.path.join(self.tempdir, 'bar')).read()
+        self.assertEqual(txt, 'foo\n')
+
+        # we should still be in directory we were in originally
+        self.assertEqual(cwd, os.getcwd())
+
     def test_simple_asyncloop(self):
         ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
@@ -86,11 +107,30 @@ class TestRun(TestCase):
 
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
-        self.assertEqual(ec, 127)
+        self.assertTrue(ec > 0)
         self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+
+    def test_noshell_executable(self):
+        ec, output = run("echo '(foo bar)'")
+        self.assertEqual(ec, 0)
+        self.assertTrue('(foo bar)' in output)
+
+        ec, output = run(['echo', "(foo bar)"])
+        self.assertEqual(ec, 0)
+        self.assertTrue('(foo bar)' in output)
+
+        # to run Python command, it's required to use the right executable (Python shell rather than default)
+        ec, output = run("""%s -c 'print ("foo")'""" % sys.executable)
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+
+        ec, output = run([sys.executable, '-c', 'print ("foo")'])
+        self.assertEqual(ec, 0)
+        self.assertTrue('foo' in output)
+
 
     def test_timeout(self):
         timeout = 3
@@ -244,3 +284,83 @@ class TestRun(TestCase):
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
         # restore
         RunQAShort.CYCLE_ANSWERS = orig_cycle_answers
+
+    def test_qa_no_newline(self):
+        """Test we do not add newline to the answer."""
+        qa_dict = {
+                   'Do NOT give me a newline': 'Sure',
+                   }
+        ec, _ = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
+        self.assertEqual(ec, 0)
+
+    def test_cmdlist(self):
+        """Tests for CmdList."""
+
+        # starting with empty command is supported
+        # this is mainly useful when parts of a command are put together separately (cfr. mympirun)
+        cmd = CmdList()
+        self.assertEqual(cmd, [])
+        cmd.add('-x')
+        self.assertEqual(cmd, ['-x'])
+
+        cmd = CmdList('test')
+        self.assertEqual(cmd, ['test'])
+
+        # can add options/arguments via string or list of strings
+        cmd.add('-t')
+        cmd.add(['--opt', 'foo', '-o', 'bar', '--optbis=baz'])
+
+        expected = ['test', '-t', '--opt', 'foo', '-o', 'bar', '--optbis=baz']
+        self.assertEqual(cmd, ['test', '-t', '--opt', 'foo', '-o', 'bar', '--optbis=baz'])
+
+        # add options/arguments via a template
+        cmd.add('%(name)s', tmpl_vals={'name': 'namegoeshere'})
+        cmd.add(['%(two)s', '%(one)s'], tmpl_vals={'one': 1, 'two': 2})
+        cmd.add('%(three)s%(five)s%(one)s', tmpl_vals={'one': '1', 'three': '3', 'five': '5'})
+        cmd.add('%s %s %s', tmpl_vals=('foo', 'bar', 'baz'))
+
+        expected.extend(['namegoeshere', '2', '1', '351', 'foo bar baz'])
+        self.assertEqual(cmd, expected)
+
+        # .append and .extend are broken, on purpose, to force use of add
+        self.assertErrorRegex(NotImplementedError, "Use add", cmd.append, 'test')
+        self.assertErrorRegex(NotImplementedError, "Use add", cmd.extend, ['test1', 'test2'])
+
+        # occurence of spaces can be disallowed (but is allowed by default)
+        cmd.add('this has spaces')
+
+        err = "Found one or more spaces"
+        self.assertErrorRegex(ValueError, err, cmd.add, 'this has spaces', allow_spaces=False)
+
+        kwargs = {
+            'tmpl_vals': {'foo': 'this has spaces'},
+            'allow_spaces': False,
+        }
+        self.assertErrorRegex(ValueError, err, cmd.add, '%(foo)s', **kwargs)
+
+        kwargs = {
+            'tmpl_vals': {'one': 'one ', 'two': 'two'},
+            'allow_spaces': False,
+        }
+        self.assertErrorRegex(ValueError, err, cmd.add, '%(one)s%(two)s', **kwargs)
+
+        expected.append('this has spaces')
+        self.assertEqual(cmd, expected)
+
+        # can also init with multiple arguments
+        cmd = CmdList('echo', "hello world", 'test')
+        self.assertEqual(cmd, ['echo', "hello world", 'test'])
+
+        # can also create via template
+        self.assertEqual(CmdList('%(one)s', tmpl_vals={'one': 1}), ['1'])
+
+        # adding non-string items yields an error
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add, 1)
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add, None)
+        self.assertErrorRegex(ValueError, "Non-string item", cmd.add, ['foo', None])
+
+        # starting with non-string stuff also fails
+        self.assertErrorRegex(ValueError, "Non-string item", CmdList, 1)
+        self.assertErrorRegex(ValueError, "Non-string item", CmdList, ['foo', None])
+        self.assertErrorRegex(ValueError, "Non-string item", CmdList, ['foo', ['bar', 'baz']])
+        self.assertErrorRegex(ValueError, "Found one or more spaces", CmdList, 'this has spaces', allow_spaces=False)

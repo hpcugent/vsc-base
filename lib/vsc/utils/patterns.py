@@ -36,10 +36,11 @@ script.
 
 @author: Andy Georges (Ghent University)
 """
+from abc import ABCMeta
 
 
-class Singleton(type):
-    """Serves as  metaclass for classes that should implement the Singleton pattern.
+class Singleton(ABCMeta):
+    """Serves as metaclass for classes that should implement the Singleton pattern.
 
     See http://stackoverflow.com/questions/6760685/creating-a-singleton-in-python
     """

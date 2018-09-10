@@ -1,6 +1,6 @@
 ### External compatible license
 """
-This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License 
+This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License
 with attribution required
 
 Original code by http://stackoverflow.com/users/416467/kindall from answer 4 of
