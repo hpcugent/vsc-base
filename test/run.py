@@ -285,6 +285,14 @@ class TestRun(TestCase):
         # restore
         RunQAShort.CYCLE_ANSWERS = orig_cycle_answers
 
+    def test_qa_no_newline(self):
+        """Test we do not add newline to the answer."""
+        qa_dict = {
+                   'Do NOT give me a newline': 'Sure',
+                   }
+        ec, _ = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
+        self.assertEqual(ec, 0)
+
     def test_cmdlist(self):
         """Tests for CmdList."""
 
