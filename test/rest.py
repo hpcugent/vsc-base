@@ -71,8 +71,10 @@ class RestClientTest(TestCase):
 
     def test_request_methods(self):
         """Test all request methods"""
-        status, body = self.client.head()
+        status, headers = self.client.head()
         self.assertEqual(status, 200)
+        self.assertTrue(headers)
+        self.assertIn('X-GitHub-Media-Type', headers)
         try:
             status, body = self.client.user.emails.post(body='jens.timmerman@ugent.be')
             self.assertTrue(False, 'posting to unauthorized endpoint did not trhow a http error')
