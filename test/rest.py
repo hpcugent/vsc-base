@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2017 Ghent University
+# Copyright 2014-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -71,8 +71,10 @@ class RestClientTest(TestCase):
 
     def test_request_methods(self):
         """Test all request methods"""
-        status, body = self.client.head()
+        status, headers = self.client.head()
         self.assertEqual(status, 200)
+        self.assertTrue(headers)
+        self.assertTrue('X-GitHub-Media-Type' in headers)
         try:
             status, body = self.client.user.emails.post(body='jens.timmerman@ugent.be')
             self.assertTrue(False, 'posting to unauthorized endpoint did not trhow a http error')
