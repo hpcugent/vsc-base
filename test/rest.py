@@ -60,6 +60,10 @@ class RestClientTest(TestCase):
 
     def test_client(self):
         """Do a test api call"""
+        if GITHUB_TOKEN is None:
+            print("Skipping test_client, since no GitHub token is available")
+            return
+
         status, body = self.client.repos[GITHUB_USER][GITHUB_REPO].contents.a_directory['a_file.txt'].get()
         self.assertEqual(status, 200)
         # dGhpcyBpcyBhIGxpbmUgb2YgdGV4dAo= == 'this is a line of text' in base64 encoding
@@ -71,6 +75,10 @@ class RestClientTest(TestCase):
 
     def test_request_methods(self):
         """Test all request methods"""
+        if GITHUB_TOKEN is None:
+            print("Skipping test_request_methods, since no GitHub token is available")
+            return
+
         status, headers = self.client.head()
         self.assertEqual(status, 200)
         self.assertTrue(headers)
