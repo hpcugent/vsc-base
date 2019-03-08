@@ -108,7 +108,8 @@ class TestRun(TestCase):
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
         self.assertTrue(ec > 0)
-        self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
+        regex = re.compile(r"'?test/sandbox/testpkg/\*'?: No such file or directory")
+        self.assertTrue(regex.search(output), "Pattern '%s' found in: %s" % (regex.pattern, output))
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
