@@ -890,7 +890,12 @@ class RunQA(RunLoop, RunAsync):
         """
         hit = False
 
-        self.log.debug('output %s all_output %s' % (output, self._process_output))
+        # use a dict so the formatting shows all characters explicitly (and quoted)
+        self.log.debug('output %s', {
+            'latest': output,
+            'all': self._process_output,
+            'since_latest_match': self._process_output[self.hit_position:],
+        })
 
         # qa first and then qa_reg
         nr_qa = len(self.qa)
@@ -936,7 +941,7 @@ class RunQA(RunLoop, RunAsync):
         super(RunQA, self)._loop_process_output(output)
 
 
-class RunNoShellQA(RunNoShellLoop, RunNoShellAsync):
+class RunNoShellQA(RunNoShell, RunQA):
     """Question/Answer processing"""
     pass
 
