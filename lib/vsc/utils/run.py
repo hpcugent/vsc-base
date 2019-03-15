@@ -910,7 +910,9 @@ class RunQA(RunLoop, RunAsync):
                     self.log.debug("New answers list for question %s: %s" % (question.pattern, answers))
                 self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s process_output %s" %
                                (answer, question.pattern, idx >= nr_qa, output, self._process_output[-50:]))
-                self._process_module.send_all(self._process, answer)
+                written = self._process_module.send_all(self._process, answer)
+                if written != len(answer):
+                    self.log.warning("answer '%s' not fully written: %s out of %s bytes", answer, written, len(answer))
                 hit = True
                 self.hit_position = len(self._process_output)  # position of next possible match
                 break
