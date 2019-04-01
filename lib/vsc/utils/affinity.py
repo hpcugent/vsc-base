@@ -34,6 +34,7 @@ Linux priority
 
 @author: Stijn De Weirdt (Ghent University)
 """
+from __future__ import print_function
 
 import ctypes
 import os
@@ -294,33 +295,33 @@ if __name__ == '__main__':
     setLogLevelDebug()
 
     cs = cpu_set_t()
-    print "__bits", cs.__bits
-    print "sizeof cpu_set_t", ctypes.sizeof(cs)
+    print("__bits " + cs.__bits)
+    print("sizeof cpu_set_t " + ctypes.sizeof(cs))
     x = sched_getaffinity()
-    print "x", x
+    print("x " + x)
     hr_mask = "1-5,7,9,10-15"
-    print hr_mask, x.convert_hr_bits(hr_mask)
-    print x
+    print(hr_mask + ' ' + x.convert_hr_bits(hr_mask))
+    print(x)
     x.set_bits()
-    print x
+    print(x)
 
     sched_setaffinity(x)
-    print sched_getaffinity()
+    print(sched_getaffinity())
 
     x.convert_hr_bits("1")
     x.set_bits()
     sched_setaffinity(x)
     y = sched_getaffinity()
-    print x, y
+    print(x + ' ' + y)
 
-    print sched_getcpu()
+    print(sched_getcpu())
 
     # resources
     # nice -n 5 python affinity.py prints 5 here
     currentprio = getpriority()
-    print "getpriority", currentprio
+    print("getpriority " + currentprio)
     newprio = 10
     setpriority(newprio)
     newcurrentprio = getpriority()
-    print "getpriority", newcurrentprio
+    print("getpriority " + newcurrentprio)
     assert newcurrentprio == newprio

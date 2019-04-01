@@ -10,6 +10,7 @@ Module to make python scripts run in background.
 
 @author: Sander Marechal
 """
+from __future__ import print_function
 
 import sys, os, time, atexit
 from signal import SIGTERM
@@ -123,7 +124,7 @@ class Daemon:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
             else:
-                print str(err)
+                print(str(err))
                 sys.exit(1)
 
     def restart(self):
