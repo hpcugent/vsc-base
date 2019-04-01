@@ -327,7 +327,10 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-        raise exception, message, tb
+
+        err = exception(message)
+        err.__traceback__ = tb
+        raise err
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
@@ -383,7 +386,7 @@ class FancyLogger(logging.getLoggerClass()):
             """Write to stream and flush the handler"""
             if (not hasattr(hdlr, 'stream')) or hdlr.stream is None:
                 # no stream or not initialised.
-                raise("write_and_flush_stream failed. No active stream attribute.")
+                raise Exception("write_and_flush_stream failed. No active stream attribute.")
             if data is not None:
                 hdlr.stream.write(data)
                 hdlr.flush()
@@ -586,7 +589,9 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
             os.makedirs(directory)
         except Exception as ex:
             exc, detail, tb = sys.exc_info()
-            raise exc, "Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail), tb
+            exc = exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))
+            exc.__traceback__ = tb
+            raise exc
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,

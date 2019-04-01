@@ -138,7 +138,7 @@ class FancyMonth:
     def get_other(self, shift=-1):
         """Return month that is shifted shift months: negative integer is in past, positive is in future"""
         new = self.date.year * 12 + self.date.month - 1 + shift
-        return self.__class__(date(new // 12, new % 12 + 1, 01))
+        return self.__class__(date(new // 12, new % 12 + 1, 0o1))
 
     def interval(self, otherdate):
         """Return time ordered list of months between date and otherdate"""
