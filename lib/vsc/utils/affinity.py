@@ -37,7 +37,7 @@ Linux priority
 import ctypes
 import os
 from ctypes.util import find_library
-from vsc.utils.fancylogger import getLogger, setLogLevelDebug
+from vsc.utils.fancylogger import getLogger
 
 _logger = getLogger("affinity")
 
