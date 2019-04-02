@@ -34,8 +34,6 @@ Linux priority
 
 @author: Stijn De Weirdt (Ghent University)
 """
-from __future__ import print_function
-
 import ctypes
 import os
 from ctypes.util import find_library
@@ -102,8 +100,14 @@ id_t = ctypes.c_uint
 #  __cpu_mask __bits[__NMASKBITS];
 #} cpu_set_t;
 class cpu_set_t(ctypes.Structure):
-    """Class that implements the cpu_set_t struct
-        also provides some methods to convert between bit representation and soem human readable format
+    """
+    Class that implements the cpu_set_t struct
+    also provides some methods to convert between bit representation and soem human readable format
+
+    Example usage:
+    cs = cpu_set_t()
+    print("__bits " + cs.__bits)
+    print("sizeof cpu_set_t " + ctypes.sizeof(cs))
     """
     _fields_ = [('__bits', cpu_mask_t * NMASKBITS)]
 
@@ -201,7 +205,28 @@ class cpu_set_t(ctypes.Structure):
 # extern int sched_getaffinity (pid_t __pid, size_t __cpusetsize,
 #                              cpu_set_t *__cpuset);
 def sched_getaffinity(cs=None, pid=None):
-    """Get the affinity"""
+    """
+    Get the affinity
+
+    Example usage:
+
+    x = sched_getaffinity()
+    print("x " + x)
+    hr_mask = "1-5,7,9,10-15"
+    print(hr_mask + ' ' + x.convert_hr_bits(hr_mask))
+    print(x)
+    x.set_bits()
+    print(x)
+
+    sched_setaffinity(x)
+    print(sched_getaffinity())
+
+    x.convert_hr_bits("1")
+    x.set_bits()
+    sched_setaffinity(x)
+    y = sched_getaffinity()
+    print(x + ' ' + y)
+    """
     if cs is None:
         cs = cpu_set_t()
     if pid is None:
@@ -233,7 +258,12 @@ def sched_setaffinity(cs, pid=None):
 # /* Get index of currently used CPU.  */
 # extern int sched_getcpu (void) __THROW;
 def sched_getcpu():
-    """Get currently used cpu"""
+    """
+    Get currently used cpu
+
+    Example usage:
+    print(sched_getcpu())
+    """
     return _libc.sched_getcpu()
 
 
@@ -248,7 +278,15 @@ def sched_getcpu():
 # extern int setpriority (__priority_which_t __which, id_t __who, int __prio)
 #     __THROW;
 def getpriority(which=None, who=None):
-    """Get the priority"""
+    """
+    Get the priority
+
+    Example usage:
+    # resources
+    # nice -n 5 python affinity.py prints 5 here
+    currentprio = getpriority()
+    print("getpriority " + currentprio)
+    """
     if which is None:
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
@@ -264,7 +302,16 @@ def getpriority(which=None, who=None):
 
 
 def setpriority(prio, which=None, who=None):
-    """Set the priority (aka nice)"""
+    """
+    Set the priority (aka nice)
+
+    Example usage:
+    newprio = 10
+    setpriority(newprio)
+    newcurrentprio = getpriority()
+    print("getpriority " + newcurrentprio)
+    assert newcurrentprio == newprio
+    """
     if which is None:
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
@@ -288,40 +335,3 @@ def setpriority(prio, which=None, who=None):
         _logger.debug("setpriority for which %s who %s prio %s" % (which, who, prio))
     else:
         _logger.error("setpriority failed for which %s who %s prio %s" % (which, who, prio))
-
-
-if __name__ == '__main__':
-    # some examples of usage
-    setLogLevelDebug()
-
-    cs = cpu_set_t()
-    print("__bits " + cs.__bits)
-    print("sizeof cpu_set_t " + ctypes.sizeof(cs))
-    x = sched_getaffinity()
-    print("x " + x)
-    hr_mask = "1-5,7,9,10-15"
-    print(hr_mask + ' ' + x.convert_hr_bits(hr_mask))
-    print(x)
-    x.set_bits()
-    print(x)
-
-    sched_setaffinity(x)
-    print(sched_getaffinity())
-
-    x.convert_hr_bits("1")
-    x.set_bits()
-    sched_setaffinity(x)
-    y = sched_getaffinity()
-    print(x + ' ' + y)
-
-    print(sched_getcpu())
-
-    # resources
-    # nice -n 5 python affinity.py prints 5 here
-    currentprio = getpriority()
-    print("getpriority " + currentprio)
-    newprio = 10
-    setpriority(newprio)
-    newcurrentprio = getpriority()
-    print("getpriority " + newcurrentprio)
-    assert newcurrentprio == newprio
