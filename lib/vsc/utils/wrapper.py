@@ -6,7 +6,27 @@ with attribution required
 Original code by http://stackoverflow.com/users/416467/kindall from answer 4 of
 http://stackoverflow.com/questions/9057669/how-can-i-intercept-calls-to-pythons-magic-methods-in-new-style-classes
 """
-class Wrapper(object):
+from future.utils import with_metaclass
+
+
+class WrapperMetaclass(type):
+    def __init__(cls, name, bases, dct):
+
+        def make_proxy(name):
+            def proxy(self, *args): # pylint:disable=unused-argument
+                return getattr(self._obj, name)
+            return proxy
+
+        type.__init__(cls, name, bases, dct)
+        if cls.__wraps__:
+            ignore = set("__%s__" % n for n in cls.__ignore__.split())
+            for name in dir(cls.__wraps__):
+                if name.startswith("__"):
+                    if name not in ignore and name not in dct:
+                        setattr(cls, name, property(make_proxy(name)))
+
+
+class Wrapper(with_metaclass(WrapperMetaclass, object)):
     """Wrapper class that provides proxy access to an instance of some
        internal instance."""
 
@@ -24,20 +44,3 @@ class Wrapper(object):
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):
         return getattr(self._obj, name)
-
-    # create proxies for wrapped object's double-underscore attributes
-    class __metaclass__(type):
-        def __init__(cls, name, bases, dct):
-
-            def make_proxy(name):
-                def proxy(self, *args): # pylint:disable=unused-argument
-                    return getattr(self._obj, name)
-                return proxy
-
-            type.__init__(cls, name, bases, dct)
-            if cls.__wraps__:
-                ignore = set("__%s__" % n for n in cls.__ignore__.split())
-                for name in dir(cls.__wraps__):
-                    if name.startswith("__"):
-                        if name not in ignore and name not in dct:
-                            setattr(cls, name, property(make_proxy(name)))

@@ -42,7 +42,7 @@ import tempfile
 from unittest import TestLoader, main, TestSuite
 try:
     from unittest import skipUnless
-except ImportError:
+except (AttributeError, ImportError):
     # Python 2.6 does not have `skipIf`/`skipUnless`
     def skipUnless(condition, reason):
         if condition:
