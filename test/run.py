@@ -38,7 +38,14 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import CmdList, run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
+#import logging
+#logging.basicConfig(level=logging.DEBUG)
+
+from vsc.utils.run import (
+    CmdList, run, run_simple, asyncloop, run_asyncloop,
+    run_timeout, RunTimeout,
+    RunQA, RunNoShellQA,
+)
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -49,10 +56,14 @@ SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
 SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
 
-class RunQAShort(RunQA):
+class RunQAShort(RunNoShellQA):
+    LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
+
+class RunLegQAShort(RunQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
 
 run_qas = RunQAShort.run
+run_legacy_qas = RunLegQAShort.run
 
 
 class TestRun(TestCase):
@@ -94,6 +105,11 @@ class TestRun(TestCase):
 
     def test_simple_asyncloop(self):
         ec, output = run_asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
+        self.assertEqual(ec, 0)
+        self.assertTrue('shortsleep' in output.lower())
+
+    def test_simple_ns_asyncloop(self):
+        ec, output = asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
@@ -225,6 +241,14 @@ class TestRun(TestCase):
                    '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
                    }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
+        self.assertEqual(ec, 0)
+
+    def test_qa_legacy_regex(self):
+        """Test regex based q and a (works only for qa_reg)"""
+        qa_dict = {
+                   '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
+                   }
+        ec, output = run_legacy_qas([sys.executable, SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_noqa(self):
