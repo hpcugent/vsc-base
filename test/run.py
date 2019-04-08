@@ -29,6 +29,7 @@ Tests for the vsc.utils.run module.
 @author: Stijn De Weirdt (Ghent University)
 """
 import pkgutil
+import logging
 import os
 import re
 import stat
@@ -38,7 +39,7 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-#import logging
+# Uncomment when debugging, cannot enable permanetnly, messes up tests that toggle debugging
 #logging.basicConfig(level=logging.DEBUG)
 
 from vsc.utils.run import (
@@ -230,24 +231,24 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
 
         qa_dict = {
-                   'Simple question:': 'simple answer',
-                   }
+            'Simple question:': 'simple answer',
+        }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'simple'], qa=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_regex(self):
         """Test regex based q and a (works only for qa_reg)"""
         qa_dict = {
-                   '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
-                   }
+            '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
+        }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_legacy_regex(self):
         """Test regex based q and a (works only for qa_reg)"""
         qa_dict = {
-                   '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
-                   }
+            '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
+        }
         ec, output = run_legacy_qas([sys.executable, SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
         self.assertEqual(ec, 0)
 
@@ -255,8 +256,8 @@ class TestRun(TestCase):
         """Test noqa"""
         # this has to fail
         qa_dict = {
-                   'Now is the time.': 'OK',
-                   }
+            'Now is the time.': 'OK',
+        }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'waitforit'], qa=qa_dict)
         self.assertEqual(ec, RUNRUN_QA_MAX_MISS_EXITCODE)
 
@@ -313,8 +314,8 @@ class TestRun(TestCase):
     def test_qa_no_newline(self):
         """Test we do not add newline to the answer."""
         qa_dict = {
-                   'Do NOT give me a newline': 'Sure',
-                   }
+            'Do NOT give me a newline': 'Sure',
+        }
         ec, _ = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
         self.assertEqual(ec, 0)
 
