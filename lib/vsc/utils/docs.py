@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2018 Ghent University
+# Copyright 2015-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -43,7 +43,7 @@ def mk_rst_table(titles, columns):
     title_cnt, col_cnt = len(titles), len(columns)
     if title_cnt != col_cnt:
         msg = "Number of titles/columns should be equal, found %d titles and %d columns" % (title_cnt, col_cnt)
-        raise LengthNotEqualException, msg
+        raise LengthNotEqualException(msg)
     table = []
     tmpl = []
     line = []

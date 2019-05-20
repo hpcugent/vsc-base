@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Ghent University
+# Copyright 2012-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -29,6 +29,7 @@ Tests for the vsc.utils.run module.
 @author: Stijn De Weirdt (Ghent University)
 """
 import pkgutil
+import logging
 import os
 import re
 import stat
@@ -38,7 +39,14 @@ import time
 import shutil
 from unittest import TestLoader, main
 
-from vsc.utils.run import CmdList, run, run_simple, run_asyncloop, run_timeout, RunQA, RunTimeout
+# Uncomment when debugging, cannot enable permanetnly, messes up tests that toggle debugging
+#logging.basicConfig(level=logging.DEBUG)
+
+from vsc.utils.run import (
+    CmdList, run, run_simple, asyncloop, run_asyncloop,
+    run_timeout, RunTimeout,
+    RunQA, RunNoShellQA,
+)
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -49,10 +57,14 @@ SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
 SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
 
-class RunQAShort(RunQA):
+class RunQAShort(RunNoShellQA):
+    LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
+
+class RunLegQAShort(RunQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
 
 run_qas = RunQAShort.run
+run_legacy_qas = RunLegQAShort.run
 
 
 class TestRun(TestCase):
@@ -97,6 +109,11 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
 
+    def test_simple_ns_asyncloop(self):
+        ec, output = asyncloop([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
+        self.assertEqual(ec, 0)
+        self.assertTrue('shortsleep' in output.lower())
+
     def test_simple_glob(self):
         ec, output = run_simple('ls test/sandbox/testpkg/*')
         self.assertEqual(ec, 0)
@@ -108,7 +125,8 @@ class TestRun(TestCase):
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
         self.assertTrue(ec > 0)
-        self.assertTrue('test/sandbox/testpkg/*: No such file or directory' in output)
+        regex = re.compile(r"'?test/sandbox/testpkg/\*'?: No such file or directory")
+        self.assertTrue(regex.search(output), "Pattern '%s' found in: %s" % (regex.pattern, output))
         ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
         self.assertEqual(ec, 0)
         self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
@@ -213,25 +231,33 @@ class TestRun(TestCase):
         self.assertEqual(ec, 0)
 
         qa_dict = {
-                   'Simple question:': 'simple answer',
-                   }
+            'Simple question:': 'simple answer',
+        }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'simple'], qa=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_regex(self):
         """Test regex based q and a (works only for qa_reg)"""
         qa_dict = {
-                   '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
-                   }
+            '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
+        }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
+        self.assertEqual(ec, 0)
+
+    def test_qa_legacy_regex(self):
+        """Test regex based q and a (works only for qa_reg)"""
+        qa_dict = {
+            '\s(?P<time>\d+(?:\.\d+)?).*?What time is it\?': '%(time)s',
+        }
+        ec, output = run_legacy_qas([sys.executable, SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
         self.assertEqual(ec, 0)
 
     def test_qa_noqa(self):
         """Test noqa"""
         # this has to fail
         qa_dict = {
-                   'Now is the time.': 'OK',
-                   }
+            'Now is the time.': 'OK',
+        }
         ec, output = run_qas([sys.executable, SCRIPT_QA, 'waitforit'], qa=qa_dict)
         self.assertEqual(ec, RUNRUN_QA_MAX_MISS_EXITCODE)
 
@@ -288,8 +314,8 @@ class TestRun(TestCase):
     def test_qa_no_newline(self):
         """Test we do not add newline to the answer."""
         qa_dict = {
-                   'Do NOT give me a newline': 'Sure',
-                   }
+            'Do NOT give me a newline': 'Sure',
+        }
         ec, _ = run_qas([sys.executable, SCRIPT_QA, 'nonewline'], qa=qa_dict, add_newline=False)
         self.assertEqual(ec, 0)
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2018 Ghent University
+# Copyright 2009-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -890,7 +890,12 @@ class RunQA(RunLoop, RunAsync):
         """
         hit = False
 
-        self.log.debug('output %s all_output %s' % (output, self._process_output))
+        # use a dict so the formatting shows all characters explicitly (and quoted)
+        self.log.debug('output %s', {
+            'latest': output,
+            'all': self._process_output,
+            'since_latest_match': self._process_output[self.hit_position:],
+        })
 
         # qa first and then qa_reg
         nr_qa = len(self.qa)
@@ -905,7 +910,9 @@ class RunQA(RunLoop, RunAsync):
                     self.log.debug("New answers list for question %s: %s" % (question.pattern, answers))
                 self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s process_output %s" %
                                (answer, question.pattern, idx >= nr_qa, output, self._process_output[-50:]))
-                self._process_module.send_all(self._process, answer)
+                written = self._process_module.send_all(self._process, answer)
+                if written != len(answer):
+                    self.log.warning("answer '%s' not fully written: %s out of %s bytes", answer, written, len(answer))
                 hit = True
                 self.hit_position = len(self._process_output)  # position of next possible match
                 break
@@ -936,7 +943,7 @@ class RunQA(RunLoop, RunAsync):
         super(RunQA, self)._loop_process_output(output)
 
 
-class RunNoShellQA(RunNoShellLoop, RunNoShellAsync):
+class RunNoShellQA(RunNoShell, RunQA):
     """Question/Answer processing"""
     pass
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2018 Ghent University
+# Copyright 2012-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -138,7 +138,7 @@ class FancyMonth:
     def get_other(self, shift=-1):
         """Return month that is shifted shift months: negative integer is in past, positive is in future"""
         new = self.date.year * 12 + self.date.month - 1 + shift
-        return self.__class__(date(new // 12, new % 12 + 1, 01))
+        return self.__class__(date(new // 12, new % 12 + 1, 1))
 
     def interval(self, otherdate):
         """Return time ordered list of months between date and otherdate"""
