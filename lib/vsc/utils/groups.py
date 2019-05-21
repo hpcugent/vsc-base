@@ -1,5 +1,5 @@
 #
-# Copyright 2018-2018 Ghent University
+# Copyright 2018-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -43,7 +43,7 @@ def getgrouplist(user, groupnames=True):
     libc = cdll.LoadLibrary(find_library('libc'))
 
     getgrouplist = libc.getgrouplist
-    # max of 50 groups should be enought
+    # max of 50 groups should be enough as first try
     ngroups = 50
     getgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint * ngroups), POINTER(c_int32)]
     getgrouplist.restype = c_int32
@@ -57,11 +57,12 @@ def getgrouplist(user, groupnames=True):
         user = pwd.getpwuid(user)
 
     ct = getgrouplist(user.pw_name, user.pw_gid, byref(grouplist), byref(ngrouplist))
-    # if a max of 50 groups was not enought, try again with exact given nr
+    # if a max of 50 groups was not enough, try again with exact given nr
     if ct < 0:
         getgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint *int(ngrouplist.value)), POINTER(c_int32)]
         grouplist = (c_uint * int(ngrouplist.value))()
         ct = getgrouplist(user.pw_name, user.pw_gid, byref(grouplist), byref(ngrouplist))
+
     if ct < 0:
         raise Exception("Could not find groups for %s" % user)
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Ghent University
+# Copyright 2012-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,10 +28,14 @@ tests for groups module
 """
 import grp
 import pwd
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 from vsc.install.testing import TestCase
 
 from vsc.utils.groups import getgrouplist
+from vsc.utils.run import run
 
 class GroupsTest(TestCase):
     """TestCase for groups"""
@@ -39,8 +43,18 @@ class GroupsTest(TestCase):
     def test_getgrouplist(self):
         """Test getgrouplist"""
         for user in pwd.getpwall():
-            gidgroups = getgrouplist(user.pw_gid)
+            gidgroups = getgrouplist(user.pw_uid)
             namegroups = getgrouplist(user.pw_name)
-            groups = [g.gr_name for g in grp.getgrall() if user.pw_name in g.gr_mem]
+
+            # get named groups from id
+            #   grp.getgrall is wrong, e.g. for root user on F30,
+            #   gr_mem for root group is empty (as is entry in /etc/group),
+            #   while id returns 1 group
+            #groups = [g.gr_name for g in grp.getgrall() if user.pw_name in g.gr_mem]
+            ec, groups_txt = run(['id', '-Gn', user.pw_name])
+            groups = groups_txt.strip().split()
+
+            logging.debug("User %s gidgroups %s namegroups %s groups %s",
+                          user, gidgroups, namegroups, groups)
             self.assertEqual(gidgroups, namegroups)
             self.assertEqual(gidgroups, groups)
