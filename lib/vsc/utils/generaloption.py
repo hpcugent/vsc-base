@@ -564,30 +564,30 @@ class ExtOptionParser(OptionParser):
         except (IndexError, ValueError, AttributeError):
             self.log.debug("set_description_docstring: no docstring found in latest stack globals")
             docstr = None
+            return None
 
-        if docstr is not None:
-            indent = " "
-            # kwargs and ** magic to deal with width
-            kwargs = {
-                'initial_indent': indent * 2,
-                'subsequent_indent': indent * 2,
-                'replace_whitespace': False,
-            }
-            width = os.environ.get('COLUMNS', None)
-            if width is not None:
-                # default textwrap width
-                try:
-                    kwargs['width'] = int(width)
-                except ValueError:
-                    pass
+        indent = " "
+        # kwargs and ** magic to deal with width
+        kwargs = {
+            'initial_indent': indent * 2,
+            'subsequent_indent': indent * 2,
+            'replace_whitespace': False,
+        }
+        width = os.environ.get('COLUMNS', None)
+        if width is not None:
+            # default textwrap width
+            try:
+                kwargs['width'] = int(width)
+            except ValueError:
+                pass
 
-            # deal with newlines in docstring
-            final_docstr = ['']
-            for line in str(docstr).strip("\n ").split("\n"):
-                final_docstr.append(textwrap.fill(line, **kwargs))
-            final_docstr.append('')
+        # deal with newlines in docstring
+        final_docstr = ['']
+        for line in str(docstr).strip("\n ").split("\n"):
+            final_docstr.append(textwrap.fill(line, **kwargs))
+        final_docstr.append('')
 
-            return "\n".join(final_docstr)
+        return "\n".join(final_docstr)
 
     def format_description(self, formatter):
         """Extend to allow docstring as description"""
@@ -807,7 +807,7 @@ class ExtOptionParser(OptionParser):
 
         if not self.process_env_options:
             self.log.debug("Not processing environment for options")
-            return
+            return None
 
         if self.envvar_prefix is None:
             self.get_env_options_prefix()
@@ -1058,6 +1058,7 @@ class GeneralOption(object):
                                        (name, self.auto_section_name))
                         fn()
                         self.auto_section_name = None  # reset it
+        return None
 
     def make_option_metavar(self, longopt, details):  # pylint: disable=unused-argument
         """Generate the metavar for option longopt
@@ -1071,6 +1072,8 @@ class GeneralOption(object):
 
         if self.METAVAR_DEFAULT:
             return longopt.upper()
+
+        return None
 
     def add_group_parser(self, opt_dict, description, prefix=None, otherdefaults=None, section_name=None):
         """Make a group parser from a dict

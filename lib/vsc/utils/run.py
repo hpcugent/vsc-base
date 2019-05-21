@@ -852,12 +852,12 @@ class RunQA(RunLoop, RunAsync):
             split_q = [escape_special(x) for x in REG_SPLIT.split(question)]
             reg_q_txt = SPLIT.join(split_q) + SPLIT.rstrip('+') + "*$"
             reg_q = re.compile(r"" + reg_q_txt)
-            if reg_q.search(question):
-                return reg_q
-            else:
+            if not reg_q.search(question):
                 # this is just a sanity check on the created regex, can this actually occur?
                 msg_tmpl = "_parse_qa process_question: question %s converted in %s does not match itself"
                 self.log.raiseException(msg_tmpl % (question.pattern, reg_q_txt), exception=ValueError)
+
+            return reg_q
 
         new_qa = {}
         self.log.debug("new_qa: ")
