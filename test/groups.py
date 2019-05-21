@@ -30,7 +30,8 @@ import grp
 import pwd
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+# Uncomment when debugging, cannot enable permanetnly, messes up tests that toggle debugging
+#logging.basicConfig(level=logging.DEBUG)
 
 from vsc.install.testing import TestCase
 
