@@ -44,8 +44,8 @@ class GroupsTest(TestCase):
     def test_getgrouplist(self):
         """Test getgrouplist"""
         for user in pwd.getpwall():
-            gidgroups = getgrouplist(user.pw_uid)
-            namegroups = getgrouplist(user.pw_name)
+            gidgroups = sorted(getgrouplist(user.pw_uid))
+            namegroups = sorted(getgrouplist(user.pw_name))
 
             # get named groups from id
             #   grp.getgrall is wrong, e.g. for root user on F30,
@@ -53,7 +53,7 @@ class GroupsTest(TestCase):
             #   while id returns 1 group
             #groups = [g.gr_name for g in grp.getgrall() if user.pw_name in g.gr_mem]
             ec, groups_txt = run(['id', '-Gn', user.pw_name])
-            groups = groups_txt.strip().split()
+            groups = sorted(groups_txt.strip().split())
 
             logging.debug("User %s gidgroups %s namegroups %s groups %s",
                           user, gidgroups, namegroups, groups)
