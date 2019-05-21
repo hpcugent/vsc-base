@@ -64,7 +64,7 @@ def getgrouplist(user, groupnames=True):
         ct = getgrouplist(user.pw_name, user.pw_gid, byref(grouplist), byref(ngrouplist))
 
     if ct < 0:
-        raise Exception("Could not find groups for %s" % user)
+        raise Exception("Could not find groups for %s: getgrouplist returned %s" % (user, ct))
 
     grouplist = [grouplist[i] for i in xrange(ct)]
     if groupnames:
