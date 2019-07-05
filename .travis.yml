@@ -3,6 +3,9 @@ python:
   - 2.7
   - 3.5
   - 3.6
+matrix:
+  - python: 3.7
+    dist: xenial
 install:
   - easy_install vsc-install
   # installing coloredlogs and future is only needed for the import tests
