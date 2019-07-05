@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2018 Ghent University
+# Copyright 2011-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -74,6 +74,7 @@ Logging to a udp server:
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+from __future__ import print_function
 
 from collections import namedtuple
 from future.utils import raise_with_traceback
@@ -390,7 +391,7 @@ class FancyLogger(logging.getLoggerClass()):
             """Write to stream and flush the handler"""
             if (not hasattr(hdlr, 'stream')) or hdlr.stream is None:
                 # no stream or not initialised.
-                raise("write_and_flush_stream failed. No active stream attribute.")
+                raise Exception("write_and_flush_stream failed. No active stream attribute.")
             if data is not None:
                 hdlr.stream.write(data)
                 hdlr.flush()
@@ -486,8 +487,8 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     l.fancyrecord = fancyrecord
     if _env_to_boolean('FANCYLOGGER_GETLOGGER_DEBUG'):
         print('FANCYLOGGER_GETLOGGER_DEBUG')
-        print("name %s fname %s fullname %s" % (name, fname, fullname))
-        print("getRootLoggerName: " % getRootLoggerName())
+        print('name ' + name + ' fname ' + fname + ' fullname ' + fullname)
+        print("getRootLoggerName: " + getRootLoggerName())
         if hasattr(l, 'get_parent_info'):
             print('parent_info verbose')
             print("\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
@@ -748,12 +749,10 @@ def setLogLevel(level):
     """
     if isinstance(level, basestring):
         level = getLevelInt(level)
-
     logger = getLogger(fname=False, clsname=False)
-
     logger.setLevel(level)
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
-        print("FANCYLOGGER_LOGLEVEL_DEBUG %s %s" % (level, logging.getLevelName(level)))
+        print("FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level))
         print("\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG")))
         sys.stdout.flush()
 
@@ -873,7 +872,7 @@ def setroot(fancyrecord=FANCYLOG_FANCYRECORD):
             lgr[1].parent = root
 
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
-        print("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT %s %s " % (lvl, logging.getLevelName(lvl)))
+        print("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ", lvl, logging.getLevelName(lvl))
         print("\n".join(root.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ")))
         sys.stdout.flush()
 

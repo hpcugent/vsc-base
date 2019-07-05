@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Ghent University
+# Copyright 2016-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -27,7 +27,6 @@
 Simple, ugly test script for QA
 """
 import time
-import os
 import re
 import sys
 
@@ -42,10 +41,13 @@ qa = {
     'simple': ('Simple question: ', 'simple answer'),
     'whattime': ('Now it is %s. What time is it? ' % now, "%s" % now),
     'waitforit': ('Now is the time.', 'OK'),
+    'nonewline': ('Do NOT give me a newline', 'Sure'),
 }
 
 for k, v in qa.items():
     if k == sys.argv[1]:
+
+        # sanity case: no answer and no question
         if v[0] is None:
             res[k] = [True, None]
         else:
@@ -57,11 +59,20 @@ for k, v in qa.items():
             elif k == 'ask_number':
                 if len(sys.argv) == 3:
                     loop_cnt = int(sys.argv[2])
+
             for i in range(0, loop_cnt):
                 print v[0],
                 sys.stdout.flush()
-                a = sys.stdin.readline().rstrip('\n')
+
+                # for all regular cases, we do not care if there was a newline
+                # but for the case where no newline is added to the answer, we
+                # better not strip it :)
+                if k == 'nonewline':
+                    a = sys.stdin.read(len(v[1]))
+                else:
+                    a = sys.stdin.readline().rstrip('\n')
                 a_re = re.compile(v[1])
+
                 if k == 'ask_number':
                     if a == '0':
                         # '0' means stop
@@ -70,18 +81,30 @@ for k, v in qa.items():
                     if k in res:
                         prev = int(res[k][1])
                     a = str(prev + int(a))
+
                 res[k] = [a_re.match(a), a]
+
 
 if __name__ == '__main__':
     failed = 0
 
     for k, v in res.items():
-        if 'ask_number' in k and v[0]:
-            print "Answer: %s" % v[1]
-        elif v[0]:
-            print "Test %s OK" % k
+        if k == 'nonewline':
+            sys.exit(0)
+        if v[0]:
+            if k == 'nonewline':
+                if v[1][-1] == '\n':
+                    failed += 1
+                    print "Test %s NOT OK, did not expect a newline in the answer" % (k,)
+                    sys.exit(57)
+                else:
+                    sys.exit(0)
+            if 'ask_number' in k:
+                print "Answer: %s" % v[1]
+            else:
+                print "Test %s OK" % k
         else:
-            failed += 1
+            failed += 2
             print "Test %s NOT OK expected answer '%s', received '%s'" % (k, qa[k][1], v[1])
 
     sys.exit(failed)

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2018 Ghent University
+# Copyright 2009-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -74,6 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
+from vsc.utils.missing import is_string
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -84,6 +85,47 @@ RUNRUN_QA_MAX_MISS_EXITCODE = 124
 
 BASH = '/bin/bash'
 SHELL = BASH
+
+
+class CmdList(list):
+    """Wrapper for 'list' type to be used for constructing a list of options & arguments for a command."""
+
+    def __init__(self, *args, **kwargs):
+        """
+        Create CmdList instance to construct command
+
+        :param cmd: actual command to run (first item in list)
+        """
+        super(CmdList, self).__init__()
+        self.add(args, **kwargs)
+
+    def add(self, items, tmpl_vals=None, allow_spaces=True):
+        """
+        Add options/arguments to command
+
+        :param item: option/argument to add to command
+        :param tmpl_vals: template values for item
+        """
+        if not isinstance(items, (list, tuple)):
+            items = [items]
+
+        for item in items:
+            if tmpl_vals:
+                item = item % tmpl_vals
+
+            if not is_string(item):
+                raise ValueError("Non-string item %s (type %s) being added to command %s" % (item, type(item), self))
+
+            if not allow_spaces and ' ' in item:
+                raise ValueError("Found one or more spaces in item '%s' being added to command %s" % (item, self))
+
+            super(CmdList, self).append(item)
+
+    def append(self, *args, **kwargs):
+        raise NotImplementedError("Use add rather than append")
+
+    def extend(self, *args, **kwargs):
+        raise NotImplementedError("Use add rather than extend")
 
 
 class DummyFunction(object):
@@ -256,13 +298,13 @@ class Run(object):
                     self._cwd_before_startpath = os.getcwd()  # store it some one can return to it
                     os.chdir(self.startpath)
                 except OSError:
-                    self.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
+                    self.log.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
                                         (self._cwd_before_startpath, self.startpath))
             else:
-                self.log.raiseExcpetion("_start_in_path: provided startpath %s exists but is no directory" %
+                self.log.raiseException("_start_in_path: provided startpath %s exists but is no directory" %
                                         self.startpath)
         else:
-            self.raiseException("_start_in_path: startpath %s does not exist" % self.startpath)
+            self.log.raiseException("_start_in_path: startpath %s does not exist" % self.startpath)
 
     def _return_to_previous_start_in_path(self):
         """Change to original path before the change to startpath"""
@@ -279,25 +321,26 @@ class Run(object):
                                           "startpath %s") % (currentpath, self.startpath))
                     os.chdir(self._cwd_before_startpath)
                 except OSError:
-                    self.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
+                    self.log.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
                                          "to previous path %s") % (currentpath, self._cwd_before_startpath))
             else:
-                self.log.raiseExcpetion(("_return_to_previous_start_in_path: provided previous cwd path %s exists "
+                self.log.raiseException(("_return_to_previous_start_in_path: provided previous cwd path %s exists "
                                          "but is no directory") % self._cwd_before_startpath)
         else:
-            self.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
+            self.log.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
                                 self._cwd_before_startpath)
 
     def _make_popen_named_args(self, others=None):
         """Create the named args for Popen"""
         self._popen_named_args = {
-                                  'stdout': self._process_module.PIPE,
-                                  'stderr': self._process_module.STDOUT,
-                                  'stdin': self._process_module.PIPE,
-                                  'close_fds': True,
-                                  'shell': self.use_shell,
-                                  'executable': self.shell,
-                                  }
+            'stdout': self._process_module.PIPE,
+            'stderr': self._process_module.STDOUT,
+            'stdin': self._process_module.PIPE,
+            'close_fds': True,
+            'shell': self.use_shell,
+            'executable': self.shell,
+        }
+
         if others is not None:
             self._popen_named_args.update(others)
 
@@ -308,9 +351,9 @@ class Run(object):
         self.log.warning("using potentialy unsafe shell commands, use run.run or run.RunNoShell.run \
                          instead of run.run_simple or run.Run.run")
         if self.cmd is None:
-            self.log.raiseExcpetion("_make_shell_command: no cmd set.")
+            self.log.raiseException("_make_shell_command: no cmd set.")
 
-        if isinstance(self.cmd, basestring):
+        if is_string(self.cmd):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = " ".join([str(arg).replace(' ', '\ ') for arg in self.cmd])
@@ -448,13 +491,14 @@ class Run(object):
 
 class RunNoShell(Run):
     USE_SHELL = False
+    SHELL = None
 
     def _make_shell_command(self):
         """Convert cmd into a list of command to be sent to popen, without a shell"""
         if self.cmd is None:
-            self.log.raiseExcpetion("_make_shell_command: no cmd set.")
+            self.log.raiseException("_make_shell_command: no cmd set.")
 
-        if isinstance(self.cmd, basestring):
+        if is_string(self.cmd):
             self._shellcmd = shlex.split(self.cmd)
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = self.cmd
@@ -652,11 +696,11 @@ class RunFile(Run):
                 if os.path.isfile(self.filename):
                     self.log.warning("_make_popen_named_args: going to overwrite existing file %s" % self.filename)
                 elif os.path.isdir(self.filename):
-                    self.raiseException(("_make_popen_named_args: writing to filename %s impossible. Path exists and "
-                                         "is a directory.") % self.filename)
+                    self.log.raiseException(("_make_popen_named_args: writing to filename %s impossible. "
+                                             "Path exists and is a directory.") % self.filename)
                 else:
-                    self.raiseException("_make_popen_named_args: path exists and is not a file or directory %s" %
-                                        self.filename)
+                    self.log.raiseException("_make_popen_named_args: path exists and is not a file or directory %s" %
+                                            self.filename)
             else:
                 dirname = os.path.dirname(self.filename)
                 if dirname and not os.path.isdir(dirname):
@@ -740,6 +784,7 @@ class RunNoShellTimout(RunNoShell, RunTimeout):
     """Run for maximum timeout seconds"""
     pass
 
+
 class RunQA(RunLoop, RunAsync):
     """Question/Answer processing"""
     LOOP_MAX_MISS_COUNT = 20
@@ -758,8 +803,10 @@ class RunQA(RunLoop, RunAsync):
         qa = kwargs.pop('qa', {})
         qa_reg = kwargs.pop('qa_reg', {})
         no_qa = kwargs.pop('no_qa', [])
+        self.add_newline = kwargs.pop('add_newline', True)
         self._loop_miss_count = None  # maximum number of misses
         self._loop_previous_ouput_length = None  # track length of output through loop
+        self.hit_position = 0
 
         super(RunQA, self).__init__(cmd, **kwargs)
 
@@ -786,7 +833,7 @@ class RunQA(RunLoop, RunAsync):
 
         def process_answers(answers):
             """Construct list of newline-terminated answers (as strings)."""
-            if isinstance(answers, basestring):
+            if is_string(answers):
                 answers = [answers]
             elif isinstance(answers, list):
                 # list is manipulated when answering matching question, so take a copy
@@ -795,8 +842,9 @@ class RunQA(RunLoop, RunAsync):
                 msg_tmpl = "Invalid type for answer, not a string or list: %s (%s)"
                 self.log.raiseException(msg_tmpl % (type(answers), answers), exception=TypeError)
             # add optional split at the end
-            for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
-                answers[i] += '\n'
+            if self.add_newline:
+                for i in [idx for idx, a in enumerate(answers) if not a.endswith('\n')]:
+                    answers[i] += '\n'
             return answers
 
         def process_question(question):
@@ -804,12 +852,12 @@ class RunQA(RunLoop, RunAsync):
             split_q = [escape_special(x) for x in REG_SPLIT.split(question)]
             reg_q_txt = SPLIT.join(split_q) + SPLIT.rstrip('+') + "*$"
             reg_q = re.compile(r"" + reg_q_txt)
-            if reg_q.search(question):
-                return reg_q
-            else:
+            if not reg_q.search(question):
                 # this is just a sanity check on the created regex, can this actually occur?
                 msg_tmpl = "_parse_qa process_question: question %s converted in %s does not match itself"
                 self.log.raiseException(msg_tmpl % (question.pattern, reg_q_txt), exception=ValueError)
+
+            return reg_q
 
         new_qa = {}
         self.log.debug("new_qa: ")
@@ -836,19 +884,23 @@ class RunQA(RunLoop, RunAsync):
         self._loop_miss_count = 0
         self._loop_previous_ouput_length = 0
 
-
     def _loop_process_output(self, output):
         """Process the output that is read in blocks
             check the output passed to questions available
         """
         hit = False
 
-        self.log.debug('output %s all_output %s' % (output, self._process_output))
+        # use a dict so the formatting shows all characters explicitly (and quoted)
+        self.log.debug('output %s', {
+            'latest': output,
+            'all': self._process_output,
+            'since_latest_match': self._process_output[self.hit_position:],
+        })
 
         # qa first and then qa_reg
         nr_qa = len(self.qa)
         for idx, (question, answers) in enumerate(self.qa.items() + self.qa_reg.items()):
-            res = question.search(self._process_output)
+            res = question.search(self._process_output[self.hit_position:])
             if output and res:
                 answer = answers[0] % res.groupdict()
                 if len(answers) > 1:
@@ -856,10 +908,13 @@ class RunQA(RunLoop, RunAsync):
                     if self.CYCLE_ANSWERS:
                         answers.append(prev_answer)
                     self.log.debug("New answers list for question %s: %s" % (question.pattern, answers))
-                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s" %
-                               (answer, question.pattern, idx >= nr_qa, self._process_output[-50:]))
-                self._process_module.send_all(self._process, answer)
+                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s process_output %s" %
+                               (answer, question.pattern, idx >= nr_qa, output, self._process_output[-50:]))
+                written = self._process_module.send_all(self._process, answer)
+                if written != len(answer):
+                    self.log.warning("answer '%s' not fully written: %s out of %s bytes", answer, written, len(answer))
                 hit = True
+                self.hit_position = len(self._process_output)  # position of next possible match
                 break
 
         if not hit:
@@ -876,7 +931,7 @@ class RunQA(RunLoop, RunAsync):
                 if not noqa:
                     self._loop_miss_count += 1
         else:
-            self._loop_miss_count = 0  # rreset miss counter on hit
+            self._loop_miss_count = 0  # reset miss counter on hit
 
         if self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
             self.log.debug("loop_process_output: max misses LOOP_MAX_MISS_COUNT %s reached. End of output: %s" %
@@ -888,7 +943,7 @@ class RunQA(RunLoop, RunAsync):
         super(RunQA, self)._loop_process_output(output)
 
 
-class RunNoShellQA(RunNoShellLoop, RunNoShellAsync):
+class RunNoShellQA(RunNoShell, RunQA):
     """Question/Answer processing"""
     pass
 

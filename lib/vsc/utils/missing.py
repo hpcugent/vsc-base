@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2018 Ghent University
+# Copyright 2012-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -53,6 +53,11 @@ from vsc.utils.frozendict import FrozenDict
 
 
 _log = fancylogger.getLogger('vsc.utils.missing')
+
+
+def is_string(item):
+    """Check whether specified value is a string or not."""
+    return isinstance(item, basestring)
 
 
 def partial(func, *args, **keywords):

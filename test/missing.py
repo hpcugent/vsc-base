@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2017 Ghent University
+# Copyright 2012-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -32,7 +32,7 @@ Tests for the vsc.utils.missing module.
 import sys
 from random import randint, seed
 
-from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
+from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict, is_string
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.missing import namedtuple_with_defaults
 from vsc.utils.patterns import Singleton
@@ -320,3 +320,11 @@ class TestMissing(TestCase):
         MyTuple = namedtuple_with_defaults("MyTuple", fields, [1,2,3])
 
         self.assertEqual(MyTuple(field2=42), MyTuple(field1=1,field2=42,field3=3))
+
+    def test_is_string(self):
+        """Tests for is_string function."""
+        for item in ['foo', "hello world", """foo\nbar""", '']:
+            self.assertTrue(is_string(item))
+
+        for item in [1, None, ['foo'], ('foo',), {'foo': 'bar'}]:
+            self.assertFalse(is_string(item))

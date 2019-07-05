@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011-2018 Ghent University
+# Copyright 2011-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -36,6 +36,7 @@ then use mpi to get these environment variables to the clients.
 
 @author: Jens Timmerman (Ghent University)
 """
+from __future__ import print_function
 from optparse import OptionParser
 from vsc.utils import fancylogger
 from vsc.utils.daemon import Daemon
@@ -91,9 +92,9 @@ class LogDaemon(Daemon):
 
         # get socket
         self.socket_.bind((self.hostname, self.port))
-        print "FANCYLOG_SERVER_PID=%s" % self.pidfile
-        print "FANCYLOG_SERVER=%s:%d" % (socket.gethostname(), self.socket_.getsockname()[-1])
-        print "FANCYLOG_SERVER_LOGFILE=%s" % self.logfile
+        print("FANCYLOG_SERVER_PID=%s" % self.pidfile)
+        print("FANCYLOG_SERVER=%s:%d" % (socket.gethostname(), self.socket_.getsockname()[-1]))
+        print("FANCYLOG_SERVER_LOGFILE=%s" % self.logfile)
         sys.stdout.flush()
 
         # Start the daemon

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2013-2017 Ghent University
+# Copyright 2013-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -41,7 +41,7 @@ import tempfile
 from unittest import TestLoader, main, TestSuite
 try:
     from unittest import skipUnless
-except ImportError:
+except (AttributeError, ImportError):
     # Python 2.6 does not have `skipIf`/`skipUnless`
     def skipUnless(condition, reason):
         if condition:

@@ -109,8 +109,9 @@ class Popen(subprocess.Popen):
 
         try:
             written = os.write(self.stdin.fileno(), inp)
-        except OSError, why:
-            if why[0] == errno.EPIPE:  # broken pipe
+            self.stdin.flush()
+        except OSError as why:
+            if why.args[0] == errno.EPIPE:  # broken pipe
                 return self._close('stdin')
             raise
 
@@ -185,8 +186,11 @@ def send_all(p, data):
     """
     Send data to process p
     """
+    allsent = 0
     while len(data):
         sent = p.send(data)
         if sent is None:
             raise Exception(MESSAGE)
+        allsent += sent
         data = buffer(data, sent)
+    return allsent

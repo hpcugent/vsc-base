@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2018 Ghent University
+# Copyright 2012-2019 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -34,11 +34,10 @@ Linux priority
 
 @author: Stijn De Weirdt (Ghent University)
 """
-
 import ctypes
 import os
 from ctypes.util import find_library
-from vsc.utils.fancylogger import getLogger, setLogLevelDebug
+from vsc.utils.fancylogger import getLogger
 
 _logger = getLogger("affinity")
 
@@ -101,8 +100,14 @@ id_t = ctypes.c_uint
 #  __cpu_mask __bits[__NMASKBITS];
 #} cpu_set_t;
 class cpu_set_t(ctypes.Structure):
-    """Class that implements the cpu_set_t struct
-        also provides some methods to convert between bit representation and soem human readable format
+    """
+    Class that implements the cpu_set_t struct
+    also provides some methods to convert between bit representation and soem human readable format
+
+    Example usage:
+    cs = cpu_set_t()
+    print("__bits " + cs.__bits)
+    print("sizeof cpu_set_t " + ctypes.sizeof(cs))
     """
     _fields_ = [('__bits', cpu_mask_t * NMASKBITS)]
 
@@ -126,7 +131,7 @@ class cpu_set_t(ctypes.Structure):
                 self.log.raiseException("convert_hr_bits: end is lower then start in '%s'" % rng)
             elif indices[0] < 0:
                 self.log.raiseException("convert_hr_bits: negative start in '%s'" % rng)
-            elif indices[1] > CPU_SETSIZE + 1 :  # also covers start, since end > start
+            elif indices[1] > CPU_SETSIZE + 1:  # also covers start, since end > start
                 self.log.raiseException("convert_hr_bits: end larger then max %s in '%s'" % (CPU_SETSIZE, rng))
 
             self.cpus[indices[0]:indices[1] + 1] = [1] * (indices[1] + 1 - indices[0])
@@ -164,7 +169,7 @@ class cpu_set_t(ctypes.Structure):
         nr_cpus = len(cpus_list)
         if  nr_cpus > CPU_SETSIZE:
             self.log.warning("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
-                           (nr_cpus , CPU_SETSIZE))
+                           (nr_cpus, CPU_SETSIZE))
             cpus_list = cpus_list[:CPU_SETSIZE]
         elif nr_cpus < CPU_SETSIZE:
             cpus_list.extend([0] * (CPU_SETSIZE - nr_cpus))
@@ -200,7 +205,28 @@ class cpu_set_t(ctypes.Structure):
 # extern int sched_getaffinity (pid_t __pid, size_t __cpusetsize,
 #                              cpu_set_t *__cpuset);
 def sched_getaffinity(cs=None, pid=None):
-    """Get the affinity"""
+    """
+    Get the affinity
+
+    Example usage:
+
+    x = sched_getaffinity()
+    print("x " + x)
+    hr_mask = "1-5,7,9,10-15"
+    print(hr_mask + ' ' + x.convert_hr_bits(hr_mask))
+    print(x)
+    x.set_bits()
+    print(x)
+
+    sched_setaffinity(x)
+    print(sched_getaffinity())
+
+    x.convert_hr_bits("1")
+    x.set_bits()
+    sched_setaffinity(x)
+    y = sched_getaffinity()
+    print(x + ' ' + y)
+    """
     if cs is None:
         cs = cpu_set_t()
     if pid is None:
@@ -232,7 +258,12 @@ def sched_setaffinity(cs, pid=None):
 # /* Get index of currently used CPU.  */
 # extern int sched_getcpu (void) __THROW;
 def sched_getcpu():
-    """Get currently used cpu"""
+    """
+    Get currently used cpu
+
+    Example usage:
+    print(sched_getcpu())
+    """
     return _libc.sched_getcpu()
 
 
@@ -247,7 +278,15 @@ def sched_getcpu():
 # extern int setpriority (__priority_which_t __which, id_t __who, int __prio)
 #     __THROW;
 def getpriority(which=None, who=None):
-    """Get the priority"""
+    """
+    Get the priority
+
+    Example usage:
+    # resources
+    # nice -n 5 python affinity.py prints 5 here
+    currentprio = getpriority()
+    print("getpriority " + currentprio)
+    """
     if which is None:
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
@@ -263,7 +302,16 @@ def getpriority(which=None, who=None):
 
 
 def setpriority(prio, which=None, who=None):
-    """Set the priority (aka nice)"""
+    """
+    Set the priority (aka nice)
+
+    Example usage:
+    newprio = 10
+    setpriority(newprio)
+    newcurrentprio = getpriority()
+    print("getpriority " + newcurrentprio)
+    assert newcurrentprio == newprio
+    """
     if which is None:
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
@@ -287,40 +335,3 @@ def setpriority(prio, which=None, who=None):
         _logger.debug("setpriority for which %s who %s prio %s" % (which, who, prio))
     else:
         _logger.error("setpriority failed for which %s who %s prio %s" % (which, who, prio))
-
-
-if __name__ == '__main__':
-    # some examples of usage
-    setLogLevelDebug()
-
-    cs = cpu_set_t()
-    print "__bits", cs.__bits
-    print "sizeof cpu_set_t", ctypes.sizeof(cs)
-    x = sched_getaffinity()
-    print "x", x
-    hr_mask = "1-5,7,9,10-15"
-    print hr_mask, x.convert_hr_bits(hr_mask)
-    print x
-    x.set_bits()
-    print x
-
-    sched_setaffinity(x)
-    print sched_getaffinity()
-
-    x.convert_hr_bits("1")
-    x.set_bits()
-    sched_setaffinity(x)
-    y = sched_getaffinity()
-    print x, y
-
-    print sched_getcpu()
-
-    # resources
-    # nice -n 5 python affinity.py prints 5 here
-    currentprio = getpriority()
-    print "getpriority", currentprio
-    newprio = 10
-    setpriority(newprio)
-    newcurrentprio = getpriority()
-    print "getpriority", newcurrentprio
-    assert newcurrentprio == newprio
