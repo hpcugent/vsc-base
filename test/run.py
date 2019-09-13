@@ -46,6 +46,7 @@ from vsc.utils.run import (
     CmdList, run, run_simple, asyncloop, run_asyncloop,
     run_timeout, RunTimeout,
     RunQA, RunNoShellQA,
+    async_to_stdout, run_async_to_stdout,
 )
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
@@ -56,6 +57,8 @@ SCRIPT_SIMPLE = os.path.join(SCRIPTS_DIR, 'simple.py')
 SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
 SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
+
+TEST_GLOB = ['ls','test/sandbox/testpkg/*']
 
 class RunQAShort(RunNoShellQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
@@ -77,6 +80,12 @@ class TestRun(TestCase):
     def tearDown(self):
         super(TestCase, self).tearDown()
         shutil.rmtree(self.tempdir)
+
+    def glob_output(self, output, ec=None):
+        """Verify that output of TEST_GLOB is ok"""
+        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        if ec is not None:
+            self.assertEqual(ec, 0)
 
     def test_simple(self):
         ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
@@ -115,21 +124,32 @@ class TestRun(TestCase):
         self.assertTrue('shortsleep' in output.lower())
 
     def test_simple_glob(self):
-        ec, output = run_simple('ls test/sandbox/testpkg/*')
-        self.assertEqual(ec, 0)
-        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
-        ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
-        self.assertEqual(ec, 0)
-        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        ec, output = run_simple(" ".join(TEST_GLOB))
+        self.glob_output(output, ec=ec)
+        ec, output = run_simple(TEST_GLOB)
+        self.glob_output(output, ec=ec)
 
     def test_noshell_glob(self):
         ec, output = run('ls test/sandbox/testpkg/*')
         self.assertTrue(ec > 0)
         regex = re.compile(r"'?test/sandbox/testpkg/\*'?: No such file or directory")
         self.assertTrue(regex.search(output), "Pattern '%s' found in: %s" % (regex.pattern, output))
-        ec, output = run_simple(['ls','test/sandbox/testpkg/*'])
+        ec, output = run_simple(TEST_GLOB)
+        self.glob_output(output, ec=ec)
+
+    def test_noshell_async_stdout_glob(self):
+        self.mock_stdout(True)
+        ec, output = async_to_stdout("/bin/echo ok")
         self.assertEqual(ec, 0)
-        self.assertTrue(all(x in output.lower() for x in ['__init__.py', 'testmodule.py', 'testmodulebis.py']))
+        self.assertEqual(output, "ok\n", "returned async_to_stdout output is as expected")
+        self.assertEqual(sys.stdout.getvalue(), output, "async_to_stdout returned output is send to stdout")
+
+    def test_async_stdout_glob(self):
+        self.mock_stdout(True)
+        ec, output = run_async_to_stdout("/bin/echo ok")
+        self.assertEqual(ec, 0)
+        self.assertEqual(output, "ok\n", "returned run_async_to_stdout output is as expected")
+        self.assertEqual(sys.stdout.getvalue(), output, "returned output is send to stdout")
 
     def test_noshell_executable(self):
         ec, output = run("echo '(foo bar)'")
