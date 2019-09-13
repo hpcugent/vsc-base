@@ -640,7 +640,7 @@ class RunLoopStdout(RunLoop):
         super(RunLoopStdout, self)._loop_process_output(output)
 
 
-class RunNoShellLoopStdout(RunNoShell, RunLoop):
+class RunNoShellLoopStdout(RunNoShell, RunLoopStdout):
     pass
 
 
@@ -780,7 +780,7 @@ class RunTimeout(RunLoop, RunAsync):
         super(RunTimeout, self)._loop_process_output(output)
 
 
-class RunNoShellTimout(RunNoShell, RunTimeout):
+class RunNoShellTimeout(RunNoShell, RunTimeout):
     """Run for maximum timeout seconds"""
     pass
 
@@ -1007,7 +1007,7 @@ run_simple_noworries = RunNoWorries.run
 
 async_run = RunNoShellAsync.run
 asyncloop = RunNoShellAsyncLoop.run
-timeout = RunNoShellTimout
+timeout = RunNoShellTimeout
 # deprecated
 run_async = RunAsync.run
 # deprecated
