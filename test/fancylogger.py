@@ -30,6 +30,8 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+from __future__ import print_function
+
 import logging
 import os
 from random import randint
