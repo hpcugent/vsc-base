@@ -313,19 +313,28 @@ class FancyLoggerTest(TestCase):
 
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(Exception, 'failtest', test123, Exception, 'failtest')
-        self.assertTrue(re.match("^WARNING.*HIT.*failtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
+        regex = re.compile("^WARNING.*HIT.*failtest\n.*in test123.*$", re.M)
+        txt = open(self.logfn, 'r').read()
+        self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
 
         open(self.logfn, 'w')
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(KeyError, 'failkeytest', test123, KeyError, 'failkeytest')
-        self.assertTrue(re.match("^WARNING.*HIT.*'failkeytest'\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
+        regex = re.compile("^WARNING.*HIT.*'failkeytest'\n.*in test123.*$", re.M)
+        txt = open(self.logfn, 'r').read()
+        self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
 
         open(self.logfn, 'w')
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(AttributeError, 'attrtest', test123, AttributeError, 'attrtest')
-        self.assertTrue(re.match("^WARNING.*HIT.*attrtest\n.*in test123.*$", open(self.logfn, 'r').read(), re.M))
+
+        regex = re.compile("^WARNING.*HIT.*attrtest\n.*in test123.*$", re.M)
+        txt = open(self.logfn, 'r').read()
+        self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
 
     def _stream_stdouterr(self, isstdout=True, expect_match=True):
         """Log to stdout or stderror, check stdout or stderror"""
@@ -468,8 +477,8 @@ class FancyLoggerTest(TestCase):
         self.assertTrue(msg in stringfile.getvalue(),
                         msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
 
-
-    def test_fancylogger_as_rootlogger_logging(self):
+    # make sure this test runs last, since it may mess up other tests (like test_raiseException)
+    def test_zzz_fancylogger_as_rootlogger_logging(self):
         """
         Test if just using import logging, logging with logging uses fancylogger
         after setting the root logger
@@ -482,7 +491,6 @@ class FancyLoggerTest(TestCase):
                          msg='logging.root is the root logger')
         self.assertFalse(isinstance(logging.root, fancylogger.FancyLogger),
                          msg='logging.root is not a FancyLogger')
-
 
         stringfile = StringIO()
         sys.stderr = stringfile
