@@ -65,9 +65,11 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 
 def _get_tty_stream():
     """Try to open and return a stream connected to a TTY device."""
-    if os.isatty(sys.stdout.fileno()):
+    # sys.stdout/sys.stderr may be a StringIO object, which does not have fileno
+    # this happens when running the tests in a virtualenv (e.g. via tox)
+    if hasattr(sys.stdout, 'fileno') and os.isatty(sys.stdout.fileno()):
         return sys.stdout
-    elif os.isatty(sys.stderr.fileno()):
+    elif hasattr(sys.stderr, 'fileno') and os.isatty(sys.stderr.fileno()):
         return sys.stderr
     else:
         if 'TTY' in os.environ:
