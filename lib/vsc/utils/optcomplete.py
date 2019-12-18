@@ -633,7 +633,7 @@ def gen_cmdline(cmd_list, partial, shebang=True):
     env.append("COMP_CWORD=%s" % cmd_list.index(partial))
 
     if not shebang:
-        env.append(sys.executable)
+        env.append(shell_quote(sys.executable))
 
     # add script
     env.append('"%s"' % cmd_list[0])
