@@ -28,20 +28,17 @@ Tests for the vsc.utils.run module.
 
 @author: Stijn De Weirdt (Ghent University)
 """
-import pkgutil
-import logging
 import os
 import re
-import stat
 import sys
 import tempfile
 import time
 import shutil
-from unittest import TestLoader, main
 
 # Uncomment when debugging, cannot enable permanetnly, messes up tests that toggle debugging
 #logging.basicConfig(level=logging.DEBUG)
 
+from vsc.utils.missing import shell_quote
 from vsc.utils.run import (
     CmdList, run, run_simple, asyncloop, run_asyncloop,
     run_timeout, RunTimeout,
@@ -161,14 +158,14 @@ class TestRun(TestCase):
         self.assertTrue('(foo bar)' in output)
 
         # to run Python command, it's required to use the right executable (Python shell rather than default)
-        ec, output = run("""%s -c 'print ("foo")'""" % sys.executable)
+        python_cmd = shell_quote(sys.executable)
+        ec, output = run("""%s -c 'print ("foo")'""" % python_cmd)
         self.assertEqual(ec, 0)
         self.assertTrue('foo' in output)
 
         ec, output = run([sys.executable, '-c', 'print ("foo")'])
         self.assertEqual(ec, 0)
         self.assertTrue('foo' in output)
-
 
     def test_timeout(self):
         timeout = 3
