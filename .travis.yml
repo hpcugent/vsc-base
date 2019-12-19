@@ -1,9 +1,16 @@
-language: python
-python:
-  - "2.7"
-install:
-  - easy_install vsc-install
+dist: bionic
+language: generic
+addons:
+  apt:
+    packages:
+      - python2.7
+      - python3.6
+before_install:
+    # virtualenv 16.0.0 upgraded vendored pip to 10.0.1,
+    # which includes a sufficiently recent setuptools to avoid
+    # hitting the problem described in https://github.com/pypa/setuptools/issues/1282
+    - pip install --user 'virtualenv>=16.0.0' tox
 script:
-  # 'hpcugent' is a mandatory remote for setup.py to work (because of vsc-install)
+  # 'hpcugent' is a mandatory remote for setup.py to work (because of get_name_url)
   - git remote add hpcugent https://github.com/hpcugent/vsc-base.git
-  - python setup.py test
+  - tox -v -c tox.ini
