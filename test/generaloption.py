@@ -28,6 +28,8 @@ Unit tests for generaloption
 
 @author: Stijn De Weirdt (Ghent University)
 """
+from __future__ import print_function
+
 import copy
 import datetime
 import logging
@@ -325,7 +327,7 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
         topt = TestOption1(go_args=["--aregexopt='^foo.*bar$'"])
-        print topt.generate_cmd_line()
+        print(topt.generate_cmd_line())
         self.assertTrue(topt.options.aregexopt is not None)
         self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
         self.assertTrue('--aregexopt=\'\'"\'"\'^foo.*bar$\'"\'"\'\'' in topt.generate_cmd_line())
@@ -716,7 +718,7 @@ debug=1
         # avoids run.log.error message
         self.assertEqual(ec, 0, msg="simple_option.py test script ran success")
 
-        print out
+        print(out)
         reply_match = reg_reply.search(out)
         self.assertTrue(reply_match, msg="COMPREPLY %s in output %s" % (reg_reply.pattern, out))
 
@@ -792,7 +794,7 @@ debug=1
                          msg='no errors logged, got %s' % self.count_logcache('error'))
 
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
-        print self.LOGCACHE['error']
+        print(self.LOGCACHE['error'])
         self.assertEqual(self.count_logcache('error'), 1,
                          msg='one error should be logged, got %s' % self.count_logcache('error'))
 

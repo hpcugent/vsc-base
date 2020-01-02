@@ -30,6 +30,8 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+from __future__ import print_function
+
 import logging
 import os
 from random import randint
@@ -423,7 +425,7 @@ class FancyLoggerTest(TestCase):
         handler = fancylogger.logToScreen()
         logger = fancylogger.getLogger(fname=False, clsname=False)
         logger.warn("blabla")
-        print stringfile.getvalue()
+        print(stringfile.getvalue())
         # this will only hold in debug mode, so also disable the test
         if __debug__:
             self.assertTrue('FancyLoggerTest' in stringfile.getvalue())

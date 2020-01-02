@@ -29,6 +29,8 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+from __future__ import print_function
+
 import sys
 from random import randint, seed
 
@@ -112,7 +114,7 @@ def generate_random_dag():
     """
     myseed = randint(0, sys.maxint)
     seed(myseed)
-    print "testing with random seed", myseed
+    print("testing with random seed", myseed)
     edge_probability = randint(10, 30)
     ranks = randint(3, 10)
     graph = {}
