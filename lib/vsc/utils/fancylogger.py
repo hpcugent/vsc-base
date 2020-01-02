@@ -77,6 +77,7 @@ Logging to a udp server:
 from __future__ import print_function
 
 from collections import namedtuple
+from future.utils import raise_with_traceback
 import inspect
 import logging
 import logging.handlers
@@ -186,12 +187,19 @@ Colorize = namedtuple('Colorize', 'AUTO ALWAYS NEVER')('auto', 'always', 'never'
 
 
 APOCALYPTIC = 'APOCALYPTIC'
-# register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
+
 # register QUIET, EXCEPTION and FATAL alias
-logging._levelNames['EXCEPTION'] = logging.ERROR
-logging._levelNames['FATAL'] = logging.CRITICAL
-logging._levelNames['QUIET'] = logging.WARNING
+if sys.version_info < (3, ):
+    # logging._levelNames no longer exists in Python 3
+    # logging.addLevelName is not a real replacement in Python 2 (it overwrites existing level names)
+    logging._levelNames['EXCEPTION'] = logging.ERROR
+    logging._levelNames['FATAL'] = logging.CRITICAL
+    logging._levelNames['QUIET'] = logging.WARNING
+else:
+    logging.addLevelName(logging.ERROR, 'EXCEPTION')
+    logging.addLevelName(logging.CRITICAL, 'FATAL')
+    logging.addLevelName(logging.WARNING, 'QUIET')
 
 
 # mpi rank support
@@ -327,10 +335,7 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-
-        err = exception(message)
-        err.__traceback__ = tb
-        raise err
+        raise_with_traceback(exception(message))
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
@@ -588,10 +593,8 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
         try:
             os.makedirs(directory)
         except Exception as ex:
-            exc, detail, tb = sys.exc_info()
-            exc = exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))
-            exc.__traceback__ = tb
-            raise exc
+            exc, detail, _ = sys.exc_info()
+            raise_with_traceback(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail)))
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
