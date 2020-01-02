@@ -37,13 +37,18 @@ import inspect
 import operator
 import os
 import re
-import StringIO
 import sys
 import textwrap
 from optparse import OptionParser, OptionGroup, Option, Values
 from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import gettext as _gettext  # this is gettext.gettext normally
+
+try:
+    from cStringIO import StringIO  # Python 2
+except ImportError:
+    from io import StringIO  # Python 3
+
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
@@ -668,7 +673,7 @@ class ExtOptionParser(OptionParser):
     def check_help(self, fh):
         """Checks filehandle for help functions"""
         if self.help_to_string:
-            self.help_to_file = StringIO.StringIO()
+            self.help_to_file = StringIO()
         if fh is None:
             fh = self.help_to_file
 

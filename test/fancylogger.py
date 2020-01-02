@@ -32,16 +32,21 @@ Unit tests for fancylogger.
 """
 from __future__ import print_function
 
+import coloredlogs
 import logging
 import os
-from random import randint
 import re
 import sys
 import shutil
-
-from StringIO import StringIO
 import tempfile
+from random import randint
 from unittest import TestLoader, main, TestSuite
+
+try:
+    from cStringIO import StringIO  # Python 2
+except ImportError:
+    from io import StringIO  # Python 3
+
 try:
     from unittest import skipUnless
 except (AttributeError, ImportError):
@@ -54,8 +59,6 @@ except (AttributeError, ImportError):
             def deco(fn):
                 return (lambda *args, **kwargs: True)
         return deco
-
-import coloredlogs
 
 from vsc.utils import fancylogger
 from vsc.install.testing import TestCase

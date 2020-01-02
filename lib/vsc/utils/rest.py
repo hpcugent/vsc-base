@@ -35,12 +35,19 @@ based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e256
 @author: Jens Timmerman
 """
 import base64
-import urllib
-import urllib2
 try:
     import json
 except ImportError:
     import simplejson as json
+
+try:
+    # Python 3
+    from urllib.parse import urlencode
+    from urllib.request import HTTPSHandler, Request, build_opener
+except ImportError:
+    # Python 2
+    from urllib import urlencode
+    from urllib2 import HTTPSHandler, Request, build_opener
 
 from vsc.utils import fancylogger
 
@@ -91,8 +98,8 @@ class Client(object):
         else:
             self.user_agent = user_agent
 
-        handler = urllib2.HTTPSHandler()
-        self.opener = urllib2.build_opener(handler)
+        handler = HTTPSHandler()
+        self.opener = build_opener(handler)
 
         if username is not None:
             if password is None and token is None:
@@ -189,7 +196,7 @@ class Client(object):
     def urlencode(self, params):
         if not params:
             return ''
-        return '?' + urllib.urlencode(params)
+        return '?' + urlencode(params)
 
     def hash_pass(self, password, username=None):
         if not username:
@@ -201,7 +208,7 @@ class Client(object):
             sep = '/'
         else:
             sep = ''
-        request = urllib2.Request(self.url + sep + url, data=body)
+        request = Request(self.url + sep + url, data=body)
         for header, value in headers.iteritems():
             request.add_header(header, value)
         request.get_method = lambda: method

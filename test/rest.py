@@ -29,7 +29,13 @@ Unit tests for the rest client.
 @author: Jens Timmerman (Ghent University)
 """
 import os
-from urllib2 import HTTPError
+
+try:
+    # Python 3
+    from urllib.request import HTTPError
+except ImportError:
+    # Python 2
+    from urllib2 import HTTPError
 
 from vsc.install.testing import TestCase
 
