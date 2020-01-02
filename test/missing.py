@@ -113,7 +113,7 @@ def generate_random_dag():
     """
     Based on http://stackoverflow.com/questions/12790337/generating-a-random-dag
     """
-    myseed = randint(0, sys.maxint)
+    myseed = randint(0, sys.maxsize)
     seed(myseed)
     print("testing with random seed", myseed)
     edge_probability = randint(10, 30)
@@ -313,9 +313,15 @@ class TestMissing(TestCase):
         })
         self.assertEqual(get_subclasses_dict(T1, include_base_class=True), expected)
 
+        def cname(klass):
+            """Helper function, returns name of given class."""
+            return klass.__name__
+
         # get_subclasses
-        self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
-        self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
+        print(dir(T12))
+        self.assertEqual(sorted(get_subclasses(T1), key=cname), sorted([T12, T123, T13], key=cname))
+        expected = sorted([T1, T12, T123, T13], key=cname)
+        self.assertEqual(sorted(get_subclasses(T1, include_base_class=True), key=cname), expected)
 
     def test_namedtuple_with_defaults(self):
 
