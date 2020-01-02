@@ -26,7 +26,6 @@
 """
 tests for groups module
 """
-import grp
 import pwd
 import logging
 
