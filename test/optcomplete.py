@@ -81,10 +81,10 @@ class OptcompleteTest(TestCase):
         # missing mandatory CALL_ARGS
         try:
             nc()
-        except Exception:
+        except Exception as err:
             pass
 
-        self.assertEqual(e.__class__, CompleterMissingCallArgument)
+        self.assertEqual(err.__class__, CompleterMissingCallArgument)
 
         # proper usage : strip any non-mandatory or optional argument from kwargs
         res = nc(x=1, y=2, z=3)
