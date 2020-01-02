@@ -33,6 +33,7 @@ from __future__ import print_function
 
 import sys
 from random import randint, seed
+from future.utils import with_metaclass
 
 from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict, is_string
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
@@ -235,9 +236,9 @@ class TestMissing(TestCase):
         This is a use case from EasyBuild (see ConfigurationVariables class in easybuild.tools.config).
         """
 
-        class TestFrozenDictKnownKeysSingleton(FrozenDictKnownKeys):
+        # see https://python-future.org/compatible_idioms.html#metaclasses
+        class TestFrozenDictKnownKeysSingleton(with_metaclass(Singleton, FrozenDictKnownKeys)):
             """Inner test class derived from FrozenDictKnownKeys."""
-            __metaclass__ = Singleton
             KNOWN_KEYS = ['foo', 'foo2']
 
         td = TestFrozenDictKnownKeysSingleton({'foo': 'bar'})
