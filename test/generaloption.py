@@ -41,7 +41,7 @@ from tempfile import NamedTemporaryFile
 
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS, set_columns, SimpleOption
-from vsc.utils.missing import shell_quote, shell_unquote
+from vsc.utils.missing import is_string, shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
 from vsc.utils.run import run_simple
 from vsc.install.shared_setup import vsc_setup
@@ -943,7 +943,7 @@ debug=1
         reset_columns()
         set_columns()
         cols = os.environ.get('COLUMNS')
-        self.assertTrue(cols is None or isinstance(cols, basestring))
+        self.assertTrue(cols is None or is_string(cols))
 
         reset_columns()
         set_columns(cols=10)

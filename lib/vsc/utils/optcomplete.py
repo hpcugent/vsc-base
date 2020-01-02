@@ -105,7 +105,7 @@ import types
 from optparse import OptionParser, Option
 from pprint import pformat
 
-from vsc.utils.missing import shell_quote
+from vsc.utils.missing import is_string, shell_quote
 
 debugfn = None  # for debugging only
 
@@ -205,7 +205,7 @@ class FileCompleter(Completer):
     CALL_ARGS_OPTIONAL = ['prefix']
 
     def __init__(self, endings=None):
-        if isinstance(endings, basestring):
+        if is_string(endings):
             endings = [endings]
         elif endings is None:
             endings = []
@@ -275,11 +275,11 @@ class RegexCompleter(Completer):
     def __init__(self, regexlist, always_dirs=True):
         self.always_dirs = always_dirs
 
-        if isinstance(regexlist, basestring):
+        if is_string(regexlist):
             regexlist = [regexlist]
         self.regexlist = []
         for regex in regexlist:
-            if isinstance(regex, basestring):
+            if is_string(regex):
                 regex = re.compile(regex)
             self.regexlist.append(regex)
 
@@ -537,7 +537,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     # File completion.
     if completer and (not prefix or not prefix.startswith('-')):
         # Call appropriate completer depending on type.
-        if isinstance(completer, (basestring, list, tuple)):
+        if isinstance(completer, (list, tuple)) or is_string(completer):
             completer = FileCompleter(completer)
         elif not isinstance(completer, (types.FunctionType, types.LambdaType, types.ClassType, types.ObjectType)):
             # TODO: what to do here?
@@ -545,7 +545,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
         completions = completer(**completer_kwargs)
 
-    if isinstance(completions, basestring):
+    if is_string(completions):
         # is a bash command, just run it
         if SHELL in (BASH,):  # TODO: zsh
             print(completions)

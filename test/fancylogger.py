@@ -61,6 +61,7 @@ except (AttributeError, ImportError):
         return deco
 
 from vsc.utils import fancylogger
+from vsc.utils.missing import is_string
 from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."
@@ -458,7 +459,7 @@ class FancyLoggerTest(TestCase):
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
         res = fancylogger.getDetailsLogLevels(fancy=True)
-        self.assertTrue(isinstance(res[0][1], basestring), msg='getDetailsLogLevels returns loglevel names by default')
+        self.assertTrue(is_string(res[0][1]), msg='getDetailsLogLevels returns loglevel names by default')
         res = fancylogger.getDetailsLogLevels(fancy=True, numeric=True)
         self.assertTrue(isinstance(res[0][1], int), msg='getDetailsLogLevels returns loglevel values with numeric=True')
 

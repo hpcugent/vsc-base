@@ -52,7 +52,7 @@ except ImportError:
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
-from vsc.utils.missing import shell_quote, nub
+from vsc.utils.missing import is_string, nub, shell_quote
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
@@ -120,7 +120,7 @@ def get_empty_add_flex(allvalues, self=None):
     empty = None
 
     if isinstance(allvalues, (list, tuple)):
-        if isinstance(allvalues[0], basestring):
+        if is_string(allvalues[0]):
             empty = ''
 
     if empty is None:
@@ -518,7 +518,7 @@ class ExtOptionParser(OptionParser):
         # --longopt=value, so no issues there either.
 
         # following checks assume that value is a string (not a store_or_None)
-        if not isinstance(value, basestring):
+        if not is_string(value):
             return None
 
         cmdline_index = None
@@ -1205,7 +1205,7 @@ class GeneralOption(object):
                         # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
                         hlp += ' (choices: %s)' % ', '.join(nameds['choices'])
-                    elif isinstance(extra_detail, basestring) and len(extra_detail) == 1:
+                    elif is_string(extra_detail) and len(extra_detail) == 1:
                         args.insert(0, "-%s" % extra_detail)
                     elif isinstance(extra_detail, (dict,)):
                         # extract any optcomplete completer hints
