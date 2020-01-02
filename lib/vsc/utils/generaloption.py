@@ -29,8 +29,6 @@ A class that can be used to generated options to python scripts in a general way
 @author: Stijn De Weirdt (Ghent University)
 @author: Jens Timmerman (Ghent University)
 """
-
-import ConfigParser
 import copy
 import difflib
 import inspect
@@ -46,8 +44,10 @@ from optparse import gettext as _gettext  # this is gettext.gettext normally
 
 try:
     from cStringIO import StringIO  # Python 2
+    import ConfigParser as configparser
 except ImportError:
     from io import StringIO  # Python 3
+    import configparser
 
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
@@ -186,7 +186,7 @@ class ExtOption(CompleterOption):
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
     TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path']]
-    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + Option.TYPE_CHECKER.items())
+    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + list(Option.TYPE_CHECKER.items()))
     TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
@@ -402,7 +402,7 @@ class PassThroughOptionParser(OptionParser):
 
 class ExtOptionGroup(OptionGroup):
     """An OptionGroup with support for configfile section names"""
-    RESERVED_SECTIONS = [ConfigParser.DEFAULTSECT]
+    RESERVED_SECTIONS = [configparser.DEFAULTSECT]
     NO_SECTION = ('NO', 'SECTION')
 
     def __init__(self, *args, **kwargs):
@@ -878,7 +878,7 @@ class GeneralOption(object):
         - go_columns : specify column width (in columns)
         - go_useconfigfiles : use configfiles or not (default set by CONFIGFILES_USE)
             if True, an option --configfiles will be added
-        - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
+        - go_configfiles : list of configfiles to parse. Uses configparser.read; last file wins
         - go_configfiles_initenv : section dict of key/value dict; inserted before configfileparsing
             As a special case, using all uppercase key in DEFAULT section with a case-sensitive
             configparser can be used to set "constants" for easy interpolation in all sections.
@@ -913,7 +913,7 @@ class GeneralOption(object):
     CONFIGFILES_INIT = []  # initial list of defaults, overwritten by go_configfiles options
     CONFIGFILES_IGNORE = []
     CONFIGFILES_MAIN_SECTION = 'MAIN'  # sectionname that contains the non-grouped/non-prefixed options
-    CONFIGFILE_PARSER = ConfigParser.SafeConfigParser
+    CONFIGFILE_PARSER = configparser.SafeConfigParser
     CONFIGFILE_CASESENSITIVE = True
 
     METAVAR_DEFAULT = True  # generate a default metavar
@@ -925,7 +925,7 @@ class GeneralOption(object):
 
     VERSION = None  # set the version (will add --version)
 
-    DEFAULTSECT = ConfigParser.DEFAULTSECT
+    DEFAULTSECT = configparser.DEFAULTSECT
     DEFAULT_LOGLEVEL = None
     DEFAULT_CONFIGFILES = None
     DEFAULT_IGNORECONFIGFILES = None
