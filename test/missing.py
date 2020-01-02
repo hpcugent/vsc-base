@@ -325,8 +325,14 @@ class TestMissing(TestCase):
 
     def test_is_string(self):
         """Tests for is_string function."""
-        for item in ['foo', "hello world", """foo\nbar""", '']:
+        for item in ['foo', u'foo', "hello world", """foo\nbar""", '']:
             self.assertTrue(is_string(item))
 
         for item in [1, None, ['foo'], ('foo',), {'foo': 'bar'}]:
             self.assertFalse(is_string(item))
+
+        if sys.version_info[0] >= 3:
+            self.assertFalse(is_string(b'bytes_are_not_a_string'))
+        else:
+            # in Python 2, b'foo' is really just a regular string
+            self.assertTrue(is_string(b'foo'))

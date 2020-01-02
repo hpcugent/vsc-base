@@ -40,6 +40,7 @@ Various functions that are missing from the default Python library.
 @author: Stijn De Weirdt (Ghent University)
 """
 import shlex
+import sys
 import time
 try:
     from shlex import quote  # python 3.3
@@ -57,7 +58,12 @@ _log = fancylogger.getLogger('vsc.utils.missing')
 
 def is_string(item):
     """Check whether specified value is a string or not."""
-    return isinstance(item, basestring)
+    if sys.version_info[0] >= 3:
+        # 'str' is actual string type ('bytes' is a bytestring)
+        return isinstance(item, str)
+    else:
+        # Python 2 only
+        return isinstance(item, basestring)
 
 
 def partial(func, *args, **keywords):

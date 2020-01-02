@@ -150,17 +150,21 @@ class FancyLoggerTest(TestCase):
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
-        DEBUG = fancylogger.getLevelInt('DEBUG')
-        INFO = fancylogger.getLevelInt('INFO')
-        WARNING = fancylogger.getLevelInt('WARNING')
-        ERROR = fancylogger.getLevelInt('ERROR')
-        CRITICAL = fancylogger.getLevelInt('CRITICAL')
-        APOCALYPTIC = fancylogger.getLevelInt('APOCALYPTIC')
-        self.assertTrue(INFO > DEBUG)
-        self.assertTrue(WARNING > INFO)
-        self.assertTrue(ERROR > WARNING)
-        self.assertTrue(CRITICAL > ERROR)
-        self.assertTrue(APOCALYPTIC > CRITICAL)
+        debug = fancylogger.getLevelInt('DEBUG')
+        info = fancylogger.getLevelInt('INFO')
+        warning = fancylogger.getLevelInt('WARNING')
+        error = fancylogger.getLevelInt('ERROR')
+        critical = fancylogger.getLevelInt('CRITICAL')
+        apocalyptic = fancylogger.getLevelInt('APOCALYPTIC')
+
+        for level in [debug, info, warning, error, critical, apocalyptic]:
+            self.assertTrue(isinstance(level, int))
+
+        self.assertTrue(info > debug)
+        self.assertTrue(warning > info)
+        self.assertTrue(error > warning)
+        self.assertTrue(critical > error)
+        self.assertTrue(apocalyptic > critical)
 
     def test_parentinfo(self):
         """Test the collection of parentinfo"""
