@@ -122,7 +122,7 @@ class FancyLoggerTest(TestCase):
 
         # delete all fancyloggers
         loggers = logging.Logger.manager.loggerDict
-        for name, lgr in loggers.items():
+        for name, lgr in list(loggers.items()):
             if isinstance(lgr, fancylogger.FancyLogger):
                 del loggers[name]
         # reset root handlers; mimic clean import logging
