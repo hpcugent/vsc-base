@@ -182,7 +182,7 @@ class cpu_set_t(ctypes.Structure):
             self.set_cpus(cpus)
         __bits = getattr(self, '__bits')
         prev_cpus = map(long, self.cpus)
-        for idx in xrange(NMASKBITS):
+        for idx in range(NMASKBITS):
             cpus = [2 ** cpuidx for cpuidx, val in
                     enumerate(self.cpus[idx * NCPUBITS:(idx + 1) * NCPUBITS]) if val == 1]
             __bits[idx] = cpu_mask_t(sum(cpus))

@@ -66,7 +66,7 @@ def getgrouplist(user, groupnames=True):
     if ct < 0:
         raise Exception("Could not find groups for %s: getgrouplist returned %s" % (user, ct))
 
-    grouplist = [grouplist[i] for i in xrange(ct)]
+    grouplist = [grouplist[i] for i in range(ct)]
     if groupnames:
         grouplist = [grp.getgrgid(i).gr_name for i in grouplist]
     return grouplist
