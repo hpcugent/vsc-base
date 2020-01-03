@@ -42,12 +42,12 @@ Various functions that are missing from the default Python library.
 import shlex
 import sys
 import time
+from collections import namedtuple, Mapping
+from functools import reduce
 try:
     from shlex import quote  # python 3.3
 except ImportError:
     from pipes import quote  # python 2.7
-
-from collections import namedtuple, Mapping
 
 from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
