@@ -27,7 +27,6 @@
 Simple, ugly test script
 """
 import time
-import os
 import sys
 
 EC_SUCCES = 0
@@ -48,5 +47,5 @@ if __name__ == '__main__':
     if len(txt) == 0:
         txt.append('Nothing passed')
         ec = EC_NOARGS
-    print "\n".join(txt)
+    print("\n".join(txt))
     sys.exit(ec)

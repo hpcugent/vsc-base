@@ -94,7 +94,7 @@ class TestRun(TestCase):
 
         cmd = "echo foo > bar"
 
-        self.assertErrorRegex(ValueError, '.*', run_simple, cmd, startpath='/no/such/directory')
+        self.assertErrorRegex(Exception, '.*', run_simple, cmd, startpath='/no/such/directory')
 
         ec, out = run_simple(cmd, startpath=self.tempdir)
 
@@ -207,7 +207,7 @@ class TestRun(TestCase):
             # make it's not too fast
             time.sleep(5)
             # there's now 6 seconds to complete the remainder
-            pids = range(depth+1)
+            pids = list(range(depth+1))
             # normally this is ordered output, but you never know
             for line in open(res_fn).readlines():
                 dep, pid, _ = line.strip().split(" ") # 3rd is PPID

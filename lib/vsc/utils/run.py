@@ -405,7 +405,7 @@ class Run(object):
         if readsize is None:
             readsize = -1  # read all
         self.log.debug("_read_process: going to read with readsize %s" % readsize)
-        out = self._process.stdout.read(readsize)
+        out = self._process.stdout.read(readsize).decode()
         return out
 
     def _post_exitcode(self):
@@ -556,7 +556,7 @@ class RunLoop(Run):
         time.sleep(self.LOOP_TIMEOUT_INIT)
         ec = self._process.poll()
         try:
-            while self._loop_continue and ec < 0:
+            while self._loop_continue and (ec is None or ec < 0):
                 output = self._read_process()
                 self._process_output += output
                 # process after updating the self._process_ vars
@@ -671,7 +671,7 @@ class RunAsync(Run):
             else:
                 # non-blocking read (readsize is a maximum to return !
                 out = self._process_module.recv_some(self._process, maxread=readsize)
-            return out
+            return out.decode()
         except (IOError, Exception):
             # recv_some may throw Exception
             self.log.exception("_read_process: read failed")
@@ -899,7 +899,7 @@ class RunQA(RunLoop, RunAsync):
 
         # qa first and then qa_reg
         nr_qa = len(self.qa)
-        for idx, (question, answers) in enumerate(self.qa.items() + self.qa_reg.items()):
+        for idx, (question, answers) in enumerate(list(self.qa.items()) + list(self.qa_reg.items())):
             res = question.search(self._process_output[self.hit_position:])
             if output and res:
                 answer = answers[0] % res.groupdict()

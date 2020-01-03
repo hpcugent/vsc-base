@@ -71,6 +71,7 @@ import fcntl  # @UnresolvedImport
 import os
 import select  # @UnresolvedImport
 import subprocess
+import sys
 import time
 
 
@@ -179,7 +180,7 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
             len_y += len(r)
         else:
             time.sleep(max((x - time.time()) / tr, 0))
-    return ''.join(y)
+    return b''.join(y)
 
 
 def send_all(p, data):
@@ -187,10 +188,18 @@ def send_all(p, data):
     Send data to process p
     """
     allsent = 0
+
+    # in Python 3, we must use a bytestring
+    if sys.version_info[0] >= 3:
+        data = data.encode()
+
     while len(data):
         sent = p.send(data)
         if sent is None:
             raise Exception(MESSAGE)
         allsent += sent
-        data = buffer(data, sent)
+        if sys.version_info[0] >= 3:
+            data = memoryview(data)[sent:]
+        else:
+            data = buffer(data, sent)
     return allsent
