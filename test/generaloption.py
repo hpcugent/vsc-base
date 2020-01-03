@@ -527,7 +527,7 @@ class GeneralOptionTest(TestCase):
 
     def test_configfiles(self):
         """Test configfiles (base section for empty prefix from auto_section_name)"""
-        CONFIGFILE1 = """
+        CONFIGFILE1 = b"""
 [base]
 store=ok
 longbase=1
@@ -576,7 +576,7 @@ opt1=value1
         self.assertEqual(topt1b.configfiles, [tmp1.name] + _init_configfiles);
 
 
-        CONFIGFILE2 = """
+        CONFIGFILE2 = b"""
 [base]
 store=notok2
 longbase=0
@@ -608,7 +608,7 @@ debug=1
             self.assertFalse(dest in topt2.options._action_taken)
 
         # This works because we manipulate DEFAULT and use all uppercase name
-        CONFIGFILE3 = """
+        CONFIGFILE3 = b"""
 [base]
 store=%(FROMINIT)s
 """
