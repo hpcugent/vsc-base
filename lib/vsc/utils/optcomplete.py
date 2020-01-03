@@ -164,7 +164,7 @@ class Completer(object):
         if self.CALL_ARGS_OPTIONAL is not None:
             all_args.extend(self.CALL_ARGS_OPTIONAL)
 
-        for arg in kwargs.keys():
+        for arg in list(kwargs.keys()):
             if arg not in all_args:
                 # remove it
                 kwargs.pop(arg)
@@ -188,7 +188,7 @@ class ListCompleter(Completer):
 
     def _call(self, **kwargs):
         """Return the initialised fixed list of strings"""
-        return map(str, self.olist)
+        return list(map(str, self.olist))
 
 
 class AllCompleter(Completer):

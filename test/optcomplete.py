@@ -37,6 +37,7 @@ from vsc.utils.optcomplete import NoneCompleter, ListCompleter, AllCompleter, Kn
 from vsc.utils.optcomplete import FileCompleter, DirCompleter, RegexCompleter
 from vsc.utils.optcomplete import extract_word, gen_cmdline, OPTCOMPLETE_ENVIRONMENT
 
+
 class OptcompleteTest(TestCase):
     """Tests for optcomplete."""
 
@@ -77,14 +78,15 @@ class OptcompleteTest(TestCase):
             def _call(self, **kwargs):
                 return sorted(kwargs.keys())
 
+        saved_err = None
         nc = NewCompleter()
         # missing mandatory CALL_ARGS
         try:
             nc()
         except Exception as err:
-            pass
+            saved_err = err
 
-        self.assertEqual(err.__class__, CompleterMissingCallArgument)
+        self.assertEqual(saved_err.__class__, CompleterMissingCallArgument)
 
         # proper usage : strip any non-mandatory or optional argument from kwargs
         res = nc(x=1, y=2, z=3)
@@ -102,7 +104,7 @@ class OptcompleteTest(TestCase):
         # return list of strings
         initlist = ['original', 'list', 1]
         lc = ListCompleter(initlist)
-        self.assertEqual(lc(), map(str, initlist))
+        self.assertEqual(lc(), list(map(str, initlist)))
 
     def test_all_completer(self):
         """Test the AllCompleter class"""
