@@ -190,16 +190,20 @@ APOCALYPTIC = 'APOCALYPTIC'
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
 
 # register QUIET, EXCEPTION and FATAL alias
-if sys.version_info < (3, ):
-    # logging._levelNames no longer exists in Python 3
-    # logging.addLevelName is not a real replacement in Python 2 (it overwrites existing level names)
-    logging._levelNames['EXCEPTION'] = logging.ERROR
-    logging._levelNames['FATAL'] = logging.CRITICAL
-    logging._levelNames['QUIET'] = logging.WARNING
+LOG_LEVEL_ALIASES = {
+    'EXCEPTION': logging.ERROR,
+    'FATAL': logging.CRITICAL,
+    'QUIET': logging.WARNING,
+}
+if sys.version_info[0] < 3:
+    # Python 2
+    for alias in LOG_LEVEL_ALIASES:
+        logging._levelNames[alias] = LOG_LEVEL_ALIASES[alias]
 else:
-    logging.addLevelName(logging.ERROR, 'EXCEPTION')
-    logging.addLevelName(logging.CRITICAL, 'FATAL')
-    logging.addLevelName(logging.WARNING, 'QUIET')
+    # Python 3 (logging._levelNames no longer exists)
+    # logging.addLevelName is not a real replacement (it overwrites existing level names)
+    for key in LOG_LEVEL_ALIASES:
+        logging._nameToLevel[key] = LOG_LEVEL_ALIASES[key]
 
 
 # mpi rank support

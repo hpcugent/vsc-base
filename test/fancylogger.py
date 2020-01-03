@@ -154,17 +154,30 @@ class FancyLoggerTest(TestCase):
         debug = fancylogger.getLevelInt('DEBUG')
         info = fancylogger.getLevelInt('INFO')
         warning = fancylogger.getLevelInt('WARNING')
+        quiet = fancylogger.getLevelInt('QUIET')
         error = fancylogger.getLevelInt('ERROR')
+        exception = fancylogger.getLevelInt('EXCEPTION')
         critical = fancylogger.getLevelInt('CRITICAL')
+        fatal = fancylogger.getLevelInt('FATAL')
         apocalyptic = fancylogger.getLevelInt('APOCALYPTIC')
 
-        for level in [debug, info, warning, error, critical, apocalyptic]:
+        for level in [debug, info, warning, quiet, error, exception, fatal, critical, fatal, apocalyptic]:
             self.assertTrue(isinstance(level, int))
+
+        self.assertEqual(logging.getLevelName(debug), 'DEBUG')
+        self.assertEqual(logging.getLevelName(info), 'INFO')
+        self.assertEqual(logging.getLevelName(warning), 'WARNING')
+        self.assertEqual(logging.getLevelName(error), 'ERROR')
+        self.assertEqual(logging.getLevelName(critical), 'CRITICAL')
+        self.assertEqual(logging.getLevelName(apocalyptic), 'APOCALYPTIC')
 
         self.assertTrue(info > debug)
         self.assertTrue(warning > info)
+        self.assertEqual(warning, quiet)
         self.assertTrue(error > warning)
+        self.assertEqual(error, exception)
         self.assertTrue(critical > error)
+        self.assertEqual(critical, fatal)
         self.assertTrue(apocalyptic > critical)
 
     def test_parentinfo(self):
@@ -200,7 +213,7 @@ class FancyLoggerTest(TestCase):
         pi_l2c = log_l2c._get_parent_info()
         self.assertEqual(len(pi_l2c), 3)  # level1a as parent does not exist
 
-    def test_uft8_decoding(self):
+    def test_utf8_decoding(self):
         """Test UTF8 decoding."""
         # truncate the logfile
         open(self.logfn, 'w')
@@ -227,7 +240,7 @@ class FancyLoggerTest(TestCase):
             logger.info(msg)
             logger.warning(msg)
             logger.warn(msg)
-            if isinstance(msg, unicode):
+            if not isinstance(msg, str):
                 regex = msg.encode('utf8', 'replace')
             else:
                 regex = str(msg)
@@ -274,9 +287,15 @@ class FancyLoggerTest(TestCase):
         open(self.logfn, 'w').write('')
 
         # test handling of non-UTF8 chars
-        msg = MSG + u"\x81"
-        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
-        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\xc2\x81" % max_ver)
+        msg = MSG + u'\x81'
+        if sys.version_info[0] >= 3:
+            # Python 3: unicode is supported in regular string values (no special unicode type)
+            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
+            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)
+        else:
+            # Python 2: extra \xc2 character appears for unicode strings
+            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
+            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\xc2\x81" % max_ver)
 
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
 
@@ -432,11 +451,12 @@ class FancyLoggerTest(TestCase):
         fancylogger.setLogFormat("%(className)s blabla")
         handler = fancylogger.logToScreen()
         logger = fancylogger.getLogger(fname=False, clsname=False)
-        logger.warn("blabla")
-        print(stringfile.getvalue())
+        logger.warning("blabla")
+        txt = stringfile.getvalue()
         # this will only hold in debug mode, so also disable the test
         if __debug__:
-            self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
+            pattern = 'FancyLoggerTest'
+            self.assertTrue(pattern in txt, "Pattern '%s' found in: %s" % (pattern, txt))
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
         sys.stderr = _stderr
