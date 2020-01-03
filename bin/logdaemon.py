@@ -79,7 +79,7 @@ class LogDaemon(Daemon):
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pidf = file(self.pidfile, 'r')
+            pidf = open(self.pidfile, 'r')
             pid = int(pidf.read().strip())
             pidf.close()
         except IOError:
