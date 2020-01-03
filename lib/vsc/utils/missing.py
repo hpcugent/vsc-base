@@ -63,7 +63,7 @@ def is_string(item):
         return isinstance(item, str)
     else:
         # Python 2 only
-        return isinstance(item, basestring)
+        return isinstance(item, basestring)  # noqa (to avoid prospector failing on undefined 'basestring' in Python 3)
 
 
 def partial(func, *args, **keywords):

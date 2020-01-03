@@ -201,5 +201,5 @@ def send_all(p, data):
         if sys.version_info[0] >= 3:
             data = memoryview(data)[sent:]
         else:
-            data = buffer(data, sent)
+            data = buffer(data, sent)  # noqa (to avoid prospector failing on undefined 'buffer' in Python 3)
     return allsent
