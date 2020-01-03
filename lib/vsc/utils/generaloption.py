@@ -37,6 +37,7 @@ import os
 import re
 import sys
 import textwrap
+from functools import reduce
 from optparse import OptionParser, OptionGroup, Option, Values
 from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
@@ -296,8 +297,11 @@ class ExtOption(CompleterOption):
                 default = getattr(parser.get_default_values(), dest, None)
                 if default is None:
                     default = type(value)()
-                if not (hasattr(default, '__add__') and
-                        (hasattr(default, '__neg__') or hasattr(default, '__getslice__'))):
+
+                # __getslice__ is only there in Python 2 for values that support slicing;
+                # in Python 3, __getitem__ is definitely required for slicing, but not sufficient strictly speaking
+                neg_slice_attrs = ['__neg__', '__getslice__', '__getitem__']
+                if not (hasattr(default, '__add__') and any(hasattr(default, a) for a in neg_slice_attrs)):
                     msg = "Unsupported type %s for action %s (requires + and one of negate or slice)"
                     self.log.raiseException(msg % (type(default), action))
                 if action in ('add', 'add_flex'):
@@ -550,7 +554,7 @@ class ExtOptionParser(OptionParser):
             return "Value '%s' starts with a '-'" % value
 
         if not self.ALLOW_TYPO_AS_VALUE:
-            possibilities = self._long_opt.keys() + self._short_opt.keys()
+            possibilities = list(self._long_opt.keys()) + list(self._short_opt.keys())
             # also on optionnames, i.e. without the -- / -
             possibilities.extend([x.lstrip('-') for x in possibilities])
             # max 3 options; minimum score is taken from EB experience
@@ -730,7 +734,8 @@ class ExtOptionParser(OptionParser):
                 if opt.help is not nohelp:
                     values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
 
-            res.extend(mk_rst_table(titles, map(list, zip(*values))))
+            columns = [list(x) for x in zip(*values)]
+            res.extend(mk_rst_table(titles, columns))
             res.append('')
 
         return '\n'.join(res)
@@ -1583,8 +1588,7 @@ class GeneralOption(object):
             self.log.debug("generate_cmd_line no ignore")
 
         args = []
-        opt_dests = self.options.__dict__.keys()
-        opt_dests.sort()
+        opt_dests = sorted(self.options.__dict__.keys())
 
         for opt_dest in opt_dests:
             # help is store_or_None, but is not a processed option, so skip it
@@ -1674,11 +1678,18 @@ class GeneralOption(object):
                             opt_value = opt_value + -default
                         else:
                             opt_value = -default + opt_value
-                    elif hasattr(opt_value, '__getslice__'):
-                        if action == 'add_first':
-                            opt_value = opt_value[:-len(default)]
-                        else:
-                            opt_value = opt_value[len(default):]
+                    # __getslice__ no longer exists in Python 3,
+                    # and just having __getitem__ is not sufficient to support slicing;
+                    # so, just try slicing, and ignore if it fails
+                    elif hasattr(opt_value, '__getslice__') or hasattr(opt_value, '__getitem__'):
+                        try:
+                            if action == 'add_first':
+                                opt_value = opt_value[:-len(default)]
+                            else:
+                                opt_value = opt_value[len(default):]
+                        except TypeError:
+                            # if slicing fails, a TypeError "is not subscriptable" will be raised
+                            pass
 
                 if typ in ExtOption.TYPE_STRLIST:
                     sep, klass, helpsep = what_str_list_tuple(typ)

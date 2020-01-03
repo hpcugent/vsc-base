@@ -255,7 +255,7 @@ class GeneralOptionTest(TestCase):
                           'justatest': True,
                           'level_longlevel': True,
                           'store_with_dash': None,
-                          'level_prefix_and_dash':'YY',  # this dict is about destinations
+                          'level_prefix_and_dash': 'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None,
                           'configfiles': ['/not/a/real/configfile'],
                           'base': False,
@@ -267,8 +267,8 @@ class GeneralOptionTest(TestCase):
                           'ext_add_list': None,
                           'ext_add_list_default': ['now'],
                           'ext_add_list_first': ['two', 'three', 'now'],
-                          'ext_add_list_flex': ['a','x', 'y', 'b'],
-                          'ext_add_pathlist_flex': ['p1/foo','p2', 'p3', 'p4'],
+                          'ext_add_list_flex': ['a', 'x', 'y', 'b'],
+                          'ext_add_pathlist_flex': ['p1/foo', 'p2', 'p3', 'p4'],
                           'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
@@ -643,7 +643,10 @@ store=%(FROMINIT)s
         """Test the loglevel default setting"""
         def _loglevel(lvl, msg):
             lvl_int = topt.log.getEffectiveLevel()
-            lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]
+            if sys.version_info[0] >= 3:
+                lvl_name = logging.getLevelName(lvl_int)
+            else:
+                lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]
             self.assertEqual(lvl_int,
                              fancylogger.getLevelInt(lvl),
                              msg="%s (expected %s got %s)" % (msg, lvl, lvl_name))
@@ -665,7 +668,7 @@ store=%(FROMINIT)s
         topt = TestOption1(go_args=['--debug', '--info', '--quiet'], go_nosystemexit=True,)
         _loglevel('WARNING', 'last wins: --debug --info --quiet gives WARNING')
 
-        CONFIGFILE1 = """
+        CONFIGFILE1 = b"""
 [base]
 debug=1
 """
@@ -820,7 +823,8 @@ debug=1
             stderr = self.get_stderr()
             self.mock_stderr(False)
         self.assertTrue(system_exit)
-        self.assertTrue(msg in stderr)
+        regex = re.compile(msg)
+        self.assertTrue(regex.search(stderr), "Found '%s' in: %s" % (regex.pattern, stderr))
 
     def test_nosuchoption(self):
         """Test catching of non-existing options."""
@@ -885,7 +889,7 @@ debug=1
         """Test how valid options being used as values are handled."""
         # -s requires an argument
         self._match_testoption1_sysexit(['-b', '-s'],
-                                        "-s option requires an argument")
+                                        "-s option requires .* argument")
 
         # only valid way of specifying '-b' as a value to --store
         topt = TestOption1(go_args=['--store=-b'])
