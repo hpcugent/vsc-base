@@ -7,7 +7,7 @@
 #
 # http://code.activestate.com/recipes/440554/
 #
-# Copyright 2009-2013 Ghent University
+# Copyright 2009-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
