@@ -30,6 +30,7 @@ Utility functions to help with keeping the codebase compatible with both Python 
 """
 import configparser
 from io import StringIO
+from shlex import quote
 
 
 def is_string(value):

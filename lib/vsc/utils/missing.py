@@ -44,13 +44,10 @@ import sys
 import time
 from collections import namedtuple, Mapping
 from functools import reduce
-try:
-    from shlex import quote  # python 3.3
-except ImportError:
-    from pipes import quote  # python 2.7
 
 from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
+from vsc.utils.py2vs3 import quote
 
 
 _log = fancylogger.getLogger('vsc.utils.missing')

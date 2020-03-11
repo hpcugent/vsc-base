@@ -29,6 +29,7 @@ Utility functions to help with keeping the codebase compatible with both Python 
 @author: Kenneth Hoste (Ghent University)
 """
 from cStringIO import StringIO
+from pipes import quote
 import ConfigParser as configparser
 
 
