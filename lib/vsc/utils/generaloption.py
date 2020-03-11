@@ -1674,17 +1674,13 @@ class GeneralOption(object):
                         else:
                             opt_value = -default + opt_value
                     # __getslice__ no longer exists in Python 3,
-                    # and just having __getitem__ is not sufficient to support slicing;
-                    # so, just try slicing, and ignore if it fails
+                    # and just having __getitem__ is not sufficient to support slicing,
+                    # but we'll assume it's OK (and code that relies on it incorrectly will result in a traceback)
                     elif hasattr(opt_value, '__getslice__') or hasattr(opt_value, '__getitem__'):
-                        try:
-                            if action == 'add_first':
-                                opt_value = opt_value[:-len(default)]
-                            else:
-                                opt_value = opt_value[len(default):]
-                        except TypeError:
-                            # if slicing fails, a TypeError "is not subscriptable" will be raised
-                            pass
+                        if action == 'add_first':
+                            opt_value = opt_value[:-len(default)]
+                        else:
+                            opt_value = opt_value[len(default):]
 
                 if typ in ExtOption.TYPE_STRLIST:
                     sep, klass, helpsep = what_str_list_tuple(typ)
