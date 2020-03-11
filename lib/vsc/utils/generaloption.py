@@ -548,6 +548,8 @@ class ExtOptionParser(OptionParser):
             return "Value '%s' starts with a '-'" % value
 
         if not self.ALLOW_TYPO_AS_VALUE:
+            # need to convert result of .keys() to list first before concatenating,
+            # because in Python 3 .keys() returns an iterator
             possibilities = list(self._long_opt.keys()) + list(self._short_opt.keys())
             # also on optionnames, i.e. without the -- / -
             possibilities.extend([x.lstrip('-') for x in possibilities])
