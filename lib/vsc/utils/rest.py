@@ -32,29 +32,15 @@ Mainly the RestClient, which you can use to easily pythonify a rest api.
 based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e2561fc4d434d3
 
 @author: Jonathan Paugh
-@author: Jens Timmerman
+@author: Jens Timmerman (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
 import base64
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
-try:
-    # Python 3
-    from urllib.parse import urlencode
-    from urllib.request import HTTPSHandler, Request, build_opener
-except ImportError:
-    # Python 2
-    from urllib import urlencode
-    from urllib2 import HTTPSHandler, Request, build_opener
+import json
+from functools import partial
 
 from vsc.utils import fancylogger
-
-try:
-    from functools import partial
-except ImportError:
-    from vsc.utils.missing import partial
+from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, urlencode
 
 
 class Client(object):

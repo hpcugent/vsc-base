@@ -31,6 +31,8 @@ Utility functions to help with keeping the codebase compatible with both Python 
 from cStringIO import StringIO
 from pipes import quote
 import ConfigParser as configparser
+from urllib import urlencode
+from urllib2 import HTTPSHandler, Request, build_opener
 
 
 def is_string(value):

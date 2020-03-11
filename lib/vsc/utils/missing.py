@@ -53,25 +53,10 @@ from vsc.utils.py2vs3 import quote
 _log = fancylogger.getLogger('vsc.utils.missing')
 
 
-def partial(func, *args, **keywords):
-    """
-    Return a new partial object which when called will behave like func called with the positional arguments args
-    and keyword arguments keywords. If more arguments are supplied to the call, they are appended to args. If additional
-    keyword arguments are supplied, they extend and override keywords.
-    new in python 2.5, from https://docs.python.org/2/library/functools.html#functools.partial
-    """
-    def newfunc(*fargs, **fkeywords):
-        newkeywords = keywords.copy()
-        newkeywords.update(fkeywords)
-        return func(*(args + fargs), **newkeywords)
-    newfunc.func = func
-    newfunc.args = args
-    newfunc.keywords = keywords
-    return newfunc
-
 # Placeholder, used to have implementations for any and all that were missing in py24
 any = any # pylint: disable=redefined-builtin
 all = all # pylint: disable=redefined-builtin
+
 
 def nub(list_):
     """Returns the unique items of a list of hashables, while preserving order of
