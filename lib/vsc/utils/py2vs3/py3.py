@@ -28,6 +28,9 @@ Utility functions to help with keeping the codebase compatible with both Python 
 
 @author: Kenneth Hoste (Ghent University)
 """
+import configparser
+from io import StringIO
+
 
 def is_string(value):
     """Check whether specified value is of type string (not bytes)."""

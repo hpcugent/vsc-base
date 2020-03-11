@@ -43,11 +43,6 @@ from random import randint
 from unittest import TestLoader, main, TestSuite
 
 try:
-    from cStringIO import StringIO  # Python 2
-except ImportError:
-    from io import StringIO  # Python 3
-
-try:
     from unittest import skipUnless
 except (AttributeError, ImportError):
     # Python 2.6 does not have `skipIf`/`skipUnless`
@@ -61,7 +56,7 @@ except (AttributeError, ImportError):
         return deco
 
 from vsc.utils import fancylogger
-from vsc.utils.py2vs3 import is_py_ver, is_py3, is_string
+from vsc.utils.py2vs3 import StringIO, is_py_ver, is_py3, is_string
 from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."

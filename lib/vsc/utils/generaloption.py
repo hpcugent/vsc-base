@@ -43,18 +43,11 @@ from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import gettext as _gettext  # this is gettext.gettext normally
 
-try:
-    from cStringIO import StringIO  # Python 2
-    import ConfigParser as configparser
-except ImportError:
-    from io import StringIO  # Python 3
-    import configparser
-
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import nub, shell_quote
-from vsc.utils.py2vs3 import is_string
+from vsc.utils.py2vs3 import StringIO, configparser, is_string
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
