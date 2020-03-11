@@ -5,6 +5,8 @@
 node {
     stage('checkout git') {
         checkout scm
+        // remove untracked files (*.pyc for example)
+        sh 'git clean -fxd'
     }
     stage('test') {
         sh 'python2.7 -V'
