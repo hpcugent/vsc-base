@@ -730,8 +730,7 @@ class ExtOptionParser(OptionParser):
                 if opt.help is not nohelp:
                     values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
 
-            columns = [list(x) for x in zip(*values)]
-            res.extend(mk_rst_table(titles, columns))
+            res.extend(mk_rst_table(titles, map(list, zip(*values))))
             res.append('')
 
         return '\n'.join(res)
