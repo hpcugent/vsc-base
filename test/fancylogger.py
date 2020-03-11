@@ -61,7 +61,7 @@ except (AttributeError, ImportError):
         return deco
 
 from vsc.utils import fancylogger
-from vsc.utils.missing import is_string
+from vsc.utils.py2vs3 import is_py_ver, is_py3, is_string
 from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."
@@ -191,8 +191,9 @@ class FancyLoggerTest(TestCase):
         pi_l1 = log_l1._get_parent_info()
         self.assertEqual(len(pi_l1), 3)
 
-        py_v_27 = sys.version_info >= (2, 7, 0)
-        if py_v_27:
+        is_py27 = is_py_ver(2,7)
+
+        if is_py27:
             log_l2a = log_l1.getChild('level2a')
             pi_l2a = log_l2a._get_parent_info()
             self.assertEqual(len(pi_l2a), 4)
@@ -201,7 +202,7 @@ class FancyLoggerTest(TestCase):
         log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
         # fname=False is required to have the name similar
         # cutoff last letter (a vs b)
-        if py_v_27:
+        if is_py27:
             self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
         pi_l2b = log_l2b._get_parent_info()
         # yes, this broken on several levels (incl in logging itself)
@@ -288,7 +289,7 @@ class FancyLoggerTest(TestCase):
 
         # test handling of non-UTF8 chars
         msg = MSG + u'\x81'
-        if sys.version_info[0] >= 3:
+        if is_py3():
             # Python 3: unicode is supported in regular string values (no special unicode type)
             msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
             msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)

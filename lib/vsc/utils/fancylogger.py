@@ -88,6 +88,9 @@ import traceback
 import weakref
 from distutils.version import LooseVersion
 
+from vsc.utils.py2vs3 import is_py2, is_string
+
+
 def _env_to_boolean(varname, default=False):
     """
     Compute a boolean based on the truth value of environment variable `varname`.
@@ -195,15 +198,16 @@ LOG_LEVEL_ALIASES = {
     'FATAL': logging.CRITICAL,
     'QUIET': logging.WARNING,
 }
-if sys.version_info[0] < 3:
-    # Python 2
-    for alias in LOG_LEVEL_ALIASES:
-        logging._levelNames[alias] = LOG_LEVEL_ALIASES[alias]
+
+if is_py2():
+    levelnames = logging._levelNames
 else:
-    # Python 3 (logging._levelNames no longer exists)
+    # logging._levelNames no longer exists in Python 3
     # logging.addLevelName is not a real replacement (it overwrites existing level names)
-    for key in LOG_LEVEL_ALIASES:
-        logging._nameToLevel[key] = LOG_LEVEL_ALIASES[key]
+    levelnames = logging._nameToLevel
+
+for key in LOG_LEVEL_ALIASES:
+    levelnames[key] = LOG_LEVEL_ALIASES[key]
 
 
 # mpi rank support
@@ -227,7 +231,7 @@ class MissingLevelName(KeyError):
 
 def getLevelInt(level_name):
     """Given a level name, return the int value"""
-    if not isinstance(level_name, str):
+    if not is_string(level_name):
         raise TypeError('Provided name %s is not a string (type %s)' % (level_name, type(level_name)))
 
     level = logging.getLevelName(level_name)
@@ -388,7 +392,7 @@ class FancyLogger(logging.getLoggerClass()):
         """
         Add (continuous) data to an existing message stream (eg a stream after a logging.info()
         """
-        if isinstance(levelno, str):
+        if is_string(levelno):
             levelno = getLevelInt(levelno)
 
         def write_and_flush_stream(hdlr, data=None):
@@ -751,7 +755,7 @@ def setLogLevel(level):
     """
     Set a global log level for all FancyLoggers
     """
-    if isinstance(level, str):
+    if is_string(level):
         level = getLevelInt(level)
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)

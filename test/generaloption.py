@@ -41,8 +41,9 @@ from tempfile import NamedTemporaryFile
 
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS, set_columns, SimpleOption
-from vsc.utils.missing import is_string, shell_quote, shell_unquote
+from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
+from vsc.utils.py2vs3 import is_py3, is_string
 from vsc.utils.run import run_simple
 from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
@@ -643,7 +644,7 @@ store=%(FROMINIT)s
         """Test the loglevel default setting"""
         def _loglevel(lvl, msg):
             lvl_int = topt.log.getEffectiveLevel()
-            if sys.version_info[0] >= 3:
+            if is_py3():
                 lvl_name = logging.getLevelName(lvl_int)
             else:
                 lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]

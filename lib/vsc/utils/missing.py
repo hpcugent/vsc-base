@@ -56,16 +56,6 @@ from vsc.utils.frozendict import FrozenDict
 _log = fancylogger.getLogger('vsc.utils.missing')
 
 
-def is_string(item):
-    """Check whether specified value is a string or not."""
-    if sys.version_info[0] >= 3:
-        # 'str' is actual string type ('bytes' is a bytestring)
-        return isinstance(item, str)
-    else:
-        # Python 2 only
-        return isinstance(item, basestring)  # noqa (to avoid prospector failing on undefined 'basestring' in Python 3)
-
-
 def partial(func, *args, **keywords):
     """
     Return a new partial object which when called will behave like func called with the positional arguments args

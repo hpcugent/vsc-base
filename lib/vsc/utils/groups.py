@@ -31,7 +31,7 @@ import pwd
 from ctypes import c_char_p, c_uint, c_int32, POINTER, byref, cdll
 from ctypes.util import find_library
 
-from vsc.utils.missing import is_string
+from vsc.utils.py2vs3 import is_string
 
 
 def getgrouplist(user, groupnames=True):

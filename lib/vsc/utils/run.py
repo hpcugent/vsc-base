@@ -74,7 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.missing import is_string
+from vsc.utils.py2vs3 import is_string
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'

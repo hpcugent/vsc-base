@@ -35,7 +35,7 @@ import sys
 from random import randint, seed
 from future.utils import with_metaclass
 
-from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict, is_string
+from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.missing import namedtuple_with_defaults
 from vsc.utils.patterns import Singleton
@@ -329,17 +329,3 @@ class TestMissing(TestCase):
         MyTuple = namedtuple_with_defaults("MyTuple", fields, [1,2,3])
 
         self.assertEqual(MyTuple(field2=42), MyTuple(field1=1,field2=42,field3=3))
-
-    def test_is_string(self):
-        """Tests for is_string function."""
-        for item in ['foo', u'foo', "hello world", """foo\nbar""", '']:
-            self.assertTrue(is_string(item))
-
-        for item in [1, None, ['foo'], ('foo',), {'foo': 'bar'}]:
-            self.assertFalse(is_string(item))
-
-        if sys.version_info[0] >= 3:
-            self.assertFalse(is_string(b'bytes_are_not_a_string'))
-        else:
-            # in Python 2, b'foo' is really just a regular string
-            self.assertTrue(is_string(b'foo'))

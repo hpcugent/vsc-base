@@ -105,7 +105,8 @@ import types
 from optparse import OptionParser, Option
 from pprint import pformat
 
-from vsc.utils.missing import is_string, shell_quote
+from vsc.utils.missing import shell_quote
+from vsc.utils.py2vs3 import is_string
 
 debugfn = None  # for debugging only
 

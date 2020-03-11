@@ -74,6 +74,8 @@ import subprocess
 import sys
 import time
 
+from vsc.utils.py2vs3 import is_py3
+
 
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
@@ -190,7 +192,7 @@ def send_all(p, data):
     allsent = 0
 
     # in Python 3, we must use a bytestring
-    if sys.version_info[0] >= 3:
+    if is_py3():
         data = data.encode()
 
     while len(data):
@@ -198,7 +200,7 @@ def send_all(p, data):
         if sent is None:
             raise Exception(MESSAGE)
         allsent += sent
-        if sys.version_info[0] >= 3:
+        if is_py3():
             data = memoryview(data)[sent:]
         else:
             data = buffer(data, sent)  # noqa (to avoid prospector failing on undefined 'buffer' in Python 3)

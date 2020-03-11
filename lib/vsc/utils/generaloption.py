@@ -53,7 +53,8 @@ except ImportError:
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
-from vsc.utils.missing import is_string, nub, shell_quote
+from vsc.utils.missing import nub, shell_quote
+from vsc.utils.py2vs3 import is_string
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
