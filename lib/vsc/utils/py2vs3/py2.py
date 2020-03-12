@@ -28,11 +28,11 @@ Utility functions to help with keeping the codebase compatible with both Python 
 
 @author: Kenneth Hoste (Ghent University)
 """
-from cStringIO import StringIO
-from pipes import quote
-import ConfigParser as configparser
-from urllib import urlencode
-from urllib2 import HTTPSHandler, Request, build_opener
+from cStringIO import StringIO  # noqa
+from pipes import quote  # noqa
+import ConfigParser as configparser  # noqa
+from urllib import urlencode  # noqa
+from urllib2 import HTTPError, HTTPSHandler, Request, build_opener  # noqa
 
 
 def is_string(value):
