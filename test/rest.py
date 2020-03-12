@@ -30,15 +30,8 @@ Unit tests for the rest client.
 """
 import os
 
-try:
-    # Python 3
-    from urllib.request import HTTPError
-except ImportError:
-    # Python 2
-    from urllib2 import HTTPError
-
 from vsc.install.testing import TestCase
-
+from vsc.utils.py2vs3 import HTTPError
 from vsc.utils.rest import RestClient
 
 

@@ -236,10 +236,10 @@ class FancyLoggerTest(TestCase):
             logger.info(msg)
             logger.warning(msg)
             logger.warn(msg)
-            if not isinstance(msg, str):
-                regex = msg.encode('utf8', 'replace')
-            else:
+            if is_string(msg):
                 regex = str(msg)
+            else:
+                regex = msg.encode('utf8', 'replace')
             self.assertErrorRegex(Exception, regex, logger.raiseException, msg)
 
     def test_deprecated(self):
