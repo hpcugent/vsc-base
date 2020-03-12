@@ -899,7 +899,10 @@ class RunQA(RunLoop, RunAsync):
 
         # qa first and then qa_reg
         nr_qa = len(self.qa)
-        for idx, (question, answers) in enumerate(list(self.qa.items()) + list(self.qa_reg.items())):
+        # ensure consistency by sorting, and concatenate
+        # (which can't be done directly since .items() returns a generator in Python 3)
+        all_qa = sorted(self.qa.items()) + sorted(self.qa_reg.items())
+        for idx, (question, answers) in enumerate(all_qa):
             res = question.search(self._process_output[self.hit_position:])
             if output and res:
                 answer = answers[0] % res.groupdict()
