@@ -71,7 +71,6 @@ import fcntl  # @UnresolvedImport
 import os
 import select  # @UnresolvedImport
 import subprocess
-import sys
 import time
 
 from vsc.utils.py2vs3 import is_py3

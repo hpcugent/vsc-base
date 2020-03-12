@@ -40,7 +40,6 @@ Various functions that are missing from the default Python library.
 @author: Stijn De Weirdt (Ghent University)
 """
 import shlex
-import sys
 import time
 from collections import namedtuple, Mapping
 from functools import reduce
