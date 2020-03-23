@@ -26,4 +26,10 @@
 """
 Common test import
 """
-from vsc.install.commontest import CommonTest
+import vsc.install.commontest
+
+
+class ImportTest(vsc.install.commontest.CommonTest):
+
+    # skip import for vsc.utils.py2vs3 modules
+    EXCLUDE_MODS = ['^vsc\.utils\.py2vs3']
