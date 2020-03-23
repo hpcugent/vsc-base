@@ -236,10 +236,15 @@ class FancyLoggerTest(TestCase):
             logger.info(msg)
             logger.warning(msg)
             logger.warn(msg)
-            if is_string(msg):
+
+            # can't use ís_string function here, because we need to discriminate between bytestrings & unicode strings;
+            # in Python 2, the 'bytes' type (a bytestring) is the same as 'str', but not in Python 3;
+            # unicode is a different type in Python 2, but doesn't exist in Python 3;
+            if isinstance(msg, str):
                 regex = str(msg)
             else:
                 regex = msg.encode('utf8', 'replace')
+
             self.assertErrorRegex(Exception, regex, logger.raiseException, msg)
 
     def test_deprecated(self):
