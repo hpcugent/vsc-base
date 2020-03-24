@@ -66,11 +66,26 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 
 def _get_tty_stream():
     """Try to open and return a stream connected to a TTY device."""
-    # sys.stdout/sys.stderr may be a StringIO object, which does not have fileno
+    # sys.stdout/sys.stderr may be a StringIO object (which does not have fileno)
+    # or a fake output stream that does have fileno but results in io.UnsupportedOperation (Python 3 & Travis CI)
     # this happens when running the tests in a virtualenv (e.g. via tox)
-    if hasattr(sys.stdout, 'fileno') and os.isatty(sys.stdout.fileno()):
+    normal_stdout = False
+    try:
+        if hasattr(sys.stdout, 'fileno') and os.isatty(sys.stdout.fileno()):
+            normal_stdout = True
+    except Exception:
+        pass
+
+    normal_stderr = False
+    try:
+        if hasattr(sys.stderr, 'fileno') and os.isatty(sys.stderr.fileno()):
+            normal_stderr = True
+    except Exception:
+        pass
+
+    if normal_stdout:
         return sys.stdout
-    elif hasattr(sys.stderr, 'fileno') and os.isatty(sys.stderr.fileno()):
+    elif normal_stderr:
         return sys.stderr
     else:
         if 'TTY' in os.environ:
