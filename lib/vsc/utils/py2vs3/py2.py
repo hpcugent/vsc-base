@@ -37,4 +37,4 @@ from urllib2 import HTTPError, HTTPSHandler, Request, build_opener  # noqa
 
 def is_string(value):
     """Check whether specified value is of type string (not bytes)."""
-    return isinstance(value, basestring)  # pylint: disable=undefined-variable  # noqa: F821
+    return isinstance(value, basestring)  # noqa
