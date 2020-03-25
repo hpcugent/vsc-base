@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2019 Ghent University
+# Copyright 2012-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,6 +28,8 @@ Unit tests for generaloption
 
 @author: Stijn De Weirdt (Ghent University)
 """
+from __future__ import print_function
+
 import copy
 import datetime
 import logging
@@ -41,6 +43,7 @@ from vsc.utils import fancylogger
 from vsc.utils.generaloption import GeneralOption, HELP_OUTPUT_FORMATS, set_columns, SimpleOption
 from vsc.utils.missing import shell_quote, shell_unquote
 from vsc.utils.optcomplete import gen_cmdline
+from vsc.utils.py2vs3 import is_py3, is_string
 from vsc.utils.run import run_simple
 from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
@@ -253,7 +256,7 @@ class GeneralOptionTest(TestCase):
                           'justatest': True,
                           'level_longlevel': True,
                           'store_with_dash': None,
-                          'level_prefix_and_dash':'YY',  # this dict is about destinations
+                          'level_prefix_and_dash': 'YY',  # this dict is about destinations
                           'ignoreconfigfiles': None,
                           'configfiles': ['/not/a/real/configfile'],
                           'base': False,
@@ -265,8 +268,8 @@ class GeneralOptionTest(TestCase):
                           'ext_add_list': None,
                           'ext_add_list_default': ['now'],
                           'ext_add_list_first': ['two', 'three', 'now'],
-                          'ext_add_list_flex': ['a','x', 'y', 'b'],
-                          'ext_add_pathlist_flex': ['p1/foo','p2', 'p3', 'p4'],
+                          'ext_add_list_flex': ['a', 'x', 'y', 'b'],
+                          'ext_add_pathlist_flex': ['p1/foo', 'p2', 'p3', 'p4'],
                           'ext_date': None,
                           'ext_datetime': None,
                           'ext_optionalchoice': None,
@@ -325,7 +328,7 @@ class GeneralOptionTest(TestCase):
         self.assertEqual(all_args, topt.generate_cmd_line(add_default=True, ignore=ign))
 
         topt = TestOption1(go_args=["--aregexopt='^foo.*bar$'"])
-        print topt.generate_cmd_line()
+        print(topt.generate_cmd_line())
         self.assertTrue(topt.options.aregexopt is not None)
         self.assertEqual(topt.options.aregexopt.pattern, "'^foo.*bar$'")
         self.assertTrue('--aregexopt=\'\'"\'"\'^foo.*bar$\'"\'"\'\'' in topt.generate_cmd_line())
@@ -525,7 +528,7 @@ class GeneralOptionTest(TestCase):
 
     def test_configfiles(self):
         """Test configfiles (base section for empty prefix from auto_section_name)"""
-        CONFIGFILE1 = """
+        CONFIGFILE1 = b"""
 [base]
 store=ok
 longbase=1
@@ -574,7 +577,7 @@ opt1=value1
         self.assertEqual(topt1b.configfiles, [tmp1.name] + _init_configfiles);
 
 
-        CONFIGFILE2 = """
+        CONFIGFILE2 = b"""
 [base]
 store=notok2
 longbase=0
@@ -606,7 +609,7 @@ debug=1
             self.assertFalse(dest in topt2.options._action_taken)
 
         # This works because we manipulate DEFAULT and use all uppercase name
-        CONFIGFILE3 = """
+        CONFIGFILE3 = b"""
 [base]
 store=%(FROMINIT)s
 """
@@ -641,7 +644,10 @@ store=%(FROMINIT)s
         """Test the loglevel default setting"""
         def _loglevel(lvl, msg):
             lvl_int = topt.log.getEffectiveLevel()
-            lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]
+            if is_py3():
+                lvl_name = logging.getLevelName(lvl_int)
+            else:
+                lvl_name = [k for k,v in logging._levelNames.items() if v == lvl_int][0]
             self.assertEqual(lvl_int,
                              fancylogger.getLevelInt(lvl),
                              msg="%s (expected %s got %s)" % (msg, lvl, lvl_name))
@@ -663,7 +669,7 @@ store=%(FROMINIT)s
         topt = TestOption1(go_args=['--debug', '--info', '--quiet'], go_nosystemexit=True,)
         _loglevel('WARNING', 'last wins: --debug --info --quiet gives WARNING')
 
-        CONFIGFILE1 = """
+        CONFIGFILE1 = b"""
 [base]
 debug=1
 """
@@ -716,7 +722,7 @@ debug=1
         # avoids run.log.error message
         self.assertEqual(ec, 0, msg="simple_option.py test script ran success")
 
-        print out
+        print(out)
         reply_match = reg_reply.search(out)
         self.assertTrue(reply_match, msg="COMPREPLY %s in output %s" % (reg_reply.pattern, out))
 
@@ -792,7 +798,7 @@ debug=1
                          msg='no errors logged, got %s' % self.count_logcache('error'))
 
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
-        print self.LOGCACHE['error']
+        print(self.LOGCACHE['error'])
         self.assertEqual(self.count_logcache('error'), 1,
                          msg='one error should be logged, got %s' % self.count_logcache('error'))
 
@@ -818,7 +824,8 @@ debug=1
             stderr = self.get_stderr()
             self.mock_stderr(False)
         self.assertTrue(system_exit)
-        self.assertTrue(msg in stderr)
+        regex = re.compile(msg)
+        self.assertTrue(regex.search(stderr), "Found '%s' in: %s" % (regex.pattern, stderr))
 
     def test_nosuchoption(self):
         """Test catching of non-existing options."""
@@ -883,7 +890,7 @@ debug=1
         """Test how valid options being used as values are handled."""
         # -s requires an argument
         self._match_testoption1_sysexit(['-b', '-s'],
-                                        "-s option requires an argument")
+                                        "-s option requires .* argument")
 
         # only valid way of specifying '-b' as a value to --store
         topt = TestOption1(go_args=['--store=-b'])
@@ -941,7 +948,7 @@ debug=1
         reset_columns()
         set_columns()
         cols = os.environ.get('COLUMNS')
-        self.assertTrue(cols is None or isinstance(cols, basestring))
+        self.assertTrue(cols is None or is_string(cols))
 
         reset_columns()
         set_columns(cols=10)

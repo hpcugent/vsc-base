@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2019 Ghent University
+# Copyright 2012-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -29,10 +29,13 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+from __future__ import print_function
+
 import sys
 from random import randint, seed
+from future.utils import with_metaclass
 
-from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict, is_string
+from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
 from vsc.utils.missing import namedtuple_with_defaults
 from vsc.utils.patterns import Singleton
@@ -110,19 +113,19 @@ def generate_random_dag():
     """
     Based on http://stackoverflow.com/questions/12790337/generating-a-random-dag
     """
-    myseed = randint(0, sys.maxint)
+    myseed = randint(0, sys.maxsize)
     seed(myseed)
-    print "testing with random seed", myseed
+    print("testing with random seed", myseed)
     edge_probability = randint(10, 30)
     ranks = randint(3, 10)
     graph = {}
     node_max = 0
 
-    for r in xrange(ranks):
+    for r in range(ranks):
         new_nodes = randint(2, 20)
 
-        for old_node in xrange(node_max):
-            for n in xrange(new_nodes):
+        for old_node in range(node_max):
+            for n in range(new_nodes):
                 node = node_max + n
                 if randint(0, 100) < edge_probability:
                     somenode = graph.get(old_node, [])
@@ -133,7 +136,7 @@ def generate_random_dag():
 
         node_max += new_nodes
 
-    for n in xrange(new_nodes):
+    for n in range(new_nodes):
         graph[node_max - n - 1] = []
 
     return graph
@@ -183,7 +186,7 @@ class TestMissing(TestCase):
             else:
                 return i
 
-        for n in xrange(0, 2 * raise_boundary):
+        for n in range(0, 2 * raise_boundary):
             try:
                 v = f(n)
                 self.assertFalse(n < raise_boundary)
@@ -233,9 +236,9 @@ class TestMissing(TestCase):
         This is a use case from EasyBuild (see ConfigurationVariables class in easybuild.tools.config).
         """
 
-        class TestFrozenDictKnownKeysSingleton(FrozenDictKnownKeys):
+        # see https://python-future.org/compatible_idioms.html#metaclasses
+        class TestFrozenDictKnownKeysSingleton(with_metaclass(Singleton, FrozenDictKnownKeys)):
             """Inner test class derived from FrozenDictKnownKeys."""
-            __metaclass__ = Singleton
             KNOWN_KEYS = ['foo', 'foo2']
 
         td = TestFrozenDictKnownKeysSingleton({'foo': 'bar'})
@@ -266,7 +269,7 @@ class TestMissing(TestCase):
         the key invariant should be that if a appears before b in the resulting sort, there is no way to reach
         b from a in the DAG.
         """
-        for i in xrange(10):
+        for i in range(10):
             g = generate_random_dag()
             sorting = list(topological_sort(g))
             visited = set()
@@ -310,9 +313,15 @@ class TestMissing(TestCase):
         })
         self.assertEqual(get_subclasses_dict(T1, include_base_class=True), expected)
 
+        def cname(klass):
+            """Helper function, returns name of given class."""
+            return klass.__name__
+
         # get_subclasses
-        self.assertEqual(sorted(get_subclasses(T1)), sorted([T12, T123, T13]))
-        self.assertEqual(sorted(get_subclasses(T1, include_base_class=True)), sorted([T1, T12, T123, T13]))
+        print(dir(T12))
+        self.assertEqual(sorted(get_subclasses(T1), key=cname), sorted([T12, T123, T13], key=cname))
+        expected = sorted([T1, T12, T123, T13], key=cname)
+        self.assertEqual(sorted(get_subclasses(T1, include_base_class=True), key=cname), expected)
 
     def test_namedtuple_with_defaults(self):
 
@@ -320,11 +329,3 @@ class TestMissing(TestCase):
         MyTuple = namedtuple_with_defaults("MyTuple", fields, [1,2,3])
 
         self.assertEqual(MyTuple(field2=42), MyTuple(field1=1,field2=42,field3=3))
-
-    def test_is_string(self):
-        """Tests for is_string function."""
-        for item in ['foo', "hello world", """foo\nbar""", '']:
-            self.assertTrue(is_string(item))
-
-        for item in [1, None, ['foo'], ('foo',), {'foo': 'bar'}]:
-            self.assertFalse(is_string(item))

@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2019 Ghent University
+# Copyright 2012-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -57,15 +57,15 @@ class AsyncProcessTest(TestCase):
         """ try echoing some text and see if it comes back out """
         p.send_all(self.shell, "echo hello\n")
         time.sleep(0.1)
-        self.assertEqual(p.recv_some(self.shell), "hello\n")
+        self.assertEqual(p.recv_some(self.shell), b"hello\n")
 
         p.send_all(self.shell, "echo hello world\n")
         time.sleep(0.1)
-        self.assertEqual(p.recv_some(self.shell), "hello world\n")
+        self.assertEqual(p.recv_some(self.shell), b"hello world\n")
 
         p.send_all(self.shell, "exit\n")
         time.sleep(0.2)
-        self.assertEqual("", p.recv_some(self.shell, e=False))
+        self.assertEqual(b"", p.recv_some(self.shell, e=False))
         self.assertRaises(Exception, p_recv_some_exception, self.shell)
 
     def tearDown(self):

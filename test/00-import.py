@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Ghent University
+# Copyright 2016-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -26,4 +26,10 @@
 """
 Common test import
 """
-from vsc.install.commontest import CommonTest
+import vsc.install.commontest
+
+
+class ImportTest(vsc.install.commontest.CommonTest):
+
+    # skip import for vsc.utils.py2vs3 modules
+    EXCLUDE_MODS = ['^vsc\.utils\.py2vs3']

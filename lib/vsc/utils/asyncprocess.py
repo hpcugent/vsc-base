@@ -73,6 +73,8 @@ import select  # @UnresolvedImport
 import subprocess
 import time
 
+from vsc.utils.py2vs3 import is_py3
+
 
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
@@ -179,7 +181,7 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
             len_y += len(r)
         else:
             time.sleep(max((x - time.time()) / tr, 0))
-    return ''.join(y)
+    return b''.join(y)
 
 
 def send_all(p, data):
@@ -187,10 +189,18 @@ def send_all(p, data):
     Send data to process p
     """
     allsent = 0
+
+    # in Python 3, we must use a bytestring
+    if is_py3():
+        data = data.encode()
+
     while len(data):
         sent = p.send(data)
         if sent is None:
             raise Exception(MESSAGE)
         allsent += sent
-        data = buffer(data, sent)
+        if is_py3():
+            data = memoryview(data)[sent:]
+        else:
+            data = buffer(data, sent)  # noqa (to avoid prospector failing on undefined 'buffer' in Python 3)
     return allsent

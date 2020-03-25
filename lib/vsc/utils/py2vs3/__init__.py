@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Ghent University
+# Copyright 2020-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -24,28 +24,42 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-Simple, ugly test script
+Utility functions to help with keeping the codebase compatible with both Python 2 and 3.
+
+@author: Kenneth Hoste (Ghent University)
 """
-import time
+# declare vsc.utils.py2vs3 namespace
+# (must be exactly like this to avoid vsc-install complaining)
+import pkg_resources
+pkg_resources.declare_namespace(__name__)
+
+
 import sys
 
-EC_SUCCES = 0
-EC_NOARGS = 1
 
-txt = []
-ec = EC_SUCCES
+def is_py_ver(maj_ver, min_ver=0):
+    """Check whether current Python version matches specified version specs."""
 
-if 'shortsleep' in sys.argv:
-    time.sleep(0.1)
-    txt.append("Shortsleep completed")
+    curr_ver = sys.version_info
 
-if 'longsleep' in sys.argv:
-    time.sleep(10)
-    txt.append("Longsleep completed")
+    lower_limit = (maj_ver, min_ver)
+    upper_limit = (maj_ver + 1, 0)
 
-if __name__ == '__main__':
-    if len(txt) == 0:
-        txt.append('Nothing passed')
-        ec = EC_NOARGS
-    print("\n".join(txt))
-    sys.exit(ec)
+    return lower_limit <= curr_ver < upper_limit
+
+
+def is_py2():
+    """Determine whether we're using Python 3."""
+    return is_py_ver(2)
+
+
+def is_py3():
+    """Determine whether we're using Python 3."""
+    return is_py_ver(3)
+
+
+# all functionality provided by the py2 and py3 modules is made available via the easybuild.tools.py2vs3 namespace
+if is_py3():
+    from vsc.utils.py2vs3.py3 import *  # noqa
+else:
+    from vsc.utils.py2vs3.py2 import *  # noqa

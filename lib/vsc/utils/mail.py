@@ -96,30 +96,30 @@ class VscMail(object):
                 s.connect()
             try:
                 s.sendmail(mail_from, mail_to, msg.as_string())
-            except smtplib.SMTPHeloError, err:
+            except smtplib.SMTPHeloError as err:
                 self.log.error("Cannot get a proper response from the SMTP host" +
                                (self.mail_host and " %s" % (self.mail_host) or ""))
                 raise
-            except smtplib.SMTPRecipientsRefused, err:
+            except smtplib.SMTPRecipientsRefused as err:
                 self.log.error("All recipients were refused by SMTP host" +
                                (self.mail_host and " %s" % (self.mail_host) or "") +
                                " [%s]" % (mail_to))
                 raise
-            except smtplib.SMTPSenderRefused, err:
+            except smtplib.SMTPSenderRefused as err:
                 self.log.error("Sender was refused by SMTP host" +
                                (self.mail_host and " %s" % (self.mail_host) or "") +
                                "%s" % (mail_from))
                 raise
-            except smtplib.SMTPDataError, err:
+            except smtplib.SMTPDataError as err:
                 raise
-        except smtplib.SMTPConnectError, err:
+        except smtplib.SMTPConnectError as err:
             self.log.exception("Cannot connect to the SMTP host" + (self.mail_host and " %s" % (self.mail_host) or ""))
             raise VscMailError(mail_host=self.mail_host,
                                mail_to=mail_to,
                                mail_from=mail_from,
                                mail_subject=mail_subject,
                                err=err)
-        except Exception, err:
+        except Exception as err:
             self.log.exception("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
             raise VscMailError(mail_host=self.mail_host,
                                mail_to=mail_to,

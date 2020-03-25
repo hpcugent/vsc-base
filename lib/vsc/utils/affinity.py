@@ -52,7 +52,7 @@ cpu_mask_t = ctypes.c_ulong
 ##define __NCPUBITS     (8 * sizeof(__cpu_mask))
 CPU_SETSIZE = 1024
 NCPUBITS = 8 * ctypes.sizeof(cpu_mask_t)
-NMASKBITS = CPU_SETSIZE / NCPUBITS
+NMASKBITS = CPU_SETSIZE // NCPUBITS
 
 #/* Priority limits.  */
 ##define PRIO_MIN        -20     /* Minimum priority a process can have.  */
@@ -181,8 +181,8 @@ class cpu_set_t(ctypes.Structure):
         if cpus is not None:
             self.set_cpus(cpus)
         __bits = getattr(self, '__bits')
-        prev_cpus = map(long, self.cpus)
-        for idx in xrange(NMASKBITS):
+        prev_cpus = list(map(int, self.cpus))
+        for idx in range(NMASKBITS):
             cpus = [2 ** cpuidx for cpuidx, val in
                     enumerate(self.cpus[idx * NCPUBITS:(idx + 1) * NCPUBITS]) if val == 1]
             __bits[idx] = cpu_mask_t(sum(cpus))

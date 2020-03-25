@@ -77,6 +77,7 @@ Logging to a udp server:
 from __future__ import print_function
 
 from collections import namedtuple
+from future.utils import raise_with_traceback
 import inspect
 import logging
 import logging.handlers
@@ -86,6 +87,9 @@ import threading
 import traceback
 import weakref
 from distutils.version import LooseVersion
+
+from vsc.utils.py2vs3 import is_py2, is_string
+
 
 def _env_to_boolean(varname, default=False):
     """
@@ -186,12 +190,24 @@ Colorize = namedtuple('Colorize', 'AUTO ALWAYS NEVER')('auto', 'always', 'never'
 
 
 APOCALYPTIC = 'APOCALYPTIC'
-# register new loglevelname
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
+
 # register QUIET, EXCEPTION and FATAL alias
-logging._levelNames['EXCEPTION'] = logging.ERROR
-logging._levelNames['FATAL'] = logging.CRITICAL
-logging._levelNames['QUIET'] = logging.WARNING
+LOG_LEVEL_ALIASES = {
+    'EXCEPTION': logging.ERROR,
+    'FATAL': logging.CRITICAL,
+    'QUIET': logging.WARNING,
+}
+
+if is_py2():
+    levelnames = logging._levelNames
+else:
+    # logging._levelNames no longer exists in Python 3
+    # logging.addLevelName is not a real replacement (it overwrites existing level names)
+    levelnames = logging._nameToLevel
+
+for key in LOG_LEVEL_ALIASES:
+    levelnames[key] = LOG_LEVEL_ALIASES[key]
 
 
 # mpi rank support
@@ -215,11 +231,11 @@ class MissingLevelName(KeyError):
 
 def getLevelInt(level_name):
     """Given a level name, return the int value"""
-    if not isinstance(level_name, basestring):
+    if not is_string(level_name):
         raise TypeError('Provided name %s is not a string (type %s)' % (level_name, type(level_name)))
 
     level = logging.getLevelName(level_name)
-    if isinstance(level, basestring):
+    if not isinstance(level, int):
         raise MissingLevelName('Unknown loglevel name %s' % level_name)
 
     return level
@@ -280,7 +296,7 @@ class FancyLogger(logging.getLoggerClass()):
 
     # method definition as it is in logging, can't change this
     # pylint: disable=unused-argument
-    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None):
+    def makeRecord(self, name, level, pathname, lineno, msg, args, excinfo, func=None, extra=None, sinfo=None):
         """
         overwrite make record to use a fancy record (with more options)
         """
@@ -327,10 +343,7 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-
-        err = exception(message)
-        err.__traceback__ = tb
-        raise err
+        raise_with_traceback(exception(message))
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
@@ -379,7 +392,7 @@ class FancyLogger(logging.getLoggerClass()):
         """
         Add (continuous) data to an existing message stream (eg a stream after a logging.info()
         """
-        if isinstance(levelno, str):
+        if is_string(levelno):
             levelno = getLevelInt(levelno)
 
         def write_and_flush_stream(hdlr, data=None):
@@ -588,10 +601,8 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
         try:
             os.makedirs(directory)
         except Exception as ex:
-            exc, detail, tb = sys.exc_info()
-            exc = exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))
-            exc.__traceback__ = tb
-            raise exc
+            exc, detail, _ = sys.exc_info()
+            raise_with_traceback(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail)))
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
@@ -744,7 +755,7 @@ def setLogLevel(level):
     """
     Set a global log level for all FancyLoggers
     """
-    if isinstance(level, basestring):
+    if is_string(level):
         level = getLevelInt(level)
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)

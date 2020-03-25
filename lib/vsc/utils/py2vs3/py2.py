@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 Ghent University
+# Copyright 2020-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -24,28 +24,17 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-Simple, ugly test script
+Utility functions to help with keeping the codebase compatible with both Python 2 and 3.
+
+@author: Kenneth Hoste (Ghent University)
 """
-import time
-import sys
+from cStringIO import StringIO  # noqa
+from pipes import quote  # noqa
+import ConfigParser as configparser  # noqa
+from urllib import urlencode  # noqa
+from urllib2 import HTTPError, HTTPSHandler, Request, build_opener  # noqa
 
-EC_SUCCES = 0
-EC_NOARGS = 1
 
-txt = []
-ec = EC_SUCCES
-
-if 'shortsleep' in sys.argv:
-    time.sleep(0.1)
-    txt.append("Shortsleep completed")
-
-if 'longsleep' in sys.argv:
-    time.sleep(10)
-    txt.append("Longsleep completed")
-
-if __name__ == '__main__':
-    if len(txt) == 0:
-        txt.append('Nothing passed')
-        ec = EC_NOARGS
-    print("\n".join(txt))
-    sys.exit(ec)
+def is_string(value):
+    """Check whether specified value is of type string (not bytes)."""
+    return isinstance(value, basestring)  # noqa

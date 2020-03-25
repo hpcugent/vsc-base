@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2019 Ghent University
+# Copyright 2012-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,6 +28,8 @@ Python module for handling data and time strings.
 
 @author: Stijn De Weirdt (Ghent University)
 """
+from __future__ import print_function
+
 import datetime
 import os
 from vsc.install.testing import TestCase
@@ -77,41 +79,3 @@ class DateAndTimeTest(TestCase):
 def suite():
     """ returns all the testcases in this module """
     return TestLoader().loadTestsFromTestCase(DateAndTimeTest)
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests
-        just uncomment the parts you need
-    """
-#    # date_parser
-#    testdate = datetime.date(1970, 1, 1)
-#    print date_parser('1970-01-01') == testdate
-#    print date_parser('1970-1-1') == testdate
-#
-#    today = datetime.date.today()
-#    beginthismonth = datetime.date(today.year, today.month, 1)
-#    print date_parser('BEGINTHISMONTH') == beginthismonth
-#
-#    endapril = datetime.date(today.year, 4, 30)
-#    print date_parser('ENDAPRIL') == endapril
-
-#    # datetime_parser
-#    testdate = datetime.datetime(1970, 1, 1)
-#    print datetime_parser('1970-01-01') , testdate
-#    print datetime_parser('1970-1-1'), testdate
-#
-#    today = datetime.datetime.today()
-#    beginthismonth = datetime.datetime(today.year, today.month, 1, 12, 1)
-#    print datetime_parser('BEGINTHISMONTH 12:1') , beginthismonth
-#
-#    endapril = datetime.datetime(today.year, 4, 30, 12, 1, 1, 1)
-#    print datetime_parser('ENDAPRIL 12:01:01.000001') , endapril
-
-    ## FancyMonth
-    today = datetime.date.today()
-    endapril = datetime.date(today.year, 4, 10)
-    f = FancyMonth(endapril)
-    print f.nrdays, 30  # nr days in month
-
-    may2nd = datetime.date(today.year, 5, 2)
-    print f.number(may2nd), 2  # spans 2 months
-    print [x.nrdays for x in f.interval(may2nd)], [30, 31]  # interval returns FancyMonth instances

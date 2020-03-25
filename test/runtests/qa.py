@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2019 Ghent University
+# Copyright 2016-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -26,6 +26,7 @@
 """
 Simple, ugly test script for QA
 """
+from __future__ import print_function
 import time
 import re
 import sys
@@ -53,7 +54,7 @@ for k, v in qa.items():
         else:
             loop_cnt = 1
             if k == 'waitforit':
-                print 'Wait for it (%d seconds)' % TIMEOUT,
+                print('Wait for it (%d seconds)' % TIMEOUT, end='')
                 sys.stdout.flush()
                 time.sleep(TIMEOUT)
             elif k == 'ask_number':
@@ -61,7 +62,7 @@ for k, v in qa.items():
                     loop_cnt = int(sys.argv[2])
 
             for i in range(0, loop_cnt):
-                print v[0],
+                print(v[0], end='')
                 sys.stdout.flush()
 
                 # for all regular cases, we do not care if there was a newline
@@ -95,16 +96,16 @@ if __name__ == '__main__':
             if k == 'nonewline':
                 if v[1][-1] == '\n':
                     failed += 1
-                    print "Test %s NOT OK, did not expect a newline in the answer" % (k,)
+                    print("Test %s NOT OK, did not expect a newline in the answer" % (k,))
                     sys.exit(57)
                 else:
                     sys.exit(0)
             if 'ask_number' in k:
-                print "Answer: %s" % v[1]
+                print("Answer: %s" % v[1])
             else:
-                print "Test %s OK" % k
+                print("Test %s OK" % k)
         else:
             failed += 2
-            print "Test %s NOT OK expected answer '%s', received '%s'" % (k, qa[k][1], v[1])
+            print("Test %s NOT OK expected answer '%s', received '%s'" % (k, qa[k][1], v[1]))
 
     sys.exit(failed)

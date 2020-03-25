@@ -29,25 +29,25 @@ A class that can be used to generated options to python scripts in a general way
 @author: Stijn De Weirdt (Ghent University)
 @author: Jens Timmerman (Ghent University)
 """
-
-import ConfigParser
 import copy
 import difflib
 import inspect
 import operator
 import os
 import re
-import StringIO
 import sys
 import textwrap
+from functools import reduce
 from optparse import OptionParser, OptionGroup, Option, Values
 from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import gettext as _gettext  # this is gettext.gettext normally
+
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
-from vsc.utils.missing import shell_quote, nub
+from vsc.utils.missing import nub, shell_quote
+from vsc.utils.py2vs3 import StringIO, configparser, is_string
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
@@ -115,7 +115,7 @@ def get_empty_add_flex(allvalues, self=None):
     empty = None
 
     if isinstance(allvalues, (list, tuple)):
-        if isinstance(allvalues[0], basestring):
+        if is_string(allvalues[0]):
             empty = ''
 
     if empty is None:
@@ -181,7 +181,7 @@ class ExtOption(CompleterOption):
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
     TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path']]
-    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + Option.TYPE_CHECKER.items())
+    TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + list(Option.TYPE_CHECKER.items()))
     TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
 
@@ -291,8 +291,11 @@ class ExtOption(CompleterOption):
                 default = getattr(parser.get_default_values(), dest, None)
                 if default is None:
                     default = type(value)()
-                if not (hasattr(default, '__add__') and
-                        (hasattr(default, '__neg__') or hasattr(default, '__getslice__'))):
+
+                # __getslice__ is only there in Python 2 for values that support slicing;
+                # in Python 3, __getitem__ is definitely required for slicing, but not sufficient strictly speaking
+                neg_slice_attrs = ['__neg__', '__getslice__', '__getitem__']
+                if not (hasattr(default, '__add__') and any(hasattr(default, a) for a in neg_slice_attrs)):
                     msg = "Unsupported type %s for action %s (requires + and one of negate or slice)"
                     self.log.raiseException(msg % (type(default), action))
                 if action in ('add', 'add_flex'):
@@ -346,7 +349,7 @@ class PassThroughOptionParser(OptionParser):
         """Extend optparse code with catch of unknown long options error"""
         try:
             OptionParser._process_long_opt(self, rargs, values)
-        except BadOptionError, err:
+        except BadOptionError as err:
             self.largs.append(err.opt_str)
 
     def _process_short_opts(self, rargs, values):
@@ -397,7 +400,7 @@ class PassThroughOptionParser(OptionParser):
 
 class ExtOptionGroup(OptionGroup):
     """An OptionGroup with support for configfile section names"""
-    RESERVED_SECTIONS = [ConfigParser.DEFAULTSECT]
+    RESERVED_SECTIONS = [configparser.DEFAULTSECT]
     NO_SECTION = ('NO', 'SECTION')
 
     def __init__(self, *args, **kwargs):
@@ -513,7 +516,7 @@ class ExtOptionParser(OptionParser):
         # --longopt=value, so no issues there either.
 
         # following checks assume that value is a string (not a store_or_None)
-        if not isinstance(value, basestring):
+        if not is_string(value):
             return None
 
         cmdline_index = None
@@ -545,7 +548,9 @@ class ExtOptionParser(OptionParser):
             return "Value '%s' starts with a '-'" % value
 
         if not self.ALLOW_TYPO_AS_VALUE:
-            possibilities = self._long_opt.keys() + self._short_opt.keys()
+            # need to convert result of .keys() to list first before concatenating,
+            # because in Python 3 .keys() returns an iterator
+            possibilities = list(self._long_opt.keys()) + list(self._short_opt.keys())
             # also on optionnames, i.e. without the -- / -
             possibilities.extend([x.lstrip('-') for x in possibilities])
             # max 3 options; minimum score is taken from EB experience
@@ -668,7 +673,7 @@ class ExtOptionParser(OptionParser):
     def check_help(self, fh):
         """Checks filehandle for help functions"""
         if self.help_to_string:
-            self.help_to_file = StringIO.StringIO()
+            self.help_to_file = StringIO()
         if fh is None:
             fh = self.help_to_file
 
@@ -873,7 +878,7 @@ class GeneralOption(object):
         - go_columns : specify column width (in columns)
         - go_useconfigfiles : use configfiles or not (default set by CONFIGFILES_USE)
             if True, an option --configfiles will be added
-        - go_configfiles : list of configfiles to parse. Uses ConfigParser.read; last file wins
+        - go_configfiles : list of configfiles to parse. Uses configparser.read; last file wins
         - go_configfiles_initenv : section dict of key/value dict; inserted before configfileparsing
             As a special case, using all uppercase key in DEFAULT section with a case-sensitive
             configparser can be used to set "constants" for easy interpolation in all sections.
@@ -908,7 +913,7 @@ class GeneralOption(object):
     CONFIGFILES_INIT = []  # initial list of defaults, overwritten by go_configfiles options
     CONFIGFILES_IGNORE = []
     CONFIGFILES_MAIN_SECTION = 'MAIN'  # sectionname that contains the non-grouped/non-prefixed options
-    CONFIGFILE_PARSER = ConfigParser.SafeConfigParser
+    CONFIGFILE_PARSER = configparser.SafeConfigParser
     CONFIGFILE_CASESENSITIVE = True
 
     METAVAR_DEFAULT = True  # generate a default metavar
@@ -920,7 +925,7 @@ class GeneralOption(object):
 
     VERSION = None  # set the version (will add --version)
 
-    DEFAULTSECT = ConfigParser.DEFAULTSECT
+    DEFAULTSECT = configparser.DEFAULTSECT
     DEFAULT_LOGLEVEL = None
     DEFAULT_CONFIGFILES = None
     DEFAULT_IGNORECONFIGFILES = None
@@ -1136,7 +1141,7 @@ class GeneralOption(object):
             long_description = description[1]
 
         opt_grp = ExtOptionGroup(self.parser, short_description, long_description, section_name=section_name)
-        keys = opt_dict.keys()
+        keys = list(opt_dict.keys())
         if self.OPTIONGROUP_SORTED_OPTIONS:
             keys.sort()  # alphabetical
         for key in keys:
@@ -1200,7 +1205,7 @@ class GeneralOption(object):
                         # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
                         hlp += ' (choices: %s)' % ', '.join(nameds['choices'])
-                    elif isinstance(extra_detail, basestring) and len(extra_detail) == 1:
+                    elif is_string(extra_detail) and len(extra_detail) == 1:
                         args.insert(0, "-%s" % extra_detail)
                     elif isinstance(extra_detail, (dict,)):
                         # extract any optcomplete completer hints
@@ -1256,7 +1261,7 @@ class GeneralOption(object):
 
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
-        except SystemExit, err:
+        except SystemExit as err:
             self.log.debug("parseoptions: parse_args err %s code %s" % (err, err.code))
             if self.no_system_exit:
                 return
@@ -1578,8 +1583,7 @@ class GeneralOption(object):
             self.log.debug("generate_cmd_line no ignore")
 
         args = []
-        opt_dests = self.options.__dict__.keys()
-        opt_dests.sort()
+        opt_dests = sorted(self.options.__dict__.keys())
 
         for opt_dest in opt_dests:
             # help is store_or_None, but is not a processed option, so skip it
@@ -1669,7 +1673,10 @@ class GeneralOption(object):
                             opt_value = opt_value + -default
                         else:
                             opt_value = -default + opt_value
-                    elif hasattr(opt_value, '__getslice__'):
+                    # __getslice__ no longer exists in Python 3,
+                    # and just having __getitem__ is not sufficient to support slicing,
+                    # but we'll assume it's OK (and code that relies on it incorrectly will result in a traceback)
+                    elif hasattr(opt_value, '__getslice__') or hasattr(opt_value, '__getitem__'):
                         if action == 'add_first':
                             opt_value = opt_value[:-len(default)]
                         else:

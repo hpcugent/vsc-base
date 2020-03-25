@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2013-2019 Ghent University
+# Copyright 2013-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -30,16 +30,18 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+from __future__ import print_function
+
+import coloredlogs
 import logging
 import os
-from random import randint
 import re
 import sys
 import shutil
-
-from StringIO import StringIO
 import tempfile
+from random import randint
 from unittest import TestLoader, main, TestSuite
+
 try:
     from unittest import skipUnless
 except (AttributeError, ImportError):
@@ -53,9 +55,8 @@ except (AttributeError, ImportError):
                 return (lambda *args, **kwargs: True)
         return deco
 
-import coloredlogs
-
 from vsc.utils import fancylogger
+from vsc.utils.py2vs3 import StringIO, is_py_ver, is_py3, is_string
 from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."
@@ -65,11 +66,26 @@ MSGRE_TPL = r"%%s.*%s" % MSG
 
 def _get_tty_stream():
     """Try to open and return a stream connected to a TTY device."""
-    # sys.stdout/sys.stderr may be a StringIO object, which does not have fileno
+    # sys.stdout/sys.stderr may be a StringIO object (which does not have fileno)
+    # or a fake output stream that does have fileno but results in io.UnsupportedOperation (Python 3 & Travis CI)
     # this happens when running the tests in a virtualenv (e.g. via tox)
-    if hasattr(sys.stdout, 'fileno') and os.isatty(sys.stdout.fileno()):
+    normal_stdout = False
+    try:
+        if hasattr(sys.stdout, 'fileno') and os.isatty(sys.stdout.fileno()):
+            normal_stdout = True
+    except Exception:
+        pass
+
+    normal_stderr = False
+    try:
+        if hasattr(sys.stderr, 'fileno') and os.isatty(sys.stderr.fileno()):
+            normal_stderr = True
+    except Exception:
+        pass
+
+    if normal_stdout:
         return sys.stdout
-    elif hasattr(sys.stderr, 'fileno') and os.isatty(sys.stderr.fileno()):
+    elif normal_stderr:
         return sys.stderr
     else:
         if 'TTY' in os.environ:
@@ -117,7 +133,7 @@ class FancyLoggerTest(TestCase):
 
         # delete all fancyloggers
         loggers = logging.Logger.manager.loggerDict
-        for name, lgr in loggers.items():
+        for name, lgr in list(loggers.items()):
             if isinstance(lgr, fancylogger.FancyLogger):
                 del loggers[name]
         # reset root handlers; mimic clean import logging
@@ -145,17 +161,34 @@ class FancyLoggerTest(TestCase):
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
-        DEBUG = fancylogger.getLevelInt('DEBUG')
-        INFO = fancylogger.getLevelInt('INFO')
-        WARNING = fancylogger.getLevelInt('WARNING')
-        ERROR = fancylogger.getLevelInt('ERROR')
-        CRITICAL = fancylogger.getLevelInt('CRITICAL')
-        APOCALYPTIC = fancylogger.getLevelInt('APOCALYPTIC')
-        self.assertTrue(INFO > DEBUG)
-        self.assertTrue(WARNING > INFO)
-        self.assertTrue(ERROR > WARNING)
-        self.assertTrue(CRITICAL > ERROR)
-        self.assertTrue(APOCALYPTIC > CRITICAL)
+        debug = fancylogger.getLevelInt('DEBUG')
+        info = fancylogger.getLevelInt('INFO')
+        warning = fancylogger.getLevelInt('WARNING')
+        quiet = fancylogger.getLevelInt('QUIET')
+        error = fancylogger.getLevelInt('ERROR')
+        exception = fancylogger.getLevelInt('EXCEPTION')
+        critical = fancylogger.getLevelInt('CRITICAL')
+        fatal = fancylogger.getLevelInt('FATAL')
+        apocalyptic = fancylogger.getLevelInt('APOCALYPTIC')
+
+        for level in [debug, info, warning, quiet, error, exception, fatal, critical, fatal, apocalyptic]:
+            self.assertTrue(isinstance(level, int))
+
+        self.assertEqual(logging.getLevelName(debug), 'DEBUG')
+        self.assertEqual(logging.getLevelName(info), 'INFO')
+        self.assertEqual(logging.getLevelName(warning), 'WARNING')
+        self.assertEqual(logging.getLevelName(error), 'ERROR')
+        self.assertEqual(logging.getLevelName(critical), 'CRITICAL')
+        self.assertEqual(logging.getLevelName(apocalyptic), 'APOCALYPTIC')
+
+        self.assertTrue(info > debug)
+        self.assertTrue(warning > info)
+        self.assertEqual(warning, quiet)
+        self.assertTrue(error > warning)
+        self.assertEqual(error, exception)
+        self.assertTrue(critical > error)
+        self.assertEqual(critical, fatal)
+        self.assertTrue(apocalyptic > critical)
 
     def test_parentinfo(self):
         """Test the collection of parentinfo"""
@@ -168,8 +201,9 @@ class FancyLoggerTest(TestCase):
         pi_l1 = log_l1._get_parent_info()
         self.assertEqual(len(pi_l1), 3)
 
-        py_v_27 = sys.version_info >= (2, 7, 0)
-        if py_v_27:
+        is_py27 = is_py_ver(2,7)
+
+        if is_py27:
             log_l2a = log_l1.getChild('level2a')
             pi_l2a = log_l2a._get_parent_info()
             self.assertEqual(len(pi_l2a), 4)
@@ -178,7 +212,7 @@ class FancyLoggerTest(TestCase):
         log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
         # fname=False is required to have the name similar
         # cutoff last letter (a vs b)
-        if py_v_27:
+        if is_py27:
             self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
         pi_l2b = log_l2b._get_parent_info()
         # yes, this broken on several levels (incl in logging itself)
@@ -190,7 +224,7 @@ class FancyLoggerTest(TestCase):
         pi_l2c = log_l2c._get_parent_info()
         self.assertEqual(len(pi_l2c), 3)  # level1a as parent does not exist
 
-    def test_uft8_decoding(self):
+    def test_utf8_decoding(self):
         """Test UTF8 decoding."""
         # truncate the logfile
         open(self.logfn, 'w')
@@ -217,10 +251,15 @@ class FancyLoggerTest(TestCase):
             logger.info(msg)
             logger.warning(msg)
             logger.warn(msg)
-            if isinstance(msg, unicode):
-                regex = msg.encode('utf8', 'replace')
-            else:
+
+            # can't use ís_string function here, because we need to discriminate between bytestrings & unicode strings;
+            # in Python 2, the 'bytes' type (a bytestring) is the same as 'str', but not in Python 3;
+            # unicode is a different type in Python 2, but doesn't exist in Python 3;
+            if isinstance(msg, str):
                 regex = str(msg)
+            else:
+                regex = msg.encode('utf8', 'replace')
+
             self.assertErrorRegex(Exception, regex, logger.raiseException, msg)
 
     def test_deprecated(self):
@@ -264,9 +303,15 @@ class FancyLoggerTest(TestCase):
         open(self.logfn, 'w').write('')
 
         # test handling of non-UTF8 chars
-        msg = MSG + u"\x81"
-        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
-        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\xc2\x81" % max_ver)
+        msg = MSG + u'\x81'
+        if is_py3():
+            # Python 3: unicode is supported in regular string values (no special unicode type)
+            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
+            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)
+        else:
+            # Python 2: extra \xc2 character appears for unicode strings
+            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
+            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\xc2\x81" % max_ver)
 
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
 
@@ -422,11 +467,12 @@ class FancyLoggerTest(TestCase):
         fancylogger.setLogFormat("%(className)s blabla")
         handler = fancylogger.logToScreen()
         logger = fancylogger.getLogger(fname=False, clsname=False)
-        logger.warn("blabla")
-        print stringfile.getvalue()
+        logger.warning("blabla")
+        txt = stringfile.getvalue()
         # this will only hold in debug mode, so also disable the test
         if __debug__:
-            self.assertTrue('FancyLoggerTest' in stringfile.getvalue())
+            pattern = 'FancyLoggerTest'
+            self.assertTrue(pattern in txt, "Pattern '%s' found in: %s" % (pattern, txt))
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
         sys.stderr = _stderr
@@ -449,7 +495,7 @@ class FancyLoggerTest(TestCase):
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
         res = fancylogger.getDetailsLogLevels(fancy=True)
-        self.assertTrue(isinstance(res[0][1], basestring), msg='getDetailsLogLevels returns loglevel names by default')
+        self.assertTrue(is_string(res[0][1]), msg='getDetailsLogLevels returns loglevel names by default')
         res = fancylogger.getDetailsLogLevels(fancy=True, numeric=True)
         self.assertTrue(isinstance(res[0][1], int), msg='getDetailsLogLevels returns loglevel values with numeric=True')
 

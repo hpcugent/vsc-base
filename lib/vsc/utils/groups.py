@@ -26,10 +26,13 @@
 """
 This module contains tools related to users and groups
 """
-
-import pwd, grp
+import grp
+import pwd
 from ctypes import c_char_p, c_uint, c_int32, POINTER, byref, cdll
 from ctypes.util import find_library
+
+from vsc.utils.py2vs3 import is_string
+
 
 def getgrouplist(user, groupnames=True):
     """
@@ -51,22 +54,25 @@ def getgrouplist(user, groupnames=True):
     grouplist = (c_uint * ngroups)()
     ngrouplist = c_int32(ngroups)
 
-    if isinstance(user, basestring):
+    if is_string(user):
         user = pwd.getpwnam(user)
     else:
         user = pwd.getpwuid(user)
 
-    ct = getgrouplist(user.pw_name, user.pw_gid, byref(grouplist), byref(ngrouplist))
+    # .encode() is required in Python 3, since we need to pass a bytestring to getgrouplist
+    user_name, user_gid = user.pw_name.encode(), user.pw_gid
+
+    ct = getgrouplist(user_name, user_gid, byref(grouplist), byref(ngrouplist))
     # if a max of 50 groups was not enough, try again with exact given nr
     if ct < 0:
-        getgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint *int(ngrouplist.value)), POINTER(c_int32)]
+        getgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint * int(ngrouplist.value)), POINTER(c_int32)]
         grouplist = (c_uint * int(ngrouplist.value))()
-        ct = getgrouplist(user.pw_name, user.pw_gid, byref(grouplist), byref(ngrouplist))
+        ct = getgrouplist(user_name, user_gid, byref(grouplist), byref(ngrouplist))
 
     if ct < 0:
         raise Exception("Could not find groups for %s: getgrouplist returned %s" % (user, ct))
 
-    grouplist = [grouplist[i] for i in xrange(ct)]
+    grouplist = [grouplist[i] for i in range(ct)]
     if groupnames:
         grouplist = [grp.getgrgid(i).gr_name for i in grouplist]
     return grouplist

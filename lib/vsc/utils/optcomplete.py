@@ -106,6 +106,7 @@ from optparse import OptionParser, Option
 from pprint import pformat
 
 from vsc.utils.missing import shell_quote
+from vsc.utils.py2vs3 import is_string
 
 debugfn = None  # for debugging only
 
@@ -164,7 +165,7 @@ class Completer(object):
         if self.CALL_ARGS_OPTIONAL is not None:
             all_args.extend(self.CALL_ARGS_OPTIONAL)
 
-        for arg in kwargs.keys():
+        for arg in list(kwargs.keys()):
             if arg not in all_args:
                 # remove it
                 kwargs.pop(arg)
@@ -188,7 +189,7 @@ class ListCompleter(Completer):
 
     def _call(self, **kwargs):
         """Return the initialised fixed list of strings"""
-        return map(str, self.olist)
+        return list(map(str, self.olist))
 
 
 class AllCompleter(Completer):
@@ -205,7 +206,7 @@ class FileCompleter(Completer):
     CALL_ARGS_OPTIONAL = ['prefix']
 
     def __init__(self, endings=None):
-        if isinstance(endings, basestring):
+        if is_string(endings):
             endings = [endings]
         elif endings is None:
             endings = []
@@ -275,11 +276,11 @@ class RegexCompleter(Completer):
     def __init__(self, regexlist, always_dirs=True):
         self.always_dirs = always_dirs
 
-        if isinstance(regexlist, basestring):
+        if is_string(regexlist):
             regexlist = [regexlist]
         self.regexlist = []
         for regex in regexlist:
-            if isinstance(regex, basestring):
+            if is_string(regex):
                 regex = re.compile(regex)
             self.regexlist.append(regex)
 
@@ -422,7 +423,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
     # If we are not requested for complete, simply return silently, let the code
     # caller complete. This is the normal path of execution.
-    if not os.environ.has_key(OPTCOMPLETE_ENVIRONMENT):
+    if OPTCOMPLETE_ENVIRONMENT not in os.environ:
         return
     # After this point we should never return, only sys.exit(1)
 
@@ -447,7 +448,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
     # zsh's bashcompinit does not pass COMP_WORDS, replace with
     # COMP_LINE for now...
-    if not os.environ.has_key('COMP_WORDS'):
+    if 'COMP_WORDS' not in os.environ:
         os.environ['COMP_WORDS'] = os.environ['COMP_LINE']
 
     cwords = shlex.split(os.environ.get('COMP_WORDS', '').strip('() '))
@@ -537,7 +538,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     # File completion.
     if completer and (not prefix or not prefix.startswith('-')):
         # Call appropriate completer depending on type.
-        if isinstance(completer, (basestring, list, tuple)):
+        if isinstance(completer, (list, tuple)) or is_string(completer):
             completer = FileCompleter(completer)
         elif not isinstance(completer, (types.FunctionType, types.LambdaType, types.ClassType, types.ObjectType)):
             # TODO: what to do here?
@@ -545,7 +546,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
         completions = completer(**completer_kwargs)
 
-    if isinstance(completions, basestring):
+    if is_string(completions):
         # is a bash command, just run it
         if SHELL in (BASH,):  # TODO: zsh
             print(completions)

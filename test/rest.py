@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2019 Ghent University
+# Copyright 2014-2020 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -29,10 +29,9 @@ Unit tests for the rest client.
 @author: Jens Timmerman (Ghent University)
 """
 import os
-from urllib2 import HTTPError
 
 from vsc.install.testing import TestCase
-
+from vsc.utils.py2vs3 import HTTPError
 from vsc.utils.rest import RestClient
 
 

@@ -41,44 +41,21 @@ Various functions that are missing from the default Python library.
 """
 import shlex
 import time
-try:
-    from shlex import quote  # python 3.3
-except ImportError:
-    from pipes import quote  # python 2.7
-
 from collections import namedtuple, Mapping
+from functools import reduce
 
 from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
+from vsc.utils.py2vs3 import quote
 
 
 _log = fancylogger.getLogger('vsc.utils.missing')
 
 
-def is_string(item):
-    """Check whether specified value is a string or not."""
-    return isinstance(item, basestring)
-
-
-def partial(func, *args, **keywords):
-    """
-    Return a new partial object which when called will behave like func called with the positional arguments args
-    and keyword arguments keywords. If more arguments are supplied to the call, they are appended to args. If additional
-    keyword arguments are supplied, they extend and override keywords.
-    new in python 2.5, from https://docs.python.org/2/library/functools.html#functools.partial
-    """
-    def newfunc(*fargs, **fkeywords):
-        newkeywords = keywords.copy()
-        newkeywords.update(fkeywords)
-        return func(*(args + fargs), **newkeywords)
-    newfunc.func = func
-    newfunc.args = args
-    newfunc.keywords = keywords
-    return newfunc
-
 # Placeholder, used to have implementations for any and all that were missing in py24
 any = any # pylint: disable=redefined-builtin
 all = all # pylint: disable=redefined-builtin
+
 
 def nub(list_):
     """Returns the unique items of a list of hashables, while preserving order of
@@ -125,7 +102,7 @@ def find_sublist_index(ls, sub_ls):
     @return: index of the matching location or None if no match can be made.
     """
     sub_length = len(sub_ls)
-    for i in xrange(len(ls)):
+    for i in range(len(ls)):
         if ls[i:(i + sub_length)] == sub_ls:
             return i
 
@@ -340,7 +317,7 @@ class TryOrFail(object):
 
     def __call__(self, function):
         def new_function(*args, **kwargs):
-            for i in xrange(0, self.n):
+            for i in range(0, self.n):
                 try:
                     return function(*args, **kwargs)
                 except self.exceptions as err:
