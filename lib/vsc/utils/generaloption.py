@@ -66,7 +66,9 @@ def set_columns(cols=None):
         stty = '/usr/bin/stty'
         if os.path.exists(stty):
             try:
-                cols = int(os.popen('%s size 2>/dev/null' % stty).read().strip().split(' ')[1])
+                proc = os.popen('%s size 2>/dev/null' % stty)
+                cols = int(proc.read().strip().split(' ')[1])
+                proc.close()
             except (AttributeError, IndexError, OSError, ValueError):
                 # do nothing
                 pass
