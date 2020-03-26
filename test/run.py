@@ -186,7 +186,8 @@ class TestRun(TestCase):
             """ Check For the existence of a unix pid. """
             try:
                 os.kill(pid, 0)
-            except OSError:
+            except OSError as err:
+                sys.stderr.write("check_pid in test_timeout: %s\n" % err)
                 return False
             else:
                 return True
