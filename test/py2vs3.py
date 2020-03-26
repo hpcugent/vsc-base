@@ -28,9 +28,10 @@ Tests for the vsc.utils.py2vs3 module.
 
 @author: Kenneth Hoste (Ghent University)
 """
+import os
 import sys
 
-from vsc.utils.py2vs3 import is_py_ver, is_py2, is_py3, is_string
+from vsc.utils.py2vs3 import is_py_ver, is_py2, is_py3, is_string, pickle
 from vsc.install.testing import TestCase
 
 
@@ -68,7 +69,6 @@ class TestPy2vs3(TestCase):
             self.assertFalse(is_py_ver(3, 6))
             self.assertFalse(is_py_ver(3, min_ver=6))
 
-
     def test_is_string(self):
         """Tests for is_string function."""
         for item in ['foo', u'foo', "hello world", """foo\nbar""", '']:
@@ -82,3 +82,22 @@ class TestPy2vs3(TestCase):
         else:
             # in Python 2, b'foo' is really just a regular string
             self.assertTrue(is_string(b'foo'))
+
+    def test_picke(self):
+        """Tests for pickle module provided by py2vs3."""
+
+        test_pickle_file = os.path.join(self.tmpdir, 'test.pickle')
+
+        test_dict = {1: 'one', 2: 'two'}
+
+        fp = open(test_pickle_file, 'wb')
+        pickle.dump(test_dict, fp)
+        fp.close()
+
+        self.assertTrue(os.path.exists(test_pickle_file))
+
+        fp = open(test_pickle_file, 'rb')
+        loaded_pickle = pickle.load(fp)
+        fp.close()
+
+        self.assertEqual(test_dict, loaded_pickle)

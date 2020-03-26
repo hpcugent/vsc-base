@@ -29,6 +29,7 @@ Utility functions to help with keeping the codebase compatible with both Python 
 @author: Kenneth Hoste (Ghent University)
 """
 import configparser  # noqa
+import pickle  # noqa
 from io import StringIO  # noqa
 from shlex import quote  # noqa
 from urllib.parse import urlencode  # noqa

@@ -28,9 +28,10 @@ Utility functions to help with keeping the codebase compatible with both Python 
 
 @author: Kenneth Hoste (Ghent University)
 """
+import cPickle as pickle  # noqa
+import ConfigParser as configparser  # noqa
 from cStringIO import StringIO  # noqa
 from pipes import quote  # noqa
-import ConfigParser as configparser  # noqa
 from urllib import urlencode  # noqa
 from urllib2 import HTTPError, HTTPSHandler, Request, build_opener  # noqa
 
