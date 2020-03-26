@@ -35,6 +35,7 @@ import inspect
 import operator
 import os
 import re
+import shutil
 import sys
 import textwrap
 from functools import reduce
@@ -47,11 +48,12 @@ from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import nub, shell_quote
-from vsc.utils.py2vs3 import StringIO, configparser, is_string
+from vsc.utils.py2vs3 import StringIO, configparser, is_py_ver, is_string
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
 HELP_OUTPUT_FORMATS = ['', 'rst', 'short', 'config']
+STTY = '/usr/bin/stty'
 
 
 def set_columns(cols=None):
@@ -63,10 +65,11 @@ def set_columns(cols=None):
         return
 
     if cols is None:
-        stty = '/usr/bin/stty'
-        if os.path.exists(stty):
+        if is_py_ver(3, 3):
+            cols, _ = shutil.get_terminal_size()
+        elif os.path.exists(STTY):
             try:
-                proc = os.popen('%s size 2>/dev/null' % stty)
+                proc = os.popen('%s size 2>/dev/null' % STTY)
                 cols = int(proc.read().strip().split(' ')[1])
                 proc.close()
             except (AttributeError, IndexError, OSError, ValueError):
