@@ -32,7 +32,7 @@ import cPickle as pickle  # noqa
 import ConfigParser as configparser  # noqa
 from cStringIO import StringIO  # noqa
 from pipes import quote  # noqa
-from urllib import urlencode  # noqa
+from urllib import urlencode, unquote  # noqa
 from urllib2 import HTTPError, HTTPSHandler, Request, build_opener  # noqa
 
 
