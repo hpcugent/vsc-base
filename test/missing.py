@@ -230,6 +230,9 @@ class TestMissing(TestCase):
         tfdkk = TestFrozenDictKnownKeys({'foo': 'bar', 'foo2': 'bar2', 'foo3': 'bar3'}, ignore_unknown_keys=True)
         self.assertEqual(sorted(tfdkk.keys()), ['foo', 'foo2'])
 
+        # FrozenDict should be hashable
+        self.assertTrue(type(hash(tfdkk)) is int)
+
     def test_frozendictknownkeys_singleton(self):
         """
         Test use of a FrozenDictKnownKeys class that is also a singleton.
