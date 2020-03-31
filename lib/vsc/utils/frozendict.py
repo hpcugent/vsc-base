@@ -21,8 +21,10 @@ frozendict is an immutable wrapper around dictionaries that implements the compl
 It can be used as a drop-in replacement for dictionaries where immutability is desired.
 """
 import operator
-from collections import Mapping
 from functools import reduce
+from future.utils import iteritems
+
+from vsc.utils.py2vs3 import Mapping
 
 
 # minor adjustments:
@@ -50,7 +52,7 @@ class FrozenDict(Mapping):
 
     def __hash__(self):
         if self.__hash is None:
-            self.__hash = reduce(operator.xor, map(hash, self.iteritems()), 0)
+            self.__hash = reduce(operator.xor, map(hash, iteritems(self)), 0)
 
         return self.__hash
 
