@@ -92,3 +92,11 @@ class RestClientTest(TestCase):
             self.assertTrue(False, 'deleting to unauthorized endpoint did not trhow a http error')
         except HTTPError:
             pass
+
+    def test_get_method(self):
+        """A quick test of a GET to the github API"""
+
+        status, body = self.client.users['hpcugent'].get()
+        self.assertEqual(status, 200)
+        self.assertEqual(body['login'], 'hpcugent')
+        self.assertEqual(body['id'], 1515263)
