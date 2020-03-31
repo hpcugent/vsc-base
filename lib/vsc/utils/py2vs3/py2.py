@@ -34,7 +34,7 @@ from cStringIO import StringIO  # noqa
 from pipes import quote  # noqa
 from urllib import urlencode, unquote  # noqa
 from urllib2 import HTTPError, HTTPSHandler, Request, build_opener  # noqa
-from collections import Mapping
+from collections import Mapping  # noqa
 
 
 def is_string(value):
