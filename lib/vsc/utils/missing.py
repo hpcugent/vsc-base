@@ -52,11 +52,6 @@ from vsc.utils.py2vs3 import quote
 _log = fancylogger.getLogger('vsc.utils.missing')
 
 
-# Placeholder, used to have implementations for any and all that were missing in py24
-any = any # pylint: disable=redefined-builtin
-all = all # pylint: disable=redefined-builtin
-
-
 def nub(list_):
     """Returns the unique items of a list of hashables, while preserving order of
     the original list, i.e. the first unique element encoutered is
