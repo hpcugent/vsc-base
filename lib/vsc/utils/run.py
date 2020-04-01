@@ -396,7 +396,10 @@ class Run(object):
 
     def _cleanup_process(self):
         """Cleanup any leftovers from the process"""
-        pass
+        try:
+            self._process.stdout.close()
+        except OSError:
+            self.log.raiseException("_cleanup_process: failed to close stdout of the process")
 
     def _read_process(self, readsize=None):
         """Read from process, return out"""
