@@ -396,7 +396,7 @@ class Run(object):
 
     def _cleanup_process(self):
         """Cleanup any leftovers from the process"""
-        if self._process.stdout is not None:
+        if self._process.stdout is not None and not self._process.stdout.closed:
             try:
                 self._process.stdout.close()
             except OSError as err:
