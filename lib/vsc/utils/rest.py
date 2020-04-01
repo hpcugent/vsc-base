@@ -39,6 +39,7 @@ import base64
 import copy
 import json
 from functools import partial
+from future.utils import iteritems
 
 from vsc.utils import fancylogger
 from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, urlencode
@@ -202,7 +203,7 @@ class Client(object):
         else:
             sep = ''
         request = Request(self.url + sep + url, data=body)
-        for header, value in headers.iteritems():
+        for header, value in iteritems(headers):
             request.add_header(header, value)
         request.get_method = lambda: method
         fancylogger.getLogger().debug('opening request:  %s%s%s', self.url, sep, url)
