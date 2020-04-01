@@ -202,7 +202,9 @@ class Client(object):
             sep = '/'
         else:
             sep = ''
-        request = Request(self.url + sep + url, data=body.encode())
+        if body:
+            body = body.encode()
+        request = Request(self.url + sep + url, data=body)
         for header, value in iteritems(headers):
             request.add_header(header, value)
         request.get_method = lambda: method
