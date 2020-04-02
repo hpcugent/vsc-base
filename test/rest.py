@@ -32,7 +32,7 @@ import os
 
 from vsc.install.testing import TestCase
 from vsc.utils.py2vs3 import HTTPError
-from vsc.utils.rest import RestClient
+from vsc.utils.rest import Client, RestClient
 
 
 # the user who's repo to test
@@ -100,3 +100,15 @@ class RestClientTest(TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body['login'], 'hpcugent')
         self.assertEqual(body['id'], 1515263)
+
+    def test_get_connection(self):
+        """Test for Client.get_connection."""
+
+        client = Client('https://api.github.com')
+
+        url = '/repos/hpcugent/vsc-base/pulls/296/comments'
+        try:
+            client.get_connection(Client.POST, url, body="{'body': 'test'}", headers={})
+            self.assertTrue(False, "Trying to post a comment unauthorized should result in HTTPError")
+        except HTTPError:
+            pass
