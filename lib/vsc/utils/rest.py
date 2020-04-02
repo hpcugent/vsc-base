@@ -202,6 +202,8 @@ class Client(object):
             sep = '/'
         else:
             sep = ''
+        if body:
+            body = body.encode()
         request = Request(self.url + sep + url, data=body)
         for header, value in iteritems(headers):
             request.add_header(header, value)

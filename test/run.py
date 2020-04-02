@@ -210,7 +210,11 @@ class TestRun(TestCase):
             # there's now 6 seconds to complete the remainder
             pids = list(range(depth+1))
             # normally this is ordered output, but you never know
-            for line in open(res_fn).readlines():
+
+            fp = open(res_fn)
+            lines = fp.readlines()
+            fp.close()
+            for line in lines:
                 dep, pid, _ = line.strip().split(" ") # 3rd is PPID
                 pids[int(dep)] = int(pid)
 
