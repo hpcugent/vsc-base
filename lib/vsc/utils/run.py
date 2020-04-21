@@ -74,7 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.py2vs3 import is_string
+from vsc.utils.py2vs3 import ensure_ascii_string, is_string
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -409,16 +409,18 @@ class Run(object):
         if readsize is None:
             readsize = -1  # read all
         self.log.debug("_read_process: going to read with readsize %s" % readsize)
-        out = self._process.stdout.read(readsize).decode()
-        return out
+        out = self._process.stdout.read(readsize)
+        return ensure_ascii_string(out)
 
     def _post_exitcode(self):
         """Postprocess the exitcode in self._process_exitcode"""
+        cmd_ascii = ensure_ascii_string(self.cmd)
         if not self._process_exitcode == 0:
+            shell_cmd_ascii = ensure_ascii_string(self._shellcmd)
             self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: (shellcmd %s) output %s" %
-                                            (self.cmd, self._shellcmd, self._process_output))
+                                            (cmd_ascii, shell_cmd_ascii, self._process_output))
         else:
-            self.log.debug("_post_exitcode: success cmd %s: output %s" % (self.cmd, self._process_output))
+            self.log.debug("_post_exitcode: success cmd %s: output %s" % (cmd_ascii, self._process_output))
 
     def _post_output(self):
         """Postprocess the output in self._process_output"""
@@ -585,7 +587,7 @@ class RunLoop(Run):
             self._loop_process_output_final(output)
         except RunLoopException as err:
             self.log.debug('RunLoopException %s' % err)
-            self._process_output = err.output
+            self._process_output = ensure_ascii_string(err.output)
             self._process_exitcode = err.code
 
     def _loop_initialise(self):
@@ -675,7 +677,7 @@ class RunAsync(Run):
             else:
                 # non-blocking read (readsize is a maximum to return !
                 out = self._process_module.recv_some(self._process, maxread=readsize)
-            return out.decode()
+            return ensure_ascii_string(out)
         except (IOError, Exception):
             # recv_some may throw Exception
             self.log.exception("_read_process: read failed")
