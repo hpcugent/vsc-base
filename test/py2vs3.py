@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright 2020-2020 Ghent University
 #
@@ -31,7 +32,7 @@ Tests for the vsc.utils.py2vs3 module.
 import os
 import sys
 
-from vsc.utils.py2vs3 import is_py_ver, is_py2, is_py3, is_string, pickle
+from vsc.utils.py2vs3 import ensure_ascii_string, is_py_ver, is_py2, is_py3, is_string, pickle
 from vsc.install.testing import TestCase
 
 
@@ -101,3 +102,41 @@ class TestPy2vs3(TestCase):
         fp.close()
 
         self.assertEqual(test_dict, loaded_pickle)
+
+    def test_ensure_ascii_string(self):
+        """Tests for ensure_ascii_string function."""
+
+        unicode_txt = 'this -> ¢ <- is unicode'
+
+        test_cases = [
+            ('', ''),
+            ('foo', 'foo'),
+            ([1, 2, 3], "[1, 2, 3]"),
+            (['1', '2', '3'], "['1', '2', '3']"),
+            ({'one': 1}, "{'one': 1}"),
+            # in both Python 2 & 3, Unicode characters that are part of a non-string value get escaped
+            ([unicode_txt], "['this -> \\xc2\\xa2 <- is unicode']"),
+            ({'foo': unicode_txt}, "{'foo': 'this -> \\xc2\\xa2 <- is unicode'}"),
+        ]
+        if is_py2():
+            test_cases.extend([
+                # Unicode characters from regular strings are stripped out in Python 2
+                (unicode_txt, 'this ->  <- is unicode'),
+                # also test with unicode-type values (only exists in Python 2)
+                (unicode('foo'), 'foo'),
+                (unicode(unicode_txt, encoding='utf-8'), 'this -> \\xa2 <- is unicode'),
+            ])
+        else:
+            # in Python 3, Unicode characters are replaced by backslashed escape sequences in string values
+            expected_unicode_out = 'this -> \\xc2\\xa2 <- is unicode'
+            test_cases.extend([
+                (unicode_txt, expected_unicode_out),
+                # also test with bytestring-type values (only exists in Python 3)
+                (bytes('foo', encoding='utf-8'), 'foo'),
+                (bytes(unicode_txt, encoding='utf-8'), expected_unicode_out),
+            ])
+
+        for inp, out in test_cases:
+            res = ensure_ascii_string(inp)
+            self.assertTrue(is_string(res))
+            self.assertEqual(res, out)
