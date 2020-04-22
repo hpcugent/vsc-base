@@ -44,8 +44,7 @@ def is_string(value):
 
 def ensure_ascii_string(value):
     """
-    Convert the provided value to a string,
-    keeping in mind that it may contain Unicode characters.
+    Convert the provided value to an ASCII string (no Unicode characters).
     """
     if isinstance(value, unicode):  # noqa
         # encode as string, replace non-ASCII characters with backslashed escape sequences
