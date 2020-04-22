@@ -40,3 +40,20 @@ from collections.abc import Mapping  # noqa
 def is_string(value):
     """Check whether specified value is of type string (not bytes)."""
     return isinstance(value, str)
+
+
+def ensure_ascii_string(value):
+    """
+    Convert the provided value to an ASCII string (no Unicode characters).
+    """
+    if isinstance(value, bytes):
+        # if we have a bytestring, decode it to a regular string using ASCII encoding,
+        # and replace Unicode characters with backslash escaped sequences
+        value = value.decode('ascii', 'backslashreplace')
+    else:
+        # for other values, just convert to a string (which may still include Unicode characters)
+        # then convert to bytestring with UTF-8 encoding,
+        # which can then be decoded to regular string using ASCII encoding
+        value = bytes(str(value), encoding='utf-8').decode(encoding='ascii', errors='backslashreplace')
+
+    return value

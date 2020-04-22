@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright 2012-2020 Ghent University
 #
@@ -27,6 +28,7 @@
 Tests for the vsc.utils.run module.
 
 @author: Stijn De Weirdt (Ghent University)
+@author: Kenneth Hoste (Ghent University)
 """
 import os
 import re
@@ -45,6 +47,7 @@ from vsc.utils.run import (
     RunQA, RunNoShellQA,
     async_to_stdout, run_async_to_stdout,
 )
+from vsc.utils.py2vs3 import StringIO, is_py2, is_py3
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -71,11 +74,11 @@ class TestRun(TestCase):
     """Test for the run module."""
 
     def setUp(self):
-        super(TestCase, self).setUp()
+        super(TestRun, self).setUp()
         self.tempdir = tempfile.mkdtemp()
 
     def tearDown(self):
-        super(TestCase, self).tearDown()
+        super(TestRun, self).tearDown()
         shutil.rmtree(self.tempdir)
 
     def glob_output(self, output, ec=None):
@@ -135,11 +138,30 @@ class TestRun(TestCase):
         self.glob_output(output, ec=ec)
 
     def test_noshell_async_stdout_glob(self):
-        self.mock_stdout(True)
-        ec, output = async_to_stdout("/bin/echo ok")
-        self.assertEqual(ec, 0)
-        self.assertEqual(output, "ok\n", "returned async_to_stdout output is as expected")
-        self.assertEqual(sys.stdout.getvalue(), output, "async_to_stdout returned output is send to stdout")
+
+        for msg in ['ok', "message with spaces", 'this -> ¢ <- is unicode']:
+
+            self.mock_stderr(True)
+            self.mock_stdout(True)
+            ec, output = async_to_stdout("/bin/echo %s" % msg)
+            stderr, stdout = self.get_stderr(), self.get_stdout()
+            self.mock_stderr(False)
+            self.mock_stdout(False)
+
+            # there should be no output to stderr
+            self.assertFalse(stderr)
+
+            # in Python 2, we need to ensure the 'msg' input doesn't include any Unicode
+            # before comparing with 'output' (which also has Unicode characters stripped out)
+            if is_py2():
+                msg = msg.decode('ascii', 'ignore')
+            # in Python 3, Unicode characters get replaced with backslashed escape sequences
+            elif is_py3():
+                msg = msg.replace('¢', '\\xc2\\xa2')
+
+            self.assertEqual(ec, 0)
+            self.assertEqual(output, msg + '\n')
+            self.assertEqual(output, stdout)
 
     def test_async_stdout_glob(self):
         self.mock_stdout(True)
