@@ -163,6 +163,24 @@ class TestRun(TestCase):
             self.assertEqual(output, msg + '\n')
             self.assertEqual(output, stdout)
 
+    def test_noshell_async_stdout_stdin(self):
+
+        inp = "testing, 1, 2, 3"
+
+        self.mock_stderr(True)
+        self.mock_stdout(True)
+        ec, output = async_to_stdout('/bin/cat', input=inp)
+        stderr, stdout = self.get_stderr(), self.get_stdout()
+        self.mock_stderr(False)
+        self.mock_stdout(False)
+
+        # there should be no output to stderr
+        self.assertFalse(stderr)
+
+        self.assertEqual(ec, 0)
+        self.assertEqual(output, inp)
+        self.assertEqual(output, stdout)
+
     def test_async_stdout_glob(self):
         self.mock_stdout(True)
         ec, output = run_async_to_stdout("/bin/echo ok")

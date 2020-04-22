@@ -74,7 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.py2vs3 import ensure_ascii_string, is_string
+from vsc.utils.py2vs3 import ensure_ascii_string, is_py3, is_string
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -372,8 +372,13 @@ class Run(object):
     def _init_input(self):
         """Handle input, if any in a simple way"""
         if self.input is not None:  # allow empty string (whatever it may mean)
+            # in Python 3, stdin.write requires a bytestring
+            if is_py3():
+                inp = bytes(self.input, encoding='utf-8')
+            else:
+                inp = self.input
             try:
-                self._process.stdin.write(self.input)
+                self._process.stdin.write(inp)
             except Exception:
                 self.log.raiseException("_init_input: Failed write input %s to process" % self.input)
 
