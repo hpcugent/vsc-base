@@ -47,7 +47,7 @@ from vsc.utils.run import (
     RunQA, RunNoShellQA,
     async_to_stdout, run_async_to_stdout,
 )
-from vsc.utils.py2vs3 import StringIO, is_py2, is_py3
+from vsc.utils.py2vs3 import StringIO, is_py2, is_py3, is_string
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -165,21 +165,32 @@ class TestRun(TestCase):
 
     def test_noshell_async_stdout_stdin(self):
 
-        inp = "testing, 1, 2, 3"
+        # test with both regular strings and bytestrings (only matters w.r.t. Python 3 compatibility)
+        inputs = [
+            'foo',
+            b'foo',
+            "testing, 1, 2, 3",
+            b"testing, 1, 2, 3",
+        ]
+        for inp in inputs:
+            self.mock_stderr(True)
+            self.mock_stdout(True)
+            ec, output = async_to_stdout('/bin/cat', input=inp)
+            stderr, stdout = self.get_stderr(), self.get_stdout()
+            self.mock_stderr(False)
+            self.mock_stdout(False)
 
-        self.mock_stderr(True)
-        self.mock_stdout(True)
-        ec, output = async_to_stdout('/bin/cat', input=inp)
-        stderr, stdout = self.get_stderr(), self.get_stdout()
-        self.mock_stderr(False)
-        self.mock_stdout(False)
+            # there should be no output to stderr
+            self.assertFalse(stderr)
 
-        # there should be no output to stderr
-        self.assertFalse(stderr)
+            # output is always string, not bytestring, so convert before comparison
+            # (only needed for Python 3)
+            if not is_string(inp):
+                inp = inp.decode(encoding='utf-8')
 
-        self.assertEqual(ec, 0)
-        self.assertEqual(output, inp)
-        self.assertEqual(output, stdout)
+            self.assertEqual(ec, 0)
+            self.assertEqual(output, inp)
+            self.assertEqual(output, stdout)
 
     def test_async_stdout_glob(self):
         self.mock_stdout(True)

@@ -373,7 +373,7 @@ class Run(object):
         """Handle input, if any in a simple way"""
         if self.input is not None:  # allow empty string (whatever it may mean)
             # in Python 3, stdin.write requires a bytestring
-            if is_py3():
+            if is_py3() and is_string(self.input):
                 inp = bytes(self.input, encoding='utf-8')
             else:
                 inp = self.input
