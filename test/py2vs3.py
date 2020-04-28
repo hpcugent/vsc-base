@@ -140,3 +140,7 @@ class TestPy2vs3(TestCase):
             res = ensure_ascii_string(inp)
             self.assertTrue(is_string(res))
             self.assertEqual(res, out)
+
+    def test_urllib_imports(self):
+        """Test importing urllib* stuff from py2vs3."""
+        from vsc.utils.py2vs3 import HTTPError, HTTPSHandler, Request, build_opener, unquote, urlencode, urlopen
