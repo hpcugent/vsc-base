@@ -463,3 +463,8 @@ class TestRun(TestCase):
         self.assertErrorRegex(ValueError, "Non-string item", CmdList, ['foo', None])
         self.assertErrorRegex(ValueError, "Non-string item", CmdList, ['foo', ['bar', 'baz']])
         self.assertErrorRegex(ValueError, "Found one or more spaces", CmdList, 'this has spaces', allow_spaces=False)
+
+    def test_env(self):
+        ec, output = run(cmd="echo $MYENVVAR", env = {"MYENVVAR": "something"})
+        self.assertEqual(ec, 0)
+        self.assertTrue('something' in output.lower())
