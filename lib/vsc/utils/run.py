@@ -159,11 +159,13 @@ class Run(object):
             @param disable_log: use fake logger (won't log anything)
             @param use_shell: use the subshell
             @param shell: change the shell
+            @param env: environment settings to pass on
         """
         self.input = kwargs.pop('input', None)
         self.startpath = kwargs.pop('startpath', None)
         self.use_shell = kwargs.pop('use_shell', self.USE_SHELL)
         self.shell = kwargs.pop('shell', self.SHELL)
+        self,env = kwargs.pop('env', None)
 
         if kwargs.pop('disable_log', None):
             self.log = DummyFunction()  # No logging
@@ -339,6 +341,7 @@ class Run(object):
             'close_fds': True,
             'shell': self.use_shell,
             'executable': self.shell,
+            'env': self.env,
         }
 
         if others is not None:
