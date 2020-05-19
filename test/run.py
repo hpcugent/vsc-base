@@ -465,6 +465,6 @@ class TestRun(TestCase):
         self.assertErrorRegex(ValueError, "Found one or more spaces", CmdList, 'this has spaces', allow_spaces=False)
 
     def test_env(self):
-        ec, output = run(cmd="echo $MYENVVAR", env = {"MYENVVAR": "something"})
+        ec, output = run(cmd="/usr/bin/env", env = {"MYENVVAR": "something"})
         self.assertEqual(ec, 0)
         self.assertTrue('something' in output.lower())
