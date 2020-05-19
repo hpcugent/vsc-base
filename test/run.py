@@ -467,4 +467,4 @@ class TestRun(TestCase):
     def test_env(self):
         ec, output = run(cmd="/usr/bin/env", env = {"MYENVVAR": "something"})
         self.assertEqual(ec, 0)
-        self.assertTrue('something' in output.lower())
+        self.assertTrue('MYENVVAR=something' in output.lower())
