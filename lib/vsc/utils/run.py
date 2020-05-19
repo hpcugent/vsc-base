@@ -165,7 +165,7 @@ class Run(object):
         self.startpath = kwargs.pop('startpath', None)
         self.use_shell = kwargs.pop('use_shell', self.USE_SHELL)
         self.shell = kwargs.pop('shell', self.SHELL)
-        self,env = kwargs.pop('env', None)
+        self.env = kwargs.pop('env', None)
 
         if kwargs.pop('disable_log', None):
             self.log = DummyFunction()  # No logging
