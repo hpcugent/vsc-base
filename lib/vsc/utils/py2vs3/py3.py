@@ -33,6 +33,7 @@ import pickle  # noqa
 from io import StringIO  # noqa
 from shlex import quote  # noqa
 from urllib.parse import urlencode, unquote  # noqa
+from urllib.parse import quote as urlquote  # noqa
 from urllib.request import HTTPError, HTTPSHandler, Request, build_opener, urlopen  # noqa
 from collections.abc import Mapping  # noqa
 
