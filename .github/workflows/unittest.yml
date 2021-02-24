@@ -1,0 +1,24 @@
+name: run python tests
+on: [push, pull_request]
+
+jobs:
+  python_unittests:
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          python: [2.7, 3.6, 3.7, 3.8, 3.9]
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install tox
+        run: pip install tox
+      - name: add mandatory git remote
+        # 'hpcugent' is a mandatory remote for setup.py to work (because of get_name_url)
+        run: git remote add hpcugent https://github.com/hpcugent/vsc-base.git
+      - name: Run tox
+        # Run tox using the version of Python in `PATH`
+        run: tox -e py
