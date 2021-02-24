@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2020 Ghent University
+# Copyright 2011-2021 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -1455,8 +1455,7 @@ class GeneralOption(object):
                             configfile_values[opt_dest] = newval
                     else:
                         configfile_cmdline_dest.append(opt_dest)
-                        configfile_cmdline.append("--%s" % opt_name)
-                        configfile_cmdline.append(val)
+                        configfile_cmdline.append("--%s=%s" % (opt_name, val))
 
         # reparse
         self.log.debug('parseconfigfiles: going to parse options through cmdline %s' % configfile_cmdline)
