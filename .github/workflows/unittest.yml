@@ -1,0 +1,21 @@
+name: run python tests
+on: [push, pull_request]
+
+jobs:
+  python_unittests:
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          python: [2.7, 3.6]
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install tox
+        run: pip install tox
+      - name: Run tox
+        # Run tox using the version of Python in `PATH`
+        run: tox -e py
