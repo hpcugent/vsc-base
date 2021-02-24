@@ -16,6 +16,9 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install tox
         run: pip install tox
+      - name: add mandatory git remote
+        # 'hpcugent' is a mandatory remote for setup.py to work (because of get_name_url)
+        run: git remote add hpcugent https://github.com/hpcugent/vsc-base.git
       - name: Run tox
         # Run tox using the version of Python in `PATH`
         run: tox -e py
