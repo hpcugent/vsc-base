@@ -530,7 +530,7 @@ class GeneralOptionTest(TestCase):
         """Test configfiles (base section for empty prefix from auto_section_name)"""
         CONFIGFILE1 = b"""
 [base]
-store=ok
+store=--ok
 longbase=1
 store-with-dash=XX
 
@@ -553,10 +553,10 @@ opt1=value1
         topt = TestOption1(go_configfiles=[tmp1.name], go_args=[])
 
         # nothing passed by commandline
-        self.assertEqual(topt.options.configfiles, _init_configfiles);
-        self.assertEqual(topt.configfiles, [tmp1.name] + _init_configfiles);
+        self.assertEqual(topt.options.configfiles, _init_configfiles)
+        self.assertEqual(topt.configfiles, [tmp1.name] + _init_configfiles)
 
-        self.assertEqual(topt.options.store, 'ok')
+        self.assertEqual(topt.options.store, '--ok')
         self.assertEqual(topt.options.longbase, True)
         self.assertEqual(topt.options.justatest, True)
         self.assertEqual(topt.options.store_with_dash, 'XX')
@@ -573,8 +573,8 @@ opt1=value1
 
         self.assertEqual(topt1b.options.store, 'notok')
 
-        self.assertEqual(topt1b.options.configfiles, _init_configfiles);
-        self.assertEqual(topt1b.configfiles, [tmp1.name] + _init_configfiles);
+        self.assertEqual(topt1b.options.configfiles, _init_configfiles)
+        self.assertEqual(topt1b.configfiles, [tmp1.name] + _init_configfiles)
 
 
         CONFIGFILE2 = b"""
@@ -593,8 +593,8 @@ debug=1
         # cmdline wins always
         topt2 = TestOption1(go_configfiles=[tmp1.name, tmp2.name], go_args=['--store=notok3'])
 
-        self.assertEqual(topt2.options.configfiles, _init_configfiles);
-        self.assertEqual(topt2.configfiles, [tmp1.name, tmp2.name] + _init_configfiles);
+        self.assertEqual(topt2.options.configfiles, _init_configfiles)
+        self.assertEqual(topt2.configfiles, [tmp1.name, tmp2.name] + _init_configfiles)
 
         self.assertEqual(topt2.options.store, 'notok3')
         self.assertEqual(topt2.options.justatest, False)
