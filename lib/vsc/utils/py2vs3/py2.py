@@ -76,7 +76,7 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix="", prefix="tmp", dir=None):
+    def __init__(self, suffix="", prefix="tmp", dir=None):  # noqa
         self._closed = False
         self.name = None # Handle mkdtemp raising an exception
         self.name = mkdtemp(suffix, prefix, dir)
