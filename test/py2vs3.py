@@ -32,7 +32,7 @@ Tests for the vsc.utils.py2vs3 module.
 import os
 import sys
 
-from vsc.utils.py2vs3 import ensure_ascii_string, is_py_ver, is_py2, is_py3, is_string, pickle
+from vsc.utils.py2vs3 import ensure_ascii_string, is_py_ver, is_py2, is_py3, is_string, pickle, TemporaryDirectory
 from vsc.install.testing import TestCase
 
 
@@ -144,3 +144,11 @@ class TestPy2vs3(TestCase):
     def test_urllib_imports(self):
         """Test importing urllib* stuff from py2vs3."""
         from vsc.utils.py2vs3 import HTTPError, HTTPSHandler, Request, build_opener, unquote, urlencode, urlopen
+
+    def test_temporary_directory(self):
+        """Test the class TemporaryDirectory."""
+        with TemporaryDirectory() as temp_dir:
+            path = temp_dir
+            self.assertTrue(os.path.exists(temp_dir), 'Directory created by TemporaryDirectory should work')
+            self.assertTrue(os.path.isdir(temp_dir), 'Directory created by TemporaryDirectory should be a directory')
+        self.assertFalse(os.path.exists(temp_dir), 'Directory created by TemporaryDirectory should cleanup automagically')
