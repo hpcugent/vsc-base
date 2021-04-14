@@ -845,7 +845,7 @@ class ExtOptionParser(OptionParser):
                         if ("%s" % val).lower() not in ("0", "no", "false",):
                             self.environment_arguments.append("%s" % lo)
                 else:
-                    self.log.debug("Environment variable %s is not set" % env_opt_name)
+                    self.log.debug("Environment variable %s is not set", env_opt_name)
 
         if candidates:
             msg = "Found %s environment variable(s) that are prefixed with %s but do not match valid option(s): %s"
@@ -1028,7 +1028,7 @@ class GeneralOption(object):
         }
 
         descr = ['Debug and logging options', '']
-        self.log.debug("Add debug and logging options descr %s opts %s (no prefix)" % (descr, self._logopts))
+        self.log.debug("Add debug and logging options descr %s opts %s (no prefix)", descr, self._logopts)
         self.add_group_parser(self._logopts, descr, prefix=None)
 
     def _set_default_loglevel(self):
@@ -1044,7 +1044,7 @@ class GeneralOption(object):
             'ignoreconfigfiles': ("Ignore configfiles", "strlist", "add", self.DEFAULT_IGNORECONFIGFILES),
         }
         descr = ['Configfile options', '']
-        self.log.debug("Add configfiles options descr %s opts %s (no prefix)" % (descr, opts))
+        self.log.debug("Add configfiles options descr %s opts %s (no prefix)", descr, opts)
         self.add_group_parser(opts, descr, prefix=None, section_name=ExtOptionGroup.NO_SECTION)
 
     def main_options(self):
@@ -1064,8 +1064,8 @@ class GeneralOption(object):
                     fn = getattr(self, name)
                     if callable(fn):  # inspect.isfunction fails beacuse this is a boundmethod
                         self.auto_section_name = '_'.join(name.split('_')[:-1])
-                        self.log.debug('main_options: adding options from %s (auto_section_name %s)' %
-                                       (name, self.auto_section_name))
+                        self.log.debug('main_options: adding options from %s (auto_section_name %s)',
+                                       name, self.auto_section_name)
                         fn()
                         self.auto_section_name = None  # reset it
         return None
@@ -1105,16 +1105,16 @@ class GeneralOption(object):
         if opt_dict is None:
             # skip opt_dict None
             # if opt_dict is empty dict {}, the eg the descritionis added to the help
-            self.log.debug("Skipping opt_dict %s with description %s prefix %s" %
-                           (opt_dict, description, prefix))
+            self.log.debug("Skipping opt_dict %s with description %s prefix %s",
+                           opt_dict, description, prefix)
             return
 
         if otherdefaults is None:
             otherdefaults = {}
 
-        self.log.debug("add_group_parser: passed prefix %s section_name %s" % (prefix, section_name))
-        self.log.debug("add_group_parser: auto_prefix %s auto_section_name %s" %
-                       (self.auto_prefix, self.auto_section_name))
+        self.log.debug("add_group_parser: passed prefix %s section_name %s", prefix, section_name)
+        self.log.debug("add_group_parser: auto_prefix %s auto_section_name %s",
+                       self.auto_prefix, self.auto_section_name)
 
         if prefix is None:
             if self.auto_prefix is None:
@@ -1130,7 +1130,7 @@ class GeneralOption(object):
             else:
                 section_name = self.CONFIGFILES_MAIN_SECTION
 
-        self.log.debug("add_group_parser: set prefix %s section_name %s" % (prefix, section_name))
+        self.log.debug("add_group_parser: set prefix %s section_name %s", prefix, section_name)
 
         # add the section name to the help output
         if section_name is None or section_name == ExtOptionGroup.NO_SECTION:
@@ -1242,7 +1242,7 @@ class GeneralOption(object):
         prefix_section_names = self.config_prefix_sectionnames_map.setdefault(prefix, [])
         if section_name not in prefix_section_names:
             prefix_section_names.append(section_name)
-            self.log.debug("Added prefix %s to list of sectionnames for %s" % (prefix, section_name))
+            self.log.debug("Added prefix %s to list of sectionnames for %s", prefix, section_name)
 
     def default_parseoptions(self):
         """Return default options"""
@@ -1254,7 +1254,7 @@ class GeneralOption(object):
         if self.autocompleter is None:
             self.log.debug('self.autocompleter is None, disabling autocompleter')
         else:
-            self.log.debug('setting autocomplete with args %s' % self.autocompleter)
+            self.log.debug('setting autocomplete with args %s', self.autocompleter)
             autocomplete(self.parser, **self.autocompleter)
 
     def parseoptions(self, options_list=None):
@@ -1267,22 +1267,22 @@ class GeneralOption(object):
         try:
             (self.options, self.args) = self.parser.parse_args(options_list)
         except SystemExit as err:
-            self.log.debug("parseoptions: parse_args err %s code %s" % (err, err.code))
+            self.log.debug("parseoptions: parse_args err %s code %s", err, err.code)
             if self.no_system_exit:
                 return
             else:
                 sys.exit(err.code)
 
-        self.log.debug("parseoptions: options from environment %s" % (self.parser.environment_arguments))
-        self.log.debug("parseoptions: options from commandline %s" % (self.parser.commandline_arguments))
+        self.log.debug("parseoptions: options from environment %s", self.parser.environment_arguments)
+        self.log.debug("parseoptions: options from commandline %s", self.parser.commandline_arguments)
 
         # args should be empty, since everything is optional
         if len(self.args) > 1:
-            self.log.debug("Found remaining args %s" % self.args)
+            self.log.debug("Found remaining args %s", self.args)
             if self.ALLOPTSMANDATORY:
                 self.parser.error("Invalid arguments args %s" % self.args)
 
-        self.log.debug("Found options %s args %s" % (self.options, self.args))
+        self.log.debug("Found options %s args %s", self.options, self.args)
 
     def configfile_parser_init(self, initenv=None):
         """
@@ -1327,13 +1327,13 @@ class GeneralOption(object):
         if self.configfiles is None:
             self.configfiles = []
 
-        self.log.debug("parseconfigfiles: configfiles initially set %s" % self.configfiles)
+        self.log.debug("parseconfigfiles: configfiles initially set %s", self.configfiles)
 
         option_configfiles = self.options.__dict__.get('configfiles', [])  # empty list, will win so no defaults
         option_ignoreconfigfiles = self.options.__dict__.get('ignoreconfigfiles', self.CONFIGFILES_IGNORE)
 
-        self.log.debug("parseconfigfiles: configfiles set through commandline %s" % option_configfiles)
-        self.log.debug("parseconfigfiles: ignoreconfigfiles set through commandline %s" % option_ignoreconfigfiles)
+        self.log.debug("parseconfigfiles: configfiles set through commandline %s", option_configfiles)
+        self.log.debug("parseconfigfiles: ignoreconfigfiles set through commandline %s", option_ignoreconfigfiles)
         if option_configfiles is not None:
             self.configfiles.extend(option_configfiles)
 
@@ -1346,9 +1346,9 @@ class GeneralOption(object):
         for fn in self.configfiles:
             if not os.path.isfile(fn):
                 if self.CONFIGFILES_RAISE_MISSING:
-                    self.log.raiseException("parseconfigfiles: configfile %s not found." % fn)
+                    self.log.raiseException("parseconfigfiles: configfile %s not found.", fn)
                 else:
-                    self.log.debug("parseconfigfiles: configfile %s not found, will be skipped" % fn)
+                    self.log.debug("parseconfigfiles: configfile %s not found, will be skipped", fn)
 
             if fn in option_ignoreconfigfiles:
                 self.log.debug("parseconfigfiles: configfile %s will be ignored", fn)
@@ -1360,11 +1360,11 @@ class GeneralOption(object):
         except Exception:
             self.log.raiseException("parseconfigfiles: problem during read")
 
-        self.log.debug("parseconfigfiles: following files were parsed %s" % parsed_files)
-        self.log.debug("parseconfigfiles: following files were NOT parsed %s" %
+        self.log.debug("parseconfigfiles: following files were parsed %s", parsed_files)
+        self.log.debug("parseconfigfiles: following files were NOT parsed %s",
                        [x for x in configfiles if x not in parsed_files])
-        self.log.debug("parseconfigfiles: sections (w/o %s) %s" %
-                       (self.DEFAULTSECT, self.configfile_parser.sections()))
+        self.log.debug("parseconfigfiles: sections (w/o %s) %s",
+                       self.DEFAULTSECT, self.configfile_parser.sections())
 
         # walk through list of section names
         # - look for options set though config files
@@ -1377,14 +1377,14 @@ class GeneralOption(object):
         cfg_sections = self.config_prefix_sectionnames_map.values()  # without DEFAULT
         for section in cfg_sections:
             if section not in self.config_prefix_sectionnames_map.values():
-                self.log.warning("parseconfigfiles: found section %s, won't be parsed" % section)
+                self.log.warning("parseconfigfiles: found section %s, won't be parsed", section)
                 continue
 
         # add any non-option related configfile data to configfile_remainder dict
         cfg_sections_flat = [name for section_names in cfg_sections for name in section_names]
         for section in self.configfile_parser.sections():
             if section not in cfg_sections_flat:
-                self.log.debug("parseconfigfiles: found section %s, adding to remainder" % section)
+                self.log.debug("parseconfigfiles: found section %s, adding to remainder", section)
                 remainder = self.configfile_remainder.setdefault(section, {})
                 # parse the remaining options, sections starting with 'raw_'
                 # as their name will be considered raw sections
@@ -1396,17 +1396,17 @@ class GeneralOption(object):
             for section in section_names:
                 # default section is treated separate in ConfigParser
                 if not self.configfile_parser.has_section(section):
-                    self.log.debug('parseconfigfiles: no section %s' % str(section))
+                    self.log.debug('parseconfigfiles: no section %s', section)
                     continue
                 elif section == ExtOptionGroup.NO_SECTION:
-                    self.log.debug('parseconfigfiles: ignoring NO_SECTION %s' % str(section))
+                    self.log.debug('parseconfigfiles: ignoring NO_SECTION %s', section)
                     continue
                 elif section.lower() == 'default':
-                    self.log.debug('parseconfigfiles: ignoring default section %s' % section)
+                    self.log.debug('parseconfigfiles: ignoring default section %s', section)
                     continue
 
                 for opt, val in self.configfile_parser.items(section):
-                    self.log.debug('parseconfigfiles: section %s option %s val %s' % (section, opt, val))
+                    self.log.debug('parseconfigfiles: section %s option %s val %s', section, opt, val)
 
                     opt_name, opt_dest = self.make_options_option_name_and_destination(prefix, opt)
                     actual_option = self.parser.get_option_by_long_name(opt_name)
@@ -1416,7 +1416,7 @@ class GeneralOption(object):
                         if in_def and self.CONFIGFILE_CASESENSITIVE and opt == opt.upper():
                             self.log.debug(('parseconfigfiles: no option corresponding with '
                                             'opt %s dest %s in section %s but found all uppercase '
-                                            'in DEFAULT section. Skipping.') % (opt, opt_dest, section))
+                                            'in DEFAULT section. Skipping.'), opt, opt_dest, section)
                             continue
                         else:
                             self.log.raiseException(('parseconfigfiles: no option corresponding with '
@@ -1433,15 +1433,15 @@ class GeneralOption(object):
                     if is_log_action and log_action_taken:
                         # value set through take_action. do not modify by configfile
                         self.log.debug(('parseconfigfiles: log action %s (value %s) found,'
-                                        ' but log action already taken. Ignoring.') % (opt_dest, val))
+                                        ' but log action already taken. Ignoring.'), opt_dest, val)
                     elif actual_option.action in ExtOption.BOOLEAN_ACTIONS:
                         try:
                             newval = self.configfile_parser.getboolean(section, opt)
                             self.log.debug(('parseconfigfiles: getboolean for option %s value %s '
-                                            'in section %s returned %s') % (opt, val, section, newval))
+                                            'in section %s returned %s'), opt, val, section, newval)
                         except Exception:
                             self.log.raiseException(('parseconfigfiles: failed to getboolean for option %s value %s '
-                                                     'in section %s') % (opt, val, section))
+                                                     'in section %s'), opt, val, section)
                         if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                             if newval:
                                 cmd_template = "--enable-%s"
@@ -1451,14 +1451,14 @@ class GeneralOption(object):
                             configfile_cmdline.append(cmd_template % opt_name)
                         else:
                             self.log.debug(("parseconfigfiles: no enable/disable, not trying to set boolean-valued "
-                                            "option %s via cmdline, just setting value to %s" % (opt_name, newval)))
+                                            "option %s via cmdline, just setting value to %s"), opt_name, newval)
                             configfile_values[opt_dest] = newval
                     else:
                         configfile_cmdline_dest.append(opt_dest)
                         configfile_cmdline.append("--%s=%s" % (opt_name, val))
 
         # reparse
-        self.log.debug('parseconfigfiles: going to parse options through cmdline %s' % configfile_cmdline)
+        self.log.debug('parseconfigfiles: going to parse options through cmdline %s', configfile_cmdline)
         try:
             # can't reprocress the environment, since we are not reporcessing the commandline either
             self.parser.process_env_options = False
@@ -1469,7 +1469,7 @@ class GeneralOption(object):
                                     configfile_cmdline)
 
         # re-report the options as parsed via parser
-        self.log.debug("parseconfigfiles: options from configfile %s" % (self.parser.commandline_arguments))
+        self.log.debug("parseconfigfiles: options from configfile %s", self.parser.commandline_arguments)
 
         if len(parsed_configfile_args) > 0:
             self.log.raiseException('parseconfigfiles: not all options were parsed: %s' % parsed_configfile_args)
@@ -1478,23 +1478,23 @@ class GeneralOption(object):
             try:
                 configfile_values[opt_dest] = getattr(parsed_configfile_options, opt_dest)
             except AttributeError:
-                self.log.raiseException('parseconfigfiles: failed to retrieve dest %s from parsed_configfile_options' %
+                self.log.raiseException('parseconfigfiles: failed to retrieve dest %s from parsed_configfile_options',
                                         opt_dest)
 
-        self.log.debug('parseconfigfiles: parsed values from configfiles: %s' % configfile_values)
+        self.log.debug('parseconfigfiles: parsed values from configfiles: %s', configfile_values)
 
         for opt_dest, val in configfile_values.items():
             set_opt = False
             if not hasattr(self.options, opt_dest):
-                self.log.debug('parseconfigfiles: adding new option %s with value %s' % (opt_dest, val))
+                self.log.debug('parseconfigfiles: adding new option %s with value %s', opt_dest, val)
                 set_opt = True
             else:
                 if hasattr(self.options, '_action_taken') and self.options._action_taken.get(opt_dest, None):
                     # value set through take_action. do not modify by configfile
-                    self.log.debug('parseconfigfiles: option %s already found in _action_taken' % (opt_dest))
+                    self.log.debug('parseconfigfiles: option %s already found in _action_taken', opt_dest)
                 else:
-                    self.log.debug('parseconfigfiles: option %s not found in _action_taken, setting to %s' %
-                                   (opt_dest, val))
+                    self.log.debug('parseconfigfiles: option %s not found in _action_taken, setting to %s',
+                                   opt_dest, val)
                     set_opt = True
             if set_opt:
                 setattr(self.options, opt_dest, val)
@@ -1566,11 +1566,11 @@ class GeneralOption(object):
             self.log.debug("dict_by_prefix: merge_empty_prefix set")
             for opt, val in subdict[''].items():
                 if opt in subdict:
-                    self.log.error("dict_by_prefix: non-prefixed option %s conflicts with prefix of same name." % opt)
+                    self.log.error("dict_by_prefix: non-prefixed option %s conflicts with prefix of same name.", opt)
                 else:
                     subdict[opt] = val
 
-        self.log.debug("dict_by_prefix: subdict %s" % subdict)
+        self.log.debug("dict_by_prefix: subdict %s", subdict)
         return subdict
 
     def generate_cmd_line(self, ignore=None, add_default=None):
@@ -1581,7 +1581,7 @@ class GeneralOption(object):
             @param add_default : print value that are equal to default
         """
         if ignore is not None:
-            self.log.debug("generate_cmd_line ignore %s" % ignore)
+            self.log.debug("generate_cmd_line ignore %s", ignore)
             ignore = re.compile(ignore)
         else:
             self.log.debug("generate_cmd_line no ignore")
@@ -1603,8 +1603,8 @@ class GeneralOption(object):
             opt_name = self.processed_options[opt_dest][self.PROCESSED_OPTIONS_PROPERTIES.index('opt_name')]
 
             if ignore is not None and ignore.search(opt_dest):
-                self.log.debug("generate_cmd_line adding %s value %s matches ignore. Not adding to args." %
-                               (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s matches ignore. Not adding to args.",
+                               opt_name, opt_value)
                 continue
 
             if opt_value == default:
@@ -1613,25 +1613,25 @@ class GeneralOption(object):
                 msg = ''
                 if not (add_default or action in ('store_or_None',)):
                     msg = ' Not adding to args.'
-                self.log.debug("generate_cmd_line adding %s value %s default found.%s" %
-                               (opt_name, opt_value, msg))
+                self.log.debug("generate_cmd_line adding %s value %s default found.%s",
+                               opt_name, opt_value, msg)
                 if not (add_default or action in ('store_or_None',)):
                     continue
 
             if opt_value is None:
                 # do nothing
-                self.log.debug("generate_cmd_line adding %s value %s. None found. not adding to args." %
-                               (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s. None found. not adding to args.",
+                               opt_name, opt_value)
                 continue
 
             if action in ExtOption.EXTOPTION_STORE_OR:
                 if opt_value == default:
-                    self.log.debug("generate_cmd_line %s adding %s (value is default value %s)" %
-                                   (action, opt_name, opt_value))
+                    self.log.debug("generate_cmd_line %s adding %s (value is default value %s)",
+                                   action, opt_name, opt_value)
                     args.append("--%s" % (opt_name))
                 else:
-                    self.log.debug("generate_cmd_line %s adding %s non-default value %s" %
-                                   (action, opt_name, opt_value))
+                    self.log.debug("generate_cmd_line %s adding %s non-default value %s",
+                                   action, opt_name, opt_value)
                     if typ in ExtOption.TYPE_STRLIST:
                         sep, _, _ = what_str_list_tuple(typ)
                         args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
@@ -1639,16 +1639,16 @@ class GeneralOption(object):
                         args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
             elif action in ("store_true", "store_false",) + ExtOption.EXTOPTION_LOG:
                 # not default!
-                self.log.debug("generate_cmd_line adding %s value %s. store action found" %
-                               (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s. store action found",
+                               opt_name, opt_value)
                 if (action in ('store_true',) + ExtOption.EXTOPTION_LOG and default is True and opt_value is False) or \
                    (action in ('store_false',) and default is False and opt_value is True):
                     if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                         args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
                     else:
                         self.log.error(("generate_cmd_line: %s : can't set inverse of default %s with action %s "
-                                        "with missing ENABLE/DISABLE in option_class") %
-                                       (opt_name, default, action))
+                                        "with missing ENABLE/DISABLE in option_class"),
+                                       opt_name, default, action)
                 else:
                     if opt_value == default and ((action in ('store_true',) +
                                                  ExtOption.EXTOPTION_LOG and default is False) or
@@ -1658,8 +1658,8 @@ class GeneralOption(object):
                             args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
                         else:
                             self.log.debug(("generate_cmd_line: %s : action %s can only set to inverse of default %s "
-                                            "and current value is default. Not adding to args.") %
-                                           (opt_name, action, default))
+                                            "and current value is default. Not adding to args."),
+                                           opt_name, action, default)
                     else:
                         args.append("--%s" % opt_name)
             elif action in ("add", "add_first", "add_flex"):
@@ -1699,8 +1699,8 @@ class GeneralOption(object):
                     self.log.debug('generate_cmd_line no value left, skipping.')
                     continue
 
-                self.log.debug("generate_cmd_line adding %s value %s. %s action, return as %s" %
-                               (opt_name, opt_value, action, restype))
+                self.log.debug("generate_cmd_line adding %s value %s. %s action, return as %s",
+                               opt_name, opt_value, action, restype)
 
                 args.append("--%s=%s" % (opt_name, shell_quote(value)))
             elif typ in ExtOption.TYPE_STRLIST:
@@ -1708,17 +1708,17 @@ class GeneralOption(object):
                 args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
             elif action in ("append",):
                 # add multiple times
-                self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args" %
-                               (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args",
+                               opt_name, opt_value)
                 args.extend(["--%s=%s" % (opt_name, shell_quote(v)) for v in opt_value])
             elif action in ("regex",):
-                self.log.debug("generate_cmd_line adding %s regex pattern %s" % (opt_name, opt_value.pattern))
+                self.log.debug("generate_cmd_line adding %s regex pattern %s", opt_name, opt_value.pattern)
                 args.append("--%s=%s" % (opt_name, shell_quote(opt_value.pattern)))
             else:
-                self.log.debug("generate_cmd_line adding %s value %s" % (opt_name, opt_value))
+                self.log.debug("generate_cmd_line adding %s value %s", opt_name, opt_value)
                 args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
 
-        self.log.debug("commandline args %s" % args)
+        self.log.debug("commandline args %s", args)
         return args
 
 

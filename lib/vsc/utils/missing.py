@@ -39,17 +39,14 @@ Various functions that are missing from the default Python library.
 @author: Andy Georges (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+import logging
 import shlex
 import time
 from collections import namedtuple, Mapping
 from functools import reduce
 
-from vsc.utils import fancylogger
 from vsc.utils.frozendict import FrozenDict
 from vsc.utils.py2vs3 import quote
-
-
-_log = fancylogger.getLogger('vsc.utils.missing')
 
 
 def nub(list_):
@@ -220,8 +217,6 @@ class FrozenDictKnownKeys(FrozenDict):
 
     def __init__(self, *args, **kwargs):
         """Constructor, only way to define the contents."""
-        self.log = fancylogger.getLogger(self.__class__.__name__, fname=False)
-
         # support ignoring of unknown keys
         ignore_unknown_keys = kwargs.pop('ignore_unknown_keys', False)
 
@@ -231,12 +226,12 @@ class FrozenDictKnownKeys(FrozenDict):
         if unknown_keys:
             if ignore_unknown_keys:
                 for key in unknown_keys:
-                    self.log.debug("Ignoring unknown key '%s' (value '%s')" % (key, args[0][key]))
+                    logging.debug("Ignoring unknown key '%s' (value '%s')", key, args[0][key])
                     # filter key out of dictionary before creating instance
                     del tmpdict[key]
             else:
-                msg = "Encountered unknown keys %s (known keys: %s)" % (unknown_keys, self.KNOWN_KEYS)
-                self.log.raiseException(msg, exception=KeyError)
+                logging.error("Encountered unknown keys %s (known keys: %s)", unknown_keys, self.KNOWN_KEYS)
+                raise KeyError("Encountered unknown keys")
 
         super(FrozenDictKnownKeys, self).__init__(tmpdict)
     # pylint: disable=arguments-differ
@@ -318,9 +313,9 @@ class TryOrFail(object):
                 except self.exceptions as err:
                     if i == self.n - 1:
                         raise
-                    _log.exception("try_or_fail caught an exception - attempt %d: %s" % (i, err))
+                    logging.exception("try_or_fail caught an exception - attempt %d: %s", i, err)
                     if self.sleep > 0:
-                        _log.warning("try_or_fail is sleeping for %d seconds before the next attempt" % (self.sleep,))
+                        logging.warning("try_or_fail is sleeping for %d seconds before the next attempt", self.sleep)
                         time.sleep(self.sleep)
 
         return new_function

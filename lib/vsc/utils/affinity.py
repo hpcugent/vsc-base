@@ -35,11 +35,9 @@ Linux priority
 @author: Stijn De Weirdt (Ghent University)
 """
 import ctypes
+import logging
 import os
 from ctypes.util import find_library
-from vsc.utils.fancylogger import getLogger
-
-_logger = getLogger("affinity")
 
 _libc_lib = find_library('c')
 _libc = ctypes.cdll.LoadLibrary(_libc_lib)
@@ -113,7 +111,6 @@ class cpu_set_t(ctypes.Structure):
 
     def __init__(self, *args, **kwargs):
         super(cpu_set_t, self).__init__(*args, **kwargs)
-        self.log = getLogger(self.__class__.__name__)
         self.cpus = None
 
     def __str__(self):
@@ -128,14 +125,17 @@ class cpu_set_t(ctypes.Structure):
 
             # sanity check
             if indices[1] < indices[0]:
-                self.log.raiseException("convert_hr_bits: end is lower then start in '%s'" % rng)
+                logging.error("convert_hr_bits: end is lower then start in '%s'", rng)
+                raise Exception("convert_hr_bits: end is lower then start")
             elif indices[0] < 0:
-                self.log.raiseException("convert_hr_bits: negative start in '%s'" % rng)
+                logging.error("convert_hr_bits: negative start in '%s'", rng)
+                raise Exception("convert_hr_bits: negative start")
             elif indices[1] > CPU_SETSIZE + 1:  # also covers start, since end > start
-                self.log.raiseException("convert_hr_bits: end larger then max %s in '%s'" % (CPU_SETSIZE, rng))
+                logging.error("convert_hr_bits: end larger then max %s in '%s'", CPU_SETSIZE, rng)
+                raise Exception("convert_hr_bits: end larger then max")
 
             self.cpus[indices[0]:indices[1] + 1] = [1] * (indices[1] + 1 - indices[0])
-        self.log.debug("convert_hr_bits: converted %s into cpus %s" % (txt, self.cpus))
+        logging.debug("convert_hr_bits: converted %s into cpus %s", txt, self.cpus)
 
     def convert_bits_hr(self):
         """Convert __bits into human readable text"""
@@ -168,8 +168,8 @@ class cpu_set_t(ctypes.Structure):
         """Given list, set it as cpus"""
         nr_cpus = len(cpus_list)
         if  nr_cpus > CPU_SETSIZE:
-            self.log.warning("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize" %
-                           (nr_cpus, CPU_SETSIZE))
+            logging.warning("set_cpus: length cpu list %s is larger then cpusetsize %s. Truncating to cpusetsize",
+                             nr_cpus, CPU_SETSIZE)
             cpus_list = cpus_list[:CPU_SETSIZE]
         elif nr_cpus < CPU_SETSIZE:
             cpus_list.extend([0] * (CPU_SETSIZE - nr_cpus))
@@ -188,11 +188,12 @@ class cpu_set_t(ctypes.Structure):
             __bits[idx] = cpu_mask_t(sum(cpus))
         # sanity check
         if prev_cpus == self.get_cpus():
-            self.log.debug("set_bits: new set to %s" % self.convert_bits_hr())
+            logging.debug("set_bits: new set to %s", self.convert_bits_hr())
         else:
             # get_cpus() rescans
-            self.log.raiseException("set_bits: something went wrong: previous cpus %s; current ones %s" %
-                                    (prev_cpus[:20], self.cpus[:20]))
+            logging.error("set_bits: something went wrong: previous cpus %s; current ones %s",
+                          prev_cpus[:20], self.cpus[:20])
+            raise Exception("set_bits: something went wrong: previous cpus / current ones")
 
     def str_cpus(self):
         """Return a string representation of the cpus"""
@@ -234,9 +235,9 @@ def sched_getaffinity(cs=None, pid=None):
 
     ec = _libc.sched_getaffinity(pid_t(pid), ctypes.sizeof(cpu_set_t), ctypes.pointer(cs))
     if ec == 0:
-        _logger.debug("sched_getaffinity for pid %s returned cpuset %s" % (pid, cs))
+        logging.debug("sched_getaffinity for pid %s returned cpuset %s", pid, cs)
     else:
-        _logger.error("sched_getaffinity failed for pid %s ec %s" % (pid, ec))
+        logging.error("sched_getaffinity failed for pid %s ec %s", pid, ec)
     return cs
 
 
@@ -250,9 +251,9 @@ def sched_setaffinity(cs, pid=None):
 
     ec = _libc.sched_setaffinity(pid_t(pid), ctypes.sizeof(cpu_set_t), ctypes.pointer(cs))
     if ec == 0:
-        _logger.debug("sched_setaffinity for pid %s and cpuset %s" % (pid, cs))
+        logging.debug("sched_setaffinity for pid %s and cpuset %s", pid, cs)
     else:
-        _logger.error("sched_setaffinity failed for pid %s cpuset %s ec %s" % (pid, cs, ec))
+        logging.error("sched_setaffinity failed for pid %s cpuset %s ec %s", pid, cs, ec)
 
 
 # /* Get index of currently used CPU.  */
@@ -290,13 +291,14 @@ def getpriority(which=None, who=None):
     if which is None:
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
-        _logger.raiseException("getpriority: which %s not in correct range" % which)
+        logging.error("getpriority: which %s not in correct range", which)
+        raise Exception("getpriority: which not in correct range")
     if who is None:
         who = 0  # current which-ever
     prio = _libc.getpriority(priority_which_t(which),
                              id_t(who),
                              )
-    _logger.debug("getpriority prio %s for which %s who %s" % (prio, which, who))
+    logging.debug("getpriority prio %s for which %s who %s", prio, which, who)
 
     return prio
 
@@ -315,23 +317,26 @@ def setpriority(prio, which=None, who=None):
     if which is None:
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
-        _logger.raiseException("setpriority: which %s not in correct range" % which)
+        logging.error("setpriority: which %s not in correct range", which)
+        raise Exception("setpriority: which not in correct range")
     if who is None:
         who = 0  # current which-ever
 
     try:
         prio = int(prio)
     except ValueError:
-        _logger.raiseException("setpriority: failed to convert priority %s into int" % prio)
+        logging.error("setpriority: failed to convert priority %s into int", prio)
+        raise Exception("setpriority: failed to convert priority into int")
 
     if prio < PRIO_MIN or prio > PRIO_MAX:
-        _logger.raiseException("setpriority: prio not in allowed range MIN %s MAX %s" % (PRIO_MIN, PRIO_MAX))
+        logging.error("setpriority: prio not in allowed range MIN %s MAX %s", PRIO_MIN, PRIO_MAX)
+        raise Exception("setpriority: prio not in allowed range MIN MAX")
 
     ec = _libc.setpriority(priority_which_t(which),
                            id_t(who),
                            ctypes.c_int(prio)
                            )
     if ec == 0:
-        _logger.debug("setpriority for which %s who %s prio %s" % (which, who, prio))
+        logging.debug("setpriority for which %s who %s prio %s", which, who, prio)
     else:
-        _logger.error("setpriority failed for which %s who %s prio %s" % (which, who, prio))
+        logging.error("setpriority failed for which %s who %s prio %s", which, who, prio)

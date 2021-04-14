@@ -31,14 +31,13 @@ Wrapper around the standard Python mail library.
 
 @author: Andy Georges (Ghent University)
 """
-
+import logging
 import re
 import smtplib
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-
-from vsc.utils import fancylogger
 
 
 class VscMailError(Exception):
@@ -71,7 +70,6 @@ class VscMail(object):
 
     def __init__(self, mail_host=None):
         self.mail_host = mail_host
-        self.log = fancylogger.getLogger(self.__class__.__name__)
 
     def _send(self,
               mail_from,
@@ -88,39 +86,34 @@ class VscMail(object):
 
         try:
             if self.mail_host:
-                self.log.debug("Using %s as the mail host" % (self.mail_host,))
+                logging.debug("Using %s as the mail host", self.mail_host)
                 s = smtplib.SMTP(self.mail_host)
             else:
-                self.log.debug("Using the default mail host")
+                logging.debug("Using the default mail host")
                 s = smtplib.SMTP()
                 s.connect()
             try:
                 s.sendmail(mail_from, mail_to, msg.as_string())
             except smtplib.SMTPHeloError as err:
-                self.log.error("Cannot get a proper response from the SMTP host" +
-                               (self.mail_host and " %s" % (self.mail_host) or ""))
+                logging.error("Cannot get a proper response from the SMTP host %s", self.mail_host)
                 raise
             except smtplib.SMTPRecipientsRefused as err:
-                self.log.error("All recipients were refused by SMTP host" +
-                               (self.mail_host and " %s" % (self.mail_host) or "") +
-                               " [%s]" % (mail_to))
+                logging.error("All recipients were refused by SMTP host %s [%s]", self.mail_host, mail_to)
                 raise
             except smtplib.SMTPSenderRefused as err:
-                self.log.error("Sender was refused by SMTP host" +
-                               (self.mail_host and " %s" % (self.mail_host) or "") +
-                               "%s" % (mail_from))
+                logging.error("Sender was refused by SMTP host %s [%s]", self.mail_host, mail_from)
                 raise
             except smtplib.SMTPDataError as err:
                 raise
         except smtplib.SMTPConnectError as err:
-            self.log.exception("Cannot connect to the SMTP host" + (self.mail_host and " %s" % (self.mail_host) or ""))
+            logging.exception("Cannot connect to the SMTP host %s", self.mail_host)
             raise VscMailError(mail_host=self.mail_host,
                                mail_to=mail_to,
                                mail_from=mail_from,
                                mail_subject=mail_subject,
                                err=err)
         except Exception as err:
-            self.log.exception("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
+            logging.exception("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
             raise VscMailError(mail_host=self.mail_host,
                                mail_to=mail_to,
                                mail_from=mail_from,
@@ -147,7 +140,7 @@ class VscMail(object):
         @param mail_subject: the subject of the email.
         @param message: the body of the mail.
         """
-        self.log.info("Sending mail [%s] to %s." % (mail_subject, mail_to))
+        logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
 
         msg = MIMEText(message)
         msg['Subject'] = mail_subject
@@ -176,7 +169,8 @@ class VscMail(object):
             re_src = re.compile("src=\"%s\"" % im)
             (html, count) = re_src.subn("src=\"cid:%s\"" % im, html)
             if count == 0:
-                self.log.raiseException("Could not find image %s in provided HTML." % im, VscMailError)
+                logging.error("Could not find image %s in provided HTML.", im)
+                raise VscMailError("Could not find image")
 
         return html
 
