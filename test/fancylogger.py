@@ -63,6 +63,13 @@ MSG = "This is a test log message."
 # message format: '<date> <time> <type> <source location> <message>'
 MSGRE_TPL = r"%%s.*%s" % MSG
 
+# This is needed to properly initialise the rootlogger, so the  setUp code works as expected.
+#   if not present, the disableDefaultHandlers in setUp with set the filehandler to APOCALYTIC
+#   as it is the only handler, and tests will fail.
+#   To debug issues like this, run with
+#   FANCYLOGGER_LOGLEVEL_DEBUG=1 FANCYLOGGER_GETLOGGER_DEBUG=1 python setup.py test -F fancylog
+_unused_logger = fancylogger.getLogger("fake_load_test")
+
 
 def _get_tty_stream():
     """Try to open and return a stream connected to a TTY device."""
@@ -139,6 +146,20 @@ class FancyLoggerTest(TestCase):
         # reset root handlers; mimic clean import logging
         logging.root.handlers = []
 
+    def truncate_log(self):
+        # truncate the logfile
+        f = open(self.logfn, 'w')
+        f.close()
+
+    def mk_empty_log(self):
+        f = open(self.logfn, 'w')
+        f.write('')
+        f.close()
+
+    def read_log(self):
+        self.handler.flush()
+        return open(self.logfn, 'r').read()
+
     def setUp(self):
         super(FancyLoggerTest, self).setUp()
 
@@ -158,6 +179,8 @@ class FancyLoggerTest(TestCase):
 
         self.orig_raise_exception_class = fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS
         self.orig_raise_exception_method = fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD
+
+        self.truncate_log()
 
     def test_getlevelint(self):
         """Test the getLevelInt"""
@@ -226,9 +249,6 @@ class FancyLoggerTest(TestCase):
 
     def test_utf8_decoding(self):
         """Test UTF8 decoding."""
-        # truncate the logfile
-        open(self.logfn, 'w')
-
         logger = fancylogger.getLogger('utf8_test')
         logger.setLevel('DEBUG')
 
@@ -264,11 +284,10 @@ class FancyLoggerTest(TestCase):
 
     def test_deprecated(self):
         """Test deprecated log function."""
-        # truncate the logfile
-        open(self.logfn, 'w')
 
         # log message
         logger = fancylogger.getLogger('deprecated_test')
+        logger.setLevel('DEBUG')
 
         max_ver = "1.0"
 
@@ -277,18 +296,18 @@ class FancyLoggerTest(TestCase):
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.1", max_ver)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.0", max_ver)
 
-        open(self.logfn, 'w').write('')
+        #self.mk_empty_log()
 
+        logger.error("hoohoo")
         # test whether deprecated warning works
         # no deprecation if current version is lower than max version
         logger.deprecated(MSG, "0.9", max_ver)
 
         msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*%s" % (max_ver, MSG))
-        txt = open(self.logfn, 'r').read()
+        txt = self.read_log()
         self.assertTrue(msgre_warning.search(txt), "Pattern '%s' found in: %s" % (msgre_warning.pattern, txt))
 
-        # wipe log to start over
-        open(self.logfn, 'w').write('')
+        self.mk_empty_log()
 
         callback_cache = []
         def test_log_callback(msg, cache=callback_cache):
@@ -299,8 +318,7 @@ class FancyLoggerTest(TestCase):
         logger.deprecated("test callback", "0.9", max_ver, log_callback=test_log_callback)
         self.assertEqual(callback_cache[-1], "Deprecated functionality, will no longer work in v1.0: test callback")
 
-        # wipe log to start over
-        open(self.logfn, 'w').write('')
+        self.mk_empty_log()
 
         # test handling of non-UTF8 chars
         msg = MSG + u'\x81'
@@ -315,39 +333,35 @@ class FancyLoggerTest(TestCase):
 
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
 
-        open(self.logfn, 'w').write('')
+        self.mk_empty_log()
 
         logger.deprecated(msg, "0.9", max_ver)
 
-        txt = open(self.logfn, 'r').read()
+        txt = self.read_log()
         self.assertTrue(msgre_warning.search(txt))
 
     def test_fail(self):
         """Test fail log method."""
-        # truncate the logfile
-        open(self.logfn, 'w')
 
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(Exception, 'failtest', logger.fail, 'failtest')
-        self.assertTrue(re.match("^WARNING.*failtest$", open(self.logfn, 'r').read()))
+        self.assertTrue(re.match("^WARNING.*failtest$", self.read_log()))
         self.assertErrorRegex(Exception, 'failtesttemplatingworkstoo', logger.fail, 'failtest%s', 'templatingworkstoo')
 
-        open(self.logfn, 'w')
+        self.truncate_log()
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(KeyError, 'failkeytest', logger.fail, 'failkeytest')
-        self.assertTrue(re.match("^WARNING.*failkeytest$", open(self.logfn, 'r').read()))
+        self.assertTrue(re.match("^WARNING.*failkeytest$", self.read_log()))
 
-        open(self.logfn, 'w')
+        self.truncate_log()
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(KeyError, 'failkeytestagain', logger.fail, 'failkeytestagain')
-        self.assertTrue(re.match("^WARNING.*failkeytestagain$", open(self.logfn, 'r').read()))
+        self.assertTrue(re.match("^WARNING.*failkeytestagain$", self.read_log()))
 
     def test_raiseException(self):
         """Test raiseException log method."""
-        # truncate the logfile
-        open(self.logfn, 'w')
 
         def test123(exception, msg):
             """Utility function for testing raiseException."""
@@ -360,25 +374,25 @@ class FancyLoggerTest(TestCase):
         self.assertErrorRegex(Exception, 'failtest', test123, Exception, 'failtest')
 
         regex = re.compile("^WARNING.*HIT.*failtest\n.*in test123.*$", re.M)
-        txt = open(self.logfn, 'r').read()
+        txt = self.read_log()
         self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
 
-        open(self.logfn, 'w')
+        self.truncate_log()
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(KeyError, 'failkeytest', test123, KeyError, 'failkeytest')
 
         regex = re.compile("^WARNING.*HIT.*'failkeytest'\n.*in test123.*$", re.M)
-        txt = open(self.logfn, 'r').read()
+        txt = self.read_log()
         self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
 
-        open(self.logfn, 'w')
+        self.truncate_log()
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
         logger = fancylogger.getLogger('fail_test')
         self.assertErrorRegex(AttributeError, 'attrtest', test123, AttributeError, 'attrtest')
 
         regex = re.compile("^WARNING.*HIT.*attrtest\n.*in test123.*$", re.M)
-        txt = open(self.logfn, 'r').read()
+        txt = self.read_log()
         self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
 
     def _stream_stdouterr(self, isstdout=True, expect_match=True):
