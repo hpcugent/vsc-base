@@ -320,17 +320,17 @@ class Run(object):
                     currentpath = os.getcwd()
                     if currentpath != self.startpath:
                         self.log.warning(("_return_to_previous_start_in_path: current diretory %s does not match "
-                                          "startpath %s") % (currentpath, self.startpath))
+                                          "startpath %s"), currentpath, self.startpath)
                     os.chdir(self._cwd_before_startpath)
                 except OSError:
                     self.log.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
-                                         "to previous path %s") % (currentpath, self._cwd_before_startpath))
+                                             "to previous path %s"), currentpath, self._cwd_before_startpath)
             else:
                 self.log.raiseException(("_return_to_previous_start_in_path: provided previous cwd path %s exists "
                                          "but is no directory") % self._cwd_before_startpath)
         else:
             self.log.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
-                                self._cwd_before_startpath)
+                                    self._cwd_before_startpath)
 
     def _make_popen_named_args(self, others=None):
         """Create the named args for Popen"""
@@ -347,12 +347,12 @@ class Run(object):
         if others is not None:
             self._popen_named_args.update(others)
 
-        self.log.debug("_popen_named_args %s" % self._popen_named_args)
+        self.log.debug("_popen_named_args %s", self._popen_named_args)
 
     def _make_shell_command(self):
         """Convert cmd into shell command"""
-        self.log.warning("using potentialy unsafe shell commands, use run.run or run.RunNoShell.run \
-                         instead of run.run_simple or run.Run.run")
+        self.log.warning(("using potentialy unsafe shell commands, use run.run or run.RunNoShell.run "
+                          "instead of run.run_simple or run.Run.run"))
         if self.cmd is None:
             self.log.raiseException("_make_shell_command: no cmd set.")
 
@@ -416,7 +416,7 @@ class Run(object):
             readsize = self.readsize
         if readsize is None:
             readsize = -1  # read all
-        self.log.debug("_read_process: going to read with readsize %s" % readsize)
+        self.log.debug("_read_process: going to read with readsize %s", readsize)
         out = self._process.stdout.read(readsize)
         return ensure_ascii_string(out)
 
@@ -425,10 +425,10 @@ class Run(object):
         cmd_ascii = ensure_ascii_string(self.cmd)
         if not self._process_exitcode == 0:
             shell_cmd_ascii = ensure_ascii_string(self._shellcmd)
-            self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: (shellcmd %s) output %s" %
-                                            (cmd_ascii, shell_cmd_ascii, self._process_output))
+            self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: (shellcmd %s) output %s",
+                                            cmd_ascii, shell_cmd_ascii, self._process_output)
         else:
-            self.log.debug("_post_exitcode: success cmd %s: output %s" % (cmd_ascii, self._process_output))
+            self.log.debug("_post_exitcode: success cmd %s: output %s", cmd_ascii, self._process_output)
 
     def _post_output(self):
         """Postprocess the output in self._process_output"""
@@ -460,7 +460,7 @@ class Run(object):
             try:
                 pids.append(int(pid))
             except ValueError:
-                self.log.error("killtasks failed to convert task/pid %s to integer" % pid)
+                self.log.error("killtasks failed to convert task/pid %s to integer", pid)
 
         def do_something_with_pid(fn, args, msg):
             """
@@ -474,7 +474,7 @@ class Run(object):
             except Exception as err:
                 # ERSCH is no such process, so no issue
                 if not (isinstance(err, OSError) and err.errno == errno.ESRCH):
-                    self.log.error("Failed to %s from %s: %s" % (msg, pid, err))
+                    self.log.error("Failed to %s from %s: %s", msg, pid, err)
 
             return res
 
@@ -490,7 +490,7 @@ class Run(object):
 
             if kill_pgid:
                 if pgid is None:
-                    self.log.error("Can't kill pgid for pid %s, None found" % pid)
+                    self.log.error("Can't kill pgid for pid %s, None found", pid)
                 else:
                     do_something_with_pid(os.kill, [pgid, sig], 'kill pgid')
 
@@ -582,8 +582,8 @@ class RunLoop(Run):
 
                 self._loop_count += 1
 
-            self.log.debug("_wait_for_process: loop stopped after %s iterations (ec %s loop_continue %s)" %
-                           (self._loop_count, ec, self._loop_continue))
+            self.log.debug("_wait_for_process: loop stopped after %s iterations (ec %s loop_continue %s)",
+                           self._loop_count, ec, self._loop_continue)
 
             # read remaining data (all of it)
             output = self._read_process(-1)
@@ -594,7 +594,7 @@ class RunLoop(Run):
             # process after updating the self._process_ vars
             self._loop_process_output_final(output)
         except RunLoopException as err:
-            self.log.debug('RunLoopException %s' % err)
+            self.log.debug('RunLoopException %s', err)
             self._process_output = ensure_ascii_string(err.output)
             self._process_exitcode = err.code
 
@@ -628,7 +628,7 @@ class RunLoopLog(RunLoop):
 
     def _wait_for_process(self):
         # initialise the info logger
-        self.log.info("Going to run cmd %s" % self._shellcmd)
+        self.log.info("Going to run cmd %s", self._shellcmd)
         super(RunLoopLog, self)._wait_for_process()
 
     def _loop_process_output(self, output):
@@ -708,7 +708,7 @@ class RunFile(Run):
         if others is None:
             if os.path.exists(self.filename):
                 if os.path.isfile(self.filename):
-                    self.log.warning("_make_popen_named_args: going to overwrite existing file %s" % self.filename)
+                    self.log.warning("_make_popen_named_args: going to overwrite existing file %s", self.filename)
                 elif os.path.isdir(self.filename):
                     self.log.raiseException(("_make_popen_named_args: writing to filename %s impossible. "
                                              "Path exists and is a directory.") % self.filename)
@@ -786,7 +786,7 @@ class RunTimeout(RunLoop, RunAsync):
         """"""
         time_passed = time.time() - self.start
         if self.timeout is not None and time_passed > self.timeout:
-            self.log.debug("Time passed %s > timeout %s." % (time_passed, self.timeout))
+            self.log.debug("Time passed %s > timeout %s.", time_passed, self.timeout)
             self.stop_tasks()
 
             # go out of loop
@@ -878,18 +878,18 @@ class RunQA(RunLoop, RunAsync):
         for question, answers in qa.items():
             reg_q = process_question(question)
             new_qa[reg_q] = process_answers(answers)
-            self.log.debug("new_qa[%s]: %s" % (reg_q.pattern.__repr__(), answers))
+            self.log.debug("new_qa[%s]: %s", reg_q.pattern.__repr__(), answers)
 
         new_qa_reg = {}
         self.log.debug("new_qa_reg: ")
         for question, answers in qa_reg.items():
             reg_q = re.compile(r"" + question + r"[\s\n]*$")
             new_qa_reg[reg_q] = process_answers(answers)
-            self.log.debug("new_qa_reg[%s]: %s" % (reg_q.pattern.__repr__(), answers))
+            self.log.debug("new_qa_reg[%s]: %s", reg_q.pattern.__repr__(), answers)
 
         # simple statements, can contain wildcards
         new_no_qa = [re.compile(r"" + x + r"[\s\n]*$") for x in no_qa]
-        self.log.debug("new_no_qa: %s" % [x.pattern.__repr__() for x in new_no_qa])
+        self.log.debug("new_no_qa: %s", [x.pattern.__repr__() for x in new_no_qa])
 
         return new_qa, new_qa_reg, new_no_qa
 
@@ -924,9 +924,9 @@ class RunQA(RunLoop, RunAsync):
                     prev_answer = answers.pop(0)
                     if self.CYCLE_ANSWERS:
                         answers.append(prev_answer)
-                    self.log.debug("New answers list for question %s: %s" % (question.pattern, answers))
-                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s process_output %s" %
-                               (answer, question.pattern, idx >= nr_qa, output, self._process_output[-50:]))
+                    self.log.debug("New answers list for question %s: %s", question.pattern, answers)
+                self.log.debug("_loop_process_output: answer %s question %s (std: %s) out %s process_output %s",
+                               answer, question.pattern, idx >= nr_qa, output, self._process_output[-50:])
                 written = self._process_module.send_all(self._process, answer)
                 if written != len(answer):
                     self.log.warning("answer '%s' not fully written: %s out of %s bytes", answer, written, len(answer))
@@ -943,7 +943,7 @@ class RunQA(RunLoop, RunAsync):
                 noqa = False
                 for r in self.no_qa:
                     if r.search(self._process_output):
-                        self.log.debug("_loop_process_output: no_qa found for out %s" % self._process_output[-50:])
+                        self.log.debug("_loop_process_output: no_qa found for out %s", self._process_output[-50:])
                         noqa = True
                 if not noqa:
                     self._loop_miss_count += 1
@@ -951,8 +951,8 @@ class RunQA(RunLoop, RunAsync):
             self._loop_miss_count = 0  # reset miss counter on hit
 
         if self._loop_miss_count > self.LOOP_MAX_MISS_COUNT:
-            self.log.debug("loop_process_output: max misses LOOP_MAX_MISS_COUNT %s reached. End of output: %s" %
-                           (self.LOOP_MAX_MISS_COUNT, self._process_output[-500:]))
+            self.log.debug("loop_process_output: max misses LOOP_MAX_MISS_COUNT %s reached. End of output: %s",
+                           self.LOOP_MAX_MISS_COUNT, self._process_output[-500:])
             self.stop_tasks()
 
             # go out of loop
@@ -1048,6 +1048,3 @@ run_qa = RunQA.run
 run_qalog = RunQALog.run
 # deprecated
 run_qastdout = RunQAStdout.run
-
-if __name__ == "__main__":
-    run('echo ok')

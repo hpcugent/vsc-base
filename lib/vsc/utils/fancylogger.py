@@ -495,8 +495,8 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     l.fancyrecord = fancyrecord
     if _env_to_boolean('FANCYLOGGER_GETLOGGER_DEBUG'):
         print('FANCYLOGGER_GETLOGGER_DEBUG')
-        print('name ' + name + ' fname ' + fname + ' fullname ' + fullname)
-        print("getRootLoggerName: " + getRootLoggerName())
+        print('name %s fname %s fullname %s' % (name, fname, fullname))
+        print("getRootLoggerName: %s" % getRootLoggerName())
         if hasattr(l, 'get_parent_info'):
             print('parent_info verbose')
             print("\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
@@ -668,7 +668,7 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
             setattr(logger, loggeroption, handler)
         else:
             handler = getattr(logger, loggeroption)
-    elif not enable:
+    else:
         # stop logging to X
         if handler is None:
             if len(logger.handlers) == 1:
@@ -678,6 +678,10 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
                 zerohandler = logger.handlers[0]
                 # no logging should be done with APOCALYPTIC, so silence happens
                 zerohandler.setLevel(getLevelInt(APOCALYPTIC))
+                if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
+                    print("FANCYLOGGER_LOGLEVEL_DEBUG DISABLE LAST HANDLER", zerohandler)
+                    print("\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG")))
+                    sys.stdout.flush()
             else:  # remove the handler set with this loggeroption
                 handler = getattr(logger, loggeroption)
                 logger.removeHandler(handler)
@@ -760,7 +764,7 @@ def setLogLevel(level):
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)
     if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
-        print("FANCYLOGGER_LOGLEVEL_DEBUG", level, logging.getLevelName(level))
+        print("FANCYLOGGER_LOGLEVEL_DEBUG SETLOGLEVEL", level, logging.getLevelName(level))
         print("\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG")))
         sys.stdout.flush()
 

@@ -152,3 +152,15 @@ class TestPy2vs3(TestCase):
             self.assertTrue(os.path.exists(temp_dir), 'Directory created by TemporaryDirectory should work')
             self.assertTrue(os.path.isdir(temp_dir), 'Directory created by TemporaryDirectory should be a directory')
         self.assertFalse(os.path.exists(temp_dir), 'Directory created by TemporaryDirectory should cleanup automagically')
+
+    def test_os_exceptions(self):
+        """Test importing urllib* stuff from py2vs3."""
+        from vsc.utils.py2vs3 import FileNotFoundErrorExc, FileExistsErrorExc
+
+        self.assertRaises(FileNotFoundErrorExc, lambda: os.unlink(os.path.join(self.tmpdir, 'notafile')))
+
+        afile = os.path.join(self.tmpdir, 'afile')
+        with open(afile, 'w') as f:
+            f.write("abc")
+
+        self.assertRaises(FileExistsErrorExc, lambda: os.open(afile, os.O_CREAT | os.O_WRONLY | os.O_EXCL))

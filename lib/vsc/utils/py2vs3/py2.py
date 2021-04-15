@@ -38,6 +38,9 @@ from urllib import urlencode, unquote  # noqa
 from urllib2 import HTTPError, HTTPSHandler, Request, build_opener, urlopen  # noqa
 from collections import Mapping  # noqa
 
+FileExistsErrorExc = OSError  # noqa
+FileNotFoundErrorExc = OSError  # noqa
+
 
 def is_string(value):
     """Check whether specified value is of type string (not bytes)."""
