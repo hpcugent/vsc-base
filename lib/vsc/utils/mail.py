@@ -34,11 +34,12 @@ Wrapper around the standard Python mail library.
 import logging
 import re
 import smtplib
-
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
+from vsc.utils.generaloption import simple_option
 
 class VscMailError(Exception):
     """Raised if the sending of an email fails for some reason."""
@@ -68,8 +69,25 @@ class VscMailError(Exception):
 class VscMail(object):
     """Class providing functionality to send out mail."""
 
-    def __init__(self, mail_host=None):
-        self.mail_host = mail_host
+    def __init__(self, mail_host=None, auth=False, mail_config=None):
+
+        opts = {
+            "from": ("Sender", None, "store", None),
+            "smtp": ("Host:Port", None, "store", "exploud.ugent.be:587"),
+            "smtp-auth-password": ("Authentication password", None, "store", None),
+            "smtp-auth-user": ("Authentication user", None, "store", None),
+            "smtp-use-starttls": ("Should we start a TLS session", bool, "store_true", False),
+        }
+
+        self.auth = auth
+
+        if self.auth:
+            self.go = simple_option(opts, config_files=mail_config)
+            (host, port) = self.go.options.smtp.split(":")
+            self.mail_host = host
+            self.mail_port = port
+        else:
+            self.mail_host = mail_host
 
     def _send(self,
               mail_from,
@@ -85,13 +103,20 @@ class VscMail(object):
         """
 
         try:
-            if self.mail_host:
-                logging.debug("Using %s as the mail host", self.mail_host)
-                s = smtplib.SMTP(self.mail_host)
+            if self.auth:
+                logging.debug("Using %s as the mail host with authenticatio", self.mail_host)
+                s = smtplib.SMTP(host=self.mail_host, port=self.mail_port)
+                context = ssl.create_default_context()
+                s.starttls(context=context)
+                s.login(user=self.go.options.smtp_auth_user, password=self.go.options.smtp_auth_password)
             else:
-                logging.debug("Using the default mail host")
-                s = smtplib.SMTP()
-                s.connect()
+                if self.mail_host:
+                    logging.debug("Using %s as the mail host", self.mail_host)
+                    s = smtplib.SMTP(self.mail_host)
+                else:
+                    logging.debug("Using the default mail host")
+                    s = smtplib.SMTP()
+                    s.connect()
             try:
                 s.sendmail(mail_from, mail_to, msg.as_string())
             except smtplib.SMTPHeloError as err:
@@ -105,6 +130,10 @@ class VscMail(object):
                 raise
             except smtplib.SMTPDataError as err:
                 raise
+
+            if self.auth:
+                s.quit()
+
         except smtplib.SMTPConnectError as err:
             logging.exception("Cannot connect to the SMTP host %s", self.mail_host)
             raise VscMailError(mail_host=self.mail_host,
