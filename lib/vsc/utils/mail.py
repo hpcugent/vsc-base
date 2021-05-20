@@ -80,7 +80,7 @@ class VscMail(object):
         if mail_host:
             try:
                 (host, port_) = mail_host.split(":")
-                port = port_ or port
+                port = int(port_) or port
             except ValueError:
                 pass
 
