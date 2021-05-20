@@ -71,6 +71,10 @@ class TestVscMail(TestCase):
         self.assertEqual(vm.smtp_auth_password, "hunter2")
         self.assertEqual(vm.smtp_use_starttls, False)
 
+        vm._send(mail_from="test@noreply.com", mail_to="test@noreply.com", mail_subject="s", msg=msg)
+
+        mock_smtplib.SMTP.assert_called_with("test.machine.com", 123)
+
         vm = VscMail(
             mail_host = "test.machine.com",
             mail_port=123,
