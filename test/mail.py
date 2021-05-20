@@ -39,7 +39,8 @@ from vsc.utils.mail import VscMail
 class TestVscMail(TestCase):
 
     @mock.patch('vsc.utils.mail.smtplib')
-    def test_send(self, mock_smtplib):
+    @mock.patch('vsc.utils.mail.ssl')
+    def test_send(self, mock_ssl, mock_smtplib):
 
         msg = MIMEText("test")
         msg['Subject'] = "subject"
@@ -65,3 +66,30 @@ class TestVscMail(TestCase):
         self.assertEqual(vm.smtp_auth_password, None)
         self.assertEqual(vm.smtp_use_starttls, False)
 
+
+        vm = VscMail(
+            mail_host = "test.machine.com",
+            mail_port=123,
+            smtp_auth_user="me",
+            smtp_auth_password="hunter2",
+        )
+
+        self.assertEqual(vm.mail_host, "test.machine.com")
+        self.assertEqual(vm.mail_port, 123)
+        self.assertEqual(vm.smtp_auth_user, "me")
+        self.assertEqual(vm.smtp_auth_password, "hunter2")
+        self.assertEqual(vm.smtp_use_starttls, False)
+
+        vm = VscMail(
+            mail_host = "test.machine.com",
+            mail_port=123,
+            smtp_auth_user="me",
+            smtp_auth_password="hunter2",
+            smtp_use_starttls=True
+        )
+
+        self.assertEqual(vm.mail_host, "test.machine.com")
+        self.assertEqual(vm.mail_port, 123)
+        self.assertEqual(vm.smtp_auth_user, "me")
+        self.assertEqual(vm.smtp_auth_password, "hunter2")
+        self.assertEqual(vm.smtp_use_starttls, True)
