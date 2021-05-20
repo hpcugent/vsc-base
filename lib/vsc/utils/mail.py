@@ -97,8 +97,8 @@ class VscMail(object):
             s = smtplib.SMTP()
 
         if self.smtp_use_starttls:
-                context = ssl.create_default_context()
-                s.starttls(context=context)
+            context = ssl.create_default_context()
+            s.starttls(context=context)
 
         if self.smtp_auth_user and self.smtp_auth_password:
             s.login(user=self.smtp_auth_user, password=self.smtp_auth_password)
@@ -108,10 +108,10 @@ class VscMail(object):
         return s
 
     def _send(self,
-              mail_from,
-              mail_to,
-              mail_subject,
-              msg):
+        mail_from,
+        mail_to,
+        mail_subject,
+        msg):
         """Actually send the mail.
 
         @type mail_from: string representing the sender.
@@ -139,25 +139,28 @@ class VscMail(object):
 
         except smtplib.SMTPConnectError as err:
             logging.exception("Cannot connect to the SMTP host %s", self.mail_host)
-            raise VscMailError(mail_host=self.mail_host,
-                               mail_to=mail_to,
-                               mail_from=mail_from,
-                               mail_subject=mail_subject,
-                               err=err)
+            raise VscMailError(
+                mail_host=self.mail_host,
+                mail_to=mail_to,
+                mail_from=mail_from,
+                mail_subject=mail_subject,
+                err=err)
         except Exception as err:
             logging.exception("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
-            raise VscMailError(mail_host=self.mail_host,
-                               mail_to=mail_to,
-                               mail_from=mail_from,
-                               mail_subject=mail_subject,
-                               err=err)
+            raise VscMailError(
+                mail_host=self.mail_host,
+                mail_to=mail_to,
+                mail_from=mail_from,
+                mail_subject=mail_subject,
+                err=err)
 
-    def sendTextMail(self,
-                     mail_to,
-                     mail_from,
-                     reply_to,
-                     mail_subject,
-                     message):
+    def sendTextMail(
+        self,
+        mail_to,
+        mail_from,
+        reply_to,
+        mail_subject,
+        message):
         """Send out the given message by mail to the given recipient(s).
 
         @type mail_to: string or list of strings
@@ -206,15 +209,16 @@ class VscMail(object):
 
         return html
 
-    def sendHTMLMail(self,
-                     mail_to,
-                     mail_from,
-                     reply_to,
-                     mail_subject,
-                     html_message,
-                     text_alternative,
-                     images=None,
-                     css=None):
+    def sendHTMLMail(
+        self,
+        mail_to,
+        mail_from,
+        reply_to,
+        mail_subject,
+        html_message,
+        text_alternative,
+        images=None,
+        css=None):
         """
         Send an HTML email message, encoded in a MIME/multipart message.
 
