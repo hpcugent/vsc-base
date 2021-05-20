@@ -82,23 +82,31 @@ class VscMail(object):
         self.smtp_use_starttls = smtp_use_starttls
 
     def _connect(self):
+        """
+        Connect to the mail host on the given port.
 
-        logging.debug("Using %s as the mail host with authenticatio", self.mail_host)
+        If provided, use authentication and TLS.
+        """
         if self.mail_host:
+            logging.debug("Using %s as the mail host", self.mail_host)
             if self.mail_port:
+                logging.debug("Using %d as the mail port", self.mail_port)
                 s = smtplib.SMTP(host=self.mail_host, port=self.mail_port)
             else:
                 s = smtplib.SMTP(host=self.mail_host)
         else:
             # use the system default
+            logging.debug("Using the system default mail host and port")
             s = smtplib.SMTP()
 
         if self.smtp_use_starttls:
             context = ssl.create_default_context()
             s.starttls(context=context)
+            logging.debug("Started TLS connection")
 
         if self.smtp_auth_user and self.smtp_auth_password:
             s.login(user=self.smtp_auth_user, password=self.smtp_auth_password)
+            logging.debug("Authenticated")
 
         s.connect()
 
@@ -151,6 +159,8 @@ class VscMail(object):
                 mail_from=mail_from,
                 mail_subject=mail_subject,
                 err=err)
+        finally:
+            s.quit()
 
     def sendTextMail(
         self,
