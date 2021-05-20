@@ -39,8 +39,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
-from vsc.utils.generaloption import simple_option
-
 class VscMailError(Exception):
     """Raised if the sending of an email fails for some reason."""
 
