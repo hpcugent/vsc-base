@@ -67,7 +67,13 @@ class VscMailError(Exception):
 class VscMail(object):
     """Class providing functionality to send out mail."""
 
-    def __init__(self, mail_host=None, mail_port=None, smtp_auth_user=None, smtp_auth_password=None, smtp_use_starttls=False):
+    def __init__(
+        self,
+        mail_host='',
+        mail_port=0,
+        smtp_auth_user=None,
+        smtp_auth_password=None,
+        smtp_use_starttls=False):
 
         # we must not have the port in the host as this will fail the certificate check if needed
         (host, port) = (mail_host, mail_port)
@@ -258,7 +264,7 @@ class VscMail(object):
 
         # Create the body of the message (a plain-text and an HTML version).
         if images is not None:
-            html_message = self.replace_images_cid(html_message, images)
+            html_message = self._replace_images_cid(html_message, images)
 
         # Record the MIME types of both parts - text/plain and text/html_message.
         msg_plain = MIMEText(text_alternative, 'plain')
