@@ -75,7 +75,6 @@ class VscMail(object):
         smtp_auth_password=None,
         smtp_use_starttls=False):
 
-        # we must not have the port in the host as this will fail the certificate check if needed
         self.mail_host = mail_host
         self.mail_port = mail_port
         self.smtp_auth_user = smtp_auth_user
@@ -105,7 +104,8 @@ class VscMail(object):
 
         return s
 
-    def _send(self,
+    def _send(
+        self,
         mail_from,
         mail_to,
         mail_subject,
