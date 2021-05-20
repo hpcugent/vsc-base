@@ -77,17 +77,19 @@ class TestVscMail(TestCase):
 
         vm = VscMail(
             mail_host = "test.machine.com",
-            mail_port=123,
+            mail_port=124,
             smtp_auth_user="me",
             smtp_auth_password="hunter2",
             smtp_use_starttls=True
         )
 
         self.assertEqual(vm.mail_host, "test.machine.com")
-        self.assertEqual(vm.mail_port, 123)
+        self.assertEqual(vm.mail_port, 124)
         self.assertEqual(vm.smtp_auth_user, "me")
         self.assertEqual(vm.smtp_auth_password, "hunter2")
         self.assertEqual(vm.smtp_use_starttls, True)
 
-        mock_smtplib.SMTP.assert_called_with(host="test.machine.com", port=123)
+        vm._send(mail_from="test@noreply.com", mail_to="test@noreply.com", mail_subject="s", msg=msg)
+
+        mock_smtplib.SMTP.assert_called_with(host="test.machine.com", port=124)
         mock_ssl.create_default_context.assert_called()
