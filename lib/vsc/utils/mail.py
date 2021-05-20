@@ -76,16 +76,8 @@ class VscMail(object):
         smtp_use_starttls=False):
 
         # we must not have the port in the host as this will fail the certificate check if needed
-        (host, port) = (mail_host, mail_port)
-        if mail_host:
-            try:
-                (host, port_) = mail_host.split(":")
-                port = int(port_) or port
-            except ValueError:
-                pass
-
-        self.mail_host = host
-        self.mail_port = port
+        self.mail_host = mail_host
+        self.mail_port = mail_port
         self.smtp_auth_user = smtp_auth_user
         self.smtp_auth_password = smtp_auth_password
         self.smtp_use_starttls = smtp_use_starttls

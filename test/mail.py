@@ -58,15 +58,6 @@ class TestVscMail(TestCase):
 
         vm._send(mail_from="test@noreply.com", mail_to="test@noreply.com", mail_subject="s", msg=msg)
 
-        vm = VscMail(mail_host = "test.machine.com:654")
-
-        self.assertEqual(vm.mail_host, "test.machine.com")
-        self.assertEqual(vm.mail_port, 654)
-        self.assertEqual(vm.smtp_auth_user, None)
-        self.assertEqual(vm.smtp_auth_password, None)
-        self.assertEqual(vm.smtp_use_starttls, False)
-
-
         vm = VscMail(
             mail_host = "test.machine.com",
             mail_port=123,
