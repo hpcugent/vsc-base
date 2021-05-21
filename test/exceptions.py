@@ -62,8 +62,9 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         log_re = re.compile("^%s :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % getRootLoggerName(), re.M)
-        logtxt = open(tmplog, 'r').read()
-        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+        with open(tmplog, 'r') as f:
+            logtxt = f.read()
+            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
         # test formatting of message
         self.assertErrorRegex(LoggedException, 'BOOMBAF', raise_loggedexception, 'BOOM%s', 'BAF')
@@ -92,8 +93,9 @@ class ExceptionsTest(TestCase):
 
         rootlog = getRootLoggerName()
         log_re = re.compile("^%s.testlogger_one :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog, re.M)
-        logtxt = open(tmplog, 'r').read()
-        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+        with open(tmplog, 'r') as f:
+            logtxt = f.read()
+            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
         os.remove(tmplog)
 
@@ -114,8 +116,9 @@ class ExceptionsTest(TestCase):
 
         rootlog = getRootLoggerName()
         log_re = re.compile("^%s(.testlogger_local)? :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog)
-        logtxt = open(tmplog, 'r').read()
-        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+        with open(tmplog, 'r') as f:
+            logtxt = f.read()
+            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
         os.remove(tmplog)
 
@@ -143,12 +146,12 @@ class ExceptionsTest(TestCase):
         rootlogname = getRootLoggerName()
 
         log_re = re.compile("^%s :: BOOM$" % rootlogname, re.M)
-        logtxt = open(tmplog, 'r').read()
-        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+        with open(tmplog, 'r') as f:
+            logtxt = f.read()
+            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
-        f = open(tmplog, 'w')
-        f.write('')
-        f.close()
+        with open(tmplog, 'w') as f:
+            f.write('')
 
         # location is included if LOC_INFO_TOP_PKG_NAMES is defined
         TestException.LOC_INFO_TOP_PKG_NAMES = ['vsc']
@@ -157,12 +160,12 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at (?:.*?/)?vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
-        logtxt = open(tmplog, 'r').read()
-        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+        with open(tmplog, 'r') as f:
+            logtxt = f.read()
+            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
-        f = open(tmplog, 'w')
-        f.write('')
-        f.close()
+        with open(tmplog, 'w') as f:
+            f.write('')
 
         # absolute path of location is included if there's no match in LOC_INFO_TOP_PKG_NAMES
         TestException.LOC_INFO_TOP_PKG_NAMES = ['foobar']
@@ -171,8 +174,9 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at (?:.*?/)?vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
-        logtxt = open(tmplog, 'r').read()
-        self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+        with open(tmplog, 'r') as f:
+            logtxt = f.read()
+            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
 
         os.remove(tmplog)
 
