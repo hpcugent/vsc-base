@@ -112,12 +112,7 @@ class VscMail(object):
 
         return s
 
-    def _send(
-        self,
-        mail_from,
-        mail_to,
-        mail_subject,
-        msg):
+    def _send(self, mail_from, mail_to, mail_subject, msg):
         """Actually send the mail.
 
         @type mail_from: string representing the sender.
@@ -162,13 +157,7 @@ class VscMail(object):
         finally:
             s.quit()
 
-    def sendTextMail(
-        self,
-        mail_to,
-        mail_from,
-        reply_to,
-        mail_subject,
-        message):
+    def sendTextMail(self, mail_to, mail_from, reply_to, mail_subject, message):
         """Send out the given message by mail to the given recipient(s).
 
         @type mail_to: string or list of strings
