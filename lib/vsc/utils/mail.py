@@ -200,13 +200,15 @@ class VscMail(object):
                      html_message,
                      text_alternative,
                      images=None,
-                     css=None):
+                     css=None
+                     cc=None,
+                     bcc=None):
         """
         Send an HTML email message, encoded in a MIME/multipart message.
 
         The images and css are included in the message, and should be provided separately.
 
-        @type mail_to: string or list of strings
+        @type mail_to: string
         @type mail_from: string
         @type reply_to: string
         @type mail_subject: string
@@ -214,8 +216,10 @@ class VscMail(object):
         @type text_alternative: string
         @type images: list of strings
         @type css: string
+        @type cc: string
+        @type bcc: string
 
-        @param mail_to: a valid recipient email addresses.
+        @param mail_to: a valid recipient email address or comma-separated string of email addresses
         @param mail_from: a valid sender email address.
         @param reply_to: a valid email address for the (potential) replies.
         @param html_message: the actual payload, body of the mail
@@ -223,6 +227,8 @@ class VscMail(object):
         @param images: the images that are referenced in the HTML body. These should be available as files on the
                       filesystem in the directory where the script runs. Caveat: assume jpeg image type.
         @param css: CSS definitions
+        @param cc: a valid CC email address or comma-separated string of email addresses
+        @param bcc: a valid BCC email address or comma-separated string of email addresses
         """
 
         # Create message container - the correct MIME type is multipart/alternative.
@@ -230,6 +236,18 @@ class VscMail(object):
         msg_root['Subject'] = mail_subject
         msg_root['From'] = mail_from
         msg_root['To'] = mail_to
+
+        mail_to = mail_to.split(',')
+
+        if cc:
+            logging.info("Sending mail [%s] in CC to %s.", mail_subject, cc)
+            msg['Cc'] = cc
+            mail_to.append(cc.split(','))
+
+        if bcc:
+            logging.info("Sending mail [%s] in BCC to %s.", mail_subject, bcc)
+            # do *not* set msg['Bcc'] to avoid leaking the BCC email address to all recipients
+            mail_to.append(bcc.split(','))
 
         if reply_to is None:
             reply_to = mail_from
