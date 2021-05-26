@@ -241,12 +241,12 @@ class VscMail(object):
 
         if cc:
             logging.info("Sending mail [%s] in CC to %s.", mail_subject, cc)
-            msg['Cc'] = cc
+            msg_root['Cc'] = cc
             mail_to.append(cc.split(','))
 
         if bcc:
             logging.info("Sending mail [%s] in BCC to %s.", mail_subject, bcc)
-            # do *not* set msg['Bcc'] to avoid leaking the BCC email address to all recipients
+            # do *not* set msg_root['Bcc'] to avoid leaking the BCC email address to all recipients
             mail_to.append(bcc.split(','))
 
         if reply_to is None:
