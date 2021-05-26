@@ -47,7 +47,7 @@ class VscMailError(Exception):
         """Initialisation.
 
         @type mail_host: string
-        @type mail_to: string
+        @type mail_to: string or list of strings
         @type mail_from: string
         @type mail_subject: string
         @type err: Exception subclass
@@ -79,7 +79,7 @@ class VscMail(object):
         """Actually send the mail.
 
         @type mail_from: string representing the sender.
-        @type mail_to: string representing the recipient.
+        @type mail_to: string or list of strings representing the recipient.
         @type mail_subject: string representing the subject.
         @type msg: MIME message.
         """
@@ -125,20 +125,26 @@ class VscMail(object):
                      mail_from,
                      reply_to,
                      mail_subject,
-                     message):
+                     message,
+                     cc=None,
+                     bcc=None):
         """Send out the given message by mail to the given recipient(s).
 
-        @type mail_to: string or list of strings
+        @type mail_to: string
         @type mail_from: string
         @type reply_to: string
         @type mail_subject: string
         @type message: string
+        @type cc: string
+        @type bcc: string
 
-        @param mail_to: a valid recipient email address
+        @param mail_to: a valid recipient email address or comma-separated string of email addresses
         @param mail_from: a valid sender email address.
         @param reply_to: a valid email address for the (potential) replies.
         @param mail_subject: the subject of the email.
         @param message: the body of the mail.
+        @param cc: a valid CC email address or comma-separated string of email addresses
+        @param bcc: a valid BCC email address or comma-separated string of email addresses
         """
         logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
 
@@ -146,6 +152,18 @@ class VscMail(object):
         msg['Subject'] = mail_subject
         msg['From'] = mail_from
         msg['To'] = mail_to
+
+        mail_to = mail_to.split(',')
+
+        if cc:
+            logging.info("Sending mail [%s] in CC to %s.", mail_subject, cc)
+            msg['Cc'] = cc
+            mail_to.append(cc.split(','))
+
+        if bcc:
+            logging.info("Sending mail [%s] in BCC to %s.", mail_subject, bcc)
+            # do *not* set msg['Bcc'] to avoid leaking the BCC email address to all recipients
+            mail_to.append(bcc.split(','))
 
         if reply_to is None:
             reply_to = mail_from
