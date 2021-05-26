@@ -200,7 +200,7 @@ class VscMail(object):
                      html_message,
                      text_alternative,
                      images=None,
-                     css=None
+                     css=None,
                      cc=None,
                      bcc=None):
         """
