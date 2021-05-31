@@ -154,7 +154,7 @@ class VscMail(object):
                 mail_from=mail_from,
                 mail_subject=mail_subject,
                 err=err)
-        finally:
+        else:
             s.quit()
 
     def sendTextMail(self, mail_to, mail_from, reply_to, mail_subject, message):
