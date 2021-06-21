@@ -149,14 +149,15 @@ class VscMail(object):
         else:
             s.quit()
 
-    def sendTextMail(self,
-                     mail_to,
-                     mail_from,
-                     reply_to,
-                     mail_subject,
-                     message,
-                     cc=None,
-                     bcc=None):
+    def sendTextMail(
+        self,
+        mail_to,
+        mail_from,
+        reply_to,
+        mail_subject,
+        message,
+        cc=None,
+        bcc=None):
         """Send out the given message by mail to the given recipient(s).
 
         @type mail_to: list
@@ -252,7 +253,7 @@ class VscMail(object):
         @type cc: list
         @type bcc: list
 
-        @param mail_to: a valid recipient email address or comma-separated string of email addresses
+        @param mail_to: a list of valid email addresses
         @param mail_from: a valid sender email address.
         @param reply_to: a valid email address for the (potential) replies.
         @param html_message: the actual payload, body of the mail
