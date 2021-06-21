@@ -34,12 +34,11 @@ Wrapper around the standard Python mail library.
 import logging
 import re
 import smtplib
-
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from future.utils import string_types
-
 
 class VscMailError(Exception):
     """Raised if the sending of an email fails for some reason."""
@@ -69,14 +68,43 @@ class VscMailError(Exception):
 class VscMail(object):
     """Class providing functionality to send out mail."""
 
-    def __init__(self, mail_host=None):
-        self.mail_host = mail_host
+    def __init__(
+        self,
+        mail_host='',
+        mail_port=0,
+        smtp_auth_user=None,
+        smtp_auth_password=None,
+        smtp_use_starttls=False):
 
-    def _send(self,
-              mail_from,
-              mail_to,
-              mail_subject,
-              msg):
+        self.mail_host = mail_host
+        self.mail_port = mail_port
+        self.smtp_auth_user = smtp_auth_user
+        self.smtp_auth_password = smtp_auth_password
+        self.smtp_use_starttls = smtp_use_starttls
+
+    def _connect(self):
+        """
+        Connect to the mail host on the given port.
+
+        If provided, use authentication and TLS.
+        """
+        logging.debug("Using mail host %s, mail port %d", self.mail_host, self.mail_port)
+        s = smtplib.SMTP(host=self.mail_host, port=self.mail_port)
+
+        if self.smtp_use_starttls:
+            context = ssl.create_default_context()
+            s.starttls(context=context)
+            logging.debug("Started TLS connection")
+
+        if self.smtp_auth_user and self.smtp_auth_password:
+            s.login(user=self.smtp_auth_user, password=self.smtp_auth_password)
+            logging.debug("Authenticated")
+
+        s.connect()
+
+        return s
+
+    def _send(self, mail_from, mail_to, mail_subject, msg):
         """Actually send the mail.
 
         @type mail_from: string representing the sender.
@@ -86,13 +114,8 @@ class VscMail(object):
         """
 
         try:
-            if self.mail_host:
-                logging.debug("Using %s as the mail host", self.mail_host)
-                s = smtplib.SMTP(self.mail_host)
-            else:
-                logging.debug("Using the default mail host")
-                s = smtplib.SMTP()
-                s.connect()
+            s = self._connect()
+
             try:
                 s.sendmail(mail_from, mail_to, msg.as_string())
             except smtplib.SMTPHeloError as err:
@@ -106,20 +129,25 @@ class VscMail(object):
                 raise
             except smtplib.SMTPDataError as err:
                 raise
+
         except smtplib.SMTPConnectError as err:
             logging.exception("Cannot connect to the SMTP host %s", self.mail_host)
-            raise VscMailError(mail_host=self.mail_host,
-                               mail_to=mail_to,
-                               mail_from=mail_from,
-                               mail_subject=mail_subject,
-                               err=err)
+            raise VscMailError(
+                mail_host=self.mail_host,
+                mail_to=mail_to,
+                mail_from=mail_from,
+                mail_subject=mail_subject,
+                err=err)
         except Exception as err:
             logging.exception("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
-            raise VscMailError(mail_host=self.mail_host,
-                               mail_to=mail_to,
-                               mail_from=mail_from,
-                               mail_subject=mail_subject,
-                               err=err)
+            raise VscMailError(
+                mail_host=self.mail_host,
+                mail_to=mail_to,
+                mail_from=mail_from,
+                mail_subject=mail_subject,
+                err=err)
+        else:
+            s.quit()
 
     def sendTextMail(self,
                      mail_to,
@@ -196,17 +224,18 @@ class VscMail(object):
 
         return html
 
-    def sendHTMLMail(self,
-                     mail_to,
-                     mail_from,
-                     reply_to,
-                     mail_subject,
-                     html_message,
-                     text_alternative,
-                     images=None,
-                     css=None,
-                     cc=None,
-                     bcc=None):
+    def sendHTMLMail(
+        self,
+        mail_to,
+        mail_from,
+        reply_to,
+        mail_subject,
+        html_message,
+        text_alternative,
+        images=None,
+        css=None,
+        cc=None,
+        bcc=None):
         """
         Send an HTML email message, encoded in a MIME/multipart message.
 
@@ -266,7 +295,7 @@ class VscMail(object):
 
         # Create the body of the message (a plain-text and an HTML version).
         if images is not None:
-            html_message = self.replace_images_cid(html_message, images)
+            html_message = self._replace_images_cid(html_message, images)
 
         # Record the MIME types of both parts - text/plain and text/html_message.
         msg_plain = MIMEText(text_alternative, 'plain')
