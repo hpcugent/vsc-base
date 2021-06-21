@@ -48,7 +48,7 @@ class VscMailError(Exception):
         """Initialisation.
 
         @type mail_host: string
-        @type mail_to: string or list of strings
+        @type mail_to: list of strings (or string, but deprecated)
         @type mail_from: string
         @type mail_subject: string
         @type err: Exception subclass
@@ -80,7 +80,7 @@ class VscMail(object):
         """Actually send the mail.
 
         @type mail_from: string representing the sender.
-        @type mail_to: string or list of strings representing the recipient.
+        @type mail_to: list of strings (or string, but deprecated) representing the recipient.
         @type mail_subject: string representing the subject.
         @type msg: MIME message.
         """
