@@ -38,6 +38,7 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from future.utils import string_types
 
 class VscMailError(Exception):
     """Raised if the sending of an email fails for some reason."""
@@ -46,7 +47,7 @@ class VscMailError(Exception):
         """Initialisation.
 
         @type mail_host: string
-        @type mail_to: string
+        @type mail_to: list of strings (or string, but deprecated)
         @type mail_from: string
         @type mail_subject: string
         @type err: Exception subclass
@@ -107,7 +108,7 @@ class VscMail(object):
         """Actually send the mail.
 
         @type mail_from: string representing the sender.
-        @type mail_to: string representing the recipient.
+        @type mail_to: list of strings (or string, but deprecated) representing the recipient.
         @type mail_subject: string representing the subject.
         @type msg: MIME message.
         """
@@ -148,27 +149,54 @@ class VscMail(object):
         else:
             s.quit()
 
-    def sendTextMail(self, mail_to, mail_from, reply_to, mail_subject, message):
+    def sendTextMail(
+        self,
+        mail_to,
+        mail_from,
+        reply_to,
+        mail_subject,
+        message,
+        cc=None,
+        bcc=None):
         """Send out the given message by mail to the given recipient(s).
 
-        @type mail_to: string or list of strings
+        @type mail_to: list
         @type mail_from: string
         @type reply_to: string
         @type mail_subject: string
         @type message: string
+        @type cc: list
+        @type bcc: list
 
-        @param mail_to: a valid recipient email address
+        @param mail_to: a list of valid email addresses
         @param mail_from: a valid sender email address.
         @param reply_to: a valid email address for the (potential) replies.
         @param mail_subject: the subject of the email.
         @param message: the body of the mail.
+        @param cc: a list of valid CC email addresses
+        @param bcc: a list of valid BCC email addresses
         """
+
+        # deprecated: single email as string
+        if isinstance(mail_to, string_types):
+            mail_to = [mail_to]
+
         logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
 
         msg = MIMEText(message)
         msg['Subject'] = mail_subject
         msg['From'] = mail_from
-        msg['To'] = mail_to
+        msg['To'] = ','.join(mail_to)
+
+        if cc:
+            logging.info("Sending mail [%s] in CC to %s.", mail_subject, cc)
+            msg['Cc'] = cc
+            mail_to.extend(cc)
+
+        if bcc:
+            logging.info("Sending mail [%s] in BCC to %s.", mail_subject, bcc)
+            # do *not* set msg['Bcc'] to avoid leaking the BCC email address to all recipients
+            mail_to.extend(bcc)
 
         if reply_to is None:
             reply_to = mail_from
@@ -206,13 +234,15 @@ class VscMail(object):
         html_message,
         text_alternative,
         images=None,
-        css=None):
+        css=None,
+        cc=None,
+        bcc=None):
         """
         Send an HTML email message, encoded in a MIME/multipart message.
 
         The images and css are included in the message, and should be provided separately.
 
-        @type mail_to: string or list of strings
+        @type mail_to: list
         @type mail_from: string
         @type reply_to: string
         @type mail_subject: string
@@ -220,8 +250,10 @@ class VscMail(object):
         @type text_alternative: string
         @type images: list of strings
         @type css: string
+        @type cc: list
+        @type bcc: list
 
-        @param mail_to: a valid recipient email addresses.
+        @param mail_to: a list of valid email addresses
         @param mail_from: a valid sender email address.
         @param reply_to: a valid email address for the (potential) replies.
         @param html_message: the actual payload, body of the mail
@@ -229,13 +261,31 @@ class VscMail(object):
         @param images: the images that are referenced in the HTML body. These should be available as files on the
                       filesystem in the directory where the script runs. Caveat: assume jpeg image type.
         @param css: CSS definitions
+        @param cc: a list of valid CC email addresses
+        @param bcc: a list of valid BCC email addresses
         """
+
+        # deprecated: single email as string
+        if isinstance(mail_to, string_types):
+            mail_to = [mail_to]
+
+        logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
 
         # Create message container - the correct MIME type is multipart/alternative.
         msg_root = MIMEMultipart('alternative')
         msg_root['Subject'] = mail_subject
         msg_root['From'] = mail_from
-        msg_root['To'] = mail_to
+        msg_root['To'] = ','.join(mail_to)
+
+        if cc:
+            logging.info("Sending mail [%s] in CC to %s.", mail_subject, cc)
+            msg_root['Cc'] = cc
+            mail_to.extend(cc)
+
+        if bcc:
+            logging.info("Sending mail [%s] in BCC to %s.", mail_subject, bcc)
+            # do *not* set msg_root['Bcc'] to avoid leaking the BCC email address to all recipients
+            mail_to.extend(bcc)
 
         if reply_to is None:
             reply_to = mail_from
