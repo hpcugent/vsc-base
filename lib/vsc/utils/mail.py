@@ -100,8 +100,6 @@ class VscMail(object):
             s.login(user=self.smtp_auth_user, password=self.smtp_auth_password)
             logging.debug("Authenticated")
 
-        s.connect()
-
         return s
 
     def _send(self, mail_from, mail_to, mail_subject, msg):
