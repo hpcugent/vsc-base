@@ -117,15 +117,16 @@ class VscMail(object):
             try:
                 s.sendmail(mail_from, mail_to, msg.as_string())
             except smtplib.SMTPHeloError as err:
-                logging.error("Cannot get a proper response from the SMTP host %s", self.mail_host)
+                logging.error("Cannot get a proper response from the SMTP host %s: %s", self.mail_host, err)
                 raise
             except smtplib.SMTPRecipientsRefused as err:
-                logging.error("All recipients were refused by SMTP host %s [%s]", self.mail_host, mail_to)
+                logging.error("All recipients were refused by SMTP host %s [%s]: %s", self.mail_host, mail_to, err)
                 raise
             except smtplib.SMTPSenderRefused as err:
-                logging.error("Sender was refused by SMTP host %s [%s]", self.mail_host, mail_from)
+                logging.error("Sender was refused by SMTP host %s [%s]: %s", self.mail_host, mail_from, err)
                 raise
             except smtplib.SMTPDataError as err:
+                logging.error("Data error: %s", err)
                 raise
 
         except smtplib.SMTPConnectError as err:
