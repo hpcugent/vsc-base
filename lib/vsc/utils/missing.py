@@ -318,6 +318,8 @@ class TryOrFail(object):
                         logging.warning("try_or_fail is sleeping for %d seconds before the next attempt", self.sleep)
                         time.sleep(self.sleep)
 
+                return None
+
         return new_function
 
 
