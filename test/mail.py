@@ -29,6 +29,7 @@ Unit tests for the mail wrapper.
 @author: Andy Georges (Ghent University)
 """
 import mock
+import logging
 import os
 
 from vsc.install.testing import TestCase
@@ -37,6 +38,35 @@ from email.mime.text import MIMEText
 from vsc.utils.mail import VscMail
 
 class TestVscMail(TestCase):
+
+
+    def test_config_file(self):
+
+        mail_host = "mailhost.domain"
+        mail_port = 123
+        mail_host_port = "mailhost.domain:567"
+        smtp_auth_user = "user"
+        smtp_auth_password = "passwd"
+        smtp_use_starttls = True
+
+        mail = VscMail(mail_host=mail_host)
+
+        self.assertEqual(mail.mail_host, mail_host)
+        self.assertEqual(mail.mail_port, 587)
+
+        mail = VscMail(mail_host=mail_host, mail_port=mail_port)
+        self.assertEqual(mail.mail_host, mail_host)
+        self.assertEqual(mail.mail_port, mail_port)
+
+        mail = VscMail(mail_config=os.path.dirname(__file__) + '/data/' + 'mailconfig.ini')
+
+        logging.warning("mail.mail_host: %s", mail.mail_host)
+
+        self.assertEqual(mail.mail_host, "config_host")
+        self.assertEqual(mail.mail_port, 789)
+        self.assertEqual(mail.smtp_auth_user, "config_user")
+        self.assertEqual(mail.smtp_auth_password, "config_passwd")
+        self.assertEqual(mail.smtp_use_starttls, '1')
 
     @mock.patch('vsc.utils.mail.smtplib')
     @mock.patch('vsc.utils.mail.ssl')
@@ -51,7 +81,7 @@ class TestVscMail(TestCase):
         vm = VscMail()
 
         self.assertEqual(vm.mail_host, '')
-        self.assertEqual(vm.mail_port, 0)
+        self.assertEqual(vm.mail_port, 587)
         self.assertEqual(vm.smtp_auth_user, None)
         self.assertEqual(vm.smtp_auth_password, None)
         self.assertEqual(vm.smtp_use_starttls, False)
