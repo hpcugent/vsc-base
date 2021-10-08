@@ -77,6 +77,10 @@ class VscMail(object):
         smtp_auth_password=None,
         smtp_use_starttls=False,
         mail_config=None):
+        """
+        - If there is a config file provided, its values take precedence over the arguments passed to __init__
+        - If the mail_host is of the format host:port, that port takes precedence over mail_port
+        """
 
         mail_options = ConfigParser()
         if mail_config:
@@ -84,8 +88,15 @@ class VscMail(object):
             with open(mail_config, "r") as mc:
                 mail_options.read_file(mc)
 
-        self.mail_host = mail_options.get("main", "mail_host", fallback=mail_host)
-        self.mail_port = int(mail_options.get("main", "mail_port", fallback=mail_port))
+        # we can have cases where the host part is actually host:port
+        _mail_host = mail_options.get("main", "mail_host", fallback=mail_host)
+        try:
+            self.mail_host, _mail_port = _mail_host.split(":")
+        except ValueError:
+            self.mail_host = _mail_host
+            _mail_port = mail_options.get("main", "mail_port", fallback=mail_port)
+
+        self.mail_port = int(_mail_port)
         self.smtp_auth_user = mail_options.get("main", "smtp_auth_user", fallback=smtp_auth_user)
         self.smtp_auth_password = mail_options.get("main", "smtp_auth_password", fallback=smtp_auth_password)
         self.smtp_use_starttls = mail_options.get("main", "smtp_use_starttls", fallback=smtp_use_starttls)
