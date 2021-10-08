@@ -35,6 +35,7 @@ import logging
 import re
 import smtplib
 import ssl
+from configparser import ConfigParser
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -71,16 +72,24 @@ class VscMail(object):
     def __init__(
         self,
         mail_host='',
-        mail_port=0,
+        mail_port=587,
         smtp_auth_user=None,
         smtp_auth_password=None,
-        smtp_use_starttls=False):
+        smtp_use_starttls=False,
+        mail_config=None):
 
-        self.mail_host = mail_host
-        self.mail_port = mail_port
-        self.smtp_auth_user = smtp_auth_user
-        self.smtp_auth_password = smtp_auth_password
-        self.smtp_use_starttls = smtp_use_starttls
+        mail_options = ConfigParser()
+        if mail_config:
+            logging.info("Reading config file: %s", mail_config)
+            with open(mail_config, "r") as mc:
+                mail_options.read_file(mc)
+
+        self.mail_host = mail_options.get("main", "mail_host", fallback=mail_host)
+        self.mail_port = int(mail_options.get("main", "mail_port", fallback=mail_port))
+        self.smtp_auth_user = mail_options.get("main", "smtp_auth_user", fallback=smtp_auth_user)
+        self.smtp_auth_password = mail_options.get("main", "smtp_auth_password", fallback=smtp_auth_password)
+        self.smtp_use_starttls = mail_options.get("main", "smtp_use_starttls", fallback=smtp_use_starttls)
+
 
     def _connect(self):
         """
