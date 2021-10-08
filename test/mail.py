@@ -38,6 +38,25 @@ from vsc.utils.mail import VscMail
 
 class TestVscMail(TestCase):
 
+
+    @mock.patch('vsc.utils.mail.open')
+    def test_config_file(self, mock_open):
+
+        mail_host = "mailhost.domain"
+        mail_port = 123
+        mail_host_port = "mailhost.domain:567"
+        smtp_auth_user = "user"
+        smtp_auth_password = "passwd"
+        smtp_use_starttls = True
+
+        mail = VscMail(mail_host=mail_host, mail_config=None)
+
+        self.assertEqual(mail.mail_host, mail_host)
+        self.assertEqual(mail.mail_port, 587)
+
+
+
+
     @mock.patch('vsc.utils.mail.smtplib')
     @mock.patch('vsc.utils.mail.ssl')
     def test_send(self, mock_ssl, mock_smtplib):
@@ -51,7 +70,7 @@ class TestVscMail(TestCase):
         vm = VscMail()
 
         self.assertEqual(vm.mail_host, '')
-        self.assertEqual(vm.mail_port, 0)
+        self.assertEqual(vm.mail_port, 587)
         self.assertEqual(vm.smtp_auth_user, None)
         self.assertEqual(vm.smtp_auth_password, None)
         self.assertEqual(vm.smtp_use_starttls, False)
