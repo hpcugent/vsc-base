@@ -30,6 +30,7 @@ Unit tests for the mail wrapper.
 """
 import mock
 import os
+from mock.mock import MagicMock
 
 from vsc.install.testing import TestCase
 
@@ -54,7 +55,24 @@ class TestVscMail(TestCase):
         self.assertEqual(mail.mail_host, mail_host)
         self.assertEqual(mail.mail_port, 587)
 
+        mock_file = MagicMock()
+        mock_file.read_file.return_value = """
+            [main]
+            mail_host = config_host
+            mail_port = 789
+            smtp_auth_user = config_user
+            smtp_auth_password = config_passwd
+            smtp_use_starttls = 1
+        """
+        mock_open.return_value = mock_file
 
+        mail = VscMail(mail_config="blah")
+
+        self.assertEqual(mail.mail_host, "config_host")
+        self.assertEqual(mail.mail_port, 789)
+        self.assertEqual(mail.smtp_auth_user, "config_user")
+        self.assertEqual(mail.smtp_auth_password, "config_passwd")
+        self.assertEqual(mail.smtp_use_starttls, True)
 
 
     @mock.patch('vsc.utils.mail.smtplib')
