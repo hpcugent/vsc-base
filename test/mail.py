@@ -30,29 +30,23 @@ Unit tests for the mail wrapper.
 """
 import mock
 import logging
+import sys
 from mock.mock import MagicMock
 
-from unittest.mock import mock_open
+if sys.version_info[0] >= 3:
+    from unittest.mock import mock_open
+elif sys.version_info[0] >= 2:
+    from mock import mock_open
 
 from vsc.install.testing import TestCase
 
 from email.mime.text import MIMEText
 from vsc.utils.mail import VscMail
 
-cfgfile = """
-    [main]
-    mail_host = config_host
-    mail_port = 789
-    smtp_auth_user = config_user
-    smtp_auth_password = config_passwd
-    smtp_use_starttls = 1
-"""
-
-class TestVscMail(TestCase):
+class TestVscMailConfig(TestCase):
 
 
-    @mock.patch("builtins.open", new_callable=mock_open, read_data=cfgfile)
-    def test_config_file(self, mock_file):
+    def test_config_file(self):
 
         mail_host = "mailhost.domain"
         mail_port = 123
@@ -70,8 +64,7 @@ class TestVscMail(TestCase):
         self.assertEqual(mail.mail_host, mail_host)
         self.assertEqual(mail.mail_port, mail_port)
 
-        mock_file = MagicMock()
-        mock_file.return_value = """
+        cfgfile = """
             [main]
             mail_host = config_host
             mail_port = 789
@@ -79,9 +72,13 @@ class TestVscMail(TestCase):
             smtp_auth_password = config_passwd
             smtp_use_starttls = 1
         """
-        mock_open.return_value = mock_file
-
-        mail = VscMail(mail_config="blah")
+        # based on https://stackoverflow.com/questions/1289894/how-do-i-mock-an-open-used-in-a-with-statement-using-the-mock-framework-in-pyth/34677735#34677735
+        if sys.version_info[0] >= 3:
+            with mock.patch("builtins.open", mock_open(read_data=cfgfile)):
+                mail = VscMail(mail_config="blah")
+        elif sys.version_info[0] >= 2:
+            with mock.patch("__builtin__.open", mock_open(read_data=cfgfile)):
+                mail = VscMail(mail_config="blah")
 
         logging.warning("mail.mail_host: %s", mail.mail_host)
 
@@ -92,6 +89,7 @@ class TestVscMail(TestCase):
         self.assertEqual(mail.smtp_use_starttls, '1')
 
 
+class TestVscMail(TestCase):
     @mock.patch('vsc.utils.mail.smtplib')
     @mock.patch('vsc.utils.mail.ssl')
     def test_send(self, mock_ssl, mock_smtplib):
