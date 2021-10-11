@@ -31,19 +31,13 @@ Unit tests for the mail wrapper.
 import mock
 import logging
 import sys
-from mock.mock import MagicMock
-
-if sys.version_info[0] >= 3:
-    from unittest.mock import mock_open
-elif sys.version_info[0] >= 2:
-    from mock import mock_open
 
 from vsc.install.testing import TestCase
 
 from email.mime.text import MIMEText
 from vsc.utils.mail import VscMail
 
-class TestVscMailConfig(TestCase):
+class TestVscMail(TestCase):
 
 
     def test_config_file(self):
@@ -64,21 +58,7 @@ class TestVscMailConfig(TestCase):
         self.assertEqual(mail.mail_host, mail_host)
         self.assertEqual(mail.mail_port, mail_port)
 
-        cfgfile = """
-            [main]
-            mail_host = config_host
-            mail_port = 789
-            smtp_auth_user = config_user
-            smtp_auth_password = config_passwd
-            smtp_use_starttls = 1
-        """
-        # based on https://stackoverflow.com/questions/1289894/how-do-i-mock-an-open-used-in-a-with-statement-using-the-mock-framework-in-pyth/34677735#34677735
-        if sys.version_info[0] >= 3:
-            with mock.patch("builtins.open", mock_open(read_data=cfgfile)):
-                mail = VscMail(mail_config="blah")
-        elif sys.version_info[0] >= 2:
-            with mock.patch("__builtin__.open", mock_open(read_data=cfgfile)):
-                mail = VscMail(mail_config="blah")
+        mail = VscMail(mail_config=os.path.dirname(__file__) + '/data/' + 'mailconfig.ini')
 
         logging.warning("mail.mail_host: %s", mail.mail_host)
 
@@ -88,8 +68,6 @@ class TestVscMailConfig(TestCase):
         self.assertEqual(mail.smtp_auth_password, "config_passwd")
         self.assertEqual(mail.smtp_use_starttls, '1')
 
-
-class TestVscMail(TestCase):
     @mock.patch('vsc.utils.mail.smtplib')
     @mock.patch('vsc.utils.mail.ssl')
     def test_send(self, mock_ssl, mock_smtplib):
