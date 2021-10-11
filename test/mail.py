@@ -30,7 +30,7 @@ Unit tests for the mail wrapper.
 """
 import mock
 import logging
-import sys
+import os
 
 from vsc.install.testing import TestCase
 
