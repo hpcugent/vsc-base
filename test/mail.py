@@ -29,19 +29,30 @@ Unit tests for the mail wrapper.
 @author: Andy Georges (Ghent University)
 """
 import mock
-import os
+import logging
 from mock.mock import MagicMock
+
+from unittest.mock import mock_open
 
 from vsc.install.testing import TestCase
 
 from email.mime.text import MIMEText
 from vsc.utils.mail import VscMail
 
+cfgfile = """
+    [main]
+    mail_host = config_host
+    mail_port = 789
+    smtp_auth_user = config_user
+    smtp_auth_password = config_passwd
+    smtp_use_starttls = 1
+"""
+
 class TestVscMail(TestCase):
 
 
-    @mock.patch('vsc.utils.mail.open')
-    def test_config_file(self, mock_open):
+    @mock.patch("builtins.open", new_callable=mock_open, read_data=cfgfile)
+    def test_config_file(self, mock_file):
 
         mail_host = "mailhost.domain"
         mail_port = 123
@@ -50,13 +61,17 @@ class TestVscMail(TestCase):
         smtp_auth_password = "passwd"
         smtp_use_starttls = True
 
-        mail = VscMail(mail_host=mail_host, mail_config=None)
+        mail = VscMail(mail_host=mail_host)
 
         self.assertEqual(mail.mail_host, mail_host)
         self.assertEqual(mail.mail_port, 587)
 
+        mail = VscMail(mail_host=mail_host, mail_port=mail_port)
+        self.assertEqual(mail.mail_host, mail_host)
+        self.assertEqual(mail.mail_port, mail_port)
+
         mock_file = MagicMock()
-        mock_file.read_file.return_value = """
+        mock_file.return_value = """
             [main]
             mail_host = config_host
             mail_port = 789
@@ -68,11 +83,13 @@ class TestVscMail(TestCase):
 
         mail = VscMail(mail_config="blah")
 
+        logging.warning("mail.mail_host: %s", mail.mail_host)
+
         self.assertEqual(mail.mail_host, "config_host")
         self.assertEqual(mail.mail_port, 789)
         self.assertEqual(mail.smtp_auth_user, "config_user")
         self.assertEqual(mail.smtp_auth_password, "config_passwd")
-        self.assertEqual(mail.smtp_use_starttls, True)
+        self.assertEqual(mail.smtp_use_starttls, '1')
 
 
     @mock.patch('vsc.utils.mail.smtplib')
