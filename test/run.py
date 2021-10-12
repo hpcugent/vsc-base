@@ -33,6 +33,7 @@ Tests for the vsc.utils.run module.
 import logging
 import os
 import re
+import stat
 import sys
 import tempfile
 import time
@@ -46,7 +47,7 @@ from vsc.utils.run import (
     CmdList, run, run_simple, asyncloop, run_asyncloop,
     run_timeout, RunTimeout,
     RunQA, RunNoShellQA,
-    async_to_stdout, ensure_cmd_abs_path, run_async_to_stdout,
+    async_to_stdout, ensure_cmd_abs_path, run_async_to_stdout, run
 )
 from vsc.utils.py2vs3 import is_py2, is_py3, is_string
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
@@ -95,6 +96,20 @@ class TestRun(TestCase):
         ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
+
+    def test_run_path(self):
+        """Test use of run function when specifying custom path to use for resolving relative command name."""
+
+        test_cmd = os.path.join(self.tmpdir, 'test123')
+        with open(test_cmd, 'w') as fp:
+            fp.write("#!/bin/bash\necho 123\n")
+        os.chmod(test_cmd, stat.S_IRUSR | stat.S_IXUSR)
+
+        self.assertErrorRegex(OSError, r"Command test123 not found in \$PATH!", run, 'test123')
+
+        ec, out = run('test123', command_path=self.tmpdir + os.pathsep + '/usr/bin')
+        self.assertEqual(ec, 0)
+        self.assertEqual(out, '123\n')
 
     def test_startpath(self):
         cwd = os.getcwd()

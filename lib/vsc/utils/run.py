@@ -87,8 +87,12 @@ BASH = '/bin/bash'
 SHELL = BASH
 
 
-def ensure_cmd_abs_path(cmd):
-    """Make sure that command is specified via an absolute path."""
+def ensure_cmd_abs_path(cmd, path=None):
+    """
+    Make sure that command is specified via an absolute path.
+
+    :param path: colon-separated string with list of paths to use for searching (as alternative to $PATH)
+    """
     if not cmd:
         raise ValueError("Empty command specified!")
     if is_string(cmd):
@@ -102,7 +106,7 @@ def ensure_cmd_abs_path(cmd):
         logging.warning("Command to run is specified via relative path: %s" % cmd_path)
 
         # resolve to absolute path via $PATH
-        cmd_abs_path = which(cmd_path)
+        cmd_abs_path = which(cmd_path, path=path)
         if cmd_abs_path is None:
             raise OSError("Command %s not found in $PATH!" % cmd_path)
 
@@ -192,19 +196,22 @@ class Run(object):
             @param use_shell: use the subshell
             @param shell: change the shell
             @param env: environment settings to pass on
+            @param command_path: colon-separated string of paths to use for searching for command
+                                 (only used if command name is specified a relative path)
         """
         self.input = kwargs.pop('input', None)
         self.startpath = kwargs.pop('startpath', None)
         self.use_shell = kwargs.pop('use_shell', self.USE_SHELL)
         self.shell = kwargs.pop('shell', self.SHELL)
         self.env = kwargs.pop('env', None)
+        command_path = kwargs.pop('command_path', None)
 
         if kwargs.pop('disable_log', None):
             self.log = DummyFunction()  # No logging
         if not hasattr(self, 'log'):
             self.log = getLogger(self._get_log_name())
 
-        self.cmd = ensure_cmd_abs_path(cmd)  # actual command
+        self.cmd = ensure_cmd_abs_path(cmd, path=command_path)  # actual command
 
         self._cwd_before_startpath = None
 
