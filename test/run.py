@@ -475,16 +475,34 @@ class TestRun(TestCase):
 
     def test_ensure_cmd_abs_path(self):
         """Test ensure_cmd_abs_path function."""
-        ls = ensure_cmd_abs_path('ls')
+
+        def check_warning(cmd):
+            """Pass cmd to ensure_cmd_abs_path, and check for warning being printed."""
+            if isinstance(cmd, (list, tuple)):
+                cmd_name = cmd[0]
+            else:
+                cmd_name = cmd.split(' ')[0]
+
+            self.mock_stderr(True)
+            self.mock_stdout(True)
+            res = ensure_cmd_abs_path(cmd)
+            stderr, stdout = self.get_stderr(), self.get_stdout()
+            self.mock_stderr(False)
+            self.mock_stdout(False)
+            self.assertFalse(stdout)
+            self.assertEqual(stderr, "WARNING: Command to run is specified via relative path: %s" % cmd_name)
+            return res
+
+        ls = check_warning('ls')
         self.assertTrue(os.path.isabs(ls) and os.path.exists(ls))
 
-        cmd = ensure_cmd_abs_path('ls foo')
+        cmd = check_warning('ls foo')
         self.assertTrue(cmd.endswith('/ls foo'))
         cmd_path = cmd.split(' ')[0]
         self.assertTrue(os.path.isabs(cmd_path) and os.path.exists(cmd_path))
 
         for input_cmd in (['ls', 'foo'], ('ls', 'foo')):
-            cmd = ensure_cmd_abs_path(input_cmd)
+            cmd = check_warning(input_cmd)
             self.assertTrue(isinstance(cmd, type(input_cmd)))
             self.assertEqual(len(cmd), 2)
             self.assertTrue(os.path.isabs(cmd[0]) and os.path.exists(cmd[0]))
