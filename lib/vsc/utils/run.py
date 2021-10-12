@@ -74,7 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.py2vs3 import ensure_ascii_string, is_py3, is_string
+from vsc.utils.py2vs3 import ensure_ascii_string, is_py3, is_string, which
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -85,6 +85,38 @@ RUNRUN_QA_MAX_MISS_EXITCODE = 124
 
 BASH = '/bin/bash'
 SHELL = BASH
+
+
+def ensure_cmd_abs_path(cmd):
+    """Make sure that command is specified via an absolute path."""
+    if not cmd:
+        raise ValueError("Empty command specified!")
+    if is_string(cmd):
+        cmd_path = cmd.split(' ')[0]
+    elif isinstance(cmd, (list, tuple,)):
+        cmd_path = cmd[0]
+    else:
+        raise ValueError("Unknown type of command: %s (type %s)" % (cmd, type(cmd)))
+
+    if not os.path.isabs(cmd_path):
+        sys.stderr.write("WARNING: Command to run is specified via relative path: %s" % cmd_path)
+
+        # resolve to absolute path via $PATH
+        cmd_abs_path = which(cmd_path)
+        if cmd_abs_path is None:
+            raise OSError("Command %s not found in $PATH!" % cmd_path)
+
+        # re-assemble command with absolute path
+        if is_string(cmd):
+            cmd = ' '.join([cmd_abs_path] + cmd.split(' ')[1:])
+        elif isinstance(cmd, list):
+            cmd[0] = cmd_abs_path
+        elif isinstance(cmd, tuple):
+            cmd = tuple([cmd_abs_path] + list(cmd[1:]))
+        else:
+            raise ValueError("Unknown type of command: %s (type %s)" % (cmd, type(cmd)))
+
+    return cmd
 
 
 class CmdList(list):
@@ -172,7 +204,7 @@ class Run(object):
         if not hasattr(self, 'log'):
             self.log = getLogger(self._get_log_name())
 
-        self.cmd = cmd  # actual command
+        self.cmd = ensure_cmd_abs_path(cmd)  # actual command
 
         self._cwd_before_startpath = None
 

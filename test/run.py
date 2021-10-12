@@ -38,16 +38,16 @@ import time
 import shutil
 
 # Uncomment when debugging, cannot enable permanetnly, messes up tests that toggle debugging
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 from vsc.utils.missing import shell_quote
 from vsc.utils.run import (
     CmdList, run, run_simple, asyncloop, run_asyncloop,
     run_timeout, RunTimeout,
     RunQA, RunNoShellQA,
-    async_to_stdout, run_async_to_stdout,
+    async_to_stdout, ensure_cmd_abs_path, run_async_to_stdout,
 )
-from vsc.utils.py2vs3 import StringIO, is_py2, is_py3, is_string
+from vsc.utils.py2vs3 import is_py2, is_py3, is_string
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -58,13 +58,16 @@ SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
 SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
 
-TEST_GLOB = ['ls','test/sandbox/testpkg/*']
+TEST_GLOB = ['ls', 'test/sandbox/testpkg/*']
+
 
 class RunQAShort(RunNoShellQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
 
+
 class RunLegQAShort(RunQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
+
 
 run_qas = RunQAShort.run
 run_legacy_qas = RunLegQAShort.run
@@ -355,13 +358,14 @@ class TestRun(TestCase):
         qa_reg_dict = {
             "Enter a number \(.*\):": ['2', '3', '5', '0'] + ['100'] * 100,
         }
-        ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
+        cmd = [sys.executable, SCRIPT_QA, 'ask_number', '100']
+        ec, output = run_qas(cmd, qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 10$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
 
         # verify type checking on answers
-        self.assertErrorRegex(TypeError, "Invalid type for answer", run_qas, [], qa={'q': 1})
+        self.assertErrorRegex(TypeError, "Invalid type for answer", run_qas, cmd, qa={'q': 1})
 
         # test more questions than answers, both with and without cycling
         qa_reg_dict = {
@@ -465,6 +469,38 @@ class TestRun(TestCase):
         self.assertErrorRegex(ValueError, "Found one or more spaces", CmdList, 'this has spaces', allow_spaces=False)
 
     def test_env(self):
-        ec, output = run(cmd="/usr/bin/env", env = {"MYENVVAR": "something"})
+        ec, output = run(cmd="/usr/bin/env", env={"MYENVVAR": "something"})
         self.assertEqual(ec, 0)
         self.assertTrue('myenvvar=something' in output.lower())
+
+    def test_ensure_cmd_abs_path(self):
+        """Test ensure_cmd_abs_path function."""
+        ls = ensure_cmd_abs_path('ls')
+        self.assertTrue(os.path.isabs(ls) and os.path.exists(ls))
+
+        cmd = ensure_cmd_abs_path('ls foo')
+        self.assertTrue(cmd.endswith('/ls foo'))
+        cmd_path = cmd.split(' ')[0]
+        self.assertTrue(os.path.isabs(cmd_path) and os.path.exists(cmd_path))
+
+        for input_cmd in (['ls', 'foo'], ('ls', 'foo')):
+            cmd = ensure_cmd_abs_path(input_cmd)
+            self.assertTrue(isinstance(cmd, type(input_cmd)))
+            self.assertEqual(len(cmd), 2)
+            self.assertTrue(os.path.isabs(cmd[0]) and os.path.exists(cmd[0]))
+            self.assertEqual(cmd[1], 'foo')
+
+        # command is left untouched if it already uses an absolute path
+        for cmd in ('/bin/nosuchcommand', ['/foo'], ('/bin/ls', 'foo')):
+            self.assertEqual(ensure_cmd_abs_path(cmd), cmd)
+
+        # check handling of faulty input
+        error_msg = r"Command nosuchcommand not found in \$PATH!"
+        self.assertErrorRegex(OSError, error_msg, ensure_cmd_abs_path, 'nosuchcommand')
+
+        error_msg = "Empty command specified!"
+        self.assertErrorRegex(ValueError, error_msg, ensure_cmd_abs_path, [])
+        self.assertErrorRegex(ValueError, error_msg, ensure_cmd_abs_path, ())
+
+        error_msg = "Unknown type of command: 1"
+        self.assertErrorRegex(ValueError, error_msg, ensure_cmd_abs_path, 1)
