@@ -36,7 +36,7 @@ vsc-base base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw
 
-VSC_INSTALL_REQ_VERSION = '0.15.2'
+VSC_INSTALL_REQ_VERSION = '0.17.19'
 
 _coloredlogs_pkgs = [
     'coloredlogs < 6.0',     # automatic log colorizer
@@ -44,7 +44,7 @@ _coloredlogs_pkgs = [
 ]
 
 PACKAGE = {
-    'version': '3.3.2',
+    'version': '3.4.0',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
