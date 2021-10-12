@@ -30,6 +30,7 @@ Tests for the vsc.utils.run module.
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+import logging
 import os
 import re
 import sys
@@ -476,21 +477,25 @@ class TestRun(TestCase):
     def test_ensure_cmd_abs_path(self):
         """Test ensure_cmd_abs_path function."""
 
+        logger = logging.getLogger()
+        log_path = os.path.join(self.tmpdir, 'log.txt')
+        filelogger = logging.FileHandler(log_path)
+        logger.addHandler(filelogger)
+
         def check_warning(cmd):
-            """Pass cmd to ensure_cmd_abs_path, and check for warning being printed."""
+            """Pass cmd to ensure_cmd_abs_path, and check for warning being printed (through logger)."""
             if isinstance(cmd, (list, tuple)):
                 cmd_name = cmd[0]
             else:
                 cmd_name = cmd.split(' ')[0]
 
-            self.mock_stderr(True)
-            self.mock_stdout(True)
             res = ensure_cmd_abs_path(cmd)
-            stderr, stdout = self.get_stderr(), self.get_stdout()
-            self.mock_stderr(False)
-            self.mock_stdout(False)
-            self.assertFalse(stdout)
-            self.assertEqual(stderr, "WARNING: Command to run is specified via relative path: %s" % cmd_name)
+
+            # check for emitted log message (last line of log file)
+            with open(log_path, 'r') as fh:
+                logline = fh.readlines()[-1].strip()
+                self.assertEqual(logline, "Command to run is specified via relative path: %s" % cmd_name)
+
             return res
 
         ls = check_warning('ls')
@@ -522,3 +527,6 @@ class TestRun(TestCase):
 
         error_msg = "Unknown type of command: 1"
         self.assertErrorRegex(ValueError, error_msg, ensure_cmd_abs_path, 1)
+
+        logger.removeHandler(filelogger)
+        filelogger.close()

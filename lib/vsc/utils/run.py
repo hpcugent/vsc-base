@@ -99,7 +99,7 @@ def ensure_cmd_abs_path(cmd):
         raise ValueError("Unknown type of command: %s (type %s)" % (cmd, type(cmd)))
 
     if not os.path.isabs(cmd_path):
-        sys.stderr.write("WARNING: Command to run is specified via relative path: %s" % cmd_path)
+        logging.warning("Command to run is specified via relative path: %s" % cmd_path)
 
         # resolve to absolute path via $PATH
         cmd_abs_path = which(cmd_path)
