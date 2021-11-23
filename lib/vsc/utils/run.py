@@ -74,7 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.py2vs3 import ensure_ascii_string, is_py3, is_string
+from vsc.utils.py2vs3 import ensure_ascii_string, is_py3, is_string, which
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -85,6 +85,42 @@ RUNRUN_QA_MAX_MISS_EXITCODE = 124
 
 BASH = '/bin/bash'
 SHELL = BASH
+
+
+def ensure_cmd_abs_path(cmd, path=None):
+    """
+    Make sure that command is specified via an absolute path.
+
+    :param path: colon-separated string with list of paths to use for searching (as alternative to $PATH)
+    """
+    if not cmd:
+        raise ValueError("Empty command specified!")
+    if is_string(cmd):
+        cmd_path = cmd.split(' ')[0]
+    elif isinstance(cmd, (list, tuple,)):
+        cmd_path = cmd[0]
+    else:
+        raise ValueError("Unknown type of command: %s (type %s)" % (cmd, type(cmd)))
+
+    if not os.path.isabs(cmd_path):
+        logging.warning("Command to run is specified via relative path: %s" % cmd_path)
+
+        # resolve to absolute path via $PATH
+        cmd_abs_path = which(cmd_path, path=path)
+        if cmd_abs_path is None:
+            raise OSError("Command %s not found in $PATH!" % cmd_path)
+
+        # re-assemble command with absolute path
+        if is_string(cmd):
+            cmd = ' '.join([cmd_abs_path] + cmd.split(' ')[1:])
+        elif isinstance(cmd, list):
+            cmd[0] = cmd_abs_path
+        elif isinstance(cmd, tuple):
+            cmd = tuple([cmd_abs_path] + list(cmd[1:]))
+        else:
+            raise ValueError("Unknown type of command: %s (type %s)" % (cmd, type(cmd)))
+
+    return cmd
 
 
 class CmdList(list):
@@ -160,19 +196,22 @@ class Run(object):
             @param use_shell: use the subshell
             @param shell: change the shell
             @param env: environment settings to pass on
+            @param command_path: colon-separated string of paths to use for searching for command
+                                 (only used if command name is specified a relative path)
         """
         self.input = kwargs.pop('input', None)
         self.startpath = kwargs.pop('startpath', None)
         self.use_shell = kwargs.pop('use_shell', self.USE_SHELL)
         self.shell = kwargs.pop('shell', self.SHELL)
         self.env = kwargs.pop('env', None)
+        command_path = kwargs.pop('command_path', None)
 
         if kwargs.pop('disable_log', None):
             self.log = DummyFunction()  # No logging
         if not hasattr(self, 'log'):
             self.log = getLogger(self._get_log_name())
 
-        self.cmd = cmd  # actual command
+        self.cmd = ensure_cmd_abs_path(cmd, path=command_path)  # actual command
 
         self._cwd_before_startpath = None
 

@@ -30,9 +30,11 @@ Tests for the vsc.utils.py2vs3 module.
 @author: Kenneth Hoste (Ghent University)
 """
 import os
+import stat
 import sys
 
-from vsc.utils.py2vs3 import ensure_ascii_string, is_py_ver, is_py2, is_py3, is_string, pickle, TemporaryDirectory
+from vsc.utils.py2vs3 import ensure_ascii_string, is_py_ver, is_py2, is_py3, is_string, pickle, which
+from vsc.utils.py2vs3 import TemporaryDirectory
 from vsc.install.testing import TestCase
 
 
@@ -143,12 +145,11 @@ class TestPy2vs3(TestCase):
 
     def test_urllib_imports(self):
         """Test importing urllib* stuff from py2vs3."""
-        from vsc.utils.py2vs3 import HTTPError, HTTPSHandler, Request, build_opener, unquote, urlencode, urlopen
+        from vsc.utils.py2vs3 import HTTPError, HTTPSHandler, Request, build_opener, unquote, urlencode, urlopen  # noqa
 
     def test_temporary_directory(self):
         """Test the class TemporaryDirectory."""
         with TemporaryDirectory() as temp_dir:
-            path = temp_dir
             self.assertTrue(os.path.exists(temp_dir), 'Directory created by TemporaryDirectory should work')
             self.assertTrue(os.path.isdir(temp_dir), 'Directory created by TemporaryDirectory should be a directory')
         self.assertFalse(os.path.exists(temp_dir), 'Directory created by TemporaryDirectory should cleanup automagically')
@@ -164,3 +165,27 @@ class TestPy2vs3(TestCase):
             f.write("abc")
 
         self.assertRaises(FileExistsErrorExc, lambda: os.open(afile, os.O_CREAT | os.O_WRONLY | os.O_EXCL))
+
+    def test_which(self):
+        """Test which function."""
+
+        self.assertTrue(which('ls'))
+        self.assertEqual(which('nosuchcommand'), None)
+
+        # create test to test with
+        test_cmd = os.path.join(self.tmpdir, 'test123')
+        with open(test_cmd, 'w') as fp:
+            fp.write("echo 123")
+
+        # missing exec permission
+        self.assertEqual(which('test123'), None)
+        self.assertEqual(which('test123', mode=os.R_OK, path=self.tmpdir), test_cmd)
+
+        os.chmod(test_cmd, stat.S_IRUSR | stat.S_IXUSR)
+
+        # not available via $PATH
+        self.assertEqual(which('test123'), None)
+        self.assertEqual(which('test123', path=self.tmpdir), test_cmd)
+
+        os.environ['PATH'] = self.tmpdir + os.pathsep + os.getenv('PATH')
+        self.assertEqual(which('test123'), test_cmd)

@@ -133,3 +133,28 @@ class TemporaryDirectory(object):
             self._rmdir(path)
         except OSError:
             pass
+
+
+def which(cmd, mode=os.F_OK | os.X_OK, path=None):
+    """
+    Return the first absolute path that matches the given command.
+
+    Searches via specified path, or $PATH as fallback.
+
+    Returns absolute path to command if found, None if not.
+    """
+    res = None
+    if os.path.isabs(cmd):
+        if os.access(cmd, cmd):
+            res = cmd
+    else:
+        if path is None:
+            path = os.environ.get('PATH', '')
+
+        for cand_path in path.split(os.pathsep):
+            cmd_path = os.path.join(cand_path, cmd)
+            if os.access(cmd_path, mode):
+                res = cmd_path
+                break
+
+    return res

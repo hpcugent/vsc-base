@@ -30,24 +30,26 @@ Tests for the vsc.utils.run module.
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+import logging
 import os
 import re
+import stat
 import sys
 import tempfile
 import time
 import shutil
 
 # Uncomment when debugging, cannot enable permanetnly, messes up tests that toggle debugging
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 from vsc.utils.missing import shell_quote
 from vsc.utils.run import (
     CmdList, run, run_simple, asyncloop, run_asyncloop,
     run_timeout, RunTimeout,
     RunQA, RunNoShellQA,
-    async_to_stdout, run_async_to_stdout,
+    async_to_stdout, ensure_cmd_abs_path, run_async_to_stdout, run
 )
-from vsc.utils.py2vs3 import StringIO, is_py2, is_py3, is_string
+from vsc.utils.py2vs3 import is_py2, is_py3, is_string
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -58,13 +60,16 @@ SCRIPT_QA = os.path.join(SCRIPTS_DIR, 'qa.py')
 SCRIPT_NESTED = os.path.join(SCRIPTS_DIR, 'run_nested.sh')
 
 
-TEST_GLOB = ['ls','test/sandbox/testpkg/*']
+TEST_GLOB = ['ls', 'test/sandbox/testpkg/*']
+
 
 class RunQAShort(RunNoShellQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
 
+
 class RunLegQAShort(RunQA):
     LOOP_MAX_MISS_COUNT = 3  # approx 3 sec
+
 
 run_qas = RunQAShort.run
 run_legacy_qas = RunLegQAShort.run
@@ -91,6 +96,20 @@ class TestRun(TestCase):
         ec, output = run_simple([sys.executable, SCRIPT_SIMPLE, 'shortsleep'])
         self.assertEqual(ec, 0)
         self.assertTrue('shortsleep' in output.lower())
+
+    def test_run_path(self):
+        """Test use of run function when specifying custom path to use for resolving relative command name."""
+
+        test_cmd = os.path.join(self.tmpdir, 'test123')
+        with open(test_cmd, 'w') as fp:
+            fp.write("#!/bin/bash\necho 123\n")
+        os.chmod(test_cmd, stat.S_IRUSR | stat.S_IXUSR)
+
+        self.assertErrorRegex(OSError, r"Command test123 not found in \$PATH!", run, 'test123')
+
+        ec, out = run('test123', command_path=self.tmpdir + os.pathsep + '/usr/bin')
+        self.assertEqual(ec, 0)
+        self.assertEqual(out, '123\n')
 
     def test_startpath(self):
         cwd = os.getcwd()
@@ -355,13 +374,14 @@ class TestRun(TestCase):
         qa_reg_dict = {
             "Enter a number \(.*\):": ['2', '3', '5', '0'] + ['100'] * 100,
         }
-        ec, output = run_qas([sys.executable, SCRIPT_QA, 'ask_number', '100'], qa_reg=qa_reg_dict)
+        cmd = [sys.executable, SCRIPT_QA, 'ask_number', '100']
+        ec, output = run_qas(cmd, qa_reg=qa_reg_dict)
         self.assertEqual(ec, 0)
         answer_re = re.compile(".*Answer: 10$")
         self.assertTrue(answer_re.match(output), "'%s' matches pattern '%s'" % (output, answer_re.pattern))
 
         # verify type checking on answers
-        self.assertErrorRegex(TypeError, "Invalid type for answer", run_qas, [], qa={'q': 1})
+        self.assertErrorRegex(TypeError, "Invalid type for answer", run_qas, cmd, qa={'q': 1})
 
         # test more questions than answers, both with and without cycling
         qa_reg_dict = {
@@ -465,6 +485,63 @@ class TestRun(TestCase):
         self.assertErrorRegex(ValueError, "Found one or more spaces", CmdList, 'this has spaces', allow_spaces=False)
 
     def test_env(self):
-        ec, output = run(cmd="/usr/bin/env", env = {"MYENVVAR": "something"})
+        ec, output = run(cmd="/usr/bin/env", env={"MYENVVAR": "something"})
         self.assertEqual(ec, 0)
         self.assertTrue('myenvvar=something' in output.lower())
+
+    def test_ensure_cmd_abs_path(self):
+        """Test ensure_cmd_abs_path function."""
+
+        logger = logging.getLogger()
+        log_path = os.path.join(self.tmpdir, 'log.txt')
+        filelogger = logging.FileHandler(log_path)
+        logger.addHandler(filelogger)
+
+        def check_warning(cmd):
+            """Pass cmd to ensure_cmd_abs_path, and check for warning being printed (through logger)."""
+            if isinstance(cmd, (list, tuple)):
+                cmd_name = cmd[0]
+            else:
+                cmd_name = cmd.split(' ')[0]
+
+            res = ensure_cmd_abs_path(cmd)
+
+            # check for emitted log message (last line of log file)
+            with open(log_path, 'r') as fh:
+                logline = fh.readlines()[-1].strip()
+                self.assertEqual(logline, "Command to run is specified via relative path: %s" % cmd_name)
+
+            return res
+
+        ls = check_warning('ls')
+        self.assertTrue(os.path.isabs(ls) and os.path.exists(ls))
+
+        cmd = check_warning('ls foo')
+        self.assertTrue(cmd.endswith('/ls foo'))
+        cmd_path = cmd.split(' ')[0]
+        self.assertTrue(os.path.isabs(cmd_path) and os.path.exists(cmd_path))
+
+        for input_cmd in (['ls', 'foo'], ('ls', 'foo')):
+            cmd = check_warning(input_cmd)
+            self.assertTrue(isinstance(cmd, type(input_cmd)))
+            self.assertEqual(len(cmd), 2)
+            self.assertTrue(os.path.isabs(cmd[0]) and os.path.exists(cmd[0]))
+            self.assertEqual(cmd[1], 'foo')
+
+        # command is left untouched if it already uses an absolute path
+        for cmd in ('/bin/nosuchcommand', ['/foo'], ('/bin/ls', 'foo')):
+            self.assertEqual(ensure_cmd_abs_path(cmd), cmd)
+
+        # check handling of faulty input
+        error_msg = r"Command nosuchcommand not found in \$PATH!"
+        self.assertErrorRegex(OSError, error_msg, ensure_cmd_abs_path, 'nosuchcommand')
+
+        error_msg = "Empty command specified!"
+        self.assertErrorRegex(ValueError, error_msg, ensure_cmd_abs_path, [])
+        self.assertErrorRegex(ValueError, error_msg, ensure_cmd_abs_path, ())
+
+        error_msg = "Unknown type of command: 1"
+        self.assertErrorRegex(ValueError, error_msg, ensure_cmd_abs_path, 1)
+
+        logger.removeHandler(filelogger)
+        filelogger.close()
