@@ -42,11 +42,11 @@ Various functions that are missing from the default Python library.
 import logging
 import shlex
 import time
-from collections import namedtuple, Mapping
+from collections import namedtuple
 from functools import reduce
 
 from vsc.utils.frozendict import FrozenDict
-from vsc.utils.py2vs3 import quote
+from vsc.utils.py2vs3 import quote, Mapping
 
 
 def nub(list_):
