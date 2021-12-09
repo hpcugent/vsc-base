@@ -89,17 +89,17 @@ class VscMail(object):
                 mail_options.read_file(mc)
 
         # we can have cases where the host part is actually host:port
-        _mail_host = mail_options.get("main", "mail_host", fallback=mail_host)
+        _mail_host = mail_options.get("MAIN", "smtp", fallback=mail_host)
         try:
             self.mail_host, _mail_port = _mail_host.split(":")
         except ValueError:
             self.mail_host = _mail_host
-            _mail_port = mail_options.get("main", "mail_port", fallback=mail_port)
+            _mail_port = mail_options.get("MAIN", "mail_port", fallback=mail_port)
 
         self.mail_port = int(_mail_port)
-        self.smtp_auth_user = mail_options.get("main", "smtp_auth_user", fallback=smtp_auth_user)
-        self.smtp_auth_password = mail_options.get("main", "smtp_auth_password", fallback=smtp_auth_password)
-        self.smtp_use_starttls = mail_options.get("main", "smtp_use_starttls", fallback=smtp_use_starttls)
+        self.smtp_auth_user = mail_options.get("MAIN", "smtp_auth_user", fallback=smtp_auth_user)
+        self.smtp_auth_password = mail_options.get("MAIN", "smtp_auth_password", fallback=smtp_auth_password)
+        self.smtp_use_starttls = mail_options.get("MAIN", "smtp_use_starttls", fallback=smtp_use_starttls)
 
 
     def _connect(self):
