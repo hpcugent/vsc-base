@@ -1,5 +1,5 @@
 #
-# Copyright 2021-2021 Ghent University
+# Copyright 2021-2022 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -22,7 +22,6 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
-#
 #
 """
 """
