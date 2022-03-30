@@ -42,7 +42,7 @@ from functools import partial
 from future.utils import iteritems
 
 from vsc.utils import fancylogger
-from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, urlencode
+from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, is_py3, urlencode
 
 
 class Client(object):
@@ -195,7 +195,18 @@ class Client(object):
     def hash_pass(self, password, username=None):
         if not username:
             username = self.username
-        return 'Basic ' + base64.b64encode('%s:%s' % (username, password)).strip()
+
+        credentials = '%s:%s' % (username, password)
+        if is_py3():
+            # convert credentials into bytes
+            credentials = credentials.encode('utf-8')
+
+        encoded_credentials = base64.b64encode(credentials).strip()
+        if is_py3():
+            # convert back to string
+            encoded_credentials = str(encoded_credentials, 'utf-8')
+
+        return 'Basic ' + encoded_credentials
 
     def get_connection(self, method, url, body, headers):
         if not self.url.endswith('/') and not url.startswith('/'):
