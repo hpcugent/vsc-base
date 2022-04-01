@@ -179,6 +179,8 @@ class Client(object):
             pybody = conn.headers
         else:
             body = conn.read()
+            if is_py3():
+                body = body.decode('utf-8')  # byte encoded response
             try:
                 pybody = json.loads(body)
             except ValueError:
