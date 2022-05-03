@@ -211,10 +211,11 @@ class Client(object):
         return 'Basic ' + encoded_credentials
 
     def get_connection(self, method, url, body, headers):
-        if not self.url.endswith('/') and not url.startswith('/'):
-            sep = '/'
-        else:
+        url = url.lstrip('/')
+        if self.url.endswith('/'):
             sep = ''
+        else:
+            sep = '/'
         if body:
             body = body.encode()
         request = Request(self.url + sep + url, data=body)
