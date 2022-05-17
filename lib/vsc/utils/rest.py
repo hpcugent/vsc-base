@@ -42,7 +42,7 @@ from functools import partial
 from future.utils import iteritems
 
 from vsc.utils import fancylogger
-from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, is_py3, urlencode
+from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, is_py3, is_string, urlencode
 
 
 class Client(object):
@@ -128,7 +128,7 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.DELETE, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.DELETE, url, body, headers, content_type='application/json')
 
     def post(self, url, body=None, headers=None, **params):
         """
@@ -136,7 +136,7 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.POST, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.POST, url, body, headers, content_type='application/json')
 
     def put(self, url, body=None, headers=None, **params):
         """
@@ -144,7 +144,7 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.PUT, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.PUT, url, body, headers, content_type='application/json')
 
     def patch(self, url, body=None, headers=None, **params):
         """
@@ -152,10 +152,11 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.PATCH, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.PATCH, url, body, headers, content_type='application/json')
 
     def request(self, method, url, body, headers, content_type=None):
         """Low-level networking. All HTTP-method methods call this"""
+        # format headers
         if headers is None:
             headers = {}
 
@@ -172,7 +173,19 @@ class Client(object):
         if 'X-Auth-Token' in headers_censored:
             headers_censored['X-Auth-Token'] = '<actual authorization header censored>'
 
-        fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers_censored)
+        if body and not is_string(body):
+            # censor contents of body to avoid leaking passwords
+            body_censored = copy.deepcopy(body)
+            secret_items = ['password']
+            for secret in set(body_censored).intersection(secret_items):
+                body_censored[secret] = '<actual secret censored>'
+            # serialize body
+            body = json.dumps(body)
+        else:
+            # assume serialized bodies are clear of secrets
+            body_censored = body
+
+        fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body_censored, headers_censored)
 
         # TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
