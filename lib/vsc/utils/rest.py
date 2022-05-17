@@ -169,6 +169,8 @@ class Client(object):
         # censor contents of 'Authorization' part of header, to avoid leaking tokens or passwords in logs
         headers_censored = copy.deepcopy(headers)
         headers_censored['Authorization'] = '<actual authorization header censored>'
+        if 'X-Auth-Token' in headers_censored:
+            headers_censored['X-Auth-Token'] = '<actual authorization header censored>'
 
         fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers_censored)
 
