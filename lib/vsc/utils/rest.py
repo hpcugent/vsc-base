@@ -169,9 +169,9 @@ class Client(object):
 
         # censor contents of 'Authorization' part of header, to avoid leaking tokens or passwords in logs
         headers_censored = copy.deepcopy(headers)
-        headers_censored['Authorization'] = '<actual authorization header censored>'
-        if 'X-Auth-Token' in headers_censored:
-            headers_censored['X-Auth-Token'] = '<actual authorization header censored>'
+        secret_items = ['Authorization', 'X-Auth-Token']
+        for secret in set(headers_censored).intersection(secret_items):
+            headers_censored[secret] = '<actual authorization header censored>'
 
         if body and not is_string(body):
             # censor contents of body to avoid leaking passwords
