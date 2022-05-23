@@ -35,6 +35,14 @@ import time as _time
 from datetime import tzinfo, timedelta, datetime, date
 
 
+TODAY = 'TODAY'
+TOMORROW = 'TOMORROW'
+YESTERDAY = 'YESTERDAY'
+
+BEGIN = 'BEGIN'
+END = 'END'
+
+
 class FancyMonth:
     """Convenience class for month math"""
     def __init__(self, tmpdate=None, year=None, month=None, day=None):
@@ -156,7 +164,7 @@ class FancyMonth:
 
     def parser(self, txt):
         """Based on strings, return date: eg BEGINTHIS returns first day of the current month"""
-        supportedtime = ('BEGIN', 'END',)
+        supportedtime = (BEGIN, END,)
         supportedshift = ['THIS', 'LAST', 'NEXT']
         regtxt = r"^(%s)(%s)?" % ('|'.join(supportedtime), '|'.join(supportedshift))
 
@@ -180,9 +188,9 @@ class FancyMonth:
         nm = self.get_other(shift)
 
         timetxt = reg.group(1)
-        if timetxt == 'BEGIN':
+        if timetxt == BEGIN:
             res = nm.first
-        elif timetxt == 'END':
+        elif timetxt == END:
             res = nm.last
         else:
             msg = "parse: unknown time %s (supported: %s)" % (timetxt, supportedtime)
@@ -202,7 +210,7 @@ def date_parser(txt):
     DECEMBER)}
     """
 
-    reserveddate = ('TODAY',)
+    reserveddate = (TODAY, TOMORROW, YESTERDAY,)
     testsupportedmonths = [txt.endswith(calendar.month_name[x].upper()) for x in range(1, 13)]
 
     if txt.endswith('MONTH'):
@@ -214,9 +222,18 @@ def date_parser(txt):
         m = FancyMonth(month=testsupportedmonths.index(True) + 1, day=1)
         res = m.parser(txt)
     elif txt in reserveddate:
-        if txt in ('TODAY',):
+        if txt in (TODAY, TOMORROW, YESTERDAY,):
             m = FancyMonth()
             res = m.date
+
+            if txt in (TOMORROW, YESTERDAY,):
+                thisday = datetime(res.year, res.month, res.day)
+                oneday = timedelta(days=1)
+                if txt == TOMORROW:
+                    thisday += oneday
+                elif txt == YESTERDAY:
+                    thisday -= oneday
+                res = thisday.date()
         else:
             msg = 'dateparser: unimplemented reservedword %s' % txt
             raise(Exception(msg))
@@ -240,21 +257,28 @@ def datetime_parser(txt):
     tmpdate = date_parser(tmpts[0])
 
     datetuple = [tmpdate.year, tmpdate.month, tmpdate.day]
-    if len(tmpts) > 1:
-        # add hour and minutes
-        datetuple.extend([int(x) for x in tmpts[1].split(':')[:2]])
-
-        try:
-            sects = tmpts[1].split(':')[2].split('.')
-        except (AttributeError, IndexError):
-            sects = [0]
-        # add seconds
-        datetuple.append(int(sects[0]))
-        if len(sects) > 1:
-            # add microseconds
-            datetuple.append(int(float('.%s' % sects[1]) * 10 ** 6))
-
     res = datetime(*datetuple)
+
+    if len(tmpts) > 1:
+        hour = tmpts[1]
+
+        if hour == BEGIN:
+            # this is a noop
+            pass
+        elif hour == END:
+            res += timedelta(days=1, seconds=-1)
+        else:
+            hms = hour.split(':')
+
+            try:
+                sects = hms[2].split('.')
+            except (AttributeError, IndexError):
+                sects = [0]
+
+            # add hour, minutes, seconds
+            res += timedelta(hours=int(hms[0]), minutes=int(hms[1]), seconds=int(sects[0]))
+            if len(sects) > 1:
+                res += timedelta(microseconds=int((sects[1] + "0"*6)[:6]))
 
     return res
 

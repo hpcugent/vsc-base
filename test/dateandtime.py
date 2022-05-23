@@ -51,6 +51,13 @@ class DateAndTimeTest(TestCase):
         endapril = datetime.date(today.year, 4, 30)
         self.assertEqual(date_parser('ENDAPRIL') , endapril)
 
+        todaytime = datetime.datetime(today.year, today.month, today.day)
+        oneday = datetime.timedelta(days=1)
+
+        self.assertEqual(date_parser('TODAY'), today)
+        self.assertEqual(date_parser('YESTERDAY'), (todaytime - oneday).date())
+        self.assertEqual(date_parser('TOMORROW'), (todaytime + oneday).date())
+
     def test_datetime_parser(self):
         """Test the date_parser"""
         testdate = datetime.datetime(1970, 1, 1)
@@ -58,11 +65,20 @@ class DateAndTimeTest(TestCase):
         self.assertEqual(datetime_parser('1970-1-1'), testdate)
 
         today = datetime.datetime.today()
+        todaytime = datetime.datetime(today.year, today.month, today.day)
+        oneday = datetime.timedelta(days=1)
+
+        self.assertEqual(datetime_parser('TODAY'), todaytime)
+        self.assertEqual(datetime_parser('YESTERDAY'), todaytime - oneday)
+        self.assertEqual(datetime_parser('TOMORROW'), todaytime + oneday)
+
         beginthismonth = datetime.datetime(today.year, today.month, 1, 12, 1)
         self.assertEqual(datetime_parser('BEGINTHISMONTH 12:1') , beginthismonth)
 
-        endapril = datetime.datetime(today.year, 4, 30, 12, 1, 1, 1)
-        self.assertEqual(datetime_parser('ENDAPRIL 12:01:01.000001') , endapril)
+        todayend = todaytime
+        self.assertEqual(datetime_parser('TODAY BEGIN'), todaytime)
+        self.assertEqual(datetime_parser('TODAY END'), todaytime + oneday - datetime.timedelta(seconds=1))
+        self.assertEqual(datetime_parser('YESTERDAY END'), todaytime - datetime.timedelta(seconds=1))
 
     def test_fancymonth(self):
         """Test some of the FancyMonth functions"""
