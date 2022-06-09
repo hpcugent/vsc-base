@@ -170,19 +170,27 @@ class Client(object):
         # censor contents of 'Authorization' part of header, to avoid leaking tokens or passwords in logs
         headers_censored = copy.deepcopy(headers)
         secret_items = ['Authorization', 'X-Auth-Token']
-        for secret in set(headers_censored).intersection(secret_items):
-            headers_censored[secret] = '<actual authorization header censored>'
+        try:
+            for secret in set(headers_censored).intersection(secret_items):
+                headers_censored[secret] = '<actual authorization header censored>'
+        except TypeError:
+            fancylogger.getLogger().warning("Unknown request header structure, cannot censor secrets")
 
         if body and not is_string(body):
             # censor contents of body to avoid leaking passwords
             body_censored = copy.deepcopy(body)
             secret_items = ['password']
-            for secret in set(body_censored).intersection(secret_items):
-                body_censored[secret] = '<actual secret censored>'
-            # serialize body
-            body = json.dumps(body)
+            try:
+                for secret in set(body_censored).intersection(secret_items):
+                    body_censored[secret] = '<actual secret censored>'
+            except TypeError:
+                fancylogger.getLogger().warning("Unknown request body structure, cannot censor secrets")
+            else:
+                # serialize body
+                body = json.dumps(body)
         else:
             # assume serialized bodies are clear of secrets
+            fancylogger.getLogger().debug("Request with pre-serialized body, will not censor secrets")
             body_censored = body
 
         fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body_censored, headers_censored)
