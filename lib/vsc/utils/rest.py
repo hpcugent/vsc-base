@@ -174,7 +174,7 @@ class Client(object):
             for secret in set(headers_censored).intersection(secret_items):
                 headers_censored[secret] = '<actual authorization header censored>'
         except TypeError:
-            fancylogger.getLogger().warning("Unknown request header structure, cannot censor secrets")
+            fancylogger.getLogger().debug("Unknown request header structure, cannot censor secrets")
 
         if body and not is_string(body):
             # censor contents of body to avoid leaking passwords
@@ -184,7 +184,7 @@ class Client(object):
                 for secret in set(body_censored).intersection(secret_items):
                     body_censored[secret] = '<actual secret censored>'
             except TypeError:
-                fancylogger.getLogger().warning("Unknown request body structure, cannot censor secrets")
+                fancylogger.getLogger().debug("Unknown request body structure, cannot censor secrets")
 
             # serialize body in all cases
             body = json.dumps(body)
