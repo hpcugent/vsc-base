@@ -185,9 +185,9 @@ class Client(object):
                     body_censored[secret] = '<actual secret censored>'
             except TypeError:
                 fancylogger.getLogger().warning("Unknown request body structure, cannot censor secrets")
-            else:
-                # serialize body
-                body = json.dumps(body)
+
+            # serialize body
+            body = json.dumps(body)
         else:
             # assume serialized bodies are clear of secrets
             fancylogger.getLogger().debug("Request with pre-serialized body, will not censor secrets")
