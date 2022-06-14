@@ -153,7 +153,7 @@ class MonoidConcat(object):
         return base_list
 
     def star(self):
-        return MonoidExtend()
+        return MonoidConcat()
 
 class MonoidDict(dict):
     """A dictionary with a monoid operation, that allows combining values in the dictionary according to the mappend
