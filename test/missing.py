@@ -37,7 +37,7 @@ from future.utils import with_metaclass
 
 from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
-from vsc.utils.missing import namedtuple_with_defaults
+from vsc.utils.missing import Monoid, MonoidConcat, namedtuple_with_defaults
 from vsc.utils.patterns import Singleton
 from vsc.install.testing import TestCase
 
@@ -332,3 +332,16 @@ class TestMissing(TestCase):
         MyTuple = namedtuple_with_defaults("MyTuple", fields, [1,2,3])
 
         self.assertEqual(MyTuple(field2=42), MyTuple(field1=1,field2=42,field3=3))
+
+    def test_monoid(self):
+        l = lambda a, b: a + b
+        test_monoid = Monoid(0, l)
+        self.assertTrue(test_monoid(1,2,3) == 6)
+
+    def test_monoid_concat(self):
+        list_a = [1,3,5]
+        list_b = [11,13,17]
+        list_c = [23,29]
+        expected_result = list_a + list_b + list_c
+        test_monoid = MonoidConcat()
+        self.assertTrue(test_monoid(list_a, list_b, list_c) == expected_result)
