@@ -137,6 +137,23 @@ class Monoid(object):
         """Return a new similar monoid."""
         return Monoid(self.null, self.mappend)
 
+class MonoidConcat(object):
+    """Variation of the Monoid object optimized to concatenate lists"""
+
+    def concatenate(self, base_list, extra_list):
+        """Extend the base list with the items of the extra list"""
+        base_list.extend(extra_list)
+        return base_list
+
+    def __call__(self, *args):
+        """When the monoid is called, concatenate all given lists"""
+        base_list = args[0]
+        for extra_list in args[1:]:
+            base_list = self.concatenate(base_list, extra_list)
+        return base_list
+
+    def star(self):
+        return MonoidExtend()
 
 class MonoidDict(dict):
     """A dictionary with a monoid operation, that allows combining values in the dictionary according to the mappend
