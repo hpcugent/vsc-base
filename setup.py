@@ -33,6 +33,7 @@ vsc-base base distribution setup.py
 @author: Kenneth Hoste (Ghent University)
 """
 
+import sys
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw
 
@@ -61,4 +62,8 @@ PACKAGE = {
 }
 
 if __name__ == '__main__':
+    # for python2, we want the backport of configparser
+    if sys.version_info < (3, 0):
+        PACKAGE['install_requires'].append('configparser < 5.0')
+
     shared_setup.action_target(PACKAGE)
