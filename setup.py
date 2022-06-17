@@ -64,6 +64,6 @@ PACKAGE = {
 if __name__ == '__main__':
     # for python2, we want the backport of configparser
     if sys.version_info < (3, 0):
-        PACKAGE['install_requires'].append('configparser')
+        PACKAGE['install_requires'].append('configparser < 5.0')
 
     shared_setup.action_target(PACKAGE)
