@@ -112,3 +112,26 @@ class RestClientTest(TestCase):
             self.assertTrue(False, "Trying to post a comment unauthorized should result in HTTPError")
         except HTTPError:
             pass
+
+    def test_censor_request(self):
+        """Test censor of requests"""
+
+        client = Client('https://api.github.com')
+
+        payload = {'username': 'vsc10001', 'password': 'potato', 'token': '123456'}
+        payload_censored = client.censor_request(['password'], payload)
+        self.assertEqual(
+            payload_censored,
+            {'username': 'vsc10001', 'password': '<actual secret censored>', 'token': '123456'},
+        )
+        payload_censored = client.censor_request(['password', 'token'], payload)
+        self.assertEqual(
+            payload_censored,
+            {'username': 'vsc10001', 'password': '<actual secret censored>', 'token': '<actual secret censored>'},
+        )
+        payload_censored = client.censor_request(['something_else'], payload)
+        self.assertEqual(payload_censored, payload)
+
+        nondict_payload = [payload, 'more_payload']
+        payload_censored = client.censor_request(['password'], nondict_payload)
+        self.assertEqual(payload_censored, nondict_payload)
