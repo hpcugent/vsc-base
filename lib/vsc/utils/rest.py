@@ -44,6 +44,8 @@ from future.utils import iteritems
 from vsc.utils import fancylogger
 from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, is_py3, is_string, urlencode
 
+CENSORED_MESSAGE = '<actual secret censored>'
+
 
 class Client(object):
     """An implementation of a REST client"""
@@ -168,26 +170,13 @@ class Client(object):
         headers['User-Agent'] = self.user_agent
 
         # censor contents of 'Authorization' part of header, to avoid leaking tokens or passwords in logs
-        headers_censored = copy.deepcopy(headers)
         secret_items = ['Authorization', 'X-Auth-Token']
-        try:
-            for secret in set(headers_censored).intersection(secret_items):
-                headers_censored[secret] = '<actual authorization header censored>'
-        except TypeError:
-            # Unknown request header structure, cannot censor secrets
-            pass
+        headers_censored = self.censor_request(secret_items, headers)
 
         if body and not is_string(body):
             # censor contents of body to avoid leaking passwords
-            body_censored = copy.deepcopy(body)
             secret_items = ['password']
-            try:
-                for secret in set(body_censored).intersection(secret_items):
-                    body_censored[secret] = '<actual secret censored>'
-            except TypeError:
-                # Unknown request body structure, cannot censor secrets
-                pass
-
+            body_censored = self.censor_request(secret_items, body)
             # serialize body in all cases
             body = json.dumps(body)
         else:
@@ -213,6 +202,25 @@ class Client(object):
         fancylogger.getLogger().debug('reponse len: %s ', len(pybody))
         conn.close()
         return status, pybody
+
+    @staticmethod
+    def censor_request(secrets, payload):
+        """
+        Replace secrets in payload with a censored message
+
+        @type secrets: list of keys that will be censored
+        @type payload: dictionary with headers or body of request
+        """
+        payload_censored = copy.deepcopy(payload)
+
+        try:
+            for secret in set(payload_censored).intersection(secrets):
+                payload_censored[secret] = CENSORED_MESSAGE
+        except TypeError:
+            # Unknown payload structure, cannot censor secrets
+            pass
+
+        return payload_censored
 
     def urlencode(self, params):
         if not params:
