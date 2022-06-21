@@ -42,7 +42,9 @@ from functools import partial
 from future.utils import iteritems
 
 from vsc.utils import fancylogger
-from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, is_py3, urlencode
+from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, is_py3, is_string, urlencode
+
+CENSORED_MESSAGE = '<actual secret censored>'
 
 
 class Client(object):
@@ -128,7 +130,7 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.DELETE, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.DELETE, url, body, headers, content_type='application/json')
 
     def post(self, url, body=None, headers=None, **params):
         """
@@ -136,7 +138,7 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.POST, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.POST, url, body, headers, content_type='application/json')
 
     def put(self, url, body=None, headers=None, **params):
         """
@@ -144,7 +146,7 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.PUT, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.PUT, url, body, headers, content_type='application/json')
 
     def patch(self, url, body=None, headers=None, **params):
         """
@@ -152,10 +154,11 @@ class Client(object):
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.PATCH, url, json.dumps(body), headers, content_type='application/json')
+        return self.request(self.PATCH, url, body, headers, content_type='application/json')
 
     def request(self, method, url, body, headers, content_type=None):
         """Low-level networking. All HTTP-method methods call this"""
+        # format headers
         if headers is None:
             headers = {}
 
@@ -167,10 +170,21 @@ class Client(object):
         headers['User-Agent'] = self.user_agent
 
         # censor contents of 'Authorization' part of header, to avoid leaking tokens or passwords in logs
-        headers_censored = copy.deepcopy(headers)
-        headers_censored['Authorization'] = '<actual authorization header censored>'
+        secret_items = ['Authorization', 'X-Auth-Token']
+        headers_censored = self.censor_request(secret_items, headers)
 
-        fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body, headers_censored)
+        if body and not is_string(body):
+            # censor contents of body to avoid leaking passwords
+            secret_items = ['password']
+            body_censored = self.censor_request(secret_items, body)
+            # serialize body in all cases
+            body = json.dumps(body)
+        else:
+            # assume serialized bodies are already clear of secrets
+            fancylogger.getLogger().debug("Request with pre-serialized body, will not censor secrets")
+            body_censored = body
+
+        fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body_censored, headers_censored)
 
         # TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
@@ -188,6 +202,25 @@ class Client(object):
         fancylogger.getLogger().debug('reponse len: %s ', len(pybody))
         conn.close()
         return status, pybody
+
+    @staticmethod
+    def censor_request(secrets, payload):
+        """
+        Replace secrets in payload with a censored message
+
+        @type secrets: list of keys that will be censored
+        @type payload: dictionary with headers or body of request
+        """
+        payload_censored = copy.deepcopy(payload)
+
+        try:
+            for secret in set(payload_censored).intersection(secrets):
+                payload_censored[secret] = CENSORED_MESSAGE
+        except TypeError:
+            # Unknown payload structure, cannot censor secrets
+            pass
+
+        return payload_censored
 
     def urlencode(self, params):
         if not params:
