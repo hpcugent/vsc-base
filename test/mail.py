@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright 2014-2022 Ghent University
 #
@@ -123,3 +124,13 @@ class TestVscMail(TestCase):
 
         mock_smtplib.SMTP.assert_called_with(host="test.machine.com", port=124)
         mock_ssl.create_default_context.assert_called()
+
+        # test sending a unicode message
+        vm = VscMail()
+        vm.sendTextMail(
+            "test@noreply.com",
+            "test@noreply.com",
+            "test@noreply.com",
+            "subject",
+            u" Καλημέρα κόσμε, コンニチハ",
+        )
