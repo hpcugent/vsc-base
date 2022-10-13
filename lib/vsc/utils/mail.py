@@ -115,6 +115,8 @@ class VscMail(object):
             context = ssl.create_default_context()
             s.starttls(context=context)
             logging.debug("Started TLS connection")
+        elif not self.mail_host:
+            s.connect()
 
         if self.smtp_auth_user and self.smtp_auth_password:
             s.login(user=self.smtp_auth_user, password=self.smtp_auth_password)
