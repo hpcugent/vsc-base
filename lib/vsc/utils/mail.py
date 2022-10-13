@@ -202,7 +202,7 @@ class VscMail(object):
 
         logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
 
-        msg = MIMEText(message)
+        msg = MIMEText(message, 'plain', 'utf-8')
         msg['Subject'] = mail_subject
         msg['From'] = mail_from
         msg['To'] = ','.join(mail_to)
@@ -318,8 +318,8 @@ class VscMail(object):
             html_message = self._replace_images_cid(html_message, images)
 
         # Record the MIME types of both parts - text/plain and text/html_message.
-        msg_plain = MIMEText(text_alternative, 'plain')
-        msg_html = MIMEText(html_message, 'html_message')
+        msg_plain = MIMEText(text_alternative, 'plain', 'utf-8')
+        msg_html = MIMEText(html_message, 'html_message', 'utf-8')
 
         # Attach parts into message container.
         # According to RFC 2046, the last part of a multipart message, in this case
@@ -329,7 +329,7 @@ class VscMail(object):
         msg_alt.attach(msg_html)
 
         if css is not None:
-            msg_html_css = MIMEText(css, 'css')
+            msg_html_css = MIMEText(css, 'css', 'utf-8')
             msg_html_css.add_header('Content-ID', '<newsletter.css>')
             msg_alt.attach(msg_html_css)
 
