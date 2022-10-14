@@ -108,14 +108,14 @@ class VscMail(object):
 
         If provided, use authentication and TLS.
         """
-        logging.debug("Using mail host %s, mail port %d", self.mail_host, self.mail_port)
+        logging.debug("Using mail host %s, mail port %s", self.mail_host, self.mail_port)
         s = smtplib.SMTP(host=self.mail_host, port=self.mail_port)
 
         if self.smtp_use_starttls:
             context = ssl.create_default_context()
             s.starttls(context=context)
             logging.debug("Started TLS connection")
-        else:
+        elif not self.mail_host:
             s.connect()
 
         if self.smtp_auth_user and self.smtp_auth_password:
