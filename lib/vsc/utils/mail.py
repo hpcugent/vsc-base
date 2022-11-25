@@ -72,10 +72,10 @@ class VscMail(object):
     def __init__(
         self,
         mail_host='',
-        mail_port=587,
+        mail_port=25,
         smtp_auth_user=None,
         smtp_auth_password=None,
-        smtp_use_starttls=False,
+        smtp_use_starttls=True,
         mail_config=None):
         """
         - If there is a config file provided, its values take precedence over the arguments passed to __init__
