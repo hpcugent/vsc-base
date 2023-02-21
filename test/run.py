@@ -106,8 +106,8 @@ class TestRun(TestCase):
 
         # command was actually executed, in specified directory
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'bar')))
-        txt = open(os.path.join(self.tempdir, 'bar')).read()
-        self.assertEqual(txt, 'foo\n')
+        with open(os.path.join(self.tempdir, 'bar')) as txt:
+            self.assertEqual(txt.read(), 'foo\n')
 
         # we should still be in directory we were in originally
         self.assertEqual(cwd, os.getcwd())
@@ -255,9 +255,8 @@ class TestRun(TestCase):
             pids = list(range(depth+1))
             # normally this is ordered output, but you never know
 
-            fp = open(res_fn)
-            lines = fp.readlines()
-            fp.close()
+            with open(res_fn) as fih:
+                lines = fih.readlines()
             for line in lines:
                 dep, pid, _ = line.strip().split(" ") # 3rd is PPID
                 pids[int(dep)] = int(pid)
