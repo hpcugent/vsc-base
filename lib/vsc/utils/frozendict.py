@@ -22,7 +22,12 @@ It can be used as a drop-in replacement for dictionaries where immutability is d
 """
 import operator
 from functools import reduce
-from collections.abc import Mapping
+try:
+    # py 3.10+
+    from collections import Mapping  # noqa
+except ImportError:
+    # < py 3.10
+    from collections.abc import Mapping  # noqa
 
 class FrozenDict(Mapping):
 
