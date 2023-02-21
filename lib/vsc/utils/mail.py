@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2022 Ghent University
+# Copyright 2012-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -39,7 +39,6 @@ from configparser import ConfigParser
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from future.utils import string_types
 
 class VscMailError(Exception):
     """Raised if the sending of an email fails for some reason."""
@@ -199,7 +198,8 @@ class VscMail(object):
         """
 
         # deprecated: single email as string
-        if isinstance(mail_to, string_types):
+        if isinstance(mail_to, str):
+            logging.warning("Deprecated, mail_to passed as string. Should be list of strings.")
             mail_to = [mail_to]
 
         logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
@@ -286,8 +286,8 @@ class VscMail(object):
         @param bcc: a list of valid BCC email addresses
         """
 
-        # deprecated: single email as string
-        if isinstance(mail_to, string_types):
+        if isinstance(mail_to, str):
+            logging.warning("Deprecated, mail_to passed as string. Should be list of strings.")
             mail_to = [mail_to]
 
         logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
@@ -337,9 +337,8 @@ class VscMail(object):
 
         if images is not None:
             for im in images:
-                image_fp = open(im, 'r')
-                msg_image = MIMEImage(image_fp.read(), 'jpeg')  # FIXME: for now, we assume jpegs
-                image_fp.close()
+                with open(im, 'r') as image_fp:
+                    msg_image = MIMEImage(image_fp.read(), 'jpeg')  # FIXME: for now, we assume jpegs
                 msg_image.add_header('Content-ID', "<%s>" % im)
                 msg_alt.attach(msg_image)
 

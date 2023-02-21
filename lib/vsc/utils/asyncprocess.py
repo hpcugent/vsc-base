@@ -73,9 +73,6 @@ import select  # @UnresolvedImport
 import subprocess
 import time
 
-from vsc.utils.py2vs3 import is_py3
-
-
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
 MESSAGE = "Other end disconnected!"
@@ -190,17 +187,12 @@ def send_all(p, data):
     """
     allsent = 0
 
-    # in Python 3, we must use a bytestring
-    if is_py3():
-        data = data.encode()
+    data = data.encode()
 
     while len(data):
         sent = p.send(data)
         if sent is None:
             raise Exception(MESSAGE)
         allsent += sent
-        if is_py3():
-            data = memoryview(data)[sent:]
-        else:
-            data = buffer(data, sent)  # noqa (to avoid prospector failing on undefined 'buffer' in Python 3)
+        data = memoryview(data)[sent:]
     return allsent

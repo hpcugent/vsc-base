@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2022 Ghent University
+# Copyright 2012-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -43,11 +43,10 @@ import logging
 import shlex
 import time
 from collections import namedtuple
+from collections.abc import Mapping
 from functools import reduce
 
 from vsc.utils.frozendict import FrozenDict
-from vsc.utils.py2vs3 import quote, Mapping
-
 
 def nub(list_):
     """Returns the unique items of a list of hashables, while preserving order of
@@ -249,7 +248,7 @@ class FrozenDictKnownKeys(FrozenDict):
 
 def shell_quote(x):
     """Add quotes so it can be passed to shell"""
-    return quote(str(x))
+    return shlex.quote(str(x))
 
 
 def shell_unquote(x):
@@ -357,3 +356,19 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
         prototype = T(*default_values)
     T.__new__.__defaults__ = tuple(prototype)
     return T
+
+def ensure_ascii_string(value):
+    """
+    Convert the provided value to an ASCII string (no Unicode characters).
+    """
+    if isinstance(value, bytes):
+        # if we have a bytestring, decode it to a regular string using ASCII encoding,
+        # and replace Unicode characters with backslash escaped sequences
+        value = value.decode('ascii', 'backslashreplace')
+    else:
+        # for other values, just convert to a string (which may still include Unicode characters)
+        # then convert to bytestring with UTF-8 encoding,
+        # which can then be decoded to regular string using ASCII encoding
+        value = bytes(str(value), encoding='utf-8').decode(encoding='ascii', errors='backslashreplace')
+
+    return value

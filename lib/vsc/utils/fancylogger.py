@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2022 Ghent University
+# Copyright 2011-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -74,10 +74,6 @@ Logging to a udp server:
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
-from __future__ import print_function
-
-from collections import namedtuple
-from future.utils import raise_with_traceback
 import inspect
 import logging
 import logging.handlers
@@ -87,8 +83,6 @@ import threading
 import traceback
 import weakref
 from distutils.version import LooseVersion
-
-from vsc.utils.py2vs3 import is_py2, is_string
 
 
 def _env_to_boolean(varname, default=False):
@@ -157,13 +151,6 @@ def _env_to_boolean(varname, default=False):
 OPTIMIZED_ANSWER = "not available in optimized mode"
 
 HAVE_COLOREDLOGS_MODULE = False
-if not _env_to_boolean('FANCYLOGGER_NO_COLOREDLOGS'):
-    try:
-        import coloredlogs
-        import humanfriendly
-        HAVE_COLOREDLOGS_MODULE = True
-    except ImportError:
-        pass
 
 # constants
 TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
@@ -185,10 +172,6 @@ BACKUPCOUNT = 10  # number of rotating log files to save
 
 DEFAULT_UDP_PORT = 5005
 
-# poor man's enum
-Colorize = namedtuple('Colorize', 'AUTO ALWAYS NEVER')('auto', 'always', 'never')
-
-
 APOCALYPTIC = 'APOCALYPTIC'
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
 
@@ -199,12 +182,9 @@ LOG_LEVEL_ALIASES = {
     'QUIET': logging.WARNING,
 }
 
-if is_py2():
-    levelnames = logging._levelNames
-else:
-    # logging._levelNames no longer exists in Python 3
-    # logging.addLevelName is not a real replacement (it overwrites existing level names)
-    levelnames = logging._nameToLevel
+# logging._levelNames no longer exists in Python 3
+# logging.addLevelName is not a real replacement (it overwrites existing level names)
+levelnames = logging._nameToLevel
 
 for key in LOG_LEVEL_ALIASES:
     levelnames[key] = LOG_LEVEL_ALIASES[key]
@@ -231,7 +211,7 @@ class MissingLevelName(KeyError):
 
 def getLevelInt(level_name):
     """Given a level name, return the int value"""
-    if not is_string(level_name):
+    if not isinstance(level_name, str):
         raise TypeError('Provided name %s is not a string (type %s)' % (level_name, type(level_name)))
 
     level = logging.getLevelName(level_name)
@@ -343,7 +323,7 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-        raise_with_traceback(exception(message))
+        raise(exception(message))
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
@@ -392,7 +372,7 @@ class FancyLogger(logging.getLoggerClass()):
         """
         Add (continuous) data to an existing message stream (eg a stream after a logging.info()
         """
-        if is_string(levelno):
+        if isinstance(levelno, str):
             levelno = getLevelInt(levelno)
 
         def write_and_flush_stream(hdlr, data=None):
@@ -546,7 +526,7 @@ def getRootLoggerName():
         return OPTIMIZED_ANSWER
 
 
-def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Colorize.NEVER):
+def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=None):
     """
     enable (or disable) logging to screen
     returns the screenhandler (this can be used to later disable logging to screen)
@@ -559,10 +539,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Col
     by default, logToScreen will log to stderr; logging to stdout instead can be done
     by setting the 'stdout' parameter to True
 
-    The `colorize` parameter enables or disables log colorization using
-    ANSI terminal escape sequences, according to the values allowed
-    in the `colorize` parameter to function `_screenLogFormatterFactory`
-    (which see).
+    The `colorize` is deprecated and does nothing.
     """
     handleropts = {'stdout': stdout}
     formatter = _screenLogFormatterFactory(colorize=colorize, stream=(sys.stdout if stdout else sys.stderr))
@@ -602,7 +579,7 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
             os.makedirs(directory)
         except Exception as ex:
             exc, detail, _ = sys.exc_info()
-            raise_with_traceback(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail)))
+            raise(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail)))
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
@@ -693,34 +670,14 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
     return handler
 
 
-def _screenLogFormatterFactory(colorize=Colorize.NEVER, stream=sys.stdout):
+def _screenLogFormatterFactory(colorize=None, stream=None):
     """
-    Return a log formatter class, with optional colorization features.
-
-    Second argument `colorize` controls whether the formatter
-    can use ANSI terminal escape sequences:
-
-    * ``Colorize.NEVER`` (default) forces use the plain `logging.Formatter` class;
-    * ``Colorize.ALWAYS`` forces use of the colorizing formatter;
-    * ``Colorize.AUTO`` selects the colorizing formatter depending on
-      whether `stream` is connected to a terminal.
-
-    Second argument `stream` is the stream to check in case `colorize`
-    is ``Colorize.AUTO``.
+    Return a log formatter class.
     """
-    formatter = logging.Formatter  # default
-    if HAVE_COLOREDLOGS_MODULE:
-        if colorize == Colorize.AUTO:
-            # auto-detect
-            if humanfriendly.terminal.terminal_supports_colors(stream):
-                formatter = coloredlogs.ColoredFormatter
-        elif colorize == Colorize.ALWAYS:
-            formatter = coloredlogs.ColoredFormatter
-        elif colorize == Colorize.NEVER:
-            pass
-        else:
-            raise ValueError("Argument `colorize` must be one of 'auto', 'always', or 'never'.")
-    return formatter
+    if colorize:
+        logging.debug("stream %s given.", type(stream))
+        logging.warning("Deprecated option colorize used. ignored.")
+    return logging.Formatter
 
 
 def _getSysLogFacility(name=None):
@@ -759,7 +716,7 @@ def setLogLevel(level):
     """
     Set a global log level for all FancyLoggers
     """
-    if is_string(level):
+    if isinstance(level, str):
         level = getLevelInt(level)
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2022 Ghent University
+# Copyright 2009-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -74,7 +74,7 @@ import sys
 import time
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.py2vs3 import ensure_ascii_string, is_py3, is_string
+from vsc.utils.missing import ensure_ascii_string
 
 PROCESS_MODULE_ASYNCPROCESS_PATH = 'vsc.utils.asyncprocess'
 PROCESS_MODULE_SUBPROCESS_PATH = 'subprocess'
@@ -113,7 +113,7 @@ class CmdList(list):
             if tmpl_vals:
                 item = item % tmpl_vals
 
-            if not is_string(item):
+            if not isinstance(item, str):
                 raise ValueError("Non-string item %s (type %s) being added to command %s" % (item, type(item), self))
 
             if not allow_spaces and ' ' in item:
@@ -356,7 +356,7 @@ class Run(object):
         if self.cmd is None:
             self.log.raiseException("_make_shell_command: no cmd set.")
 
-        if is_string(self.cmd):
+        if isinstance(self.cmd, str):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = " ".join([str(arg).replace(' ', '\ ') for arg in self.cmd])
@@ -375,8 +375,8 @@ class Run(object):
     def _init_input(self):
         """Handle input, if any in a simple way"""
         if self.input is not None:  # allow empty string (whatever it may mean)
-            # in Python 3, stdin.write requires a bytestring
-            if is_py3() and is_string(self.input):
+            # stdin.write requires a bytestring
+            if isinstance(self.input, str):
                 inp = bytes(self.input, encoding='utf-8')
             else:
                 inp = self.input
@@ -512,7 +512,7 @@ class RunNoShell(Run):
         if self.cmd is None:
             self.log.raiseException("_make_shell_command: no cmd set.")
 
-        if is_string(self.cmd):
+        if isinstance(self.cmd, str):
             self._shellcmd = shlex.split(self.cmd)
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = self.cmd
@@ -725,7 +725,8 @@ class RunFile(Run):
                                                  "Creating it failed.") % (dirname, self.filename))
 
             try:
-                self.filehandle = open(self.filename, 'w')
+                with open(self.filename, 'w') as fih:
+                    self.filehandle = fih
             except OSError:
                 self.log.raiseException("_make_popen_named_args: failed to open filehandle for file %s" % self.filename)
 
@@ -847,7 +848,7 @@ class RunQA(RunLoop, RunAsync):
 
         def process_answers(answers):
             """Construct list of newline-terminated answers (as strings)."""
-            if is_string(answers):
+            if isinstance(answers, str):
                 answers = [answers]
             elif isinstance(answers, list):
                 # list is manipulated when answering matching question, so take a copy

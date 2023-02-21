@@ -1,5 +1,5 @@
 #
-# Copyright 2020-2022 Ghent University
+# Copyright 2020-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,6 +28,7 @@ Utility functions to help with keeping the codebase compatible with both Python 
 
 @author: Kenneth Hoste (Ghent University)
 """
+import logging
 import cPickle as pickle  # noqa
 import ConfigParser as configparser  # noqa
 import os  # noqa
@@ -41,6 +42,7 @@ from collections import Mapping  # noqa
 FileExistsErrorExc = OSError  # noqa
 FileNotFoundErrorExc = OSError  # noqa
 
+logging.warning("py2 module deprecated, please stop using it.")
 
 def is_string(value):
     """Check whether specified value is of type string (not bytes)."""

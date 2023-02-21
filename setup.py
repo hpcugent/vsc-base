@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 #
-# Copyright 2009-2016 Ghent University
+# Copyright 2009-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -33,37 +33,23 @@ vsc-base base distribution setup.py
 @author: Kenneth Hoste (Ghent University)
 """
 
-import sys
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw
 
 VSC_INSTALL_REQ_VERSION = '0.17.19'
 
-_coloredlogs_pkgs = [
-    'coloredlogs < 6.0',     # automatic log colorizer
-    'humanfriendly',   # detect if terminal has colors
-]
-
 PACKAGE = {
-    'version': '3.4.10',
+    'version': '3.5.0',
     'author': [sdw, jt, ag, kh],
     'maintainer': [sdw, jt, ag, kh],
     # as long as 1.0.0 is not out, vsc-base should still provide vsc.fancylogger
     # setuptools must become a requirement for shared namespaces if vsc-install is removed as requirement
     'install_requires': [
         'vsc-install >= %s' % VSC_INSTALL_REQ_VERSION,
-        'future >= 0.16.0',
     ],
-    'extras_require': {
-        'coloredlogs': _coloredlogs_pkgs,
-    },
     'setup_requires': ['vsc-install >= %s' % VSC_INSTALL_REQ_VERSION],
-    'tests_require': ['prospector'] + _coloredlogs_pkgs,
+    'tests_require': ['prospector'],
 }
 
 if __name__ == '__main__':
-    # for python2, we want the backport of configparser
-    if sys.version_info < (3, 0):
-        PACKAGE['install_requires'].append('configparser < 5.0')
-
     shared_setup.action_target(PACKAGE)

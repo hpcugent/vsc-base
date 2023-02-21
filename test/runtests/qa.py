@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2022 Ghent University
+# Copyright 2016-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -26,7 +26,6 @@
 """
 Simple, ugly test script for QA
 """
-from __future__ import print_function
 import time
 import re
 import sys

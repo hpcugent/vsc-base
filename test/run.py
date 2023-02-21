@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2012-2022 Ghent University
+# Copyright 2012-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -47,7 +47,6 @@ from vsc.utils.run import (
     RunQA, RunNoShellQA,
     async_to_stdout, run_async_to_stdout,
 )
-from vsc.utils.py2vs3 import StringIO, is_py2, is_py3, is_string
 from vsc.utils.run import RUNRUN_TIMEOUT_OUTPUT, RUNRUN_TIMEOUT_EXITCODE, RUNRUN_QA_MAX_MISS_EXITCODE
 from vsc.install.testing import TestCase
 
@@ -151,13 +150,7 @@ class TestRun(TestCase):
             # there should be no output to stderr
             self.assertFalse(stderr)
 
-            # in Python 2, we need to ensure the 'msg' input doesn't include any Unicode
-            # before comparing with 'output' (which also has Unicode characters stripped out)
-            if is_py2():
-                msg = msg.decode('ascii', 'ignore')
-            # in Python 3, Unicode characters get replaced with backslashed escape sequences
-            elif is_py3():
-                msg = msg.replace('¢', '\\xc2\\xa2')
+            msg = msg.replace('¢', '\\xc2\\xa2')
 
             self.assertEqual(ec, 0)
             self.assertEqual(output, msg + '\n')
@@ -185,7 +178,7 @@ class TestRun(TestCase):
 
             # output is always string, not bytestring, so convert before comparison
             # (only needed for Python 3)
-            if not is_string(inp):
+            if not isinstance(inp, str):
                 inp = inp.decode(encoding='utf-8')
 
             self.assertEqual(ec, 0)

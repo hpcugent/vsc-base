@@ -39,10 +39,9 @@ import base64
 import copy
 import json
 from functools import partial
-from future.utils import iteritems
-
 from vsc.utils import fancylogger
-from vsc.utils.py2vs3 import HTTPSHandler, Request, build_opener, is_py3, is_string, urlencode
+from urllib.parse import urlencode
+from urllib.request import Request, HTTPSHandler, build_opener
 
 CENSORED_MESSAGE = '<actual secret censored>'
 
@@ -173,7 +172,7 @@ class Client(object):
         secret_items = ['Authorization', 'X-Auth-Token']
         headers_censored = self.censor_request(secret_items, headers)
 
-        if body and not is_string(body):
+        if body and not isinstance(body, str):
             # censor contents of body to avoid leaking passwords
             secret_items = ['password']
             body_censored = self.censor_request(secret_items, body)
@@ -193,8 +192,7 @@ class Client(object):
             pybody = conn.headers
         else:
             body = conn.read()
-            if is_py3():
-                body = body.decode('utf-8')  # byte encoded response
+            body = body.decode('utf-8')  # byte encoded response
             try:
                 pybody = json.loads(body)
             except ValueError:
@@ -232,14 +230,9 @@ class Client(object):
             username = self.username
 
         credentials = '%s:%s' % (username, password)
-        if is_py3():
-            # convert credentials into bytes
-            credentials = credentials.encode('utf-8')
-
+        credentials = credentials.encode('utf-8')
         encoded_credentials = base64.b64encode(credentials).strip()
-        if is_py3():
-            # convert back to string
-            encoded_credentials = str(encoded_credentials, 'utf-8')
+        encoded_credentials = str(encoded_credentials, 'utf-8')
 
         return 'Basic ' + encoded_credentials
 
@@ -251,7 +244,7 @@ class Client(object):
         if body:
             body = body.encode()
         request = Request(self.url + sep + url, data=body)
-        for header, value in iteritems(headers):
+        for header, value in headers.items():
             request.add_header(header, value)
         request.get_method = lambda: method
         fancylogger.getLogger().debug('opening request:  %s%s%s', self.url, sep, url)

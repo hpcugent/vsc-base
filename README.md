@@ -1,17 +1,9 @@
 # vsc-base
 
-### Build Status
-
-- Python 2.6 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python26/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python26/)
-- Python 2.7 : [![Build Status](https://jenkins1.ugent.be/job/vsc-base-python27/badge/icon)](https://jenkins1.ugent.be/job/vsc-base-python27/)
-
 # Description
 
 Common tools used within our organization.
-Originally created by the HPC team of Ghent University (http://ugent.be/hpc).
-
-# Documentation
-https://jenkins1.ugent.be/job/vsc-base-python26/Documentation/
+Originally created by the HPC team of Ghent University (https://ugent.be/hpc).
 
 # Namespaces and tools
 
@@ -64,8 +56,8 @@ A collection of python scripts, these are examples of how you could use fancylog
 vsc-base is made available under the GNU Library General Public License (LGPL) version 2 or any later version.
 
 # Acknowledgements
-vsc-base was created with support of [Ghent University](http://www.ugent.be/en),
+vsc-base was created with support of [Ghent University](https://www.ugent.be/en),
 the [Flemish Supercomputer Centre (VSC)](https://vscentrum.be/nl/en),
-the [Flemish Research Foundation (FWO)](http://www.fwo.be/en),
-and [the Department of Economy, Science and Innovation (EWI)](http://www.ewi-vlaanderen.be/en).
+the [Flemish Research Foundation (FWO)](https://www.fwo.be/en),
+and [the Department of Economy, Science and Innovation (EWI)](https://www.ewi-vlaanderen.be/en).
 

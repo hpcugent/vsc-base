@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2013-2022 Ghent University
+# Copyright 2013-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -30,33 +30,18 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
-from __future__ import print_function
-
-import coloredlogs
 import logging
 import os
 import re
 import sys
 import shutil
 import tempfile
+from io import StringIO
 from random import randint
 from unittest import TestLoader, main, TestSuite
 
-try:
-    from unittest import skipUnless
-except (AttributeError, ImportError):
-    # Python 2.6 does not have `skipIf`/`skipUnless`
-    def skipUnless(condition, reason):
-        if condition:
-            def deco(fn):
-                return fn
-        else:
-            def deco(fn):
-                return (lambda *args, **kwargs: True)
-        return deco
-
+from unittest import skipUnless
 from vsc.utils import fancylogger
-from vsc.utils.py2vs3 import StringIO, is_py_ver, is_py3, is_string
 from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."
@@ -224,19 +209,10 @@ class FancyLoggerTest(TestCase):
         pi_l1 = log_l1._get_parent_info()
         self.assertEqual(len(pi_l1), 3)
 
-        is_py27 = is_py_ver(2,7)
-
-        if is_py27:
-            log_l2a = log_l1.getChild('level2a')
-            pi_l2a = log_l2a._get_parent_info()
-            self.assertEqual(len(pi_l2a), 4)
-
         # this should be identical to getChild
         log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
         # fname=False is required to have the name similar
         # cutoff last letter (a vs b)
-        if is_py27:
-            self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
         pi_l2b = log_l2b._get_parent_info()
         # yes, this broken on several levels (incl in logging itself)
         # adding '.' in the name does not automatically create the parent/child relations
@@ -272,9 +248,6 @@ class FancyLoggerTest(TestCase):
             logger.warning(msg)
             logger.warn(msg)
 
-            # can't use ís_string function here, because we need to discriminate between bytestrings & unicode strings;
-            # in Python 2, the 'bytes' type (a bytestring) is the same as 'str', but not in Python 3;
-            # unicode is a different type in Python 2, but doesn't exist in Python 3;
             if isinstance(msg, str):
                 regex = str(msg)
             else:
@@ -322,14 +295,9 @@ class FancyLoggerTest(TestCase):
 
         # test handling of non-UTF8 chars
         msg = MSG + u'\x81'
-        if is_py3():
-            # Python 3: unicode is supported in regular string values (no special unicode type)
-            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
-            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)
-        else:
-            # Python 2: extra \xc2 character appears for unicode strings
-            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
-            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\xc2\x81" % max_ver)
+        # Python 3: unicode is supported in regular string values (no special unicode type)
+        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
+        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)
 
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
 
@@ -509,7 +477,7 @@ class FancyLoggerTest(TestCase):
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
         res = fancylogger.getDetailsLogLevels(fancy=True)
-        self.assertTrue(is_string(res[0][1]), msg='getDetailsLogLevels returns loglevel names by default')
+        self.assertTrue(isinstance(res[0][1], str), msg='getDetailsLogLevels returns loglevel names by default')
         res = fancylogger.getDetailsLogLevels(fancy=True, numeric=True)
         self.assertTrue(isinstance(res[0][1], int), msg='getDetailsLogLevels returns loglevel values with numeric=True')
 
@@ -661,27 +629,27 @@ class ScreenLogFormatterFactoryTest(TestCase):
 
     def test_colorize_never(self):
         # with colorize=Colorize.NEVER, return plain old formatter
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.NEVER)
+        cls = fancylogger._screenLogFormatterFactory("never")
         self.assertEqual(cls, logging.Formatter)
 
     def test_colorize_always(self):
-        # with colorize=Colorize.ALWAYS, return colorizing formatter
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.ALWAYS)
-        self.assertEqual(cls, coloredlogs.ColoredFormatter)
+        # with colorize=Colorize.ALWAYS, never colorizing formatter
+        cls = fancylogger._screenLogFormatterFactory("always")
+        self.assertEqual(cls, logging.Formatter)
 
     @skipUnless(_get_tty_stream(), "cannot get a stream connected to a TTY")
     def test_colorize_auto_tty(self):
         # with colorize=Colorize.AUTO on a stream connected to a TTY,
-        # return colorizing formatter
+        # never return colorizing formatter
         stream = _get_tty_stream()
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.AUTO, stream)
-        self.assertEqual(cls, coloredlogs.ColoredFormatter)
+        cls = fancylogger._screenLogFormatterFactory("auto", stream)
+        self.assertEqual(cls, logging.Formatter)
 
     def test_colorize_auto_nontty(self):
         # with colorize=Colorize.AUTO on a stream *not* connected to a TTY,
-        # return colorizing formatter
+        # never return colorizing formatter
         stream = open(os.devnull, 'w')
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.AUTO, stream)
+        cls = fancylogger._screenLogFormatterFactory("auto", stream)
         self.assertEqual(cls, logging.Formatter)
 
 
