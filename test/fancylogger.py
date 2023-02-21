@@ -95,7 +95,7 @@ def _get_tty_stream():
 
 def classless_function():
     logger = fancylogger.getLogger(fname=True, clsname=True)
-    logger.warn("from classless_function")
+    logger.warning("from classless_function")
 
 
 class FancyLoggerLogToFileTest(TestCase):
@@ -137,13 +137,13 @@ class FancyLoggerTest(TestCase):
         f.close()
 
     def mk_empty_log(self):
-        f = open(self.logfn, 'w')
-        f.write('')
-        f.close()
+        with open(self.logfn, 'w') as fih:
+            fih.write('')
 
     def read_log(self):
         self.handler.flush()
-        return open(self.logfn, 'r').read()
+        with open(self.logfn, 'r') as fih:
+            return fih.read()
 
     def setUp(self):
         super(FancyLoggerTest, self).setUp()
@@ -246,7 +246,6 @@ class FancyLoggerTest(TestCase):
             logger.fatal(msg)
             logger.info(msg)
             logger.warning(msg)
-            logger.warn(msg)
 
             if isinstance(msg, str):
                 regex = str(msg)
@@ -422,7 +421,7 @@ class FancyLoggerTest(TestCase):
         class Foobar:
             def somefunction(self):
                 logger = fancylogger.getLogger(fname=True, clsname=True)
-                logger.warn('we are logging something here')
+                logger.warning('we are logging something here')
 
         stringfile = StringIO()
         sys.stderr = stringfile
@@ -512,7 +511,7 @@ class FancyLoggerTest(TestCase):
         after setting the root logger
         """
 
-        # test logging.root is loggin root logger
+        # test logging.root is logging root logger
         # this is an assumption made to make the fancyrootlogger code work
         orig_root = logging.getLogger()
         self.assertEqual(logging.root, orig_root,
@@ -532,6 +531,8 @@ class FancyLoggerTest(TestCase):
 
         msg = 'this is my string'
         logging.debug(msg)
+
+        # fails on python 3.11
         self.assertEqual(stringfile.getvalue(), '',
                          msg="logging.debug reports nothing when fancylogger loglevel is debug")
 
