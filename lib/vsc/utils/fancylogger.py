@@ -323,7 +323,7 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-        raise(exception(message))
+        raise(exception(message)).with_traceback()
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
@@ -579,7 +579,7 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
             os.makedirs(directory)
         except Exception as ex:
             exc, detail, _ = sys.exc_info()
-            raise(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail)))
+            raise(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))).with_traceback()
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
@@ -674,7 +674,7 @@ def _screenLogFormatterFactory(colorize=None, stream=None):
     """
     Return a log formatter class.
     """
-    if colorize:
+    if colorize is not None:
         logging.debug("stream %s given.", type(stream))
         logging.warning("Deprecated option colorize used. ignored.")
     return logging.Formatter
