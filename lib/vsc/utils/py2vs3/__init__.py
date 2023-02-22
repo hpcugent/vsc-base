@@ -58,8 +58,8 @@ def is_py3():
     return is_py_ver(3)
 
 
-# all functionality provided by the py2 and py3 modules is made available via the easybuild.tools.py2vs3 namespace
+# all functionality provided by the py2 and py3 modules is made available via the vsc.utils.py2vs3 namespace
 if is_py3():
     from vsc.utils.py2vs3.py3 import *  # noqa
 else:
-    from vsc.utils.py2vs3.py2 import *  # noqa
+    raise ImportError("py2 module unsupported and removed, please stop using it.")
