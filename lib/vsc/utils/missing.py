@@ -44,12 +44,7 @@ import shlex
 import time
 from collections import namedtuple
 from functools import reduce
-try:
-    # py 3.10+
-    from collections import Mapping  # noqa
-except ImportError:
-    # < py 3.10
-    from collections.abc import Mapping  # noqa
+from collections.abc import Mapping
 
 
 from vsc.utils.frozendict import FrozenDict
