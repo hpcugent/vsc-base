@@ -542,7 +542,10 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Non
     The `colorize` is deprecated and does nothing.
     """
     handleropts = {'stdout': stdout}
-    formatter = _screenLogFormatterFactory(colorize=colorize, stream=(sys.stdout if stdout else sys.stderr))
+    if colorize is not None:
+        logging.warning("Deprecated option colorize used. ignored.")
+
+    formatter = _screenLogFormatterFactory(colorize=None, stream=None)
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
