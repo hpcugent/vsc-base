@@ -323,7 +323,7 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
-        raise(exception(message)).with_traceback()
+        raise(exception(message)).with_traceback(tb)
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
@@ -578,8 +578,8 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
         try:
             os.makedirs(directory)
         except Exception as ex:
-            exc, detail, _ = sys.exc_info()
-            raise(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))).with_traceback()
+            exc, detail, tb = sys.exc_info()
+            raise(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))).with_traceback(tb)
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
