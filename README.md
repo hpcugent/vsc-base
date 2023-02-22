@@ -52,9 +52,6 @@ A collection of python scripts, these are examples of how you could use fancylog
 - __logdaemon.py__: A daemon that listens on a port for udp packets and logs them to file, works toghether with fancylogger.
 - __startlogdaemon.py__ : Script that will start the logdaemon for  you and set environment variables for fancylogger.
 
-# License
-vsc-base is made available under the GNU Library General Public License (LGPL) version 2 or any later version.
-
 # Acknowledgements
 vsc-base was created with support of [Ghent University](https://www.ugent.be/en),
 the [Flemish Supercomputer Centre (VSC)](https://vscentrum.be/nl/en),
