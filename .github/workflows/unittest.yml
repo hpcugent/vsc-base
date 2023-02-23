@@ -1,24 +1,28 @@
-name: run python tests
-on: [push, pull_request]
-
+# .github/workflows/unittest.yml: configuration file for github actions worflow
+# This file was automatically generated using 'python -m vsc.install.ci'
+# DO NOT EDIT MANUALLY
 jobs:
   python_unittests:
-      runs-on: ubuntu-20.04
-      strategy:
-        matrix:
-          python: [3.6, 3.9]
-      steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install tox
-        run: pip install tox
-      - name: add mandatory git remote
-        # 'hpcugent' is a mandatory remote for setup.py to work (because of get_name_url)
-        run: git remote add hpcugent https://github.com/hpcugent/vsc-base.git
-      - name: Run tox
-        # Run tox using the version of Python in `PATH`
-        run: tox -e py
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python }}
+    - name: install tox
+      run: pip install tox
+    - name: add mandatory git remote
+      run: git remote add hpcugent https://github.com/hpcugent/vsc-base.git
+    - name: Run tox
+      run: tox -e py
+    strategy:
+      matrix:
+        python:
+        - 3.6
+        - 3.9
+name: run python tests
+'on':
+- push
+- pull_request
