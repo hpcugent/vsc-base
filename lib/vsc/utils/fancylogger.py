@@ -323,9 +323,11 @@ class FancyLogger(logging.getLoggerClass()):
             exception = self.RAISE_EXCEPTION_CLASS
 
         self.RAISE_EXCEPTION_LOG_METHOD(fullmessage)
+
+        exception = exception(message)
         if tb is not None:
-            raise exception(message).with_traceback(tb)
-        raise exception(message)
+            exception = exception.with_traceback(tb)
+        raise exception
 
     # pylint: disable=unused-argument
     def deprecated(self, msg, cur_ver, max_ver, depth=2, exception=None, log_callback=None, *args, **kwargs):
