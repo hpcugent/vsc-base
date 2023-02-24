@@ -106,8 +106,8 @@ class TestRun(TestCase):
 
         # command was actually executed, in specified directory
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'bar')))
-        with open(os.path.join(self.tempdir, 'bar')) as txt:
-            self.assertEqual(txt.read(), 'foo\n')
+        with open(os.path.join(self.tempdir, 'bar')) as fih:
+            self.assertEqual(fih.read(), 'foo\n')
 
         # we should still be in directory we were in originally
         self.assertEqual(cwd, os.getcwd())
