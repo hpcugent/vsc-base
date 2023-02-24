@@ -628,31 +628,10 @@ class FancyLoggerTest(TestCase):
 class ScreenLogFormatterFactoryTest(TestCase):
     """Test `_screenLogFormatterFactory`"""
 
-    def test_colorize_never(self):
-        # with colorize=Colorize.NEVER, return plain old formatter
-        cls = fancylogger._screenLogFormatterFactory("never")
-        self.assertEqual(cls, logging.Formatter)
-
     def test_colorize_always(self):
-        # with colorize=Colorize.ALWAYS, never colorizing formatter
+        # Make sure colorize no longer works and returns a standard logging.Formatter
         cls = fancylogger._screenLogFormatterFactory("always")
         self.assertEqual(cls, logging.Formatter)
-
-    @skipUnless(_get_tty_stream(), "cannot get a stream connected to a TTY")
-    def test_colorize_auto_tty(self):
-        # with colorize=Colorize.AUTO on a stream connected to a TTY,
-        # never return colorizing formatter
-        stream = _get_tty_stream()
-        cls = fancylogger._screenLogFormatterFactory("auto", stream)
-        self.assertEqual(cls, logging.Formatter)
-
-    def test_colorize_auto_nontty(self):
-        # with colorize=Colorize.AUTO on a stream *not* connected to a TTY,
-        # never return colorizing formatter
-        stream = open(os.devnull, 'w')
-        cls = fancylogger._screenLogFormatterFactory("auto", stream)
-        self.assertEqual(cls, logging.Formatter)
-
 
 class EnvToBooleanTest(TestCase):
 
