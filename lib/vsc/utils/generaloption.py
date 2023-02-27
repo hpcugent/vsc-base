@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2022 Ghent University
+# Copyright 2011-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -35,20 +35,19 @@ import inspect
 import operator
 import os
 import re
-import shutil
 import sys
 import textwrap
+import configparser
 from functools import reduce
 from optparse import OptionParser, OptionGroup, Option, Values
 from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
 from optparse import SUPPRESS_HELP as nohelp  # supported in optparse of python v2.4
 from optparse import gettext as _gettext  # this is gettext.gettext normally
-
+from io import StringIO
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
 from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import nub, shell_quote
-from vsc.utils.py2vs3 import StringIO, configparser, is_py_ver, is_string
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
@@ -65,9 +64,7 @@ def set_columns(cols=None):
         return
 
     if cols is None:
-        if is_py_ver(3, 3):
-            cols, _ = shutil.get_terminal_size()
-        elif os.path.exists(STTY):
+        if os.path.exists(STTY):
             try:
                 proc = os.popen('%s size 2>/dev/null' % STTY)
                 cols = int(proc.read().strip().split(' ')[1])
@@ -120,7 +117,7 @@ def get_empty_add_flex(allvalues, self=None):
     empty = None
 
     if isinstance(allvalues, (list, tuple)):
-        if is_string(allvalues[0]):
+        if isinstance(allvalues[0], str):
             empty = ''
 
     if empty is None:
@@ -521,7 +518,7 @@ class ExtOptionParser(OptionParser):
         # --longopt=value, so no issues there either.
 
         # following checks assume that value is a string (not a store_or_None)
-        if not is_string(value):
+        if not isinstance(value, str):
             return None
 
         cmdline_index = None
@@ -1210,7 +1207,7 @@ class GeneralOption(object):
                         # choices
                         nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
                         hlp += ' (choices: %s)' % ', '.join(nameds['choices'])
-                    elif is_string(extra_detail) and len(extra_detail) == 1:
+                    elif isinstance(extra_detail, str) and len(extra_detail) == 1:
                         args.insert(0, "-%s" % extra_detail)
                     elif isinstance(extra_detail, (dict,)):
                         # extract any optcomplete completer hints

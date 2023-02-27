@@ -1,5 +1,5 @@
 #
-# Copyright 2018-2022 Ghent University
+# Copyright 2018-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -31,9 +31,6 @@ import pwd
 from ctypes import c_char_p, c_uint, c_int32, POINTER, byref, cdll
 from ctypes.util import find_library
 
-from vsc.utils.py2vs3 import is_string
-
-
 def getgrouplist(user, groupnames=True):
     """
     Return a list of all groupid's for groups this user is in
@@ -54,7 +51,7 @@ def getgrouplist(user, groupnames=True):
     grouplist = (c_uint * ngroups)()
     ngrouplist = c_int32(ngroups)
 
-    if is_string(user):
+    if isinstance(user, str):
         user = pwd.getpwnam(user)
     else:
         user = pwd.getpwuid(user)

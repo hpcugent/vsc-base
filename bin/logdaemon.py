@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011-2022 Ghent University
+# Copyright 2011-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -36,7 +36,6 @@ then use mpi to get these environment variables to the clients.
 
 @author: Jens Timmerman (Ghent University)
 """
-from __future__ import print_function
 from optparse import OptionParser
 from vsc.utils import fancylogger
 from vsc.utils.daemon import Daemon
@@ -79,9 +78,8 @@ class LogDaemon(Daemon):
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pidf = open(self.pidfile, 'r')
-            pid = int(pidf.read().strip())
-            pidf.close()
+            with open(self.pidfile, 'r') as pidf:
+                pid = int(pidf.read().strip())
         except IOError:
             pid = None
 

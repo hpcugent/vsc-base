@@ -22,13 +22,8 @@ It can be used as a drop-in replacement for dictionaries where immutability is d
 """
 import operator
 from functools import reduce
-from future.utils import iteritems
+from collections.abc import Mapping
 
-from vsc.utils.py2vs3 import Mapping
-
-
-# minor adjustments:
-# * renamed to FrozenDict
 class FrozenDict(Mapping):
 
     def __init__(self, *args, **kwargs):
@@ -52,7 +47,7 @@ class FrozenDict(Mapping):
 
     def __hash__(self):
         if self.__hash is None:
-            self.__hash = reduce(operator.xor, map(hash, iteritems(self)), 0)
+            self.__hash = reduce(operator.xor, map(hash, self.items()), 0)
 
         return self.__hash
 

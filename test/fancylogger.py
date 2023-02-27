@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2013-2022 Ghent University
+# Copyright 2013-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -30,33 +30,18 @@ Unit tests for fancylogger.
 @author: Kenneth Hoste (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
-from __future__ import print_function
-
-import coloredlogs
 import logging
 import os
 import re
 import sys
 import shutil
 import tempfile
+from io import StringIO
 from random import randint
 from unittest import TestLoader, main, TestSuite
 
-try:
-    from unittest import skipUnless
-except (AttributeError, ImportError):
-    # Python 2.6 does not have `skipIf`/`skipUnless`
-    def skipUnless(condition, reason):
-        if condition:
-            def deco(fn):
-                return fn
-        else:
-            def deco(fn):
-                return (lambda *args, **kwargs: True)
-        return deco
-
+from unittest import skipUnless
 from vsc.utils import fancylogger
-from vsc.utils.py2vs3 import StringIO, is_py_ver, is_py3, is_string
 from vsc.install.testing import TestCase
 
 MSG = "This is a test log message."
@@ -110,7 +95,7 @@ def _get_tty_stream():
 
 def classless_function():
     logger = fancylogger.getLogger(fname=True, clsname=True)
-    logger.warn("from classless_function")
+    logger.warning("from classless_function")
 
 
 class FancyLoggerLogToFileTest(TestCase):
@@ -152,13 +137,13 @@ class FancyLoggerTest(TestCase):
         f.close()
 
     def mk_empty_log(self):
-        f = open(self.logfn, 'w')
-        f.write('')
-        f.close()
+        with open(self.logfn, 'w') as fih:
+            fih.write('')
 
     def read_log(self):
         self.handler.flush()
-        return open(self.logfn, 'r').read()
+        with open(self.logfn, 'r') as fih:
+            return fih.read()
 
     def setUp(self):
         super(FancyLoggerTest, self).setUp()
@@ -224,19 +209,10 @@ class FancyLoggerTest(TestCase):
         pi_l1 = log_l1._get_parent_info()
         self.assertEqual(len(pi_l1), 3)
 
-        is_py27 = is_py_ver(2,7)
-
-        if is_py27:
-            log_l2a = log_l1.getChild('level2a')
-            pi_l2a = log_l2a._get_parent_info()
-            self.assertEqual(len(pi_l2a), 4)
-
         # this should be identical to getChild
         log_l2b = fancylogger.getLogger('level1.level2b', fname=False)
         # fname=False is required to have the name similar
         # cutoff last letter (a vs b)
-        if is_py27:
-            self.assertEqual(log_l2a.name[:-1], log_l2b.name[:-1])
         pi_l2b = log_l2b._get_parent_info()
         # yes, this broken on several levels (incl in logging itself)
         # adding '.' in the name does not automatically create the parent/child relations
@@ -270,11 +246,7 @@ class FancyLoggerTest(TestCase):
             logger.fatal(msg)
             logger.info(msg)
             logger.warning(msg)
-            logger.warn(msg)
 
-            # can't use ís_string function here, because we need to discriminate between bytestrings & unicode strings;
-            # in Python 2, the 'bytes' type (a bytestring) is the same as 'str', but not in Python 3;
-            # unicode is a different type in Python 2, but doesn't exist in Python 3;
             if isinstance(msg, str):
                 regex = str(msg)
             else:
@@ -322,14 +294,9 @@ class FancyLoggerTest(TestCase):
 
         # test handling of non-UTF8 chars
         msg = MSG + u'\x81'
-        if is_py3():
-            # Python 3: unicode is supported in regular string values (no special unicode type)
-            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
-            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)
-        else:
-            # Python 2: extra \xc2 character appears for unicode strings
-            msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\xc2\x81" % max_ver
-            msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\xc2\x81" % max_ver)
+        # Python 3: unicode is supported in regular string values (no special unicode type)
+        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
+        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)
 
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, msg, "1.1", max_ver)
 
@@ -454,7 +421,7 @@ class FancyLoggerTest(TestCase):
         class Foobar:
             def somefunction(self):
                 logger = fancylogger.getLogger(fname=True, clsname=True)
-                logger.warn('we are logging something here')
+                logger.warning('we are logging something here')
 
         stringfile = StringIO()
         sys.stderr = stringfile
@@ -509,7 +476,7 @@ class FancyLoggerTest(TestCase):
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
 
         res = fancylogger.getDetailsLogLevels(fancy=True)
-        self.assertTrue(is_string(res[0][1]), msg='getDetailsLogLevels returns loglevel names by default')
+        self.assertTrue(isinstance(res[0][1], str), msg='getDetailsLogLevels returns loglevel names by default')
         res = fancylogger.getDetailsLogLevels(fancy=True, numeric=True)
         self.assertTrue(isinstance(res[0][1], int), msg='getDetailsLogLevels returns loglevel values with numeric=True')
 
@@ -544,7 +511,7 @@ class FancyLoggerTest(TestCase):
         after setting the root logger
         """
 
-        # test logging.root is loggin root logger
+        # test logging.root is logging root logger
         # this is an assumption made to make the fancyrootlogger code work
         orig_root = logging.getLogger()
         self.assertEqual(logging.root, orig_root,
@@ -564,6 +531,8 @@ class FancyLoggerTest(TestCase):
 
         msg = 'this is my string'
         logging.debug(msg)
+
+        # fails on python 3.11
         self.assertEqual(stringfile.getvalue(), '',
                          msg="logging.debug reports nothing when fancylogger loglevel is debug")
 
@@ -659,31 +628,10 @@ class FancyLoggerTest(TestCase):
 class ScreenLogFormatterFactoryTest(TestCase):
     """Test `_screenLogFormatterFactory`"""
 
-    def test_colorize_never(self):
-        # with colorize=Colorize.NEVER, return plain old formatter
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.NEVER)
-        self.assertEqual(cls, logging.Formatter)
-
     def test_colorize_always(self):
-        # with colorize=Colorize.ALWAYS, return colorizing formatter
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.ALWAYS)
-        self.assertEqual(cls, coloredlogs.ColoredFormatter)
-
-    @skipUnless(_get_tty_stream(), "cannot get a stream connected to a TTY")
-    def test_colorize_auto_tty(self):
-        # with colorize=Colorize.AUTO on a stream connected to a TTY,
-        # return colorizing formatter
-        stream = _get_tty_stream()
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.AUTO, stream)
-        self.assertEqual(cls, coloredlogs.ColoredFormatter)
-
-    def test_colorize_auto_nontty(self):
-        # with colorize=Colorize.AUTO on a stream *not* connected to a TTY,
-        # return colorizing formatter
-        stream = open(os.devnull, 'w')
-        cls = fancylogger._screenLogFormatterFactory(fancylogger.Colorize.AUTO, stream)
+        # Make sure colorize no longer works and returns a standard logging.Formatter
+        cls = fancylogger._screenLogFormatterFactory("always")
         self.assertEqual(cls, logging.Formatter)
-
 
 class EnvToBooleanTest(TestCase):
 

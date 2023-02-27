@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2022 Ghent University
+# Copyright 2012-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -29,11 +29,8 @@ Tests for the vsc.utils.missing module.
 @author: Andy Georges (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
-from __future__ import print_function
-
 import sys
 from random import randint, seed
-from future.utils import with_metaclass
 
 from vsc.utils.missing import get_class_for, get_subclasses, get_subclasses_dict
 from vsc.utils.missing import nub, topological_sort, FrozenDictKnownKeys, TryOrFail
@@ -239,8 +236,7 @@ class TestMissing(TestCase):
         This is a use case from EasyBuild (see ConfigurationVariables class in easybuild.tools.config).
         """
 
-        # see https://python-future.org/compatible_idioms.html#metaclasses
-        class TestFrozenDictKnownKeysSingleton(with_metaclass(Singleton, FrozenDictKnownKeys)):
+        class TestFrozenDictKnownKeysSingleton(FrozenDictKnownKeys, metaclass=Singleton):
             """Inner test class derived from FrozenDictKnownKeys."""
             KNOWN_KEYS = ['foo', 'foo2']
 

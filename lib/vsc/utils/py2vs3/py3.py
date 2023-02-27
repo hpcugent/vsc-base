@@ -1,5 +1,5 @@
 #
-# Copyright 2020-2022 Ghent University
+# Copyright 2020-2023 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,6 +28,7 @@ Utility functions to help with keeping the codebase compatible with both Python 
 
 @author: Kenneth Hoste (Ghent University)
 """
+import logging
 import configparser  # noqa
 import pickle  # noqa
 from io import StringIO  # noqa
@@ -48,6 +49,7 @@ FileNotFoundErrorExc = FileNotFoundError  # noqa
 
 def is_string(value):
     """Check whether specified value is of type string (not bytes)."""
+    logging.warning("deprecated: is_string() used, please replace by isinstance()")
     return isinstance(value, str)
 
 
@@ -55,6 +57,9 @@ def ensure_ascii_string(value):
     """
     Convert the provided value to an ASCII string (no Unicode characters).
     """
+    msg = "deprecated: vsc.utils.py2vs3.ensure_ascii_string used."
+    msg += "Please replace by vsc.utils.missing.ensure_ascii_string."
+    logging.warning(msg)
     if isinstance(value, bytes):
         # if we have a bytestring, decode it to a regular string using ASCII encoding,
         # and replace Unicode characters with backslash escaped sequences
