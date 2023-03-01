@@ -725,8 +725,7 @@ class RunFile(Run):
                                                  "Creating it failed.") % (dirname, self.filename))
 
             try:
-                with open(self.filename, 'w') as fih:
-                    self.filehandle = fih
+                self.filehandle = open(self.filename, 'w') # pylint: disable=consider-using-with
             except OSError:
                 self.log.raiseException("_make_popen_named_args: failed to open filehandle for file %s" % self.filename)
 
