@@ -67,7 +67,7 @@ def set_columns(cols=None):
     if cols is None:
         if os.path.exists(STTY):
             try:
-                proc = subprocess.run(['/usr/bin/stty', 'size'], capture_output=True)
+                proc = subprocess.run(['/usr/bin/stty', 'size'], stdout=subprocess.PIPE)
                 cols = str(proc.stdout.splitlines()[0].decode('utf-8').split(' ')[1])
             except (AttributeError, IndexError, OSError, ValueError):
                 # do nothing
