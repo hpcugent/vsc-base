@@ -38,6 +38,7 @@ import re
 import sys
 import textwrap
 import configparser
+import subprocess
 from functools import reduce
 from optparse import OptionParser, OptionGroup, Option, Values
 from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
@@ -66,9 +67,8 @@ def set_columns(cols=None):
     if cols is None:
         if os.path.exists(STTY):
             try:
-                proc = os.popen('%s size 2>/dev/null' % STTY)
-                cols = int(proc.read().strip().split(' ')[1])
-                proc.close()
+                proc = subprocess.run(['/usr/bin/stty', 'size'], capture_output=True)
+                cols = str(proc.stdout.splitlines()[0].decode('utf-8').split(' ')[1])
             except (AttributeError, IndexError, OSError, ValueError):
                 # do nothing
                 pass
