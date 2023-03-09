@@ -38,8 +38,8 @@ based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e256
 import base64
 import copy
 import json
+import logging
 from functools import partial
-from vsc.utils import fancylogger
 from urllib.parse import urlencode
 from urllib.request import Request, HTTPSHandler, build_opener
 
@@ -172,18 +172,19 @@ class Client(object):
         secret_items = ['Authorization', 'X-Auth-Token']
         headers_censored = self.censor_request(secret_items, headers)
 
-        if body and not isinstance(body, str):
-            # censor contents of body to avoid leaking passwords
-            secret_items = ['password']
-            body_censored = self.censor_request(secret_items, body)
-            # serialize body in all cases
-            body = json.dumps(body)
-        else:
-            # assume serialized bodies are already clear of secrets
-            fancylogger.getLogger().debug("Request with pre-serialized body, will not censor secrets")
-            body_censored = body
+        body_censored = body
+        if body is not None:
+            if isinstance(body, str):
+                # assume serialized bodies are already clear of secrets
+                logging.debug("Request with pre-serialized body, will not censor secrets")
+            else:
+                # censor contents of body to avoid leaking passwords
+                secret_items = ['password']
+                body_censored = self.censor_request(secret_items, body)
+                # serialize body in all cases
+                body = json.dumps(body)
 
-        fancylogger.getLogger().debug('cli request: %s, %s, %s, %s', method, url, body_censored, headers_censored)
+        logging.debug('cli request: %s, %s, %s, %s', method, url, body_censored, headers_censored)
 
         # TODO: in recent python: Context manager
         conn = self.get_connection(method, url, body, headers)
@@ -197,7 +198,7 @@ class Client(object):
                 pybody = json.loads(body)
             except ValueError:
                 pybody = body
-        fancylogger.getLogger().debug('reponse len: %s ', len(pybody))
+        logging.debug('reponse len: %s ', len(pybody))
         conn.close()
         return status, pybody
 
@@ -241,13 +242,13 @@ class Client(object):
             sep = '/'
         else:
             sep = ''
-        if body:
+        if body is not None:
             body = body.encode()
         request = Request(self.url + sep + url, data=body)
         for header, value in headers.items():
             request.add_header(header, value)
         request.get_method = lambda: method
-        fancylogger.getLogger().debug('opening request:  %s%s%s', self.url, sep, url)
+        logging.debug('opening request:  %s%s%s', self.url, sep, url)
         connection = self.opener.open(request)
         return connection
 
