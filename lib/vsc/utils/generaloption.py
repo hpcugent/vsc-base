@@ -67,7 +67,7 @@ def set_columns(cols=None):
     if cols is None:
         if os.path.exists(STTY):
             try:
-                proc = subprocess.run(['/usr/bin/stty', 'size'], stdout=subprocess.PIPE)
+                proc = subprocess.run(['/usr/bin/stty', 'size'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
                 cols = str(proc.stdout.splitlines()[0].decode('utf-8').split(' ')[1])
             except (AttributeError, IndexError, OSError, ValueError):
                 # do nothing
@@ -189,12 +189,12 @@ class ExtOption(CompleterOption):
 
     def __init__(self, *args, **kwargs):
         """Add logger to init"""
-        CompleterOption.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.log = getLogger(self.__class__.__name__)
 
     def _set_attrs(self, attrs):
         """overwrite _set_attrs to allow store_or callbacks"""
-        Option._set_attrs(self, attrs)
+        super()._set_attrs(attrs)
         if self.action == 'extend':
             # alias
             self.action = 'add'
@@ -240,7 +240,7 @@ class ExtOption(CompleterOption):
                 self.log.raiseException("%s. Use '%s%s' if the value is correct." % (errmsg, prefix, value),
                                         exception=OptionValueError)
 
-        return Option.process(self, opt, value, values, parser)
+        return super().process(opt, value, values, parser)
 
     def take_action(self, action, dest, opt, value, values, parser):
         """Extended take_action"""
@@ -248,7 +248,7 @@ class ExtOption(CompleterOption):
 
         # dest is None for actions like shorthelp and confighelp
         if dest and getattr(parser._long_opt.get('--' + dest, ''), 'store_or', '') == 'help':
-            Option.take_action(self, action, dest, opt, value, values, parser)
+            super().take_action(action, dest, opt, value, values, parser)
             fn = getattr(parser, 'print_%shelp' % values.help, None)
             if fn is None:
                 self.log.raiseException("Unsupported output format for help: %s" % value.help, exception=ValueError)
@@ -284,7 +284,7 @@ class ExtOption(CompleterOption):
                 if hasattr(values, '_logaction_taken'):
                     values._logaction_taken[dest] = True
 
-            Option.take_action(self, action, dest, opt, value, values, parser)
+            super().take_action(action, dest, opt, value, values, parser)
 
         elif action in self.EXTOPTION_EXTRA_OPTIONS:
             if action in ("add", "add_first", "add_flex",):
@@ -328,7 +328,7 @@ class ExtOption(CompleterOption):
                 self.log.raiseException(msg % (action, self.EXTOPTION_EXTRA_OPTIONS))
             setattr(values, dest, lvalue)
         else:
-            Option.take_action(self, action, dest, opt, value, values, parser)
+            super().take_action(action, dest, opt, value, values, parser)
 
         # set flag to mark as passed by action (ie not by default)
         # - distinguish from setting default value through option
@@ -345,12 +345,12 @@ class PassThroughOptionParser(OptionParser):
     from http://www.koders.com/python/fid9DFF5006AF4F52BA6483C4F654E26E6A20DBC73C.aspx?s=add+one#L27
     """
     def __init__(self):
-        OptionParser.__init__(self, add_help_option=False, usage=SUPPRESS_USAGE)
+        super().__init__(add_help_option=False, usage=SUPPRESS_USAGE)
 
     def _process_long_opt(self, rargs, values):
         """Extend optparse code with catch of unknown long options error"""
         try:
-            OptionParser._process_long_opt(self, rargs, values)
+            super()._process_long_opt(rargs, values)
         except BadOptionError as err:
             self.largs.append(err.opt_str)
 
@@ -411,13 +411,14 @@ class ExtOptionGroup(OptionGroup):
         if section_name in self.RESERVED_SECTIONS:
             self.log.raiseException('Cannot use reserved name %s for section name.' % section_name)
 
-        OptionGroup.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+
         self.section_name = section_name
         self.section_options = []
 
     def add_option(self, *args, **kwargs):
         """Extract configfile section info"""
-        option = OptionGroup.add_option(self, *args, **kwargs)
+        option = super().add_option(*args, **kwargs)
         self.section_options.append(option)
 
         return option
@@ -478,16 +479,9 @@ class ExtOptionParser(OptionParser):
         self.error_env_options = kwargs.pop('error_env_options', False)
         self.error_env_option_method = kwargs.pop('error_env_option_method', self.log.error)
 
-        # py2.4 epilog compatibilty with py2.7 / optparse 1.5.3
-        self.epilog = kwargs.pop('epilog', None)
-
         if 'option_class' not in kwargs:
             kwargs['option_class'] = ExtOption
-        OptionParser.__init__(self, *args, **kwargs)
-
-        # redefine formatter for py2.4 compat
-        if not hasattr(self.formatter, 'format_epilog'):
-            setattr(self.formatter, 'format_epilog', self.formatter.format_description)
+        super().__init__(*args, **kwargs)
 
         if self.epilog is None:
             self.epilog = []
@@ -609,7 +603,7 @@ class ExtOptionParser(OptionParser):
 
     def set_usage(self, usage):
         """Return usage and set try to set autogenerated description."""
-        OptionParser.set_usage(self, usage)
+        super().set_usage(usage)
 
         if self.description is None:
             self.description = 'NONE_AND_NOT_NONE'
@@ -623,7 +617,7 @@ class ExtOptionParser(OptionParser):
                 - only works by using reference to object
                 - same for _logaction_taken
         """
-        values = OptionParser.get_default_values(self)
+        values = super().get_default_values()
 
         class ExtValues(self.VALUES_CLASS):
             _action_taken = {}
@@ -632,19 +626,6 @@ class ExtOptionParser(OptionParser):
         newvalues = ExtValues()
         newvalues.__dict__ = values.__dict__.copy()
         return newvalues
-
-    def format_help(self, formatter=None):
-        """For py2.4 compatibility reasons (missing epilog). This is the py2.7 / optparse 1.5.3 code"""
-        if formatter is None:
-            formatter = self.formatter
-        result = []
-        if self.usage:
-            result.append(self.get_usage() + "\n")
-        if self.description:
-            result.append(self.format_description(formatter) + "\n")
-        result.append(self.format_option_help(formatter))
-        result.append(self.format_epilog(formatter))
-        return "".join(result)
 
     def format_epilog(self, formatter):
         """Allow multiple epilog parts"""
@@ -694,7 +675,7 @@ class ExtOptionParser(OptionParser):
     def print_help(self, fh=None):
         """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
         fh = self.check_help(fh)
-        OptionParser.print_help(self, fh)
+        super().print_help(fh)
 
     def print_rsthelp(self, fh=None):
         """ Print help in rst format """
@@ -797,7 +778,7 @@ class ExtOptionParser(OptionParser):
 
     def _get_args(self, args):
         """Prepend the options set through the environment"""
-        self.commandline_arguments = OptionParser._get_args(self, args)
+        self.commandline_arguments = super()._get_args(args)
         self.get_env_options()
         return self.environment_arguments + self.commandline_arguments  # prepend the environment options as longopts
 
