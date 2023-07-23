@@ -321,7 +321,7 @@ class VscMail(object):
 
         # Record the MIME types of both parts - text/plain and text/html_message.
         msg_plain = MIMEText(text_alternative, 'plain', 'utf-8')
-        msg_html = MIMEText(html_message, 'html_message', 'utf-8')
+        msg_html = MIMEText(html_message, 'html', 'utf-8')
 
         # Attach parts into message container.
         # According to RFC 2046, the last part of a multipart message, in this case
