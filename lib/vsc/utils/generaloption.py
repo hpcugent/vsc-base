@@ -67,7 +67,7 @@ def set_columns(cols=None):
         cols = get_terminal_size((80, 20)).columns
 
     if cols is not None:
-        os.environ['COLUMNS'] = "%s" % cols
+        os.environ['COLUMNS'] = f"{cols}"
 
 
 def what_str_list_tuple(name):
@@ -99,7 +99,7 @@ def check_str_list_tuple(option, opt, value):  # pylint: disable=unused-argument
     split = value.split(sep)
 
     if klass is None:
-        err = _gettext("check_strlist_strtuple: unsupported type %s" % option.type)
+        err = _gettext(f"check_strlist_strtuple: unsupported type {option.type}")
         raise OptionValueError(err)
     else:
         return klass(split)
@@ -175,7 +175,7 @@ class ExtOption(CompleterOption):
     TYPED_ACTIONS = Option.TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS + EXTOPTION_STORE_OR
     ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + EXTOPTION_EXTRA_OPTIONS
 
-    TYPE_STRLIST = ['%s%s' % (name, klass) for klass in ['list', 'tuple'] for name in ['str', 'path']]
+    TYPE_STRLIST = [f'{name}{klass}' for klass in ['list', 'tuple'] for name in ['str', 'path']]
     TYPE_CHECKER = dict([(x, check_str_list_tuple) for x in TYPE_STRLIST] + list(Option.TYPE_CHECKER.items()))
     TYPES = tuple(TYPE_STRLIST + list(Option.TYPES))
     BOOLEAN_ACTIONS = ('store_true', 'store_false',) + EXTOPTION_LOG
@@ -221,7 +221,7 @@ class ExtOption(CompleterOption):
             if self.store_or in self.EXTOPTION_STORE_OR:
                 self.default = None
             else:
-                self.log.raiseException("_set_attrs: unknown store_or %s" % self.store_or, exception=ValueError)
+                self.log.raiseException(f"_set_attrs: unknown store_or {self.store_or}", exception=ValueError)
 
     def process(self, opt, value, values, parser):
         """Handle option-as-value issues before actually processing option."""
@@ -229,8 +229,8 @@ class ExtOption(CompleterOption):
         if hasattr(parser, 'is_value_a_commandline_option'):
             errmsg = parser.is_value_a_commandline_option(opt, value)
             if errmsg is not None:
-                prefix = "%s=" % self._long_opts[0] if self._long_opts else self._short_opts[0]
-                self.log.raiseException("%s. Use '%s%s' if the value is correct." % (errmsg, prefix, value),
+                prefix = f"{self._long_opts[0] if self._long_opts else self._short_opts[0]}="
+                self.log.raiseException(f"{errmsg}. Use '{prefix}{value}' if the value is correct.",
                                         exception=OptionValueError)
 
         return super().process(opt, value, values, parser)
@@ -242,9 +242,9 @@ class ExtOption(CompleterOption):
         # dest is None for actions like shorthelp and confighelp
         if dest and getattr(parser._long_opt.get('--' + dest, ''), 'store_or', '') == 'help':
             super().take_action(action, dest, opt, value, values, parser)
-            fn = getattr(parser, 'print_%shelp' % values.help, None)
+            fn = getattr(parser, f'print_{values.help}help', None)
             if fn is None:
-                self.log.raiseException("Unsupported output format for help: %s" % value.help, exception=ValueError)
+                self.log.raiseException(f"Unsupported output format for help: {value.help}", exception=ValueError)
             else:
                 fn()
             parser.exit()
@@ -258,10 +258,10 @@ class ExtOption(CompleterOption):
             if action in self.EXTOPTION_LOG:
                 action = 'store_true'
 
-            if opt.startswith("--%s-" % self.ENABLE):
+            if opt.startswith(f"--{self.ENABLE}-"):
                 # keep action
                 pass
-            elif opt.startswith("--%s-" % self.DISABLE):
+            elif opt.startswith(f"--{self.DISABLE}-"):
                 # reverse action
                 if action in ('store_true',) + self.EXTOPTION_LOG:
                     action = 'store_false'
@@ -270,7 +270,7 @@ class ExtOption(CompleterOption):
 
             if orig_action in self.EXTOPTION_LOG and action == 'store_true':
                 newloglevel = orig_action.split('_')[1][:-3].upper()
-                logstate = ", ".join(["(%s, %s)" % (n, l) for n, l in getDetailsLogLevels()])
+                logstate = ", ".join([f"({n}, {l})" for n, l in getDetailsLogLevels()])
                 self.log.debug("changing loglevel to %s, current state: %s", newloglevel, logstate)
                 setLogLevel(newloglevel)
                 self.log.debug("changed loglevel to %s, previous state: %s", newloglevel, logstate)
@@ -402,7 +402,7 @@ class ExtOptionGroup(OptionGroup):
         self.log = getLogger(self.__class__.__name__)
         section_name = kwargs.pop('section_name', None)
         if section_name in self.RESERVED_SECTIONS:
-            self.log.raiseException('Cannot use reserved name %s for section name.' % section_name)
+            self.log.raiseException(f'Cannot use reserved name {section_name} for section name.')
 
         super().__init__(*args, **kwargs)
 
@@ -526,15 +526,15 @@ class ExtOptionParser(OptionParser):
             return None
 
         if not self.ALLOW_OPTION_NAME_AS_VALUE:
-            value_as_opt = '-%s' % value
+            value_as_opt = f'-{value}'
             if value_as_opt in self._short_opt or value_as_opt in self._long_opt:
-                return "'-%s' is a valid option" % value
+                return f"'-{value}' is a valid option"
 
         if (not self.ALLOW_OPTION_AS_VALUE) and (value in self._long_opt or value in self._short_opt):
-            return "Value '%s' is also a valid option" % value
+            return f"Value '{value}' is also a valid option"
 
         if not self.ALLOW_DASH_AS_VALUE and value.startswith('-'):
-            return "Value '%s' starts with a '-'" % value
+            return f"Value '{value}' starts with a '-'"
 
         if not self.ALLOW_TYPO_AS_VALUE:
             # need to convert result of .keys() to list first before concatenating,
@@ -546,7 +546,7 @@ class ExtOptionParser(OptionParser):
             matches = difflib.get_close_matches(value, possibilities, 3, 0.85)
 
             if matches:
-                return "Value '%s' too close match to option(s) %s" % (value, ', '.join(matches))
+                return f"Value '{value}' too close match to option(s) {', '.join(matches)}"
 
         return None
 
@@ -656,8 +656,8 @@ class ExtOptionParser(OptionParser):
         if hasattr(self.option_class, 'ENABLE') and hasattr(self.option_class, 'DISABLE'):
             def _is_enable_disable(x):
                 """Does the option start with ENABLE/DISABLE"""
-                _e = x.startswith("--%s-" % self.option_class.ENABLE)
-                _d = x.startswith("--%s-" % self.option_class.DISABLE)
+                _e = x.startswith(f"--{self.option_class.ENABLE}-")
+                _d = x.startswith(f"--{self.option_class.DISABLE}-")
                 return _e or _d
             for opt in self._get_all_options():
                 # remove all long_opts with ENABLE/DISABLE naming
@@ -665,10 +665,10 @@ class ExtOptionParser(OptionParser):
         return fh
 
     # pylint: disable=arguments-differ
-    def print_help(self, fh=None):
+    def print_help(self, file=None):
         """Intercept print to file to print to string and remove the ENABLE/DISABLE options from help"""
-        fh = self.check_help(fh)
-        super().print_help(fh)
+        file = self.check_help(file)
+        super().print_help(file)
 
     def print_rsthelp(self, fh=None):
         """ Print help in rst format """
@@ -676,7 +676,7 @@ class ExtOptionParser(OptionParser):
         result = []
         if self.usage:
             title = "Usage"
-            result.extend([title, '-' * len(title), '', '``%s``' % self.get_usage().replace("Usage: ", '').strip(), ''])
+            result.extend([title, '-' * len(title), '', f'``{self.get_usage().replace("Usage: ", "").strip()}``', ''])
         if self.description:
             title = "Description"
             result.extend([title, '-' * len(title), '', self.description, ''])
@@ -704,7 +704,7 @@ class ExtOptionParser(OptionParser):
             res.extend([title, '-' * len(title)])
             for opt in opts:
                 if opt.help is not nohelp:
-                    values.append(['``%s``' % formatter.option_strings[opt], formatter.expand_default(opt)])
+                    values.append([f'``{formatter.option_strings[opt]}``', formatter.expand_default(opt)])
 
             res.extend(mk_rst_table(titles, map(list, zip(*values))))
             res.append('')
@@ -735,7 +735,7 @@ class ExtOptionParser(OptionParser):
         option_template = "# %(help)s\n#%(option)s=\n"
         txt = ''
         for section in sections:
-            txt += "[%s]\n" % section
+            txt += f"[{section}]\n"
             for option in all_groups[section]:
                 data = {
                     'help': option.help,
@@ -753,11 +753,11 @@ class ExtOptionParser(OptionParser):
 
     def _add_help_option(self):
         """Add shorthelp and longhelp"""
-        self.add_option("-%s" % self.shorthelp[0],
+        self.add_option(f"-{self.shorthelp[0]}",
                         self.shorthelp[1],  # *self.shorthelp[1:], syntax error in Python 2.4
                         action="shorthelp",
                         help=_gettext("show short help message and exit"))
-        self.add_option("-%s" % self.longhelp[0],
+        self.add_option(f"-{self.longhelp[0]}",
                         self.longhelp[1],  # *self.longhelp[1:], syntax error in Python 2.4
                         action="help",
                         type="choice",
@@ -806,15 +806,15 @@ class ExtOptionParser(OptionParser):
             for lo in opt._long_opts:
                 if len(lo) == 0:
                     continue
-                env_opt_name = "%s_%s" % (self.envvar_prefix, lo.lstrip('-').replace('-', '_').upper())
+                env_opt_name = f"{self.envvar_prefix}_{lo.lstrip('-').replace('-', '_').upper()}"
                 val = candidates.pop(env_opt_name, None)
                 if val is not None:
                     if opt.action in opt.TYPED_ACTIONS:  # not all typed actions are mandatory, but let's assume so
-                        self.environment_arguments.append("%s=%s" % (lo, val))
+                        self.environment_arguments.append(f"{lo}={val}")
                     else:
                         # interpretation of values: 0/no/false means: don't set it
-                        if ("%s" % val).lower() not in ("0", "no", "false",):
-                            self.environment_arguments.append("%s" % lo)
+                        if (f"{val}").lower() not in ("0", "no", "false",):
+                            self.environment_arguments.append(f"{lo}")
                 else:
                     self.log.debug("Environment variable %s is not set", env_opt_name)
 
@@ -950,6 +950,8 @@ class GeneralOption(object):
         self.auto_prefix = None
         self.auto_section_name = None
 
+        self._logopts = None
+
         self.processed_options = {}
 
         self.config_prefix_sectionnames_map = {}
@@ -1004,7 +1006,7 @@ class GeneralOption(object):
 
     def _set_default_loglevel(self):
         """Set the default loglevel if no logging options are set"""
-        loglevel_set = sum([getattr(self.options, name, False) for name in self._logopts.keys()])
+        loglevel_set = sum([getattr(self.options, name, False) for name in self._logopts])
         if not loglevel_set and self.DEFAULT_LOGLEVEL is not None:
             setLogLevel(self.DEFAULT_LOGLEVEL)
 
@@ -1094,7 +1096,7 @@ class GeneralOption(object):
                 prefix = self.auto_prefix
 
         if section_name is None:
-            if prefix is not None and len(prefix) > 0 and not (prefix == self.auto_prefix):
+            if prefix is not None and len(prefix) > 0 and not prefix == self.auto_prefix:
                 section_name = prefix
             elif self.auto_section_name is not None and len(self.auto_section_name) > 0:
                 section_name = self.auto_section_name
@@ -1107,13 +1109,13 @@ class GeneralOption(object):
         if section_name is None or section_name == ExtOptionGroup.NO_SECTION:
             section_help = ''
         else:
-            section_help = " (configfile section %s)" % (section_name)
+            section_help = f" (configfile section {section_name})"
 
         if description[1]:
             short_description = description[0]
-            long_description = "%s%s" % (description[1], section_help)
+            long_description = f"{description[1]}{section_help}"
         else:
-            short_description = "%s%s" % (description[0], section_help)
+            short_description = f"{description[0]}{section_help}"
             long_description = description[1]
 
         opt_grp = ExtOptionGroup(self.parser, short_description, long_description, section_name=section_name)
@@ -1136,24 +1138,24 @@ class GeneralOption(object):
             extra_help = []
             if typ in ExtOption.TYPE_STRLIST:
                 sep, klass, helpsep = what_str_list_tuple(typ)
-                extra_help.append("type %s-separated %s" % (helpsep, klass.__name__))
+                extra_help.append(f"type {helpsep}-separated {klass.__name__}")
             elif typ is not None:
-                extra_help.append("type %s" % typ)
+                extra_help.append(f"type {typ}")
 
             if default is not None:
                 if len(str(default)) == 0:
                     extra_help.append("def ''")  # empty string
                 elif typ in ExtOption.TYPE_STRLIST:
-                    extra_help.append("def %s" % sep.join(default))
+                    extra_help.append(f"def {sep.join(default)}")
                 else:
-                    extra_help.append("def %s" % default)
+                    extra_help.append(f"def {default}")
 
             if len(extra_help) > 0:
-                hlp += " (%s)" % ("; ".join(extra_help))
+                hlp += f' ({"; ".join(extra_help)})'
 
             opt_name, opt_dest = self.make_options_option_name_and_destination(prefix, key)
 
-            args = ["--%s" % opt_name]
+            args = [f"--{opt_name}"]
 
             # this has to match PROCESSED_OPTIONS_PROPERTIES
             self.processed_options[opt_dest] = [typ, default, action, opt_name, prefix, section_name]  # add longopt
@@ -1179,10 +1181,10 @@ class GeneralOption(object):
                 for extra_detail in details[4:]:
                     if isinstance(extra_detail, (list, tuple,)):
                         # choices
-                        nameds['choices'] = ["%s" % x for x in extra_detail]  # force to strings
-                        hlp += ' (choices: %s)' % ', '.join(nameds['choices'])
+                        nameds['choices'] = [f"{x}" for x in extra_detail]  # force to strings
+                        hlp += f" (choices: {', '.join(nameds['choices'])}"
                     elif isinstance(extra_detail, str) and len(extra_detail) == 1:
-                        args.insert(0, "-%s" % extra_detail)
+                        args.insert(0, f"-{extra_detail}")
                     elif isinstance(extra_detail, (dict,)):
                         # extract any optcomplete completer hints
                         completer = extra_detail.pop('completer', None)
@@ -1190,15 +1192,15 @@ class GeneralOption(object):
                         # add remainder
                         passed_kwargs.update(extra_detail)
                     else:
-                        self.log.raiseException("add_group_parser: unknown extra detail %s" % extra_detail)
+                        self.log.raiseException(f"add_group_parser: unknown extra detail {extra_detail}")
 
             # add help
             nameds['help'] = _gettext(hlp)
 
             if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
                 if action in self.parser.option_class.BOOLEAN_ACTIONS:
-                    args.append("--%s-%s" % (self.parser.option_class.ENABLE, opt_name))
-                    args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
+                    args.append(f"--{self.parser.option_class.ENABLE}-{opt_name}")
+                    args.append(f"--{self.parser.option_class.DISABLE}-{opt_name}")
 
             # force passed_kwargs as final nameds
             nameds.update(passed_kwargs)
@@ -1251,7 +1253,7 @@ class GeneralOption(object):
         if len(self.args) > 1:
             self.log.debug("Found remaining args %s", self.args)
             if self.ALLOPTSMANDATORY:
-                self.parser.error("Invalid arguments args %s" % self.args)
+                self.parser.error(f"Invalid arguments args {self.args}")
 
         self.log.debug("Found options %s args %s", self.options, self.args)
 
@@ -1359,7 +1361,7 @@ class GeneralOption(object):
                 remainder = self.configfile_remainder.setdefault(section, {})
                 # parse the remaining options, sections starting with 'raw_'
                 # as their name will be considered raw sections
-                for opt, val in self.configfile_parser.items(section, raw=(section.startswith('raw_'))):
+                for opt, val in self.configfile_parser.items(section, raw=section.startswith('raw_')):
                     remainder[opt] = val
 
         # options are passed to the commandline option parser
@@ -1390,8 +1392,10 @@ class GeneralOption(object):
                                             'in DEFAULT section. Skipping.'), opt, opt_dest, section)
                             continue
                         else:
-                            self.log.raiseException(('parseconfigfiles: no option corresponding with '
-                                                     'opt %s dest %s in section %s') % (opt, opt_dest, section))
+                            msg = f'parseconfigfiles: no option corresponding with opt {opt} \
+                                dest {opt_dest} in section {section}'
+                            self.log.error(msg)
+                            raise ValueError(msg)
 
                     configfile_options_default[opt_dest] = actual_option.default
 
@@ -1426,7 +1430,7 @@ class GeneralOption(object):
                             configfile_values[opt_dest] = newval
                     else:
                         configfile_cmdline_dest.append(opt_dest)
-                        configfile_cmdline.append("--%s=%s" % (opt_name, val))
+                        configfile_cmdline.append(f"--{opt_name}={val}")
 
         # reparse
         self.log.debug('parseconfigfiles: going to parse options through cmdline %s', configfile_cmdline)
@@ -1435,15 +1439,18 @@ class GeneralOption(object):
             self.parser.process_env_options = False
             (parsed_configfile_options, parsed_configfile_args) = self.parser.parse_args(configfile_cmdline)
             self.parser.process_env_options = True
-        except Exception:
-            self.log.raiseException('parseconfigfiles: failed to parse options through cmdline %s' %
-                                    configfile_cmdline)
+        except Exception as exc:
+            msg = f'parseconfigfiles: failed to parse options through cmdline {configfile_cmdline}'
+            self.log.error(msg)
+            raise ValueError(msg) from exc
 
         # re-report the options as parsed via parser
         self.log.debug("parseconfigfiles: options from configfile %s", self.parser.commandline_arguments)
 
         if len(parsed_configfile_args) > 0:
-            self.log.raiseException('parseconfigfiles: not all options were parsed: %s' % parsed_configfile_args)
+            msg = f'parseconfigfiles: not all options were parsed: {parsed_configfile_args}'
+            self.log.error(msg)
+            raise ValueError(msg)
 
         for opt_dest in configfile_cmdline_dest:
             try:
@@ -1487,8 +1494,9 @@ class GeneralOption(object):
     def _get_options_by_property(self, prop_type, prop_value):
         """Return all options with property type equal to value"""
         if prop_type not in self.PROCESSED_OPTIONS_PROPERTIES:
-            self.log.raiseException('Invalid prop_type %s for PROCESSED_OPTIONS_PROPERTIES %s' %
-                                    (prop_type, self.PROCESSED_OPTIONS_PROPERTIES))
+            msg = f'Invalid prop_type {prop_type} for PROCESSED_OPTIONS_PROPERTIES {self.PROCESSED_OPTIONS_PROPERTIES}'
+            self.log.error(msg)
+            raise ValueError(msg)
         prop_idx = self.PROCESSED_OPTIONS_PROPERTIES.index(prop_type)
         # get all options with prop_type
         options = {}
@@ -1515,11 +1523,9 @@ class GeneralOption(object):
 
     def postprocess(self):
         """Some additional processing"""
-        pass
 
     def validate(self):
         """Final step, allows for validating the options and/or args"""
-        pass
 
     def dict_by_prefix(self, merge_empty_prefix=False):
         """Break the options dict by prefix; return nested dict.
@@ -1599,15 +1605,15 @@ class GeneralOption(object):
                 if opt_value == default:
                     self.log.debug("generate_cmd_line %s adding %s (value is default value %s)",
                                    action, opt_name, opt_value)
-                    args.append("--%s" % (opt_name))
+                    args.append(f"--{opt_name}")
                 else:
                     self.log.debug("generate_cmd_line %s adding %s non-default value %s",
                                    action, opt_name, opt_value)
                     if typ in ExtOption.TYPE_STRLIST:
                         sep, _, _ = what_str_list_tuple(typ)
-                        args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
+                        args.append(f"--{opt_name}={shell_quote(sep.join(opt_value))}")
                     else:
-                        args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
+                        args.append(f"--{opt_name}={shell_quote(opt_value)}")
             elif action in ("store_true", "store_false",) + ExtOption.EXTOPTION_LOG:
                 # not default!
                 self.log.debug("generate_cmd_line adding %s value %s. store action found",
@@ -1615,7 +1621,7 @@ class GeneralOption(object):
                 if (action in ('store_true',) + ExtOption.EXTOPTION_LOG and default is True and opt_value is False) or \
                    (action in ('store_false',) and default is False and opt_value is True):
                     if hasattr(self.parser.option_class, 'ENABLE') and hasattr(self.parser.option_class, 'DISABLE'):
-                        args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
+                        args.append(f"--{self.parser.option_class.DISABLE}-{opt_name}")
                     else:
                         self.log.error(("generate_cmd_line: %s : can't set inverse of default %s with action %s "
                                         "with missing ENABLE/DISABLE in option_class"),
@@ -1626,13 +1632,13 @@ class GeneralOption(object):
                                                  (action in ('store_false',) and default is True)):
                         if hasattr(self.parser.option_class, 'ENABLE') and \
                            hasattr(self.parser.option_class, 'DISABLE'):
-                            args.append("--%s-%s" % (self.parser.option_class.DISABLE, opt_name))
+                            args.append(f"--{self.parser.option_class.DISABLE}-{opt_name}")
                         else:
                             self.log.debug(("generate_cmd_line: %s : action %s can only set to inverse of default %s "
                                             "and current value is default. Not adding to args."),
                                            opt_name, action, default)
                     else:
-                        args.append("--%s" % opt_name)
+                        args.append(f"--{opt_name}")
             elif action in ("add", "add_first", "add_flex"):
                 if default is not None:
                     if action == 'add_flex' and default:
@@ -1659,7 +1665,7 @@ class GeneralOption(object):
 
                 if typ in ExtOption.TYPE_STRLIST:
                     sep, klass, helpsep = what_str_list_tuple(typ)
-                    restype = '%s-separated %s' % (helpsep, klass.__name__)
+                    restype = f'{helpsep}-separated {klass.__name__}'
                     value = sep.join(opt_value)
                 else:
                     restype = 'string'
@@ -1673,31 +1679,33 @@ class GeneralOption(object):
                 self.log.debug("generate_cmd_line adding %s value %s. %s action, return as %s",
                                opt_name, opt_value, action, restype)
 
-                args.append("--%s=%s" % (opt_name, shell_quote(value)))
+                args.append(f"--{opt_name}={shell_quote(value)}")
             elif typ in ExtOption.TYPE_STRLIST:
                 sep, _, _ = what_str_list_tuple(typ)
-                args.append("--%s=%s" % (opt_name, shell_quote(sep.join(opt_value))))
+                args.append(f"--{opt_name}={shell_quote(sep.join(opt_value))}")
             elif action in ("append",):
                 # add multiple times
                 self.log.debug("generate_cmd_line adding %s value %s. append action, return as multiple args",
                                opt_name, opt_value)
-                args.extend(["--%s=%s" % (opt_name, shell_quote(v)) for v in opt_value])
+                args.extend([f"--{opt_name}={shell_quote(v)}" for v in opt_value])
             elif action in ("regex",):
                 self.log.debug("generate_cmd_line adding %s regex pattern %s", opt_name, opt_value.pattern)
-                args.append("--%s=%s" % (opt_name, shell_quote(opt_value.pattern)))
+                args.append(f"--{opt_name}={shell_quote(opt_value.pattern)}")
             else:
                 self.log.debug("generate_cmd_line adding %s value %s", opt_name, opt_value)
-                args.append("--%s=%s" % (opt_name, shell_quote(opt_value)))
+                args.append(f"--{opt_name}={shell_quote(opt_value)}")
 
         self.log.debug("commandline args %s", args)
         return args
 
 
 class SimpleOptionParser(ExtOptionParser):
+    """Simple Options Parser extends ExtOptionParser"""
     DESCRIPTION_DOCSTRING = True
 
 
 class SimpleOption(GeneralOption):
+    """SimpleOption extends GeneralOption"""
     PARSER = SimpleOptionParser
     SETROOTLOGGER = True
 
