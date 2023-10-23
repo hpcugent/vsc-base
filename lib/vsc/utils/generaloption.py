@@ -38,7 +38,7 @@ import re
 import sys
 import textwrap
 import configparser
-import subprocess
+from shutil import get_terminal_size
 from functools import reduce
 from optparse import OptionParser, OptionGroup, Option, Values
 from optparse import BadOptionError, SUPPRESS_USAGE, OptionValueError
@@ -53,7 +53,6 @@ from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
 HELP_OUTPUT_FORMATS = ['', 'rst', 'short', 'config']
-STTY = '/usr/bin/stty'
 
 
 def set_columns(cols=None):
@@ -65,13 +64,7 @@ def set_columns(cols=None):
         return
 
     if cols is None:
-        if os.path.exists(STTY):
-            try:
-                proc = subprocess.run(['/usr/bin/stty', 'size'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-                cols = str(proc.stdout.splitlines()[0].decode('utf-8').split(' ')[1])
-            except (AttributeError, IndexError, OSError, ValueError):
-                # do nothing
-                pass
+        cols = get_terminal_size((80, 20)).columns
 
     if cols is not None:
         os.environ['COLUMNS'] = "%s" % cols
