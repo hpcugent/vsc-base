@@ -538,7 +538,7 @@ class FancyLoggerTest(TestCase):
             self.assertEqual(stringfile.getvalue(), '',
                              msg="logging.debug reports nothing when fancylogger loglevel is debug")
         else:
-            self.assertEqual(stringfile.getvalue(), f'DEBUG:root:{msg}:',
+            self.assertEqual(stringfile.getvalue(), f'DEBUG:root:{msg}\n',
                              msg="logging.debug reports something when fancylogger loglevel is debug")
 
         fancylogger.setroot()
