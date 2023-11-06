@@ -798,7 +798,7 @@ class ExtOptionParser(OptionParser):
         epilogprefixtxt += "eg. --some-opt is same as setting %(prefix)s_SOME_OPT in the environment."
         self.epilog.append(epilogprefixtxt % {'prefix': self.envvar_prefix})
 
-        candidates = dict([(k, v) for k, v in os.environ.items() if k.startswith("%s_" % self.envvar_prefix)])
+        candidates = {k: v for k, v in os.environ.items() if k.startswith(f"{self.envvar_prefix}_")}
 
         for opt in self._get_all_options():
             if opt._long_opts is None:
