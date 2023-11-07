@@ -532,9 +532,16 @@ class FancyLoggerTest(TestCase):
         msg = 'this is my string'
         logging.debug(msg)
 
-        # fails on python 3.11
-        self.assertEqual(stringfile.getvalue(), '',
-                         msg="logging.debug reports nothing when fancylogger loglevel is debug")
+
+
+        if sys.version_info < (3,7):
+            # logging stream handling was changed in python 3.7
+            # this is a good thing as messages can no longer go missing
+            expected_msg = ''
+        else:
+            expected_msg = f'DEBUG:root:{msg}\n'
+        self.assertEqual(stringfile.getvalue(), expected_msg,
+                         msg="logging.debug reports expected message (or not) when fancylogger loglevel is debug")
 
         fancylogger.setroot()
         self.assertTrue(isinstance(logging.root, fancylogger.FancyLogger),
