@@ -143,7 +143,7 @@ class CompleterMissingCallArgument(Exception):
     """Exception to raise when call arg is missing"""
 
 
-class Completer(object):
+class Completer:
     """Base class to derive all other completer classes from.
     It generates an empty completion list
     """
@@ -157,7 +157,7 @@ class Completer(object):
             for arg in self.CALL_ARGS:
                 all_args.append(arg)
                 if arg not in kwargs:
-                    msg = "%s __call__ missing mandatory arg %s" % (self.__class__.__name__, arg)
+                    msg = f"{self.__class__.__name__} __call__ missing mandatory arg {arg}"
                     raise CompleterMissingCallArgument(msg)
 
         if self.CALL_ARGS_OPTIONAL is not None:
@@ -217,7 +217,7 @@ class FileCompleter(Completer):
         if SHELL == BASH:
             res = ['_filedir']
             if self.endings:
-                res.append("'@(%s)'" % '|'.join(self.endings))
+                res.append(f"'@({'|'.join(self.endings)})'")
             return " ".join(res)
         else:
             res = []
@@ -513,7 +513,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
                         completer = NoneCompleter()
                 # Warn user at least, it could help him figure out the problem.
                 elif hasattr(option, 'completer'):
-                    msg = "Error: optparse option with a completer does not take arguments: %s" % (option)
+                    msg = f"Error: optparse option with a completer does not take arguments: {option}"
                     raise SystemExit(msg)
     except KeyError:
         pass
@@ -549,7 +549,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
         if SHELL in (BASH,):  # TODO: zsh
             print(completions)
         else:
-            raise Exception("Commands are unsupported by this shell %s" % SHELL)
+            raise Exception(f"Commands are unsupported by this shell {SHELL}")
     else:
         # Filter using prefix.
         if prefix:
@@ -567,21 +567,21 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     if debugfn:
         txt = "\n".join([
             '---------------------------------------------------------',
-            'CWORDS %s' % cwords,
-            'CLINE %s' % cline,
-            'CPOINT %s' % cpoint,
-            'CWORD %s' % cword,
+            f'CWORDS {cwords}',
+            f'CLINE {cline}',
+            f'CPOINT {cpoint}',
+            f'CWORD {cword}',
             '',
             'Short options',
             pformat(parser._short_opt),
             '',
             'Long options',
             pformat(parser._long_opt),
-            'Prefix %s' % prefix,
-            'Suffix %s' % suffix,
-            'completer_kwargs%s' % str(completer_kwargs),
+            f'Prefix {prefix}',
+            f'Suffix {suffix}',
+            f'completer_kwargs{str(completer_kwargs)}',
             #'completer_completions %s' % completer_completions,
-            'completions %s' % completions,
+            f'completions {completions}',
             ])
         if isinstance(debugfn, logging.Logger):
             debugfn.debug(txt)
@@ -594,7 +594,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     sys.exit(1)
 
 
-class CmdComplete(object):
+class CmdComplete:
 
     """Simple default base class implementation for a subcommand that supports
     command completion.  This class is assuming that there might be a method
@@ -624,16 +624,16 @@ def gen_cmdline(cmd_list, partial, shebang=True):
     cmdline = ' '.join([shell_quote(cmd) for cmd in cmd_list])
 
     env = []
-    env.append("%s=1" % OPTCOMPLETE_ENVIRONMENT)
-    env.append('COMP_LINE="%s"' % cmdline)
-    env.append('COMP_WORDS="(%s)"' % cmdline)
-    env.append("COMP_POINT=%s" % len(cmdline))
-    env.append("COMP_CWORD=%s" % cmd_list.index(partial))
+    env.append(f"{OPTCOMPLETE_ENVIRONMENT}=1")
+    env.append(f'COMP_LINE="{cmdline}"')
+    env.append(f'COMP_WORDS="({cmdline})"')
+    env.append(f"COMP_POINT={len(cmdline)}")
+    env.append(f"COMP_CWORD={cmd_list.index(partial)}")
 
     if not shebang:
         env.append(shell_quote(sys.executable))
 
     # add script
-    env.append('"%s"' % cmd_list[0])
+    env.append(f'"{cmd_list[0]}"')
 
     return " ".join(env)

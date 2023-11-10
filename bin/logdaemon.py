@@ -36,15 +36,17 @@ then use mpi to get these environment variables to the clients.
 
 @author: Jens Timmerman (Ghent University)
 """
-from optparse import OptionParser
-from vsc.utils import fancylogger
-from vsc.utils.daemon import Daemon
+
 import logging
 import os
 import pickle
 import socket
 import sys
 import traceback
+
+from optparse import OptionParser
+from vsc.utils import fancylogger
+from vsc.utils.daemon import Daemon
 
 class LogDaemon(Daemon):
     """
@@ -78,21 +80,21 @@ class LogDaemon(Daemon):
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            with open(self.pidfile, 'r') as pidf:
+            with open(self.pidfile, encoding='utf8') as pidf:
                 pid = int(pidf.read().strip())
-        except IOError:
+        except OSError:
             pid = None
 
         if pid:
-            message = "pidfile %s already exist. Daemon already running?\n"
-            sys.stderr.write(message % self.pidfile)
+            message = f"pidfile {self.pidfile} already exist. Daemon already running?\n"
+            sys.stderr.write(message)
             sys.exit(1)
 
         # get socket
         self.socket_.bind((self.hostname, self.port))
-        print("FANCYLOG_SERVER_PID=%s" % self.pidfile)
-        print("FANCYLOG_SERVER=%s:%d" % (socket.gethostname(), self.socket_.getsockname()[-1]))
-        print("FANCYLOG_SERVER_LOGFILE=%s" % self.logfile)
+        print(f"FANCYLOG_SERVER_PID={self.pidfile}")
+        print(f"FANCYLOG_SERVER={socket.gethostname()}:{int(self.socket_.getsockname()[-1])}")
+        print(f"FANCYLOG_SERVER_LOGFILE={self.logfile}")
         sys.stdout.flush()
 
         # Start the daemon
@@ -122,7 +124,7 @@ def main(args):
     Initiate the daemon
     """
     # parse options
-    parser = OptionParser(usage="usage: %s start|stop|restart [options]" % args[0])
+    parser = OptionParser(usage=f"usage: {args[0]} start|stop|restart [options]")
     # general options
     parser.add_option("-i", "--ip", dest="host", help="Ip to bind to [default: %default (all)]",
                        default="", type="string")
@@ -153,7 +155,7 @@ def main(args):
     if len(args) == 2:
         if 'stop' == args[1]:
             # save state before stopping?
-            sys.stderr.write("stopping daemon with pidfile: %s\n" % pidfile)
+            sys.stderr.write(f"stopping daemon with pidfile: {pidfile}\n")
             daemon.stop()
         elif 'restart' == args[1]:
             daemon.restart()
@@ -161,7 +163,7 @@ def main(args):
             daemon.start()
         else:
             sys.stderr.write("Unknown command\n")
-            sys.stderr.write("usage: %s start|stop|restart [options]\n" % args[0])
+            sys.stderr.write(f"usage: {args[0]} start|stop|restart [options]\n")
             sys.exit(2)
         sys.exit(0)
     else:

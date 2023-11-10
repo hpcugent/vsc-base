@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: latin-1 -*-
 #
 # Copyright 2009-2023 Ghent University
 #

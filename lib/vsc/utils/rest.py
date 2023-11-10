@@ -46,7 +46,7 @@ from urllib.request import Request, HTTPSHandler, build_opener
 CENSORED_MESSAGE = '<actual secret censored>'
 
 
-class Client(object):
+class Client:
     """An implementation of a REST client"""
     DELETE = 'DELETE'
     GET = 'GET'
@@ -99,7 +99,7 @@ class Client(object):
         if password is not None:
             self.auth_header = self.hash_pass(password, username)
         elif token is not None:
-            self.auth_header = '%s %s' % (token_type, token)
+            self.auth_header = f'{token_type} {token}'
 
     def _append_slash_to(self, url):
         """Append slash to specified URL, if desired and needed."""
@@ -186,21 +186,19 @@ class Client(object):
 
         logging.debug('cli request: %s, %s, %s, %s', method, url, body_censored, headers_censored)
 
-        # TODO: in recent python: Context manager
-        conn = self.get_connection(method, url, body, headers)
-        status = conn.code
-        if method == self.HEAD:
-            pybody = conn.headers
-        else:
-            body = conn.read()
-            body = body.decode('utf-8')  # byte encoded response
-            try:
-                pybody = json.loads(body)
-            except ValueError:
-                pybody = body
-        logging.debug('reponse len: %s ', len(pybody))
-        conn.close()
-        return status, pybody
+        with self.get_connection(method, url, body, headers) as conn:
+            status = conn.code
+            if method == self.HEAD:
+                pybody = conn.headers
+            else:
+                body = conn.read()
+                body = body.decode('utf-8')  # byte encoded response
+                try:
+                    pybody = json.loads(body)
+                except ValueError:
+                    pybody = body
+            logging.debug('reponse len: %s ', len(pybody))
+            return status, pybody
 
     @staticmethod
     def censor_request(secrets, payload):
@@ -230,7 +228,7 @@ class Client(object):
         if not username:
             username = self.username
 
-        credentials = '%s:%s' % (username, password)
+        credentials = f'{username}:{password}'
         credentials = credentials.encode('utf-8')
         encoded_credentials = base64.b64encode(credentials).strip()
         encoded_credentials = str(encoded_credentials, 'utf-8')
@@ -253,7 +251,7 @@ class Client(object):
         return connection
 
 
-class RequestBuilder(object):
+class RequestBuilder:
     '''RequestBuilder(client).path.to.resource.method(...)
         stands for
     RequestBuilder(client).client.method('path/to/resource, ...)
@@ -294,13 +292,13 @@ class RequestBuilder(object):
         '''If you ever stringify this, you've (probably) messed up
         somewhere. So let's give a semi-helpful message.
         '''
-        return "I don't know about %s, You probably want to do a get or other http request, use .get()" % self.url
+        return f"I don't know about {self.url}, You probably want to do a get or other http request, use .get()"
 
     def __repr__(self):
-        return '%s: %s' % (self.__class__, self.url)
+        return f'{self.__class__}: {self.url}'
 
 
-class RestClient(object):
+class RestClient:
     """
     A client with a request builder, so you can easily create rest requests
     e.g. to create a github Rest API client just do

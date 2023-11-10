@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2020-2023 Ghent University
 #
@@ -72,7 +71,7 @@ class TestPy2vs3(TestCase):
 
     def test_is_string(self):
         """Tests for is_string function."""
-        for item in ['foo', u'foo', "hello world", """foo\nbar""", '']:
+        for item in ['foo', 'foo', "hello world", """foo\nbar""", '']:
             self.assertTrue(is_string(item))
 
         for item in [1, None, ['foo'], ('foo',), {'foo': 'bar'}]:

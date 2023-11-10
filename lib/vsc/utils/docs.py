@@ -46,7 +46,7 @@ def mk_rst_table(titles, columns):
 
     title_cnt, col_cnt = len(titles), len(columns)
     if title_cnt != col_cnt:
-        msg = "Number of titles/columns should be equal, found %d titles and %d columns" % (title_cnt, col_cnt)
+        msg = f"Number of titles/columns should be equal, found {int(title_cnt)} titles and {int(col_cnt)} columns"
         raise LengthNotEqualException(msg)
     table = []
     tmpl = []
@@ -57,7 +57,7 @@ def mk_rst_table(titles, columns):
         width = max(map(len, columns[i] + [title]))
 
         # make line template
-        tmpl.append('{%s:{c}<%s}' % (i, width))
+        tmpl.append('{{{}:{{c}}<{}}}'.format(i, width))
 
     line = [''] * col_cnt
     line_tmpl = INDENT_4SPACES.join(tmpl)

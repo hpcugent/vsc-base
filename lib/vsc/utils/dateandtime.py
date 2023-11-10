@@ -73,7 +73,7 @@ class FancyMonth:
 
     def set_details(self):
         """Get first/last day of the month of date"""
-        class MyCalendar(object):
+        class MyCalendar:
             """Backport minimal calendar.Calendar code from 2.7 to support itermonthdays in 2.4"""
             def __init__(self, firstweekday=0):
                 self.firstweekday = firstweekday  # 0 = Monday, 6 = Sunday
@@ -132,7 +132,7 @@ class FancyMonth:
         """
         if self.include is False:
             msg = "number: include=False not implemented"
-            raise(Exception(msg))
+            raise NotImplementedError(msg)
         else:
             startdate, enddate = self.get_start_end(otherdate)
 
@@ -152,7 +152,7 @@ class FancyMonth:
         """Return time ordered list of months between date and otherdate"""
         if self.include is False:
             msg = "interval: include=False not implemented"
-            raise(Exception(msg))
+            raise NotImplementedError(msg)
         else:
             nr = self.number(otherdate)
             startdate, _ = self.get_start_end(otherdate)
@@ -166,13 +166,13 @@ class FancyMonth:
         """Based on strings, return date: eg BEGINTHIS returns first day of the current month"""
         supportedtime = (BEGIN, END,)
         supportedshift = ['THIS', 'LAST', 'NEXT']
-        regtxt = r"^(%s)(%s)?" % ('|'.join(supportedtime), '|'.join(supportedshift))
+        regtxt = rf"^({'|'.join(supportedtime)})({'|'.join(supportedshift)})?"
 
         reseervedregexp = re.compile(regtxt)
         reg = reseervedregexp.search(txt)
         if not reg:
-            msg = "parse: no match for regexp %s for txt %s" % (regtxt, txt)
-            raise(Exception(msg))
+            msg = f"parse: no match for regexp {regtxt} for txt {txt}"
+            raise ValueError(msg)
 
         shifttxt = reg.group(2)
         if shifttxt is None or shifttxt == 'THIS':
@@ -182,8 +182,8 @@ class FancyMonth:
         elif shifttxt == 'NEXT':
             shift = 1
         else:
-            msg = "parse: unknown shift %s (supported: %s)" % (shifttxt, supportedshift)
-            raise(Exception(msg))
+            msg = f"parse: unknown shift {shifttxt} (supported: {supportedshift})"
+            raise ValueError(msg)
 
         nm = self.get_other(shift)
 
@@ -193,8 +193,8 @@ class FancyMonth:
         elif timetxt == END:
             res = nm.last
         else:
-            msg = "parse: unknown time %s (supported: %s)" % (timetxt, supportedtime)
-            raise(Exception(msg))
+            msg = f"parse: unknown time {timetxt} (supported: {supportedtime})"
+            raise ValueError(msg)
 
         return res
 
@@ -235,16 +235,17 @@ def date_parser(txt):
                     thisday -= oneday
                 res = thisday.date()
         else:
-            msg = 'dateparser: unimplemented reservedword %s' % txt
-            raise(Exception(msg))
+            msg = f'dateparser: unimplemented reservedword {txt}'
+            raise NotImplementedError(msg)
     else:
         try:
             datetuple = [int(x) for x in txt.split("-")]
             res = date(*datetuple)
         except:
-            msg = ("dateparser: failed on '%s' date txt expects a YYYY-MM-DD format or "
-                   "reserved words %s") % (txt, ','.join(reserveddate))
-            raise(Exception(msg))
+            msg = (
+                f"dateparser: failed on '{txt}' date txt expects a YYYY-MM-DD format or "
+                f"reserved words {','.join(reserveddate)}")
+            raise ValueError(msg)
 
     return res
 

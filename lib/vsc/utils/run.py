@@ -96,7 +96,7 @@ class CmdList(list):
 
         :param cmd: actual command to run (first item in list)
         """
-        super(CmdList, self).__init__()
+        super().__init__()
         self.add(args, **kwargs)
 
     def add(self, items, tmpl_vals=None, allow_spaces=True):
@@ -114,12 +114,12 @@ class CmdList(list):
                 item = item % tmpl_vals
 
             if not isinstance(item, str):
-                raise ValueError("Non-string item %s (type %s) being added to command %s" % (item, type(item), self))
+                raise ValueError(f"Non-string item {item} (type {type(item)}) being added to command {self}")
 
             if not allow_spaces and ' ' in item:
-                raise ValueError("Found one or more spaces in item '%s' being added to command %s" % (item, self))
+                raise ValueError(f"Found one or more spaces in item '{item}' being added to command {self}")
 
-            super(CmdList, self).append(item)
+            super().append(item)
 
     def append(self, *args, **kwargs):
         raise NotImplementedError("Use add rather than append")
@@ -128,14 +128,14 @@ class CmdList(list):
         raise NotImplementedError("Use add rather than extend")
 
 
-class DummyFunction(object):
+class DummyFunction:
     def __getattr__(self, name):
         def dummy(*args, **kwargs):  # pylint: disable=unused-argument
             pass
         return dummy
 
 
-class Run(object):
+class Run:
     """Base class for static run method"""
     INIT_INPUT_CLOSE = True
     USE_SHELL = True
@@ -189,7 +189,7 @@ class Run(object):
 
         self._post_exitcode_log_failure = self.log.error
 
-        super(Run, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def _get_log_name(self):
         """Set the log name"""
@@ -306,7 +306,7 @@ class Run(object):
                 self.log.raiseException("_start_in_path: provided startpath %s exists but is no directory" %
                                         self.startpath)
         else:
-            self.log.raiseException("_start_in_path: startpath %s does not exist" % self.startpath)
+            self.log.raiseException(f"_start_in_path: startpath {self.startpath} does not exist")
 
     def _return_to_previous_start_in_path(self):
         """Change to original path before the change to startpath"""
@@ -351,18 +351,17 @@ class Run(object):
 
     def _make_shell_command(self):
         """Convert cmd into shell command"""
-        self.log.warning(("using potentialy unsafe shell commands, use run.run or run.RunNoShell.run "
-                          "instead of run.run_simple or run.Run.run"))
+        self.log.warning("using potentialy unsafe shell commands, use run.run or run.RunNoShell.run "
+                          "instead of run.run_simple or run.Run.run")
         if self.cmd is None:
             self.log.raiseException("_make_shell_command: no cmd set.")
 
         if isinstance(self.cmd, str):
             self._shellcmd = self.cmd
         elif isinstance(self.cmd, (list, tuple,)):
-            self._shellcmd = " ".join([str(arg).replace(' ', '\ ') for arg in self.cmd])
+            self._shellcmd = " ".join([str(arg).replace(' ', r'\ ') for arg in self.cmd])
         else:
-            self.log.raiseException("Failed to convert cmd %s (type %s) into shell command" %
-                                    (self.cmd, type(self.cmd)))
+            self.log.raiseException(f"Failed to convert cmd {self.cmd} (type {type(self.cmd)}) into shell command")
 
     def _init_process(self):
         """Initialise the self._process"""
@@ -383,7 +382,7 @@ class Run(object):
             try:
                 self._process.stdin.write(inp)
             except Exception:
-                self.log.raiseException("_init_input: Failed write input %s to process" % self.input)
+                self.log.raiseException(f"_init_input: Failed write input {self.input} to process")
 
         if self.INIT_INPUT_CLOSE:
             self._process.stdin.close()
@@ -408,7 +407,7 @@ class Run(object):
             try:
                 self._process.stdout.close()
             except OSError as err:
-                self.log.raiseException("_cleanup_process: failed to close stdout of the process: %s" % err)
+                self.log.raiseException(f"_cleanup_process: failed to close stdout of the process: {err}")
 
     def _read_process(self, readsize=None):
         """Read from process, return out"""
@@ -432,7 +431,6 @@ class Run(object):
 
     def _post_output(self):
         """Postprocess the output in self._process_output"""
-        pass
 
     def _run_return(self):
         """What to return"""
@@ -517,20 +515,18 @@ class RunNoShell(Run):
         elif isinstance(self.cmd, (list, tuple,)):
             self._shellcmd = self.cmd
         else:
-            self.log.raiseException("Failed to convert cmd %s (type %s) into non shell command" %
-                                    (self.cmd, type(self.cmd)))
+            self.log.raiseException(f"Failed to convert cmd {self.cmd} (type {type(self.cmd)}) into non shell command")
 
 
 class RunNoWorries(Run):
     """When the exitcode is >0, log.debug instead of log.error"""
     def __init__(self, cmd, **kwargs):
-        super(RunNoWorries, self).__init__(cmd, **kwargs)
+        super().__init__(cmd, **kwargs)
         self._post_exitcode_log_failure = self.log.debug
 
 
 class RunNoShellNoWorries(RunNoShell, RunNoWorries):
     """When the exitcode is >0, log.debug instead of log.error"""
-    pass
 
 
 class RunLoopException(Exception):
@@ -539,7 +535,7 @@ class RunLoopException(Exception):
         self.output = output
 
     def __str__(self):
-        return "%s code %s output %s" % (self.__class__.__name__, self.code, self.output)
+        return f"{self.__class__.__name__} code {self.code} output {self.output}"
 
 
 class RunLoop(Run):
@@ -551,7 +547,7 @@ class RunLoop(Run):
     LOOP_TIMEOUT_MAIN = 1
 
     def __init__(self, cmd, **kwargs):
-        super(RunLoop, self).__init__(cmd, **kwargs)
+        super().__init__(cmd, **kwargs)
         self._loop_count = None
         self._loop_continue = None  # intial state, change this to break out the loop
 
@@ -600,13 +596,11 @@ class RunLoop(Run):
 
     def _loop_initialise(self):
         """Initialisation before the loop starts"""
-        pass
 
     def _loop_process_output(self, output):
         """Process the output that is read in blocks
             simplest form: do nothing
         """
-        pass
 
     def _loop_process_output_final(self, output):
         """Process the remaining output that is read
@@ -620,7 +614,6 @@ class RunNoShellLoop(RunNoShell, RunLoop):
         need to read from time to time.
         otherwise the stdout/stderr buffer gets filled and it all stops working
     """
-    pass
 
 
 class RunLoopLog(RunLoop):
@@ -629,14 +622,14 @@ class RunLoopLog(RunLoop):
     def _wait_for_process(self):
         # initialise the info logger
         self.log.info("Going to run cmd %s", self._shellcmd)
-        super(RunLoopLog, self)._wait_for_process()
+        super()._wait_for_process()
 
     def _loop_process_output(self, output):
         """Process the output that is read in blocks
             send it to the logger. The logger need to be stream-like
         """
         self.log.streamLog(self.LOOP_LOG_LEVEL, output)
-        super(RunLoopLog, self)._loop_process_output(output)
+        super()._loop_process_output(output)
 
 
 class RunNoShellLoopLog(RunNoShell, RunLoopLog):
@@ -651,7 +644,7 @@ class RunLoopStdout(RunLoop):
         """
         sys.stdout.write(output)
         sys.stdout.flush()
-        super(RunLoopStdout, self)._loop_process_output(output)
+        super()._loop_process_output(output)
 
 
 class RunNoShellLoopStdout(RunNoShell, RunLoopStdout):
@@ -667,7 +660,7 @@ class RunAsync(Run):
             modulepath = PROCESS_MODULE_ASYNCPROCESS_PATH
         if extendfromlist is None:
             extendfromlist = ['send_all', 'recv_some']
-        super(RunAsync, self)._prep_module(modulepath=modulepath, extendfromlist=extendfromlist)
+        super()._prep_module(modulepath=modulepath, extendfromlist=extendfromlist)
 
     def _read_process(self, readsize=None):
         """Read from async process, return out"""
@@ -686,7 +679,7 @@ class RunAsync(Run):
                 # non-blocking read (readsize is a maximum to return !
                 out = self._process_module.recv_some(self._process, maxread=readsize)
             return ensure_ascii_string(out)
-        except (IOError, Exception):
+        except (OSError, Exception):
             # recv_some may throw Exception
             self.log.exception("_read_process: read failed")
             return ''
@@ -694,7 +687,6 @@ class RunAsync(Run):
 
 class RunNoShellAsync(RunNoShell, RunAsync):
     """Async process class"""
-    pass
 
 
 class RunFile(Run):
@@ -702,7 +694,7 @@ class RunFile(Run):
     def __init__(self, cmd, **kwargs):
         self.filename = kwargs.pop('filename', None)
         self.filehandle = None
-        super(RunFile, self).__init__(cmd, **kwargs)
+        super().__init__(cmd, **kwargs)
 
     def _make_popen_named_args(self, others=None):
         if others is None:
@@ -727,20 +719,20 @@ class RunFile(Run):
             try:
                 self.filehandle = open(self.filename, 'w') # pylint: disable=consider-using-with
             except OSError:
-                self.log.raiseException("_make_popen_named_args: failed to open filehandle for file %s" % self.filename)
+                self.log.raiseException(f"_make_popen_named_args: failed to open filehandle for file {self.filename}")
 
             others = {
                       'stdout': self.filehandle,
                       }
 
-        super(RunFile, self)._make_popen_named_args(others=others)
+        super()._make_popen_named_args(others=others)
 
     def _cleanup_process(self):
         """Close the filehandle"""
         try:
             self.filehandle.close()
         except OSError:
-            self.log.raiseException("_cleanup_process: failed to close filehandle for filename %s" % self.filename)
+            self.log.raiseException(f"_cleanup_process: failed to close filehandle for filename {self.filename}")
 
     def _read_process(self, readsize=None):
         """Meaningless for filehandle"""
@@ -749,7 +741,6 @@ class RunFile(Run):
 
 class RunNoShellFile(RunNoShell, RunFile):
     """Popen to filehandle"""
-    pass
 
 
 class RunPty(Run):
@@ -766,12 +757,11 @@ class RunPty(Run):
                 'stdout': slave,
                 'stderr': slave
                 }
-        super(RunPty, self)._make_popen_named_args(others=others)
+        super()._make_popen_named_args(others=others)
 
 
 class RunNoShellPty(RunNoShell, RunPty):
     """Pty support (eg for screen sessions)"""
-    pass
 
 
 class RunTimeout(RunLoop, RunAsync):
@@ -780,7 +770,7 @@ class RunTimeout(RunLoop, RunAsync):
     def __init__(self, cmd, **kwargs):
         self.timeout = float(kwargs.pop('timeout', None))
         self.start = time.time()
-        super(RunTimeout, self).__init__(cmd, **kwargs)
+        super().__init__(cmd, **kwargs)
 
     def _loop_process_output(self, output):
         """"""
@@ -791,12 +781,11 @@ class RunTimeout(RunLoop, RunAsync):
 
             # go out of loop
             raise RunLoopException(RUNRUN_TIMEOUT_EXITCODE, RUNRUN_TIMEOUT_OUTPUT)
-        super(RunTimeout, self)._loop_process_output(output)
+        super()._loop_process_output(output)
 
 
 class RunNoShellTimeout(RunNoShell, RunTimeout):
     """Run for maximum timeout seconds"""
-    pass
 
 
 class RunQA(RunLoop, RunAsync):
@@ -822,7 +811,7 @@ class RunQA(RunLoop, RunAsync):
         self._loop_previous_ouput_length = None  # track length of output through loop
         self.hit_position = 0
 
-        super(RunQA, self).__init__(cmd, **kwargs)
+        super().__init__(cmd, **kwargs)
 
         self.qa, self.qa_reg, self.no_qa = self._parse_qa(qa, qa_reg, no_qa)
 
@@ -839,10 +828,10 @@ class RunQA(RunLoop, RunAsync):
         """
 
         def escape_special(string):
-            specials = '.*+?(){}[]|\$^'
-            return re.sub(r"([%s])" % ''.join(['\%s' % x for x in specials]), r"\\\1", string)
+            specials = r'.*+?(){}[]|\$^'
+            return re.sub(r"([%s])" % ''.join([r'\%s' % x for x in specials]), r"\\\1", string)
 
-        SPLIT = '[\s\n]+'
+        SPLIT = '[\\s\n]+'
         REG_SPLIT = re.compile(r"" + SPLIT)
 
         def process_answers(answers):
@@ -957,7 +946,7 @@ class RunQA(RunLoop, RunAsync):
 
             # go out of loop
             raise RunLoopException(RUNRUN_QA_MAX_MISS_EXITCODE, self._process_output)
-        super(RunQA, self)._loop_process_output(output)
+        super()._loop_process_output(output)
 
 
 class RunNoShellQA(RunNoShell, RunQA):

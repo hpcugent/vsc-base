@@ -111,7 +111,7 @@ class LoggedException(Exception):
 
                 # include location info at the end of the message
                 # for example: "Nope, giving up (at easybuild/tools/somemodule.py:123 in some_function)"
-                msg = "%s (at %s:%s in %s)" % (msg, relpath, frameinfo[2], frameinfo[3])
+                msg = f"{msg} (at {relpath}:{frameinfo[2]} in {frameinfo[3]})"
 
         logger = kwargs.get('logger', None)
         # try to use logger defined in caller's environment
@@ -123,4 +123,4 @@ class LoggedException(Exception):
 
         getattr(logger, self.LOGGING_METHOD_NAME)(msg)
 
-        super(LoggedException, self).__init__(msg)
+        super().__init__(msg)

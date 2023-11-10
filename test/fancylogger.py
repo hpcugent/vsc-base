@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2013-2023 Ghent University
 #
@@ -86,7 +85,7 @@ def _get_tty_stream():
                 stream = open(tty, 'w')
                 if os.isatty(stream.fileno()):
                     return stream
-            except IOError:
+            except OSError:
                 # cannot open $TTY for writing, continue
                 pass
         # give up
@@ -142,11 +141,11 @@ class FancyLoggerTest(TestCase):
 
     def read_log(self):
         self.handler.flush()
-        with open(self.logfn, 'r') as fih:
+        with open(self.logfn) as fih:
             return fih.read()
 
     def setUp(self):
-        super(FancyLoggerTest, self).setUp()
+        super().setUp()
 
         self._reset_fancylogger()
 
@@ -234,9 +233,9 @@ class FancyLoggerTest(TestCase):
             "Here are some UTF-8 characters: ß, ©, Ω, £.",  # only UTF8 characters
             "This non-UTF-8 character '\x80' should be handled properly.",  # contains non UTF-8 character
             # unicode strings
-            u"This is a pure ASCII text.",  # pure ASCII
-            u"Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
-            u"This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
+            "This is a pure ASCII text.",  # pure ASCII
+            "Here are some UTF8 characters: ß, ©, Ω, £.",  # only UTF8 characters
+            "This non-UTF8 character '\x80' should be handled properly.",  # contains non UTF-8 character
         ]
         for msg in msgs:
             logger.critical(msg)
@@ -264,7 +263,7 @@ class FancyLoggerTest(TestCase):
         max_ver = "1.0"
 
         # test whether deprecation works
-        msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*%s" % (max_ver, MSG)
+        msgre_tpl_error = r"DEPRECATED\s*\(since v{}\).*{}".format(max_ver, MSG)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.1", max_ver)
         self.assertErrorRegex(Exception, msgre_tpl_error, logger.deprecated, MSG, "1.0", max_ver)
 
@@ -275,9 +274,9 @@ class FancyLoggerTest(TestCase):
         # no deprecation if current version is lower than max version
         logger.deprecated(MSG, "0.9", max_ver)
 
-        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*%s" % (max_ver, MSG))
+        msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v{}:.*{}".format(max_ver, MSG))
         txt = self.read_log()
-        self.assertTrue(msgre_warning.search(txt), "Pattern '%s' found in: %s" % (msgre_warning.pattern, txt))
+        self.assertTrue(msgre_warning.search(txt), f"Pattern '{msgre_warning.pattern}' found in: {txt}")
 
         self.mk_empty_log()
 
@@ -293,7 +292,7 @@ class FancyLoggerTest(TestCase):
         self.mk_empty_log()
 
         # test handling of non-UTF8 chars
-        msg = MSG + u'\x81'
+        msg = MSG + '\x81'
         # Python 3: unicode is supported in regular string values (no special unicode type)
         msgre_tpl_error = r"DEPRECATED\s*\(since v%s\).*\x81" % max_ver
         msgre_warning = re.compile(r"WARNING.*Deprecated.* will no longer work in v%s:.*\x81" % max_ver)
@@ -342,7 +341,7 @@ class FancyLoggerTest(TestCase):
 
         regex = re.compile("^WARNING.*HIT.*failtest\n.*in test123.*$", re.M)
         txt = self.read_log()
-        self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
+        self.assertTrue(regex.match(txt), f"Pattern '{regex.pattern}' matches '{txt}'")
 
         self.truncate_log()
         fancylogger.FancyLogger.RAISE_EXCEPTION_CLASS = KeyError
@@ -351,7 +350,7 @@ class FancyLoggerTest(TestCase):
 
         regex = re.compile("^WARNING.*HIT.*'failkeytest'\n.*in test123.*$", re.M)
         txt = self.read_log()
-        self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
+        self.assertTrue(regex.match(txt), f"Pattern '{regex.pattern}' matches '{txt}'")
 
         self.truncate_log()
         fancylogger.FancyLogger.RAISE_EXCEPTION_LOG_METHOD = lambda c, msg: c.warning(msg)
@@ -360,7 +359,7 @@ class FancyLoggerTest(TestCase):
 
         regex = re.compile("^WARNING.*HIT.*attrtest\n.*in test123.*$", re.M)
         txt = self.read_log()
-        self.assertTrue(regex.match(txt), "Pattern '%s' matches '%s'" % (regex.pattern, txt))
+        self.assertTrue(regex.match(txt), f"Pattern '{regex.pattern}' matches '{txt}'")
 
     def _stream_stdouterr(self, isstdout=True, expect_match=True):
         """Log to stdout or stderror, check stdout or stderror"""
@@ -383,7 +382,7 @@ class FancyLoggerTest(TestCase):
         lh = fancylogger.logToScreen(stdout=isstdout)
         logger = fancylogger.getLogger(name, fname=True, clsname=False)
         # logfn makes it unique
-        msg = 'TEST isstdout %s expect_match %s logfn %s' % (isstdout, expect_match, logfn)
+        msg = f'TEST isstdout {isstdout} expect_match {expect_match} logfn {logfn}'
         logger.info(msg)
 
         # restore
@@ -394,7 +393,7 @@ class FancyLoggerTest(TestCase):
         fh2 = open(logfn)
         txt = fh2.read().strip()
         fh2.close()
-        reg_exp = re.compile(r"INFO\s+\S+.%s.%s\s+\S+\s+%s" % (name, '_stream_stdouterr', msg))
+        reg_exp = re.compile(r"INFO\s+\S+.{}.{}\s+\S+\s+{}".format(name, '_stream_stdouterr', msg))
         match = reg_exp.search(txt) is not None
         self.assertEqual(match, expect_match)
 
@@ -453,7 +452,7 @@ class FancyLoggerTest(TestCase):
         # this will only hold in debug mode, so also disable the test
         if __debug__:
             pattern = 'FancyLoggerTest'
-            self.assertTrue(pattern in txt, "Pattern '%s' found in: %s" % (pattern, txt))
+            self.assertTrue(pattern in txt, f"Pattern '{pattern}' found in: {txt}")
         # restore
         fancylogger.logToScreen(enable=False, handler=handler)
         sys.stderr = _stderr
@@ -470,7 +469,7 @@ class FancyLoggerTest(TestCase):
                             (None, fancylogger.getAllExistingLoggers)]:
             self.assertEqual([name for name, _ in func()],
                              [name for name, _ in fancylogger.getDetailsLogLevels(fancy)],
-                             "Test getDetailsLogLevels fancy %s and function %s" % (fancy, func.__name__))
+                             f"Test getDetailsLogLevels fancy {fancy} and function {func.__name__}")
         self.assertEqual([name for name, _ in fancylogger.getAllFancyloggers()],
                          [name for name, _ in fancylogger.getDetailsLogLevels()],
                          "Test getDetailsLogLevels default fancy True and function getAllFancyloggers")
@@ -492,17 +491,17 @@ class FancyLoggerTest(TestCase):
         msg = 'this is my string'
         logging.warning(msg)
         self.assertTrue(msg in stringfile.getvalue(),
-                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
+                        msg=f"'{msg}' in '{stringfile.getvalue()}'")
 
         msg = 'there are many like it'
         logging.getLogger().warning(msg)
         self.assertTrue(msg in stringfile.getvalue(),
-                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
+                        msg=f"'{msg}' in '{stringfile.getvalue()}'")
 
         msg = 'but this one is mine'
         logging.getLogger('mine').warning(msg)
         self.assertTrue(msg in stringfile.getvalue(),
-                        msg="'%s' in '%s'" % (msg, stringfile.getvalue()))
+                        msg=f"'{msg}' in '{stringfile.getvalue()}'")
 
     # make sure this test runs last, since it may mess up other tests (like test_raiseException)
     def test_zzz_fancylogger_as_rootlogger_logging(self):
@@ -629,7 +628,7 @@ class FancyLoggerTest(TestCase):
 
         self._reset_fancylogger()
 
-        super(FancyLoggerTest, self).tearDown()
+        super().tearDown()
 
 
 class ScreenLogFormatterFactoryTest(TestCase):
@@ -649,7 +648,7 @@ class EnvToBooleanTest(TestCase):
     def _generate_var_name(self):
         while True:
             rnd = randint(0, 0xffffff)
-            name = ('TEST_VAR_%06X' % rnd)
+            name = f'TEST_VAR_{rnd:06X}'
             if name not in os.environ:
                 return name
 

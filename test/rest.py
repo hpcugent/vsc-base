@@ -53,7 +53,7 @@ class RestClientTest(TestCase):
 
     def setUp(self):
         """setup"""
-        super(RestClientTest, self).setUp()
+        super().setUp()
         self.client = RestClient('https://api.github.com', username=GITHUB_LOGIN, token=GITHUB_TOKEN)
 
     def test_client(self):
@@ -65,11 +65,11 @@ class RestClientTest(TestCase):
         status, body = self.client.repos[GITHUB_USER][GITHUB_REPO].contents.a_directory['a_file.txt'].get()
         self.assertEqual(status, 200)
         # dGhpcyBpcyBhIGxpbmUgb2YgdGV4dAo= == 'this is a line of text' in base64 encoding
-        self.assertEqual(body['content'].strip(), u"dGhpcyBpcyBhIGxpbmUgb2YgdGV4dAo=")
+        self.assertEqual(body['content'].strip(), "dGhpcyBpcyBhIGxpbmUgb2YgdGV4dAo=")
 
         status, body = self.client.repos['hpcugent']['easybuild-framework'].pulls[1].get()
         self.assertEqual(status, 200)
-        self.assertEqual(body['merge_commit_sha'], u'fba3e13815f3d2a9dfbd2f89f1cf678dd58bb1f1')
+        self.assertEqual(body['merge_commit_sha'], 'fba3e13815f3d2a9dfbd2f89f1cf678dd58bb1f1')
 
     def test_request_methods(self):
         """Test all request methods"""

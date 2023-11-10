@@ -101,7 +101,7 @@ def find_sublist_index(ls, sub_ls):
     return None
 
 
-class Monoid(object):
+class Monoid:
     """A monoid is a mathematical object with a default element (mempty or null) and a default operation to combine
     two elements of a given data type.
 
@@ -148,25 +148,25 @@ class MonoidDict(dict):
 
         @type monoid: Monoid instance
         """
-        super(MonoidDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.monoid = monoid
 
     def __setitem__(self, key, value):
         """Combine the value the dict has for the key with the new value using the mappend operation."""
-        if super(MonoidDict, self).__contains__(key):
-            current = super(MonoidDict, self).__getitem__(key)
-            super(MonoidDict, self).__setitem__(key, self.monoid(current, value))
+        if super().__contains__(key):
+            current = super().__getitem__(key)
+            super().__setitem__(key, self.monoid(current, value))
         else:
-            super(MonoidDict, self).__setitem__(key, value)
+            super().__setitem__(key, value)
 
     def __getitem__(self, key):
         """ Obtain the dictionary value for the given key. If no value is present,
         we return the monoid's mempty (null).
         """
-        if not super(MonoidDict, self).__contains__(key):
+        if not super().__contains__(key):
             return self.monoid.null
         else:
-            return super(MonoidDict, self).__getitem__(key)
+            return super().__getitem__(key)
 
 
 class RUDict(dict):
@@ -190,8 +190,8 @@ class RUDict(dict):
                 for (k, v) in E:
                     self.r_update(k, {k: v})
 
-        for k in F:
-            self.r_update(k, {k: F[k]})
+        for k, v in F.items():
+            self.r_update(k, {k: v})
 
     def r_update(self, key, other_dict):
         """Recursive update."""
@@ -222,7 +222,7 @@ class FrozenDictKnownKeys(FrozenDict):
 
         # handle unknown keys: either ignore them or raise an exception
         tmpdict = dict(*args, **kwargs)
-        unknown_keys = [key for key in tmpdict.keys() if key not in self.KNOWN_KEYS]
+        unknown_keys = [key for key in tmpdict if key not in self.KNOWN_KEYS]
         if unknown_keys:
             if ignore_unknown_keys:
                 for key in unknown_keys:
@@ -233,18 +233,18 @@ class FrozenDictKnownKeys(FrozenDict):
                 logging.error("Encountered unknown keys %s (known keys: %s)", unknown_keys, self.KNOWN_KEYS)
                 raise KeyError("Encountered unknown keys")
 
-        super(FrozenDictKnownKeys, self).__init__(tmpdict)
+        super().__init__(tmpdict)
     # pylint: disable=arguments-differ
     def __getitem__(self, key, *args, **kwargs):
         """Redefine __getitem__ to provide a better KeyError message."""
         try:
-            return super(FrozenDictKnownKeys, self).__getitem__(key, *args, **kwargs)
+            return super().__getitem__(key, *args, **kwargs)
         except KeyError as err:
             if key in self.KNOWN_KEYS:
                 raise KeyError(err)
             else:
-                tup = (key, self.__class__.__name__, self.KNOWN_KEYS)
-                raise KeyError("Unknown key '%s' for %s instance (known keys: %s)" % tup)
+                raise KeyError(
+                    f"Unknown key '{key}' for {self.__class__.__name__} instance (known keys: { self.KNOWN_KEYS})")
 
 
 def shell_quote(x):
@@ -274,7 +274,7 @@ def get_class_for(modulepath, class_name):
     try:
         klass = getattr(module, class_name)
     except AttributeError as err:
-        raise ImportError("Failed to import %s from %s: %s" % (class_name, modulepath, err))
+        raise ImportError(f"Failed to import {class_name} from {modulepath}: {err}")
     return klass
 
 
@@ -295,7 +295,7 @@ def get_subclasses(klass, include_base_class=False):
     return get_subclasses_dict(klass, include_base_class=include_base_class).keys()
 
 
-class TryOrFail(object):
+class TryOrFail:
     """
     Perform the function n times, catching each exception in the exception tuple except on the last try
     where it will be raised again.
@@ -328,8 +328,7 @@ def post_order(graph, root):
     Walk the graph from the given root in a post-order manner by providing the corresponding generator
     """
     for node in graph[root]:
-        for child in post_order(graph, node):
-            yield child
+        yield from post_order(graph, node)
     yield root
 
 

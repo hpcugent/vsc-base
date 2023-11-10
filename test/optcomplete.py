@@ -58,7 +58,7 @@ class OptcompleteTest(TestCase):
             self.tempdirs.append(tempfile.mkdtemp(dir=self.basetemp))
 
         self.alltemp = self.tempfiles + self.tempdirs
-        super(OptcompleteTest, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         """cleanup testing"""
@@ -145,7 +145,7 @@ class OptcompleteTest(TestCase):
     def test_regex_completer(self):
         """Test RegexCompleter"""
         rc = RegexCompleter(['^tmp'])
-        expected_res = self.tempfiles + self.tempdirs + ["%s%s" % (p, os.path.sep) for p in self.tempdirs]
+        expected_res = self.tempfiles + self.tempdirs + [f"{p}{os.path.sep}" for p in self.tempdirs]
         self.assertEqual(sorted(rc(prefix=os.path.join(self.basetemp, 'tmp'))), sorted(expected_res))
 
     def test_extract_word(self):
@@ -176,7 +176,7 @@ class OptcompleteTest(TestCase):
         cmd_list = ['x', 'y', partial]
         cmdline = gen_cmdline(cmd_list, partial)
         for word in [OPTCOMPLETE_ENVIRONMENT, 'COMP_LINE', 'COMP_WORDS', 'COMP_CWORD', 'COMP_POINT']:
-            self.assertTrue("%s=" % word in cmdline)
+            self.assertTrue(f"{word}=" in cmdline)
 
 
 def suite():

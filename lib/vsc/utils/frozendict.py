@@ -43,7 +43,7 @@ class FrozenDict(Mapping):
         return len(self.__dict)
 
     def __repr__(self):
-        return '<FrozenDict %s>' % repr(self.__dict)
+        return f'<FrozenDict {repr(self.__dict)}>'
 
     def __hash__(self):
         if self.__hash is None:
