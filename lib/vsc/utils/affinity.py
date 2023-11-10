@@ -110,7 +110,7 @@ class cpu_set_t(ctypes.Structure):
     _fields_ = [('__bits', cpu_mask_t * NMASKBITS)]
 
     def __init__(self, *args, **kwargs):
-        super(cpu_set_t, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.cpus = None
 
     def __str__(self):
@@ -126,13 +126,13 @@ class cpu_set_t(ctypes.Structure):
             # sanity check
             if indices[1] < indices[0]:
                 logging.error("convert_hr_bits: end is lower then start in '%s'", rng)
-                raise Exception("convert_hr_bits: end is lower then start")
+                raise ValueError("convert_hr_bits: end is lower then start")
             elif indices[0] < 0:
                 logging.error("convert_hr_bits: negative start in '%s'", rng)
-                raise Exception("convert_hr_bits: negative start")
+                raise ValueError("convert_hr_bits: negative start")
             elif indices[1] > CPU_SETSIZE + 1:  # also covers start, since end > start
                 logging.error("convert_hr_bits: end larger then max %s in '%s'", CPU_SETSIZE, rng)
-                raise Exception("convert_hr_bits: end larger then max")
+                raise ValueError("convert_hr_bits: end larger then max")
 
             self.cpus[indices[0]:indices[1] + 1] = [1] * (indices[1] + 1 - indices[0])
         logging.debug("convert_hr_bits: converted %s into cpus %s", txt, self.cpus)
@@ -146,10 +146,10 @@ class cpu_set_t(ctypes.Structure):
         parsed_idx = []
         for idx in cpus_index:
             if prev + 1 < idx:
-                parsed_idx.append("%s" % idx)
+                parsed_idx.append(f"{idx}")
             else:
                 first_idx = parsed_idx[-1].split("-")[0]
-                parsed_idx[-1] = "%s-%s" % (first_idx, idx)
+                parsed_idx[-1] = f"{first_idx}-{idx}"
             prev = idx
         return ",".join(parsed_idx)
 
@@ -193,13 +193,13 @@ class cpu_set_t(ctypes.Structure):
             # get_cpus() rescans
             logging.error("set_bits: something went wrong: previous cpus %s; current ones %s",
                           prev_cpus[:20], self.cpus[:20])
-            raise Exception("set_bits: something went wrong: previous cpus / current ones")
+            raise ValueError("set_bits: something went wrong: previous cpus / current ones")
 
     def str_cpus(self):
         """Return a string representation of the cpus"""
         if self.cpus is None:
             self.get_cpus()
-        return "".join(["%d" % x for x in self.cpus])
+        return "".join([f"{int(x)}" for x in self.cpus])
 
 
 # /* Get the CPU affinity for a task */
@@ -292,7 +292,7 @@ def getpriority(which=None, who=None):
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
         logging.error("getpriority: which %s not in correct range", which)
-        raise Exception("getpriority: which not in correct range")
+        raise ValueError("getpriority: which not in correct range")
     if who is None:
         who = 0  # current which-ever
     prio = _libc.getpriority(priority_which_t(which),
@@ -318,7 +318,7 @@ def setpriority(prio, which=None, who=None):
         which = PRIO_PROCESS
     elif which not in (PRIO_PROCESS, PRIO_PGRP, PRIO_USER,):
         logging.error("setpriority: which %s not in correct range", which)
-        raise Exception("setpriority: which not in correct range")
+        raise ValueError("setpriority: which not in correct range")
     if who is None:
         who = 0  # current which-ever
 
@@ -326,11 +326,11 @@ def setpriority(prio, which=None, who=None):
         prio = int(prio)
     except ValueError:
         logging.error("setpriority: failed to convert priority %s into int", prio)
-        raise Exception("setpriority: failed to convert priority into int")
+        raise ValueError("setpriority: failed to convert priority into int")
 
     if prio < PRIO_MIN or prio > PRIO_MAX:
         logging.error("setpriority: prio not in allowed range MIN %s MAX %s", PRIO_MIN, PRIO_MAX)
-        raise Exception("setpriority: prio not in allowed range MIN MAX")
+        raise ValueError("setpriority: prio not in allowed range MIN MAX")
 
     ec = _libc.setpriority(priority_which_t(which),
                            id_t(who),

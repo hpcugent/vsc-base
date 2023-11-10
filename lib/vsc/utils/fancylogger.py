@@ -186,8 +186,8 @@ LOG_LEVEL_ALIASES = {
 # logging.addLevelName is not a real replacement (it overwrites existing level names)
 levelnames = logging._nameToLevel
 
-for key in LOG_LEVEL_ALIASES:
-    levelnames[key] = LOG_LEVEL_ALIASES[key]
+for key, name in LOG_LEVEL_ALIASES.items():
+    levelnames[key] = name
 
 
 # mpi rank support
@@ -212,11 +212,11 @@ class MissingLevelName(KeyError):
 def getLevelInt(level_name):
     """Given a level name, return the int value"""
     if not isinstance(level_name, str):
-        raise TypeError('Provided name %s is not a string (type %s)' % (level_name, type(level_name)))
+        raise TypeError(f'Provided name {level_name} is not a string (type {type(level_name)})')
 
     level = logging.getLevelName(level_name)
     if not isinstance(level, int):
-        raise MissingLevelName('Unknown loglevel name %s' % level_name)
+        raise MissingLevelName(f'Unknown loglevel name {level_name}')
 
     return level
 
@@ -316,8 +316,8 @@ class FancyLogger(logging.getLoggerClass()):
                 # extend the message with the traceback and some more details
                 # or use self.exception() instead of self.warning()?
                 tb_text = "\n".join(traceback.format_tb(tb))
-                message += " (%s)" % detail
-                fullmessage += " (%s\n%s)" % (detail, tb_text)
+                message += f" ({detail})"
+                fullmessage += f" ({detail}\n{tb_text})"
 
         if exception is None:
             exception = self.RAISE_EXCEPTION_CLASS
@@ -346,9 +346,9 @@ class FancyLogger(logging.getLoggerClass()):
         loose_mv.version = loose_mv.version[:depth]
 
         if loose_cv >= loose_mv:
-            self.raiseException("DEPRECATED (since v%s) functionality used: %s" % (max_ver, msg), exception=exception)
+            self.raiseException(f"DEPRECATED (since v{max_ver}) functionality used: {msg}", exception=exception)
         else:
-            deprecation_msg = "Deprecated functionality, will no longer work in v%s: %s" % (max_ver, msg)
+            deprecation_msg = f"Deprecated functionality, will no longer work in v{max_ver}: {msg}"
             log_callback(deprecation_msg)
 
     def _handleFunction(self, function, levelno, **kwargs):
@@ -423,7 +423,7 @@ class FancyLogger(logging.getLoggerClass()):
     def get_parent_info(self, prefix, verbose=True):
         """Return pretty text version"""
         rev_parent_info = self._get_parent_info(verbose=verbose)
-        return ["%s %s%s" % (prefix, " " * 4 * idx, info) for idx, info in enumerate(rev_parent_info)]
+        return [f"{prefix} {' ' * 4 * idx}{info}" for idx, info in enumerate(rev_parent_info)]
 
     def __copy__(self):
         """Return shallow copy, in this case reference to current logger"""
@@ -438,7 +438,7 @@ def thread_name():
     """
     returns the current threads name
     """
-    return threading.currentThread().getName()
+    return threading.current_thread().name
 
 
 def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
@@ -479,8 +479,8 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
     l.fancyrecord = fancyrecord
     if _env_to_boolean('FANCYLOGGER_GETLOGGER_DEBUG'):
         print('FANCYLOGGER_GETLOGGER_DEBUG')
-        print('name %s fname %s fullname %s' % (name, fname, fullname))
-        print("getRootLoggerName: %s" % getRootLoggerName())
+        print(f'name {name} fname {fname} fullname {fullname}')
+        print(f"getRootLoggerName: {getRootLoggerName()}")
         if hasattr(l, 'get_parent_info'):
             print('parent_info verbose')
             print("\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
@@ -553,7 +553,7 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Non
 
     return _logToSomething(FancyStreamHandler,
                            handleropts,
-                           loggeroption='logtoscreen_stdout_%s' % str(stdout),
+                           loggeroption=f'logtoscreen_stdout_{str(stdout)}',
                            name=name,
                            enable=enable,
                            handler=handler,
@@ -586,12 +586,12 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
             os.makedirs(directory)
         except Exception as ex:
             exc, detail, tb = sys.exc_info()
-            raise(exc("Cannot create logdirectory %s: %s \n detail: %s" % (directory, ex, detail))).with_traceback(tb)
+            raise(exc(f"Cannot create logdirectory {directory}: {ex} \n detail: {detail}")).with_traceback(tb)
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
         handleropts,
-        loggeroption='logtofile_%s' % filename,
+        loggeroption=f'logtofile_{filename}',
         name=name,
         enable=enable,
         handler=filehandler,
@@ -611,7 +611,7 @@ def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):
     handleropts = {'hostname': hostname, 'port': port}
     return _logToSomething(logging.handlers.DatagramHandler,
                            handleropts,
-                           loggeroption='logtoudp_%s:%s' % (hostname, str(port)),
+                           loggeroption=f'logtoudp_{hostname}:{str(port)}',
                            name=name,
                            enable=enable,
                            handler=datagramhandler,
@@ -702,7 +702,7 @@ def _getSysLogFacility(name=None):
         name = 'user'
 
     facility = getattr(logging.handlers.SysLogHandler,
-                       "LOG_%s" % name.upper(), logging.handlers.SysLogHandler.LOG_USER)
+                       f"LOG_{name.upper()}", logging.handlers.SysLogHandler.LOG_USER)
 
     return facility
 
