@@ -889,7 +889,7 @@ class GeneralOption:
     CONFIGFILES_INIT = []  # initial list of defaults, overwritten by go_configfiles options
     CONFIGFILES_IGNORE = []
     CONFIGFILES_MAIN_SECTION = 'MAIN'  # sectionname that contains the non-grouped/non-prefixed options
-    CONFIGFILE_PARSER = configparser.SafeConfigParser
+    CONFIGFILE_PARSER = configparser.ConfigParser
     CONFIGFILE_CASESENSITIVE = True
 
     METAVAR_DEFAULT = True  # generate a default metavar
