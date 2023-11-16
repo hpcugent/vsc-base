@@ -36,12 +36,7 @@ from shlex import quote  # noqa
 from tempfile import TemporaryDirectory  # noqa
 from urllib.parse import urlencode, unquote  # noqa
 from urllib.request import HTTPError, HTTPSHandler, Request, build_opener, urlopen  # noqa
-try:
-    # py 3.10+
-    from collections import Mapping  # noqa
-except ImportError:
-    # < py 3.10
-    from collections.abc import Mapping  # noqa
+from collections.abc import Mapping # noqa
 
 FileExistsErrorExc = FileExistsError  # noqa
 FileNotFoundErrorExc = FileNotFoundError  # noqa

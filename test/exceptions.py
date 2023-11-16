@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2015-2023 Ghent University
 #
@@ -29,7 +28,6 @@ Unit tests for exceptions module.
 
 @author: Kenneth Hoste (Ghent University)
 """
-import logging
 import os
 import re
 import tempfile
@@ -61,10 +59,10 @@ class ExceptionsTest(TestCase):
         self.assertErrorRegex(LoggedException, 'BOOM', raise_loggedexception, 'BOOM')
         logToFile(tmplog, enable=False)
 
-        log_re = re.compile("^%s :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % getRootLoggerName(), re.M)
-        with open(tmplog, 'r') as f:
+        log_re = re.compile(f"^{getRootLoggerName()} :: BOOM( \\(at .*:[0-9]+ in raise_loggedexception\\))?$", re.M)
+        with open(tmplog) as f:
             logtxt = f.read()
-            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+            self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
 
         # test formatting of message
         self.assertErrorRegex(LoggedException, 'BOOMBAF', raise_loggedexception, 'BOOM%s', 'BAF')
@@ -84,7 +82,6 @@ class ExceptionsTest(TestCase):
         setLogFormat("%(name)s :: %(message)s")
 
         logger1 = getLogger('testlogger_one')
-        logger2 = getLogger('testlogger_two')
 
         # if logger is specified, it should be used
         logToFile(tmplog, enable=True)
@@ -92,10 +89,10 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile("^%s.testlogger_one :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog, re.M)
-        with open(tmplog, 'r') as f:
+        log_re = re.compile(rf"^{rootlog}.testlogger_one :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$", re.M)
+        with open(tmplog) as f:
             logtxt = f.read()
-            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+            self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
 
         os.remove(tmplog)
 
@@ -107,7 +104,6 @@ class ExceptionsTest(TestCase):
         # set log format, for each regex searching
         setLogFormat("%(name)s :: %(message)s")
 
-        logger = getLogger('testlogger_local')
 
         # if no logger is specified, logger available in calling context should be used
         logToFile(tmplog, enable=True)
@@ -115,10 +111,10 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile("^%s(.testlogger_local)? :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$" % rootlog)
-        with open(tmplog, 'r') as f:
+        log_re = re.compile(rf"^{rootlog}(.testlogger_local)? :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$")
+        with open(tmplog) as f:
             logtxt = f.read()
-            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+            self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
 
         os.remove(tmplog)
 
@@ -145,10 +141,10 @@ class ExceptionsTest(TestCase):
 
         rootlogname = getRootLoggerName()
 
-        log_re = re.compile("^%s :: BOOM$" % rootlogname, re.M)
-        with open(tmplog, 'r') as f:
+        log_re = re.compile(f"^{rootlogname} :: BOOM$", re.M)
+        with open(tmplog) as f:
             logtxt = f.read()
-            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+            self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
 
         with open(tmplog, 'w') as f:
             f.write('')
@@ -160,9 +156,9 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at (?:.*?/)?vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
-        with open(tmplog, 'r') as f:
+        with open(tmplog) as f:
             logtxt = f.read()
-            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+            self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
 
         with open(tmplog, 'w') as f:
             f.write('')
@@ -174,9 +170,9 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         log_re = re.compile(r"^%s :: BOOM \(at (?:.*?/)?vsc/install/testing.py:[0-9]+ in assertErrorRegex\)$" % rootlogname)
-        with open(tmplog, 'r') as f:
+        with open(tmplog) as f:
             logtxt = f.read()
-            self.assertTrue(log_re.match(logtxt), "%s matches %s" % (log_re.pattern, logtxt))
+            self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
 
         os.remove(tmplog)
 
@@ -192,7 +188,7 @@ class ExceptionsTest(TestCase):
         self.assertTrue(callers_logger in [logger, None])
 
         # also works when logger is 'higher up'
-        class Test(object):
+        class Test:
             """Dummy test class"""
             def foo(self, logger=None):
                 """Dummy test method, returns logger from calling context."""

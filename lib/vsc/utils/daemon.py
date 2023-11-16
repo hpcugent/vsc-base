@@ -42,7 +42,7 @@ class Daemon:
                 # exit first parent
                 sys.exit(0)
         except OSError as err:
-            sys.stderr.write("fork #1 failed: %d (%s)\n" % (err.errno, err.strerror))
+            sys.stderr.write(f"fork #1 failed: {int(err.errno)} ({err.strerror})\n")
             sys.exit(1)
 
         # decouple from parent environment
@@ -57,13 +57,13 @@ class Daemon:
                 # exit from second parent
                 sys.exit(0)
         except OSError as err:
-            sys.stderr.write("fork #2 failed: %d (%s)\n" % (err.errno, err.strerror))
+            sys.stderr.write(f"fork #2 failed: {int(err.errno)} ({err.strerror})\n")
             sys.exit(1)
 
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
-        with open(self.stdin, 'r') as sti:
+        with open(self.stdin) as sti:
             os.dup2(sti.fileno(), sys.stdin.fileno())
         with open(self.stdout, 'a+') as sto:
             os.dup2(sto.fileno(), sys.stdout.fileno())
@@ -74,7 +74,7 @@ class Daemon:
         atexit.register(self.delpid)
         pid = str(os.getpid())
         with open(self.pidfile, 'w+') as pidf:
-            pidf.write("%s\n" % pid)
+            pidf.write(f"{pid}\n")
 
     def delpid(self):
         os.remove(self.pidfile)
@@ -85,9 +85,9 @@ class Daemon:
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            with open(self.pidfile, 'r') as pidf:
+            with open(self.pidfile) as pidf:
                 pid = int(pidf.read().strip())
-        except IOError:
+        except OSError:
             pid = None
 
         if pid:
@@ -105,9 +105,9 @@ class Daemon:
         """
         # Get the pid from the pidfile
         try:
-            with open(self.pidfile, 'r') as pidf:
+            with open(self.pidfile) as pidf:
                 pid = int(pidf.read().strip())
-        except IOError:
+        except OSError:
             pid = None
 
         if not pid:

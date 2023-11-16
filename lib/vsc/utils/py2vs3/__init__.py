@@ -33,7 +33,7 @@ Utility functions to help with keeping the codebase compatible with both Python 
 import pkg_resources
 pkg_resources.declare_namespace(__name__)
 
-
+import logging
 import sys
 
 
@@ -60,6 +60,8 @@ def is_py3():
 
 # all functionality provided by the py2 and py3 modules is made available via the vsc.utils.py2vs3 namespace
 if is_py3():
+    logging.warning(
+        "DEPRECATED: vsc.utils.py2vs3 is deprecated. Please remote it and use the py3 native modules, functions, ...")
     from vsc.utils.py2vs3.py3 import *  # noqa
 else:
     raise ImportError("py2 module unsupported and removed, please stop using it.")

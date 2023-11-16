@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright 2014-2023 Ghent University
 #
@@ -132,5 +131,5 @@ class TestVscMail(TestCase):
             "test@noreply.com",
             "test@noreply.com",
             "subject",
-            u" Καλημέρα κόσμε, コンニチハ",
+            " Καλημέρα κόσμε, コンニチハ",
         )

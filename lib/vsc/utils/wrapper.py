@@ -17,7 +17,7 @@ class WrapperMetaclass(type):
 
         type.__init__(cls, name, bases, dct)
         if cls.__wraps__:
-            ignore = set("__%s__" % n for n in cls.__ignore__.split())
+            ignore = {f"__{n}__" for n in cls.__ignore__.split()}
             for name in dir(cls.__wraps__):
                 if name.startswith("__"):
                     if name not in ignore and name not in dct:
@@ -37,7 +37,7 @@ class Wrapper(metaclass=WrapperMetaclass):
         elif isinstance(obj, self.__wraps__):
             self._obj = obj
         else:
-            raise ValueError("wrapped object must be of %s" % self.__wraps__)
+            raise ValueError(f"wrapped object must be of {self.__wraps__}")
 
     # provide proxy access to regular attributes of wrapped object
     def __getattr__(self, name):

@@ -28,10 +28,8 @@ Python module for handling data and time strings.
 
 @author: Stijn De Weirdt (Ghent University)
 """
-from __future__ import print_function
 
 import datetime
-import os
 from vsc.install.testing import TestCase
 from vsc.utils.dateandtime import FancyMonth, date_parser, datetime_parser
 

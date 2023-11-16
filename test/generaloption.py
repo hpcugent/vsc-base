@@ -120,14 +120,14 @@ class GeneralOptionTest(TestCase):
 
     def setUp(self):
         """Prepare for running test."""
-        super(GeneralOptionTest, self).setUp()
+        super().setUp()
         fancylogger.resetroot()
         self.setup = vsc_setup()
         self.orig_environ = copy.deepcopy(os.environ)
 
     def tearDown(self):
         """Clean up after running test."""
-        super(GeneralOptionTest, self).tearDown()
+        super().tearDown()
         fancylogger.resetroot()
         os.environ = self.orig_environ
 
@@ -179,7 +179,7 @@ class GeneralOptionTest(TestCase):
     def test_help_outputformats(self):
         """Generate (long) rst help message"""
         for output_format in HELP_OUTPUT_FORMATS:
-            topt = TestOption1(go_args=['--help=%s' % output_format],
+            topt = TestOption1(go_args=[f'--help={output_format}'],
                                go_nosystemexit=True,
                                go_columns=100,
                                help_to_string=True,
@@ -191,7 +191,7 @@ class GeneralOptionTest(TestCase):
             elif output_format == 'config':
                 self.assertTrue(helptxt.find("#level-longlevel") > -1, "Configuration option in config help")
             else:
-                self.assertTrue(helptxt.find("--level-longlevel") > -1, "Long documentation expanded in long help (format: %s)" % output_format)
+                self.assertTrue(helptxt.find("--level-longlevel") > -1, f"Long documentation expanded in long help (format: {output_format})")
 
     def test_help_confighelp(self):
         """Generate long help message"""
@@ -203,11 +203,11 @@ class GeneralOptionTest(TestCase):
                            )
 
         for section in ['MAIN', 'base', 'level', 'ext']:
-            self.assertTrue(topt.parser.help_to_file.getvalue().find("[%s]" % section) > -1,
-                            "Looking for [%s] section marker" % section)
+            self.assertTrue(topt.parser.help_to_file.getvalue().find(f"[{section}]") > -1,
+                            f"Looking for [{section}] section marker")
         for opt in ['store-with-dash', 'level-prefix-and-dash', 'ext-strlist', 'level-level', 'debug']:
-            self.assertTrue(topt.parser.help_to_file.getvalue().find("#%s" % opt) > -1,
-                            "Looking for '#%s' option marker" % opt)
+            self.assertTrue(topt.parser.help_to_file.getvalue().find(f"#{opt}") > -1,
+                            f"Looking for '#{opt}' option marker")
 
     def test_dest_with_dash(self):
         """Test the renaming of long opts to dest"""
@@ -218,7 +218,7 @@ class GeneralOptionTest(TestCase):
     def test_quote(self):
         """Test quote/unquote"""
         value = 'value with whitespace'
-        txt = '--option=%s' % value
+        txt = f'--option={value}'
         # this looks strange, but is correct
         self.assertEqual(str(txt), '--option=value with whitespace')
         self.assertEqual(txt , shell_unquote(shell_quote(txt)))
@@ -393,7 +393,7 @@ class GeneralOptionTest(TestCase):
                 ('a,b', ['a', 'b']),
                 ('a,,b', ['a', 'x', 'y', 'b']),
         ]:
-            cmd = '--ext-add-list-flex=%s' % args
+            cmd = f'--ext-add-list-flex={args}'
             topt = TestOption1(go_args=[cmd])
             self.assertEqual(topt.options.ext_add_list_flex, val)
             self.assertEqual(topt.generate_cmd_line(ignore=r'(?<!_flex)$'), [cmd])
@@ -406,7 +406,7 @@ class GeneralOptionTest(TestCase):
         f = open(cfgfile, 'w')
         f.write('[ext]\nadd-default=two')
         f.close()
-        args = ['--configfiles=%s' % cfgfile]
+        args = [f'--configfiles={cfgfile}']
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
         self.assertEqual(topt.options.ext_add_default, 'nowtwo')
 
@@ -424,7 +424,7 @@ class GeneralOptionTest(TestCase):
         f = open(cfgfile, 'w')
         f.write('[ext]\nadd-list-default=two,three')
         f.close()
-        args = ['--configfiles=%s' % cfgfile]
+        args = [f'--configfiles={cfgfile}']
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
         self.assertEqual(topt.options.ext_add_list_default, ['now', 'two', 'three'])
 
@@ -443,7 +443,7 @@ class GeneralOptionTest(TestCase):
         f = open(cfgfile, 'w')
         f.write('[ext]\nadd-list-flex=two,,three')
         f.close()
-        args = ['--configfiles=%s' % cfgfile]
+        args = [f'--configfiles={cfgfile}']
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
         self.assertEqual(topt.options.ext_add_list_flex, ['two', 'x', 'y', 'three'])
 
@@ -463,12 +463,12 @@ class GeneralOptionTest(TestCase):
         f = open(cfgfile, 'w')
         f.write('[ext]\nadd-pathlist-flex=two::three')
         f.close()
-        args = ['--configfiles=%s' % cfgfile]
+        args = [f'--configfiles={cfgfile}']
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
         self.assertEqual(topt.options.ext_add_pathlist_flex, ['two', 'p2', 'p3', 'three'])
 
         os.environ['TEST_EXT_ADD_PATHLIST_FLEX'] = 'four::five'
-        args = ['--configfiles=%s' % cfgfile]
+        args = [f'--configfiles={cfgfile}']
         topt = TestOption1(go_args=args, envvar_prefix='TEST')
         self.assertEqual(topt.options.ext_add_pathlist_flex, ['four', 'p2', 'p3', 'five'])
 
@@ -615,7 +615,7 @@ store=%(FROMINIT)s
         tmp3.flush()  # flush, otherwise empty
 
         initenv = {'DEFAULT': {'FROMINIT' : 'woohoo'}}
-        topt3 = TestOption1(go_configfiles=[tmp3.name, tmp2.name], go_args=['--ignoreconfigfiles=%s' % tmp2.name],
+        topt3 = TestOption1(go_configfiles=[tmp3.name, tmp2.name], go_args=[f'--ignoreconfigfiles={tmp2.name}'],
                             go_configfiles_initenv=initenv)
 
         self.assertEqual(topt3.options.configfiles, _init_configfiles);
@@ -644,7 +644,7 @@ store=%(FROMINIT)s
             lvl_name = logging.getLevelName(lvl_int)
             self.assertEqual(lvl_int,
                              fancylogger.getLevelInt(lvl),
-                             msg="%s (expected %s got %s)" % (msg, lvl, lvl_name))
+                             msg=f"{msg} (expected {lvl} got {lvl_name})")
 
 
         topt = TestOption1(go_args=['--ext-optional=REALVALUE'], go_nosystemexit=True,)
@@ -679,7 +679,7 @@ debug=1
         _loglevel('DEBUG', 'DEBUG set via configfile')
 
         # set via environment; environment wins over cfg file
-        os.environ['%s_INFO' % envvar] = '1';
+        os.environ[f'{envvar}_INFO'] = '1';
         topt = TestOption1(go_configfiles=[tmp1.name],
                            go_args=[],
                            go_nosystemexit=True,
@@ -696,7 +696,7 @@ debug=1
         _loglevel('WARNING', 'commandline wins: debug in configfile, _INFO in env and --quiet gives WARNING')
 
         # remove tmp1
-        del os.environ['%s_INFO' % envvar]
+        del os.environ[f'{envvar}_INFO']
         tmp1.close()
 
     def test_optcomplete(self):
@@ -710,15 +710,15 @@ debug=1
         cmd_list = [script, partial]
 
         os.environ['SHELL'] = "bash"
-        pythonpath = 'PYTHONPATH="%s"' % os.pathsep.join([p for p in sys.path if p.startswith(self.setup.REPO_BASE_DIR)])
-        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
+        pythonpath = f'PYTHONPATH="{os.pathsep.join([p for p in sys.path if p.startswith(self.setup.REPO_BASE_DIR)])}"'
+        ec, out = run_simple(f'{pythonpath} {gen_cmdline(cmd_list, partial, shebang=False)}; test $? == 1')
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0, msg="simple_option.py test script ran success")
 
         print(out)
         reply_match = reg_reply.search(out)
-        self.assertTrue(reply_match, msg="COMPREPLY %s in output %s" % (reg_reply.pattern, out))
+        self.assertTrue(reply_match, msg=f"COMPREPLY {reg_reply.pattern} in output {out}")
 
         compl_opts = reply_match.group(1).split()
         basic_opts = ['--debug', '--enable-debug', '--disable-debug', '-d',
@@ -732,7 +732,7 @@ debug=1
         partial = '--deb'
         cmd_list = [script, partial]
 
-        ec, out = run_simple('%s %s; test $? == 1' % (pythonpath, gen_cmdline(cmd_list, partial, shebang=False)))
+        ec, out = run_simple(f'{pythonpath} {gen_cmdline(cmd_list, partial, shebang=False)}; test $? == 1')
         # tabcompletion ends with exit 1!; test returns this to 0
         # avoids run.log.error message
         self.assertEqual(ec, 0)
@@ -789,12 +789,12 @@ debug=1
         os.environ['GENERALOPTIONTEST_XYZ'] = '1'
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST')
         self.assertEqual(self.count_logcache('error'), 0,
-                         msg='no errors logged, got %s' % self.count_logcache('error'))
+                         msg=f"no errors logged, got {self.count_logcache('error')}")
 
         topt1 = TestOption1(go_args=['--level-level'], envvar_prefix='GENERALOPTIONTEST', error_env_options=True)
         print(self.LOGCACHE['error'])
         self.assertEqual(self.count_logcache('error'), 1,
-                         msg='one error should be logged, got %s' % self.count_logcache('error'))
+                         msg=f"one error should be logged, got {self.count_logcache('error')}")
 
         # using a custom error method
         def raise_error(msg, *args):
@@ -819,7 +819,7 @@ debug=1
             self.mock_stderr(False)
         self.assertTrue(system_exit)
         regex = re.compile(msg)
-        self.assertTrue(regex.search(stderr), "Found '%s' in: %s" % (regex.pattern, stderr))
+        self.assertTrue(regex.search(stderr), f"Found '{regex.pattern}' in: {stderr}")
 
     def test_nosuchoption(self):
         """Test catching of non-existing options."""
@@ -849,8 +849,8 @@ debug=1
                 msg = tpl % value
                 res = tp.is_value_a_commandline_option('--opt', value, index=idx)
                 if idx in fail:
-                    self.assertFalse(res is None, "failure should not return None for value %s" % value)
-                    self.assertTrue(msg in res, msg='%s in %s' % (msg, res))
+                    self.assertFalse(res is None, f"failure should not return None for value {value}")
+                    self.assertTrue(msg in res, msg=f'{msg} in {res}')
                 else:
                     self.assertTrue(res is None)
 

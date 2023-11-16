@@ -215,7 +215,7 @@ class TestMissing(TestCase):
 
         # check different error message for missing known and unknown keys
         self.assertErrorRegex(KeyError, "foo2", tfdkk.__getitem__, 'foo2')
-        self.assertErrorRegex(KeyError, "Unknown key 'foo3' .* instance \(known keys: .*\)", tfdkk.__getitem__, 'foo3')
+        self.assertErrorRegex(KeyError, r"Unknown key 'foo3' .* instance \(known keys: .*\)", tfdkk.__getitem__, 'foo3')
 
         # no (direct) way of adjusting dictionary
         self.assertErrorRegex(AttributeError, ".*has no attribute.*", lambda x: tfdkk.__setitem__(x), ('foo2', 'bar2'))
@@ -291,7 +291,7 @@ class TestMissing(TestCase):
         # |-- T12
         #     |-- T123
         # |-- T13
-        class T1(object):
+        class T1:
             pass
         class T12(T1):
             pass

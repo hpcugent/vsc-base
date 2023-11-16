@@ -42,11 +42,11 @@ def getgrouplist(user, groupnames=True):
     """
     libc = cdll.LoadLibrary(find_library('libc'))
 
-    getgrouplist = libc.getgrouplist
+    ngetgrouplist = libc.getgrouplist
     # max of 50 groups should be enough as first try
     ngroups = 50
-    getgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint * ngroups), POINTER(c_int32)]
-    getgrouplist.restype = c_int32
+    ngetgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint * ngroups), POINTER(c_int32)]
+    ngetgrouplist.restype = c_int32
 
     grouplist = (c_uint * ngroups)()
     ngrouplist = c_int32(ngroups)
@@ -59,15 +59,15 @@ def getgrouplist(user, groupnames=True):
     # .encode() is required in Python 3, since we need to pass a bytestring to getgrouplist
     user_name, user_gid = user.pw_name.encode(), user.pw_gid
 
-    ct = getgrouplist(user_name, user_gid, byref(grouplist), byref(ngrouplist))
+    ct = ngetgrouplist(user_name, user_gid, byref(grouplist), byref(ngrouplist))
     # if a max of 50 groups was not enough, try again with exact given nr
     if ct < 0:
-        getgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint * int(ngrouplist.value)), POINTER(c_int32)]
+        ngetgrouplist.argtypes = [c_char_p, c_uint, POINTER(c_uint * int(ngrouplist.value)), POINTER(c_int32)]
         grouplist = (c_uint * int(ngrouplist.value))()
-        ct = getgrouplist(user_name, user_gid, byref(grouplist), byref(ngrouplist))
+        ct = ngetgrouplist(user_name, user_gid, byref(grouplist), byref(ngrouplist))
 
     if ct < 0:
-        raise Exception("Could not find groups for %s: getgrouplist returned %s" % (user, ct))
+        raise ValueError(f"Could not find groups for {user}: getgrouplist returned {ct}")
 
     grouplist = [grouplist[i] for i in range(ct)]
     if groupnames:
