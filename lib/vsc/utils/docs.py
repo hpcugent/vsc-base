@@ -29,9 +29,6 @@ Functions for generating rst documentation
 @author: Caroline De Brouwer (Ghent University)
 """
 
-INDENT_4SPACES = ' ' * 4
-
-
 class LengthNotEqualException(ValueError):
     pass
 
@@ -48,28 +45,37 @@ def mk_rst_table(titles, columns):
     if title_cnt != col_cnt:
         msg = f"Number of titles/columns should be equal, found {int(title_cnt)} titles and {int(col_cnt)} columns"
         raise LengthNotEqualException(msg)
-    table = []
-    tmpl = []
-    line = []
 
-    # figure out column widths
+    table = []
+    separator_blocks = []
+    title_items = []
+    column_widths = []
+
     for i, title in enumerate(titles):
+        # figure out column widths
         width = max(map(len, columns[i] + [title]))
 
-        # make line template
-        tmpl.append('{{{}:{{c}}<{}}}'.format(i, width))
+        column_widths.append(width)
+        separator_blocks.append(f"{'='*width}")
+        title_items.append(f'{title}'.ljust(width))
 
-    line = [''] * col_cnt
-    line_tmpl = INDENT_4SPACES.join(tmpl)
-    table_line = line_tmpl.format(*line, c='=')
+    separator_line = " ".join(separator_blocks)
 
-    table.append(table_line)
-    table.append(line_tmpl.format(*titles, c=' '))
-    table.append(table_line)
+    # header
+    table.extend([
+        separator_line,
+        " ".join(title_items),
+        separator_line
+    ])
 
+    # rows
     for row in map(list, zip(*columns)):
-        table.append(line_tmpl.format(*row, c=' '))
+        row_items = []
+        for i, item in enumerate(row):
+            row_items.append((item.ljust(column_widths[i])))
+        table.append(" ".join(row_items))
 
-    table.extend([table_line, ''])
+    # footer
+    table.extend([separator_line, ''])
 
     return table

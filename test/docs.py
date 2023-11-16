@@ -56,7 +56,6 @@ class DocsTest(TestCase):
             '=' * len(t),
             '',
         ]
-
         self.assertEqual(table, check)
 
 def suite():
