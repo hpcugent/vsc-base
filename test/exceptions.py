@@ -89,7 +89,7 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile(f"^{rootlog}.testlogger_one :: BOOM( \\(at .*:[0-9]+ in raise_loggedexception\\))?$", re.M)
+        log_re = re.compile(rf"^{rootlog}.testlogger_one :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$", re.M)
         with open(tmplog) as f:
             logtxt = f.read()
             self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
@@ -111,7 +111,7 @@ class ExceptionsTest(TestCase):
         logToFile(tmplog, enable=False)
 
         rootlog = getRootLoggerName()
-        log_re = re.compile(f"^{rootlog}(.testlogger_local)? :: BOOM( \\(at .*:[0-9]+ in raise_loggedexception\\))?$")
+        log_re = re.compile(rf"^{rootlog}(.testlogger_local)? :: BOOM( \(at .*:[0-9]+ in raise_loggedexception\))?$")
         with open(tmplog) as f:
             logtxt = f.read()
             self.assertTrue(log_re.match(logtxt), f"{log_re.pattern} matches {logtxt}")
