@@ -33,12 +33,12 @@ vsc-base base distribution setup.py
 """
 
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, kh, jt, sdw
+from vsc.install.shared_setup import ag, kh, jt, sdw, wdp
 
 PACKAGE = {
-    'version': '3.6.0',
+    'version': '3.6.1',
     'author': [sdw, jt, ag, kh],
-    'maintainer': [sdw, jt, ag, kh],
+    'maintainer': [sdw, jt, ag, kh, wdp],
     'install_requires': [
         'vsc-install >= 0.17.19',
     ],
