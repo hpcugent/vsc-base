@@ -299,14 +299,20 @@ class Run:
                 try:
                     self._cwd_before_startpath = os.getcwd()  # store it some one can return to it
                     os.chdir(self.startpath)
-                except OSError:
-                    self.log.raiseException("_start_in_path: failed to change path from %s to startpath %s" %
-                                        (self._cwd_before_startpath, self.startpath))
+                except OSError as exc:
+                    msg = (
+                        f"_start_in_path: failed to change path from {self._cwd_before_startpath} "
+                        f"to startpath {self.startpath}")
+                    self.log.exception(msg)
+                    raise OSError(msg) from exc
             else:
-                self.log.raiseException("_start_in_path: provided startpath %s exists but is no directory" %
-                                        self.startpath)
+                msg = f"_start_in_path: provided startpath {self.startpath} exists but is no directory"
+                self.log.error(msg)
+                raise ValueError(msg)
         else:
-            self.log.raiseException(f"_start_in_path: startpath {self.startpath} does not exist")
+            msg = f"_start_in_path: startpath {self.startpath} does not exist"
+            self.log.error(msg)
+            raise ValueError(msg)
 
     def _return_to_previous_start_in_path(self):
         """Change to original path before the change to startpath"""
@@ -322,15 +328,22 @@ class Run:
                         self.log.warning(("_return_to_previous_start_in_path: current diretory %s does not match "
                                           "startpath %s"), currentpath, self.startpath)
                     os.chdir(self._cwd_before_startpath)
-                except OSError:
-                    self.log.raiseException(("_return_to_previous_start_in_path: failed to change path from current %s "
-                                             "to previous path %s"), currentpath, self._cwd_before_startpath)
+                except OSError as exc:
+                    msg = (
+                        f"_return_to_previous_start_in_path: failed to change path from current {currentpath} "
+                        f"to previous path {self._cwd_before_startpath}")
+                    self.log.exception(msg)
+                    raise OSError(msg) from exc
             else:
-                self.log.raiseException(("_return_to_previous_start_in_path: provided previous cwd path %s exists "
-                                         "but is no directory") % self._cwd_before_startpath)
+                msg = (
+                    f"_return_to_previous_start_in_path: provided previous cwd path {self._cwd_before_startpath} "
+                    "exists but is not a directory.")
+                self.log.error(msg)
+                raise ValueError(msg)
         else:
-            self.log.raiseException("_return_to_previous_start_in_path: previous cwd path %s does not exist" %
-                                    self._cwd_before_startpath)
+            msg = f"_return_to_previous_start_in_path: previous cwd path {self._cwd_before_startpath} does not exist"
+            self.log.error(msg)
+            raise ValueError(msg)
 
     def _make_popen_named_args(self, others=None):
         """Create the named args for Popen"""
@@ -397,9 +410,12 @@ class Run:
         try:
             self._process_exitcode = self._process.wait()
             self._process_output = self._read_process(-1)  # -1 is read all
-        except Exception:
-            self.log.raiseException("_wait_for_process: problem during wait exitcode %s output %s" %
-                                    (self._process_exitcode, self._process_output))
+        except Exception as exc:
+            msg = (
+                f"_wait_for_process: problem during wait exitcode {self._process_exitcode} "
+                f"output {self._process_output}")
+            self.log.exception(msg)
+            raise OSError(msg) from exc
 
     def _cleanup_process(self):
         """Cleanup any leftovers from the process"""
@@ -702,22 +718,27 @@ class RunFile(Run):
                 if os.path.isfile(self.filename):
                     self.log.warning("_make_popen_named_args: going to overwrite existing file %s", self.filename)
                 elif os.path.isdir(self.filename):
-                    self.log.raiseException(("_make_popen_named_args: writing to filename %s impossible. "
-                                             "Path exists and is a directory.") % self.filename)
+                    msg = (f"_make_popen_named_args: writing to filename {self.filename} impossible. "
+                           "Path exists and is a directory.")
+                    self.log.error(msg)
+                    raise ValueError(msg)
                 else:
-                    self.log.raiseException("_make_popen_named_args: path exists and is not a file or directory %s" %
-                                            self.filename)
+                    msg = f"_make_popen_named_args: path exists and is not a file or directory {self.filename}"
+                    self.log.error(msg)
+                    raise ValueError(msg)
             else:
                 dirname = os.path.dirname(self.filename)
                 if dirname and not os.path.isdir(dirname):
                     try:
                         os.makedirs(dirname)
                     except OSError:
-                        self.log.raiseException(("_make_popen_named_args: dirname %s for file %s does not exists. "
-                                                 "Creating it failed.") % (dirname, self.filename))
+                        msg = (f"_make_popen_named_args: dirname {dirname} for file {self.filename} "
+                               f"does not exists. Creating it failed.")
+                        self.log.exception(msg)
+                        raise OSError(msg) from OSError
 
             try:
-                self.filehandle = open(self.filename, 'w') # pylint: disable=consider-using-with
+                self.filehandle = open(self.filename, 'w', encoding='utf8') # pylint: disable=consider-using-with
             except OSError:
                 self.log.raiseException(f"_make_popen_named_args: failed to open filehandle for file {self.filename}")
 
@@ -829,7 +850,7 @@ class RunQA(RunLoop, RunAsync):
 
         def escape_special(string):
             specials = r'.*+?(){}[]|\$^'
-            return re.sub(r"([%s])" % ''.join([r'\%s' % x for x in specials]), r"\\\1", string)
+            return re.sub(r"([%s])" % ''.join([rf'\{x}' for x in specials]), r"\\\1", string)
 
         SPLIT = '[\\s\n]+'
         REG_SPLIT = re.compile(r"" + SPLIT)
@@ -951,54 +972,36 @@ class RunQA(RunLoop, RunAsync):
 
 class RunNoShellQA(RunNoShell, RunQA):
     """Question/Answer processing"""
-    pass
-
 
 class RunAsyncLoop(RunLoop, RunAsync):
     """Async read in loop"""
-    pass
 
 class RunNoShellAsyncLoop(RunNoShellLoop, RunNoShellAsync):
     """Async read in loop"""
-    pass
-
 
 class RunAsyncLoopLog(RunLoopLog, RunAsync):
     """Async read, log to logger"""
-    pass
-
 
 class RunNoShellAsyncLoopLog(RunNoShellLoopLog, RunNoShellAsync):
     """Async read, log to logger"""
-    pass
 
 class RunQALog(RunLoopLog, RunQA):
     """Async loop QA with LoopLog"""
-    pass
-
 
 class RunNoShellQALog(RunNoShellLoopLog, RunNoShellQA):
     """Async loop QA with LoopLog"""
-    pass
-
 
 class RunQAStdout(RunLoopStdout, RunQA):
     """Async loop QA with LoopLogStdout"""
-    pass
-
 
 class RunNoShellQAStdout(RunNoShellLoopStdout, RunNoShellQA):
     """Async loop QA with LoopLogStdout"""
-    pass
-
 
 class RunAsyncLoopStdout(RunLoopStdout, RunAsync):
     """Async read, flush to stdout"""
-    pass
 
 class RunNoShellAsyncLoopStdout(RunNoShellLoopStdout, RunNoShellAsync):
     """Async read, flush to stdout"""
-    pass
 
 
 # convenient names

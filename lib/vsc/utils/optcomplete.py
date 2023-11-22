@@ -177,7 +177,6 @@ class Completer:
 
 class NoneCompleter(Completer):
     """Generates empty completion list. For compatibility reasons."""
-    pass
 
 
 class ListCompleter(Completer):
