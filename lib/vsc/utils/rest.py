@@ -67,7 +67,7 @@ class Client:
     USER_AGENT = 'vsc-rest-client'
 
     def __init__(self, url, username=None, password=None, token=None, token_type='Token', user_agent=None,
-                 append_slash=False):
+                 append_slash=False, decode=True):
         """
         Create a Client object,
         this client can consume a REST api hosted at host/endpoint
@@ -81,6 +81,7 @@ class Client:
         self.username = username
         self.url = url
         self.append_slash = append_slash
+        self.decode = decode
 
         if not user_agent:
             self.user_agent = self.USER_AGENT
@@ -193,9 +194,12 @@ class Client:
             else:
                 body = conn.read()
                 body = body.decode('utf-8')  # byte encoded response
-                try:
-                    pybody = json.loads(body)
-                except ValueError:
+                if self.decode:
+                    try:
+                        pybody = json.loads(body)
+                    except ValueError:
+                        pybody = body
+                else:
                     pybody = body
             logging.debug('reponse len: %s ', len(pybody))
             return status, pybody
