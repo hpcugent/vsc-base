@@ -200,7 +200,7 @@ class Client:
                     except ValueError:
                         pybody = body
                 else:
-                    pybody=body
+                    pybody = body
             logging.debug('reponse len: %s ', len(pybody))
             return status, pybody
 

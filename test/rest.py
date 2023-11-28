@@ -166,9 +166,6 @@ class RestClientNoDecodeTest(TestCase):
 
         status, body = self.client.users['hpcugent'].get()
         self.assertEqual(status, 200)
-
-        print(rf"BODY: {body}")
-
         self.assertTrue('"login":"hpcugent"' in body)
         self.assertTrue('"id":1515263' in body)
 
