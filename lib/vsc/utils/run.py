@@ -160,12 +160,14 @@ class Run:
             @param use_shell: use the subshell
             @param shell: change the shell
             @param env: environment settings to pass on
+            @param post_exitcode: log errors on non zero exitcode
         """
         self.input = kwargs.pop('input', None)
         self.startpath = kwargs.pop('startpath', None)
         self.use_shell = kwargs.pop('use_shell', self.USE_SHELL)
         self.shell = kwargs.pop('shell', self.SHELL)
         self.env = kwargs.pop('env', None)
+        self.post_exitcode = kwargs.pop('post_exitcode', True)
 
         if kwargs.pop('disable_log', None):
             self.log = DummyFunction()  # No logging
@@ -440,8 +442,11 @@ class Run:
         cmd_ascii = ensure_ascii_string(self.cmd)
         if not self._process_exitcode == 0:
             shell_cmd_ascii = ensure_ascii_string(self._shellcmd)
-            self._post_exitcode_log_failure("_post_exitcode: problem occured with cmd %s: (shellcmd %s) output %s",
-                                            cmd_ascii, shell_cmd_ascii, self._process_output)
+            message = f"_post_exitcode: problem occured with cmd {cmd_acii}: (shellcmd {shell_cmd_ascii}) output {self._process_ouput}"
+            if self.post_exitcode:
+                self._post_exitcode_log_failure(message)
+            else:
+                self.log.debug(message)
         else:
             self.log.debug("_post_exitcode: success cmd %s: output %s", cmd_ascii, self._process_output)
 
@@ -763,10 +768,9 @@ class RunFile(Run):
 class RunNoShellFile(RunNoShell, RunFile):
     """Popen to filehandle"""
 
-
 class RunPty(Run):
     """Pty support (eg for screen sessions)"""
-    def _read_process(self, readsize=None):
+    hdef _read_process(self, readsize=None):
         """This does not work for pty"""
         return ''
 
