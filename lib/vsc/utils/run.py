@@ -770,7 +770,7 @@ class RunNoShellFile(RunNoShell, RunFile):
 
 class RunPty(Run):
     """Pty support (eg for screen sessions)"""
-    hdef _read_process(self, readsize=None):
+    def _read_process(self, readsize=None):
         """This does not work for pty"""
         return ''
 
