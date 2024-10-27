@@ -160,7 +160,7 @@ class Run:
             @param use_shell: use the subshell
             @param shell: change the shell
             @param env: environment settings to pass on
-            @param post_exitcode: log errors on non zero exitcode
+            @param post_exitcode: log errors on non zero exitcode (debug otherwise)
         """
         self.input = kwargs.pop('input', None)
         self.startpath = kwargs.pop('startpath', None)
