@@ -442,7 +442,10 @@ class Run:
         cmd_ascii = ensure_ascii_string(self.cmd)
         if not self._process_exitcode == 0:
             shell_cmd_ascii = ensure_ascii_string(self._shellcmd)
-            message = f"_post_exitcode: problem occured with cmd {cmd_ascii}: (shellcmd {shell_cmd_ascii}) output {self._process_ouput}"
+            message = (
+                f"_post_exitcode: problem occured with cmd {cmd_ascii}:"
+                f"(shellcmd {shell_cmd_ascii}) output {self._process_ouput}"
+            )
             if self.post_exitcode:
                 self._post_exitcode_log_failure(message)
             else:
