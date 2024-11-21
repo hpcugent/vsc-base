@@ -47,11 +47,6 @@ python utilities to be used as libraries
  - Send a plain text message
  - Send an HTML message, with a plain text alternative
 
-## bin
-A collection of python scripts, these are examples of how you could use fancylogger to log to a daemon, but should not be used directly.
-- __logdaemon.py__: A daemon that listens on a port for udp packets and logs them to file, works toghether with fancylogger.
-- __startlogdaemon.py__ : Script that will start the logdaemon for  you and set environment variables for fancylogger.
-
 # Acknowledgements
 vsc-base was created with support of [Ghent University](https://www.ugent.be/en),
 the [Flemish Supercomputer Centre (VSC)](https://vscentrum.be/nl/en),

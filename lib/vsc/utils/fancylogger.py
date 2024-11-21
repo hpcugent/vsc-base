@@ -31,7 +31,6 @@ It adds:
  - custom specifier for always showing the calling function's name
  - rotating file handler
  - a default formatter.
- - logging to an UDP server (vsc.logging.logdaemon.py f.ex.)
  - easily setting loglevel
  - easily add extra specifiers in the log record
  - internal debugging through environment variables
