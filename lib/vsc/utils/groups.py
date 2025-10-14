@@ -40,7 +40,7 @@ def getgrouplist(user, groupnames=True):
     returns a list of groupnames
     if groupames is false, returns a list of groupids (skip groupname lookups)
     """
-    libc = cdll.LoadLibrary(find_library('libc'))
+    libc = cdll.LoadLibrary(find_library('c'))
 
     ngetgrouplist = libc.getgrouplist
     # max of 50 groups should be enough as first try
