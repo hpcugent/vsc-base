@@ -28,10 +28,10 @@ Unit tests for the mail wrapper.
 
 @author: Andy Georges (Ghent University)
 """
-import mock
 import logging
 import os
 
+from unittest import mock
 from vsc.install.testing import TestCase
 
 from email.mime.text import MIMEText
