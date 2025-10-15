@@ -66,7 +66,7 @@ def mk_rst_table(titles, columns):
     table.extend([separator_line, " ".join(title_items), separator_line])
 
     # rows
-    for row in map(list, zip(*columns)):
+    for row in map(list, zip(*columns, strict=False)):
         row_items = []
         for i, item in enumerate(row):
             row_items.append(item.ljust(column_widths[i]))
