@@ -32,7 +32,7 @@ vsc-base base distribution setup.py
 @author: Kenneth Hoste (Ghent University)
 """
 
-import vsc.install.shared_setup as shared_setup
+from vsc.install import shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw, wdp
 
 PACKAGE = {
