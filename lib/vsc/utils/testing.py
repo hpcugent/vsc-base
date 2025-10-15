@@ -29,4 +29,3 @@ Test utilities.
 Deprecated: use 'from vsc.install.testing import TestCase'
 
 """
-

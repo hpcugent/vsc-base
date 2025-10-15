@@ -1,4 +1,4 @@
 import sys
 
 sys.path.append(".")
-from baseconf import *  #noqa: F403
+from baseconf import *  # noqa: F403
