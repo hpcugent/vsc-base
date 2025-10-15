@@ -752,7 +752,7 @@ class ExtOptionParser(OptionParser):
                 if opt.help is not nohelp:
                     values.append([f"``{formatter.option_strings[opt]}``", formatter.expand_default(opt)])
 
-            res.extend(mk_rst_table(titles, map(list, zip(*values, strict=False))))
+            res.extend(mk_rst_table(titles, map(list, zip(*values))))
             res.append("")
 
         return "\n".join(res)
