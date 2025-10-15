@@ -481,17 +481,17 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
         nameparts.append(_getCallingFunctionName())
     fullname = ".".join(nameparts)
 
-    l = logging.getLogger(fullname)
-    l.fancyrecord = fancyrecord
+    logger = logging.getLogger(fullname)
+    logger.fancyrecord = fancyrecord
     if _env_to_boolean("FANCYLOGGER_GETLOGGER_DEBUG"):
         print("FANCYLOGGER_GETLOGGER_DEBUG")
         print(f"name {name} fname {fname} fullname {fullname}")
         print(f"getRootLoggerName: {getRootLoggerName()}")
-        if hasattr(l, "get_parent_info"):
+        if hasattr(logger, "get_parent_info"):
             print("parent_info verbose")
-            print("\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
+            print("\n".join(logger.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
         sys.stdout.flush()
-    return l
+    return logger
 
 
 def _getCallingFunctionName():

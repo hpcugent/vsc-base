@@ -294,7 +294,7 @@ class ExtOption(CompleterOption):
 
             if orig_action in self.EXTOPTION_LOG and action == "store_true":
                 newloglevel = orig_action.split("_")[1][:-3].upper()
-                logstate = ", ".join([f"({n}, {l})" for n, l in getDetailsLogLevels()])
+                logstate = ", ".join([f"({name}, {level})" for name, level in getDetailsLogLevels()])
                 self.log.debug("changing loglevel to %s, current state: %s", newloglevel, logstate)
                 setLogLevel(newloglevel)
                 self.log.debug("changed loglevel to %s, previous state: %s", newloglevel, logstate)
@@ -524,7 +524,7 @@ class ExtOptionParser(OptionParser):
         self.environment_arguments = None
         self.commandline_arguments = None
 
-    def is_value_a_commandline_option(self, opt, value, index=None):
+    def is_value_a_commandline_option(self, opt, value, index=None):  # noqa: PLR0911
         """
         Determine if value is/could be an option passed via the commandline.
         If it is, return the reason why (can be used as message); or return None if it isn't.

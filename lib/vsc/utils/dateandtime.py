@@ -257,7 +257,7 @@ def date_parser(txt):
         try:
             datetuple = [int(x) for x in txt.split("-")]
             res = date(*datetuple)
-        except:
+        except Exception:
             msg = (
                 f"dateparser: failed on '{txt}' date txt expects a YYYY-MM-DD format or "
                 f"reserved words {','.join(reserveddate)}"
