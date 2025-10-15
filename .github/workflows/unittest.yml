@@ -3,7 +3,7 @@
 # DO NOT EDIT MANUALLY
 jobs:
   python_unittests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -12,7 +12,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: install tox
-      run: pip install 'virtualenv<20.22.0' 'tox<4.5.0'
+      run: pip install 'virtualenv' 'tox'
     - name: add mandatory git remote
       run: git remote add hpcugent https://github.com/hpcugent/vsc-base.git
     - name: Run tox
@@ -20,7 +20,6 @@ jobs:
     strategy:
       matrix:
         python:
-        - 3.6
         - 3.9
 name: run python tests
 'on':

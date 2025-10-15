@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2024 Ghent University
+# Copyright 2014-2025 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,10 +28,10 @@ Unit tests for the mail wrapper.
 
 @author: Andy Georges (Ghent University)
 """
-import mock
 import logging
 import os
 
+from unittest import mock
 from vsc.install.testing import TestCase
 
 from email.mime.text import MIMEText
