@@ -34,11 +34,12 @@ python examples/simple_option.py --info -L itjustworks
 
 @author: Stijn De Weirdt (Ghent University)
 """
+
 import logging
 from vsc.utils.generaloption import simple_option
 
 # dict = {longopt:(help_description,type,action,default_value,shortopt),}
-options = {'long1':('1st long option', None, 'store', 'excellent', 'L')}
+options = {"long1": ("1st long option", None, "store", "excellent", "L")}
 
 go = simple_option(options)
 

@@ -35,16 +35,17 @@ import time as _time
 from datetime import tzinfo, timedelta, datetime, date
 
 
-TODAY = 'TODAY'
-TOMORROW = 'TOMORROW'
-YESTERDAY = 'YESTERDAY'
+TODAY = "TODAY"
+TOMORROW = "TOMORROW"
+YESTERDAY = "YESTERDAY"
 
-BEGIN = 'BEGIN'
-END = 'END'
+BEGIN = "BEGIN"
+END = "END"
 
 
 class FancyMonth:
     """Convenience class for month math"""
+
     def __init__(self, tmpdate=None, year=None, month=None, day=None):
         """Initialise the month based on first day of month of tmpdate"""
 
@@ -73,8 +74,10 @@ class FancyMonth:
 
     def set_details(self):
         """Get first/last day of the month of date"""
+
         class MyCalendar:
             """Backport minimal calendar.Calendar code from 2.7 to support itermonthdays in 2.4"""
+
             def __init__(self, firstweekday=0):
                 self.firstweekday = firstweekday  # 0 = Monday, 6 = Sunday
 
@@ -106,7 +109,7 @@ class FancyMonth:
                     else:
                         yield _date.day
 
-        if 'Calendar' in dir(calendar):  # py2.5+
+        if "Calendar" in dir(calendar):  # py2.5+
             c = calendar.Calendar()
         else:
             c = MyCalendar()
@@ -128,8 +131,7 @@ class FancyMonth:
         return start, end
 
     def number(self, otherdate):
-        """Calculate the number of months between this month (date actually) and otherdate
-        """
+        """Calculate the number of months between this month (date actually) and otherdate"""
         if self.include is False:
             msg = "number: include=False not implemented"
             raise NotImplementedError(msg)
@@ -164,8 +166,11 @@ class FancyMonth:
 
     def parser(self, txt):
         """Based on strings, return date: eg BEGINTHIS returns first day of the current month"""
-        supportedtime = (BEGIN, END,)
-        supportedshift = ['THIS', 'LAST', 'NEXT']
+        supportedtime = (
+            BEGIN,
+            END,
+        )
+        supportedshift = ["THIS", "LAST", "NEXT"]
         regtxt = rf"^({'|'.join(supportedtime)})({'|'.join(supportedshift)})?"
 
         reseervedregexp = re.compile(regtxt)
@@ -175,11 +180,11 @@ class FancyMonth:
             raise ValueError(msg)
 
         shifttxt = reg.group(2)
-        if shifttxt is None or shifttxt == 'THIS':
+        if shifttxt is None or shifttxt == "THIS":
             shift = 0
-        elif shifttxt == 'LAST':
+        elif shifttxt == "LAST":
             shift = -1
-        elif shifttxt == 'NEXT':
+        elif shifttxt == "NEXT":
             shift = 1
         else:
             msg = f"parse: unknown shift {shifttxt} (supported: {supportedshift})"
@@ -210,10 +215,14 @@ def date_parser(txt):
     DECEMBER)}
     """
 
-    reserveddate = (TODAY, TOMORROW, YESTERDAY,)
+    reserveddate = (
+        TODAY,
+        TOMORROW,
+        YESTERDAY,
+    )
     testsupportedmonths = [txt.endswith(calendar.month_name[x].upper()) for x in range(1, 13)]
 
-    if txt.endswith('MONTH'):
+    if txt.endswith("MONTH"):
         m = FancyMonth()
         res = m.parser(txt)
     elif any(testsupportedmonths):
@@ -222,11 +231,18 @@ def date_parser(txt):
         m = FancyMonth(month=testsupportedmonths.index(True) + 1, day=1)
         res = m.parser(txt)
     elif txt in reserveddate:
-        if txt in (TODAY, TOMORROW, YESTERDAY,):
+        if txt in (
+            TODAY,
+            TOMORROW,
+            YESTERDAY,
+        ):
             m = FancyMonth()
             res = m.date
 
-            if txt in (TOMORROW, YESTERDAY,):
+            if txt in (
+                TOMORROW,
+                YESTERDAY,
+            ):
                 thisday = datetime(res.year, res.month, res.day)
                 oneday = timedelta(days=1)
                 if txt == TOMORROW:
@@ -235,7 +251,7 @@ def date_parser(txt):
                     thisday -= oneday
                 res = thisday.date()
         else:
-            msg = f'dateparser: unimplemented reservedword {txt}'
+            msg = f"dateparser: unimplemented reservedword {txt}"
             raise NotImplementedError(msg)
     else:
         try:
@@ -244,7 +260,8 @@ def date_parser(txt):
         except:
             msg = (
                 f"dateparser: failed on '{txt}' date txt expects a YYYY-MM-DD format or "
-                f"reserved words {','.join(reserveddate)}")
+                f"reserved words {','.join(reserveddate)}"
+            )
             raise ValueError(msg)
 
     return res
@@ -252,7 +269,7 @@ def date_parser(txt):
 
 def datetime_parser(txt):
     """Parse txt: tmpdate YYYY-MM-DD HH:MM:SS.mmmmmm in datetime.datetime
-        - date part is parsed with date_parser
+    - date part is parsed with date_parser
     """
     tmpts = txt.split(" ")
     tmpdate = date_parser(tmpts[0])
@@ -269,17 +286,17 @@ def datetime_parser(txt):
         elif hour == END:
             res += timedelta(days=1, seconds=-1)
         else:
-            hms = hour.split(':')
+            hms = hour.split(":")
 
             try:
-                sects = hms[2].split('.')
+                sects = hms[2].split(".")
             except (AttributeError, IndexError):
                 sects = [0]
 
             # add hour, minutes, seconds
             res += timedelta(hours=int(hms[0]), minutes=int(hms[1]), seconds=int(sects[0]))
             if len(sects) > 1:
-                res += timedelta(microseconds=int((sects[1] + "0"*6)[:6]))
+                res += timedelta(microseconds=int((sects[1] + "0" * 6)[:6]))
 
     return res
 
@@ -287,6 +304,7 @@ def datetime_parser(txt):
 def timestamp_parser(timestamp):
     """Parse timestamp to datetime"""
     return datetime.fromtimestamp(float(timestamp))
+
 
 #
 # example code from http://docs.python.org/library/datetime.html
@@ -301,14 +319,15 @@ HOUR = timedelta(hours=1)
 class UTC(tzinfo):
     """UTC"""
 
-    def utcoffset(self, dt): # pylint:disable=unused-argument
+    def utcoffset(self, dt):  # pylint:disable=unused-argument
         return ZERO
 
-    def tzname(self, dt): # pylint:disable=unused-argument
+    def tzname(self, dt):  # pylint:disable=unused-argument
         return "UTC"
 
-    def dst(self, dt): # pylint:disable=unused-argument
+    def dst(self, dt):  # pylint:disable=unused-argument
         return ZERO
+
 
 utc = UTC()
 
@@ -320,17 +339,18 @@ class FixedOffset(tzinfo):
     Note that FixedOffset(0, "UTC") is a different way to build a
     UTC tzinfo object.
     """
+
     def __init__(self, offset, name):
         self.__offset = timedelta(minutes=offset)
         self.__name = name
 
-    def utcoffset(self, dt): # pylint:disable=unused-argument
+    def utcoffset(self, dt):  # pylint:disable=unused-argument
         return self.__offset
 
-    def tzname(self, dt): # pylint:disable=unused-argument
+    def tzname(self, dt):  # pylint:disable=unused-argument
         return self.__name
 
-    def dst(self, dt): # pylint:disable=unused-argument
+    def dst(self, dt):  # pylint:disable=unused-argument
         return ZERO
 
 
@@ -364,11 +384,10 @@ class LocalTimezone(tzinfo):
         return _time.tzname[self._isdst(dt)]
 
     def _isdst(self, dt):
-        tt = (dt.year, dt.month, dt.day,
-              dt.hour, dt.minute, dt.second,
-              dt.weekday(), 0, 0)
+        tt = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.weekday(), 0, 0)
         stamp = _time.mktime(tt)
         tt = _time.localtime(stamp)
         return tt.tm_isdst > 0
+
 
 Local = LocalTimezone()

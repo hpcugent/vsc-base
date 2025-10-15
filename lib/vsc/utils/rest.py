@@ -35,6 +35,7 @@ based on https://github.com/jpaugh/agithub/commit/1e2575825b165c1cb7cbd85c22e256
 @author: Jens Timmerman (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+
 import base64
 import copy
 import json
@@ -43,17 +44,18 @@ from functools import partial
 from urllib.parse import urlencode
 from urllib.request import Request, HTTPSHandler, build_opener
 
-CENSORED_MESSAGE = '<actual secret censored>'
+CENSORED_MESSAGE = "<actual secret censored>"
 
 
 class Client:
     """An implementation of a REST client"""
-    DELETE = 'DELETE'
-    GET = 'GET'
-    HEAD = 'HEAD'
-    PATCH = 'PATCH'
-    POST = 'POST'
-    PUT = 'PUT'
+
+    DELETE = "DELETE"
+    GET = "GET"
+    HEAD = "HEAD"
+    PATCH = "PATCH"
+    POST = "POST"
+    PUT = "PUT"
 
     HTTP_METHODS = (
         DELETE,
@@ -64,10 +66,19 @@ class Client:
         PUT,
     )
 
-    USER_AGENT = 'vsc-rest-client'
+    USER_AGENT = "vsc-rest-client"
 
-    def __init__(self, url, username=None, password=None, token=None, token_type='Token', user_agent=None,
-                 append_slash=False, decode=True):
+    def __init__(
+        self,
+        url,
+        username=None,
+        password=None,
+        token=None,
+        token_type="Token",
+        user_agent=None,
+        append_slash=False,
+        decode=True,
+    ):
         """
         Create a Client object,
         this client can consume a REST api hosted at host/endpoint
@@ -100,12 +111,12 @@ class Client:
         if password is not None:
             self.auth_header = self.hash_pass(password, username)
         elif token is not None:
-            self.auth_header = f'{token_type} {token}'
+            self.auth_header = f"{token_type} {token}"
 
     def _append_slash_to(self, url):
         """Append slash to specified URL, if desired and needed."""
-        if self.append_slash and not url.endswith('/'):
-            url += '/'
+        if self.append_slash and not url.endswith("/"):
+            url += "/"
         return url
 
     def get(self, url, headers=None, **params):
@@ -130,7 +141,7 @@ class Client:
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.DELETE, url, body, headers, content_type='application/json')
+        return self.request(self.DELETE, url, body, headers, content_type="application/json")
 
     def post(self, url, body=None, headers=None, **params):
         """
@@ -138,7 +149,7 @@ class Client:
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.POST, url, body, headers, content_type='application/json')
+        return self.request(self.POST, url, body, headers, content_type="application/json")
 
     def put(self, url, body=None, headers=None, **params):
         """
@@ -146,7 +157,7 @@ class Client:
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.PUT, url, body, headers, content_type='application/json')
+        return self.request(self.PUT, url, body, headers, content_type="application/json")
 
     def patch(self, url, body=None, headers=None, **params):
         """
@@ -154,7 +165,7 @@ class Client:
         Parameters is a dictionary that will will be urlencoded
         """
         url = self._append_slash_to(url) + self.urlencode(params)
-        return self.request(self.PATCH, url, body, headers, content_type='application/json')
+        return self.request(self.PATCH, url, body, headers, content_type="application/json")
 
     def request(self, method, url, body, headers, content_type=None):
         """Low-level networking. All HTTP-method methods call this"""
@@ -163,14 +174,14 @@ class Client:
             headers = {}
 
         if content_type is not None:
-            headers['Content-Type'] = content_type
+            headers["Content-Type"] = content_type
 
         if self.auth_header is not None:
-            headers['Authorization'] = self.auth_header
-        headers['User-Agent'] = self.user_agent
+            headers["Authorization"] = self.auth_header
+        headers["User-Agent"] = self.user_agent
 
         # censor contents of 'Authorization' part of header, to avoid leaking tokens or passwords in logs
-        secret_items = ['Authorization', 'X-Auth-Token']
+        secret_items = ["Authorization", "X-Auth-Token"]
         headers_censored = self.censor_request(secret_items, headers)
 
         body_censored = body
@@ -180,12 +191,12 @@ class Client:
                 logging.debug("Request with pre-serialized body, will not censor secrets")
             else:
                 # censor contents of body to avoid leaking passwords
-                secret_items = ['password']
+                secret_items = ["password"]
                 body_censored = self.censor_request(secret_items, body)
                 # serialize body in all cases
                 body = json.dumps(body)
 
-        logging.debug('cli request: %s, %s, %s, %s', method, url, body_censored, headers_censored)
+        logging.debug("cli request: %s, %s, %s, %s", method, url, body_censored, headers_censored)
 
         with self.get_connection(method, url, body, headers) as conn:
             status = conn.code
@@ -193,7 +204,7 @@ class Client:
                 pybody = conn.headers
             else:
                 body = conn.read()
-                body = body.decode('utf-8')  # byte encoded response
+                body = body.decode("utf-8")  # byte encoded response
                 if self.decode:
                     try:
                         pybody = json.loads(body)
@@ -201,7 +212,7 @@ class Client:
                         pybody = body
                 else:
                     pybody = body
-            logging.debug('reponse len: %s ', len(pybody))
+            logging.debug("reponse len: %s ", len(pybody))
             return status, pybody
 
     @staticmethod
@@ -225,38 +236,38 @@ class Client:
 
     def urlencode(self, params):
         if not params:
-            return ''
-        return '?' + urlencode(params)
+            return ""
+        return "?" + urlencode(params)
 
     def hash_pass(self, password, username=None):
         if not username:
             username = self.username
 
-        credentials = f'{username}:{password}'
-        credentials = credentials.encode('utf-8')
+        credentials = f"{username}:{password}"
+        credentials = credentials.encode("utf-8")
         encoded_credentials = base64.b64encode(credentials).strip()
-        encoded_credentials = str(encoded_credentials, 'utf-8')
+        encoded_credentials = str(encoded_credentials, "utf-8")
 
-        return 'Basic ' + encoded_credentials
+        return "Basic " + encoded_credentials
 
     def get_connection(self, method, url, body, headers):
-        if not self.url.endswith('/') and not url.startswith('/'):
-            sep = '/'
+        if not self.url.endswith("/") and not url.startswith("/"):
+            sep = "/"
         else:
-            sep = ''
+            sep = ""
         if body is not None:
             body = body.encode()
         request = Request(self.url + sep + url, data=body)
         for header, value in headers.items():
             request.add_header(header, value)
         request.get_method = lambda: method
-        logging.debug('opening request:  %s%s%s', self.url, sep, url)
+        logging.debug("opening request:  %s%s%s", self.url, sep, url)
         connection = self.opener.open(request)
         return connection
 
 
 class RequestBuilder:
-    '''RequestBuilder(client).path.to.resource.method(...)
+    """RequestBuilder(client).path.to.resource.method(...)
         stands for
     RequestBuilder(client).client.method('path/to/resource, ...)
 
@@ -266,11 +277,12 @@ class RequestBuilder:
     bad status from github.com. (Or maybe an httplib.error...)
 
     To understand the method(...) calls, check out github.client.Client.
-    '''
+    """
+
     def __init__(self, client):
         """Constructor"""
         self.client = client
-        self.url = ''
+        self.url = ""
 
     def __getattr__(self, key):
         """
@@ -287,34 +299,36 @@ class RequestBuilder:
             mfun = getattr(self.client, key)
             fun = partial(mfun, url=self.url)
             return fun
-        self.url += '/' + key
+        self.url += "/" + key
         return self
 
     __getitem__ = __getattr__
 
     def __str__(self):
-        '''If you ever stringify this, you've (probably) messed up
+        """If you ever stringify this, you've (probably) messed up
         somewhere. So let's give a semi-helpful message.
-        '''
+        """
         return f"I don't know about {self.url}, You probably want to do a get or other http request, use .get()"
 
     def __repr__(self):
-        return f'{self.__class__}: {self.url}'
+        return f"{self.__class__}: {self.url}"
 
 
 class RestClient:
     """
     A client with a request builder, so you can easily create rest requests
     e.g. to create a github Rest API client just do
-    >>> g = RestClient('https://api.github.com', username='user', password='pass')
-    >>> g = RestClient('https://api.github.com', token='oauth token')
-    >>> status, data = g.issues.get(filter='subscribed')
+    >>> g = RestClient("https://api.github.com", username="user", password="pass")
+    >>> g = RestClient("https://api.github.com", token="oauth token")
+    >>> status, data = g.issues.get(filter="subscribed")
     >>> data
-    ... [ list_, of, stuff ]
+    ... [list_, of, stuff]
     >>> status, data = g.repos.jpaugh64.repla.issues[1].get()
     >>> data
-    ... { 'dict': 'my issue data', }
-    >>> name, repo = 'jpaugh64', 'repla'
+    ... {
+    ...     "dict": "my issue data",
+    ... }
+    >>> name, repo = "jpaugh64", "repla"
     >>> status, data = g.repos[name][repo].issues[1].get()
     ... same thing
     >>> status, data = g.funny.I.donna.remember.that.one.get()
@@ -327,6 +341,7 @@ class RestClient:
     try to validate the url you feed it. On the other hand, it
     automatically supports the full API--so why should you care?
     """
+
     def __init__(self, *args, **kwargs):
         """We create a client with the given arguments"""
         self.client = Client(*args, **kwargs)
