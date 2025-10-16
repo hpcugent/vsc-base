@@ -1,9 +1,10 @@
 line-length = 120
 indent-width = 4
 preview = true
+target-version = "py36"
 exclude = ['.bzr', '.direnv', '.eggs', '.git', '.git-rewrite', '.hg', '.ipynb_checkpoints', '.mypy_cache', '.nox', '.pants.d', '.pyenv', '.pytest_cache', '.pytype', '.ruff_cache', '.svn', '.tox', '.venv', '.vscode', '__pypackages__', '_build', 'buck-out', 'build', 'dist', 'node_modules', 'site-packages', 'venv', 'test/*']
 [lint]
-extend-select = ['E101', 'E501', 'E713', 'E4', 'E7', 'E9', 'F', 'F811', 'W291', 'PLR0911', 'PLW0602', 'PLW0604', 'PLW0108', 'PLW0127', 'PLW0129', 'PLW1501', 'PLR0124', 'PLR0202', 'PLR0203', 'PLR0402', 'PLR0913', 'B028', 'B905', 'C402', 'C403', 'UP032', 'UP037', 'UP025', 'UP036', 'UP034', 'UP033', 'UP031', 'UP004']
+extend-select = ['E101', 'E501', 'E713', 'E4', 'E7', 'E9', 'F', 'F811', 'W291', 'PLR0911', 'PLW0602', 'PLW0604', 'PLW0108', 'PLW0127', 'PLW0129', 'PLW1501', 'PLR0124', 'PLR0202', 'PLR0203', 'PLR0402', 'PLR0913', 'B028', 'B905', 'C402', 'C403', 'UP032', 'UP037', 'UP025', 'UP026', 'UP036', 'UP034', 'UP033', 'UP031', 'UP004']
 ignore = ['E731']
 pylint.max-args = 11
 [format]
