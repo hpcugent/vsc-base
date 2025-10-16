@@ -29,6 +29,7 @@ Simple QA script
 
 @author: Stijn De Weirdt (Ghent University)
 """
+
 import os
 
 from vsc.utils.run import run_qa, run_qalog, run_qastdout, run_async_to_stdout
@@ -36,57 +37,58 @@ from vsc.utils.generaloption import simple_option
 
 go = simple_option(None)
 
-SCRIPT_DIR = os.path.join(os.path.dirname(__file__), '..', 'test', 'runtests')
-SCRIPT_QA = os.path.join(SCRIPT_DIR, 'qa.py')
+SCRIPT_DIR = os.path.join(os.path.dirname(__file__), "..", "test", "runtests")
+SCRIPT_QA = os.path.join(SCRIPT_DIR, "qa.py")
 
 
 def test_qa():
     qa_dict = {
-               'Simple question:': 'simple answer',
-               }
-    ec, output = run_qa([SCRIPT_QA, 'simple'], qa=qa_dict)
+        "Simple question:": "simple answer",
+    }
+    ec, output = run_qa([SCRIPT_QA, "simple"], qa=qa_dict)
     return ec, output
 
 
 def test_qalog():
     qa_dict = {
-               'Simple question:': 'simple answer',
-               }
-    ec, output = run_qalog([SCRIPT_QA, 'simple'], qa=qa_dict)
+        "Simple question:": "simple answer",
+    }
+    ec, output = run_qalog([SCRIPT_QA, "simple"], qa=qa_dict)
     return ec, output
 
 
 def test_qastdout():
-    run_async_to_stdout([SCRIPT_QA, 'simple'])
+    run_async_to_stdout([SCRIPT_QA, "simple"])
     qa_dict = {
-               'Simple question:': 'simple answer',
-               }
-    ec, output = run_qastdout([SCRIPT_QA, 'simple'], qa=qa_dict)
+        "Simple question:": "simple answer",
+    }
+    ec, output = run_qastdout([SCRIPT_QA, "simple"], qa=qa_dict)
     return ec, output
 
 
 def test_std_regex():
     qa_dict = {
-               r'\s(?P<time>\d+(?:\.\d+)?)\..*?What time is it\?': '%(time)s',
-               }
-    ec, output = run_qastdout([SCRIPT_QA, 'whattime'], qa_reg=qa_dict)
+        r"\s(?P<time>\d+(?:\.\d+)?)\..*?What time is it\?": "%(time)s",
+    }
+    ec, output = run_qastdout([SCRIPT_QA, "whattime"], qa_reg=qa_dict)
     return ec, output
 
 
 def test_qa_noqa():
     qa_dict = {
-               'Now is the time.': 'OK',
-               }
-    no_qa = ['Wait for it \(\d+ seconds\)']
-    ec, output = run_qastdout([SCRIPT_QA, 'waitforit'], qa=qa_dict, no_qa=no_qa)
+        "Now is the time.": "OK",
+    }
+    no_qa = ["Wait for it \(\d+ seconds\)"]
+    ec, output = run_qastdout([SCRIPT_QA, "waitforit"], qa=qa_dict, no_qa=no_qa)
     return ec, output
 
 
 def test_qanoquestion():
-    ec, output = run_qalog([SCRIPT_QA, 'noquestion'])
+    ec, output = run_qalog([SCRIPT_QA, "noquestion"])
     return ec, output
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     test_qanoquestion()
     test_qastdout()
     test_qa()

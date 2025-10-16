@@ -31,6 +31,7 @@ Wrapper around the standard Python mail library.
 
 @author: Andy Georges (Ghent University)
 """
+
 import logging
 import re
 import smtplib
@@ -39,6 +40,7 @@ from configparser import ConfigParser
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+
 
 class VscMailError(Exception):
     """Raised if the sending of an email fails for some reason."""
@@ -70,12 +72,13 @@ class VscMail:
 
     def __init__(
         self,
-        mail_host='',
+        mail_host="",
         mail_port=587,
         smtp_auth_user=None,
         smtp_auth_password=None,
         smtp_use_starttls=False,
-        mail_config=None):
+        mail_config=None,
+    ):
         """
         - If there is a config file provided, its values take precedence over the arguments passed to __init__
         - If the mail_host is of the format host:port, that port takes precedence over mail_port
@@ -99,7 +102,6 @@ class VscMail:
         self.smtp_auth_user = mail_options.get("MAIN", "smtp_auth_user", fallback=smtp_auth_user)
         self.smtp_auth_password = mail_options.get("MAIN", "smtp_auth_password", fallback=smtp_auth_password)
         self.smtp_use_starttls = mail_options.get("MAIN", "smtp_use_starttls", fallback=smtp_use_starttls)
-
 
     def _connect(self):
         """
@@ -153,31 +155,17 @@ class VscMail:
         except smtplib.SMTPConnectError as err:
             logging.exception("Cannot connect to the SMTP host %s", self.mail_host)
             raise VscMailError(
-                mail_host=self.mail_host,
-                mail_to=mail_to,
-                mail_from=mail_from,
-                mail_subject=mail_subject,
-                err=err)
+                mail_host=self.mail_host, mail_to=mail_to, mail_from=mail_from, mail_subject=mail_subject, err=err
+            )
         except Exception as err:
             logging.exception("Some unknown exception occurred in VscMail.sendTextMail. Raising a VscMailError.")
             raise VscMailError(
-                mail_host=self.mail_host,
-                mail_to=mail_to,
-                mail_from=mail_from,
-                mail_subject=mail_subject,
-                err=err)
+                mail_host=self.mail_host, mail_to=mail_to, mail_from=mail_from, mail_subject=mail_subject, err=err
+            )
         else:
             s.quit()
 
-    def sendTextMail(
-        self,
-        mail_to,
-        mail_from,
-        reply_to,
-        mail_subject,
-        message,
-        cc=None,
-        bcc=None):
+    def sendTextMail(self, mail_to, mail_from, reply_to, mail_subject, message, cc=None, bcc=None):
         """Send out the given message by mail to the given recipient(s).
 
         @type mail_to: list
@@ -204,14 +192,14 @@ class VscMail:
 
         logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
 
-        msg = MIMEText(message, 'plain', 'utf-8')
-        msg['Subject'] = mail_subject
-        msg['From'] = mail_from
-        msg['To'] = ','.join(mail_to)
+        msg = MIMEText(message, "plain", "utf-8")
+        msg["Subject"] = mail_subject
+        msg["From"] = mail_from
+        msg["To"] = ",".join(mail_to)
 
         if cc:
             logging.info("Sending mail [%s] in CC to %s.", mail_subject, cc)
-            msg['Cc'] = cc
+            msg["Cc"] = cc
             mail_to.extend(cc)
 
         if bcc:
@@ -221,7 +209,7 @@ class VscMail:
 
         if reply_to is None:
             reply_to = mail_from
-        msg['Reply-to'] = reply_to
+        msg["Reply-to"] = reply_to
 
         self._send(mail_from, mail_to, mail_subject, msg)
 
@@ -238,8 +226,8 @@ class VscMail:
         """
 
         for im in images:
-            re_src = re.compile(f"src=\"{im}\"")
-            (html, count) = re_src.subn(f"src=\"cid:{im}\"", html)
+            re_src = re.compile(f'src="{im}"')
+            (html, count) = re_src.subn(f'src="cid:{im}"', html)
             if count == 0:
                 logging.error("Could not find image %s in provided HTML.", im)
                 raise VscMailError("Could not find image")
@@ -257,7 +245,8 @@ class VscMail:
         images=None,
         css=None,
         cc=None,
-        bcc=None):
+        bcc=None,
+    ):
         """
         Send an HTML email message, encoded in a MIME/multipart message.
 
@@ -293,14 +282,14 @@ class VscMail:
         logging.info("Sending mail [%s] to %s.", mail_subject, mail_to)
 
         # Create message container - the correct MIME type is multipart/alternative.
-        msg_root = MIMEMultipart('alternative')
-        msg_root['Subject'] = mail_subject
-        msg_root['From'] = mail_from
-        msg_root['To'] = ','.join(mail_to)
+        msg_root = MIMEMultipart("alternative")
+        msg_root["Subject"] = mail_subject
+        msg_root["From"] = mail_from
+        msg_root["To"] = ",".join(mail_to)
 
         if cc:
             logging.info("Sending mail [%s] in CC to %s.", mail_subject, cc)
-            msg_root['Cc'] = cc
+            msg_root["Cc"] = cc
             mail_to.extend(cc)
 
         if bcc:
@@ -310,36 +299,38 @@ class VscMail:
 
         if reply_to is None:
             reply_to = mail_from
-        msg_root['Reply-to'] = reply_to
+        msg_root["Reply-to"] = reply_to
 
-        msg_root.preamble = 'This is a multi-part message in MIME format. If your email client does not support this' \
-                            '(correctly), the first part is the plain text version.'
+        msg_root.preamble = (
+            "This is a multi-part message in MIME format. If your email client does not support this"
+            "(correctly), the first part is the plain text version."
+        )
 
         # Create the body of the message (a plain-text and an HTML version).
         if images is not None:
             html_message = self._replace_images_cid(html_message, images)
 
         # Record the MIME types of both parts - text/plain and text/html_message.
-        msg_plain = MIMEText(text_alternative, 'plain', 'utf-8')
-        msg_html = MIMEText(html_message, 'html_message', 'utf-8')
+        msg_plain = MIMEText(text_alternative, "plain", "utf-8")
+        msg_html = MIMEText(html_message, "html_message", "utf-8")
 
         # Attach parts into message container.
         # According to RFC 2046, the last part of a multipart message, in this case
         # the HTML message, is best and preferred.
         msg_root.attach(msg_plain)
-        msg_alt = MIMEMultipart('related')
+        msg_alt = MIMEMultipart("related")
         msg_alt.attach(msg_html)
 
         if css is not None:
-            msg_html_css = MIMEText(css, 'css', 'utf-8')
-            msg_html_css.add_header('Content-ID', '<newsletter.css>')
+            msg_html_css = MIMEText(css, "css", "utf-8")
+            msg_html_css.add_header("Content-ID", "<newsletter.css>")
             msg_alt.attach(msg_html_css)
 
         if images is not None:
             for im in images:
                 with open(im) as image_fp:
-                    msg_image = MIMEImage(image_fp.read(), 'jpeg')  # FIXME: for now, we assume jpegs
-                msg_image.add_header('Content-ID', f"<{im}>")
+                    msg_image = MIMEImage(image_fp.read(), "jpeg")  # FIXME: for now, we assume jpegs
+                msg_image.add_header("Content-ID", f"<{im}>")
                 msg_alt.attach(msg_image)
 
         msg_root.attach(msg_alt)

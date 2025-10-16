@@ -29,6 +29,7 @@ Functions for generating rst documentation
 @author: Caroline De Brouwer (Ghent University)
 """
 
+
 class LengthNotEqualException(ValueError):
     pass
 
@@ -56,26 +57,22 @@ def mk_rst_table(titles, columns):
         width = max(map(len, columns[i] + [title]))
 
         column_widths.append(width)
-        separator_blocks.append(f"{'='*width}")
-        title_items.append(f'{title}'.ljust(width))
+        separator_blocks.append(f"{'=' * width}")
+        title_items.append(f"{title}".ljust(width))
 
     separator_line = " ".join(separator_blocks)
 
     # header
-    table.extend([
-        separator_line,
-        " ".join(title_items),
-        separator_line
-    ])
+    table.extend([separator_line, " ".join(title_items), separator_line])
 
     # rows
     for row in map(list, zip(*columns)):
         row_items = []
         for i, item in enumerate(row):
-            row_items.append((item.ljust(column_widths[i])))
+            row_items.append(item.ljust(column_widths[i]))
         table.append(" ".join(row_items))
 
     # footer
-    table.extend([separator_line, ''])
+    table.extend([separator_line, ""])
 
     return table

@@ -10,6 +10,7 @@ Module to make python scripts run in background.
 
 @author: Sander Marechal
 """
+
 import atexit
 import logging
 import os
@@ -24,7 +25,8 @@ class Daemon:
 
     Usage: subclass the Daemon class and override the run() method
     """
-    def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+
+    def __init__(self, pidfile, stdin="/dev/null", stdout="/dev/null", stderr="/dev/null"):
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
@@ -65,15 +67,15 @@ class Daemon:
         sys.stderr.flush()
         with open(self.stdin) as sti:
             os.dup2(sti.fileno(), sys.stdin.fileno())
-        with open(self.stdout, 'a+') as sto:
+        with open(self.stdout, "a+") as sto:
             os.dup2(sto.fileno(), sys.stdout.fileno())
-        with open(self.stderr, 'ba+', 0) as ste:
+        with open(self.stderr, "ba+", 0) as ste:
             os.dup2(ste.fileno(), sys.stderr.fileno())
 
         # write pidfile
         atexit.register(self.delpid)
         pid = str(os.getpid())
-        with open(self.pidfile, 'w+') as pidf:
+        with open(self.pidfile, "w+") as pidf:
             pidf.write(f"{pid}\n")
 
     def delpid(self):
@@ -113,7 +115,7 @@ class Daemon:
         if not pid:
             message = "pidfile %s does not exist. Daemon not running?\n"
             sys.stderr.write(message % self.pidfile)
-            return # not an error in a restart
+            return  # not an error in a restart
 
         # Try killing the daemon process
         try:

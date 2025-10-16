@@ -1,5 +1,5 @@
 ### External compatible license
-#******************************************************************************\
+# ******************************************************************************\
 # * Copyright (c) 2003-2004, Martin Blais
 # * All rights reserved.
 # *
@@ -29,7 +29,7 @@
 # * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#******************************************************************************\
+# ******************************************************************************\
 
 """Automatic completion for optparse module.
 
@@ -108,7 +108,7 @@ from vsc.utils.missing import shell_quote
 
 debugfn = None  # for debugging only
 
-OPTCOMPLETE_ENVIRONMENT = 'OPTPARSE_AUTO_COMPLETE'
+OPTCOMPLETE_ENVIRONMENT = "OPTPARSE_AUTO_COMPLETE"
 
 BASH = "bash"
 
@@ -119,12 +119,14 @@ SHELL = DEFAULT_SHELL
 OPTION_CLASS = Option
 OPTIONPARSER_CLASS = OptionParser
 
+
 def set_optionparser(option_class, optionparser_class):
     """Set the default Option and OptionParser class"""
     global OPTION_CLASS
     global OPTIONPARSER_CLASS
     OPTION_CLASS = option_class
     OPTIONPARSER_CLASS = optionparser_class
+
 
 def get_shell():
     """Determine the shell, update class constant SHELL and return the shell
@@ -147,6 +149,7 @@ class Completer:
     """Base class to derive all other completer classes from.
     It generates an empty completion list
     """
+
     CALL_ARGS = None  # list of named args that must be passed
     CALL_ARGS_OPTIONAL = None  # list of named args that can be passed
 
@@ -170,7 +173,7 @@ class Completer:
 
         return self._call(**kwargs)
 
-    def _call(self, **kwargs): # pylint: disable=unused-argument
+    def _call(self, **kwargs):  # pylint: disable=unused-argument
         """Return empty list"""
         return []
 
@@ -181,6 +184,7 @@ class NoneCompleter(Completer):
 
 class ListCompleter(Completer):
     """Completes by filtering using a fixed list of strings."""
+
     def __init__(self, stringlist):
         self.olist = stringlist
 
@@ -191,16 +195,18 @@ class ListCompleter(Completer):
 
 class AllCompleter(Completer):
     """Completes by listing all possible files in current directory."""
-    CALL_ARGS_OPTIONAL = ['pwd']
+
+    CALL_ARGS_OPTIONAL = ["pwd"]
 
     def _call(self, **kwargs):
-        return os.listdir(kwargs.get('pwd', '.'))
+        return os.listdir(kwargs.get("pwd", "."))
 
 
 class FileCompleter(Completer):
     """Completes by listing all possible files in current directory.
-       If endings are specified, then limit the files to those."""
-    CALL_ARGS_OPTIONAL = ['prefix']
+    If endings are specified, then limit the files to those."""
+
+    CALL_ARGS_OPTIONAL = ["prefix"]
 
     def __init__(self, endings=None):
         if isinstance(endings, str):
@@ -211,16 +217,16 @@ class FileCompleter(Completer):
 
     def _call(self, **kwargs):
         # TODO : what does prefix do in bash?
-        prefix = kwargs.get('prefix', '')
+        prefix = kwargs.get("prefix", "")
 
         if SHELL == BASH:
-            res = ['_filedir']
+            res = ["_filedir"]
             if self.endings:
                 res.append(f"'@({'|'.join(self.endings)})'")
             return " ".join(res)
         else:
             res = []
-            for path in glob.glob(prefix + '*'):
+            for path in glob.glob(prefix + "*"):
                 res.append(path)
                 if os.path.isdir(path):
                     # add trailing slashes to directories
@@ -231,33 +237,35 @@ class FileCompleter(Completer):
 
             if len(res) == 1 and os.path.isdir(res[0]):
                 # return two options so that it completes the / but doesn't add a space
-                return [res[0] + 'a', res[0] + 'b']
+                return [res[0] + "a", res[0] + "b"]
             else:
                 return res
 
 
 class DirCompleter(Completer):
     """Completes by listing subdirectories only."""
-    CALL_ARGS_OPTIONAL = ['prefix']
+
+    CALL_ARGS_OPTIONAL = ["prefix"]
 
     def _call(self, **kwargs):
         # TODO : what does prefix do in bash?
-        prefix = kwargs.get('prefix', '')
+        prefix = kwargs.get("prefix", "")
 
         if SHELL == BASH:
             return "_filedir -d"
         else:
-            res = [path + "/" for path in glob.glob(prefix + '*') if os.path.isdir(path)]
+            res = [path + "/" for path in glob.glob(prefix + "*") if os.path.isdir(path)]
 
             if len(res) == 1:
                 # return two options so that it completes the / but doesn't add a space
-                return [res[0] + 'a', res[0] + 'b']
+                return [res[0] + "a", res[0] + "b"]
             else:
                 return res
 
 
 class KnownHostsCompleter(Completer):
     """Completes a list of known hostnames"""
+
     def _call(self, **kwargs):
         if SHELL == BASH:
             return "_known_hosts"
@@ -268,7 +276,8 @@ class KnownHostsCompleter(Completer):
 
 class RegexCompleter(Completer):
     """Completes by filtering all possible files with the given list of regexps."""
-    CALL_ARGS_OPTIONAL = ['prefix', 'pwd']
+
+    CALL_ARGS_OPTIONAL = ["prefix", "pwd"]
 
     def __init__(self, regexlist, always_dirs=True):
         self.always_dirs = always_dirs
@@ -282,11 +291,11 @@ class RegexCompleter(Completer):
             self.regexlist.append(regex)
 
     def _call(self, **kwargs):
-        dn = os.path.dirname(kwargs.get('prefix', ''))
+        dn = os.path.dirname(kwargs.get("prefix", ""))
         if dn:
             pwd = dn
         else:
-            pwd = kwargs.get('pwd', '.')
+            pwd = kwargs.get("pwd", ".")
 
         ofiles = []
         for fn in os.listdir(pwd):
@@ -305,8 +314,9 @@ class RegexCompleter(Completer):
 
 class CompleterOption(OPTION_CLASS):
     """optparse Option class with completer attribute"""
+
     def __init__(self, *args, **kwargs):
-        completer = kwargs.pop('completer', None)
+        completer = kwargs.pop("completer", None)
         OPTION_CLASS.__init__(self, *args, **kwargs)
         if completer is not None:
             self.completer = completer
@@ -316,14 +326,14 @@ def extract_word(line, point):
     """Return a prefix and suffix of the enclosing word.  The character under
     the cursor is the first character of the suffix."""
 
-    if SHELL == BASH and 'IFS' in os.environ:
-        ifs = [r.group(0) for r in re.finditer(r'.', os.environ['IFS'])]
-        wsre = re.compile('|'.join(ifs))
+    if SHELL == BASH and "IFS" in os.environ:
+        ifs = [r.group(0) for r in re.finditer(r".", os.environ["IFS"])]
+        wsre = re.compile("|".join(ifs))
     else:
-        wsre = re.compile(r'\s')
+        wsre = re.compile(r"\s")
 
     if point < 0 or point > len(line):
-        return '', ''
+        return "", ""
 
     preii = point - 1
     while preii >= 0:
@@ -338,7 +348,7 @@ def extract_word(line, point):
             break
         sufii += 1
 
-    return line[preii : point], line[point : sufii]
+    return line[preii:point], line[point:sufii]
 
 
 def error_override(self, msg):
@@ -354,15 +364,17 @@ def guess_first_nonoption(gparser, subcmds_map):
     the subcommand."""
 
     gparser = copy.deepcopy(gparser)
-    def print_usage_nousage(self, *args, **kwargs): # pylint: disable=unused-argument
+
+    def print_usage_nousage(self, *args, **kwargs):  # pylint: disable=unused-argument
         pass
+
     gparser.print_usage = print_usage_nousage
 
     prev_interspersed = gparser.allow_interspersed_args  # save state to restore
     gparser.disable_interspersed_args()
 
     # interpret cwords like a shell would interpret it
-    cwords = shlex.split(os.environ.get('COMP_WORDS', '').strip('() '))
+    cwords = shlex.split(os.environ.get("COMP_WORDS", "").strip("() "))
 
     # save original error_func so we can put it back after the hack
     error_func = gparser.error
@@ -445,13 +457,13 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
     # zsh's bashcompinit does not pass COMP_WORDS, replace with
     # COMP_LINE for now...
-    if 'COMP_WORDS' not in os.environ:
-        os.environ['COMP_WORDS'] = os.environ['COMP_LINE']
+    if "COMP_WORDS" not in os.environ:
+        os.environ["COMP_WORDS"] = os.environ["COMP_LINE"]
 
-    cwords = shlex.split(os.environ.get('COMP_WORDS', '').strip('() '))
-    cline = os.environ.get('COMP_LINE', '')
-    cpoint = int(os.environ.get('COMP_POINT', 0))
-    cword = int(os.environ.get('COMP_CWORD', 0))
+    cwords = shlex.split(os.environ.get("COMP_WORDS", "").strip("() "))
+    cline = os.environ.get("COMP_LINE", "")
+    cpoint = int(os.environ.get("COMP_POINT", 0))
+    cword = int(os.environ.get("COMP_CWORD", 0))
 
     # Extract word enclosed word.
     prefix, suffix = extract_word(cline, cpoint)
@@ -470,7 +482,7 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
                 else:
                     completer = subcmd_completer
                 autocomplete(parser, completer)
-            elif  hasattr(value, 'autocomplete'):
+            elif hasattr(value, "autocomplete"):
                 # Call completion method on object. This should call
                 # autocomplete() recursively with appropriate arguments.
                 value.autocomplete(subcmd_completer)
@@ -491,27 +503,27 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
         # has an equals sign in it.
         prev = None
         if cword < len(cwords):
-            mo = re.search('(--.*?)=(.*)', cwords[cword])
+            mo = re.search("(--.*?)=(.*)", cwords[cword])
             if mo:
                 prev, prefix = mo.groups()
         if not prev:
             prev = cwords[cword - 1]
 
-        if prev and prev.startswith('-'):
+        if prev and prev.startswith("-"):
             option = parser.get_option(prev)
             if option:
                 if option.nargs > 0:
                     optarg = True
-                    if hasattr(option, 'completer'):
+                    if hasattr(option, "completer"):
                         completer = option.completer
                     elif option.choices:
                         completer = ListCompleter(option.choices)
-                    elif option.type in ('string',):
+                    elif option.type in ("string",):
                         completer = opt_completer
                     else:
                         completer = NoneCompleter()
                 # Warn user at least, it could help him figure out the problem.
-                elif hasattr(option, 'completer'):
+                elif hasattr(option, "completer"):
                     msg = f"Error: optparse option with a completer does not take arguments: {option}"
                     raise SystemExit(msg)
     except KeyError:
@@ -520,20 +532,20 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     completions = []
 
     # Options completion.
-    if not optarg and (not prefix or prefix.startswith('-')):
+    if not optarg and (not prefix or prefix.startswith("-")):
         completions += parser._short_opt.keys()
         completions += parser._long_opt.keys()
         # Note: this will get filtered properly below.
 
     completer_kwargs = {
-        'pwd': os.getcwd(),
-        'cline': cline,
-        'cpoint': cpoint,
-        'prefix': prefix,
-        'suffix': suffix,
+        "pwd": os.getcwd(),
+        "cline": cline,
+        "cpoint": cpoint,
+        "prefix": prefix,
+        "suffix": suffix,
     }
     # File completion.
-    if completer and (not prefix or not prefix.startswith('-')):
+    if completer and (not prefix or not prefix.startswith("-")):
         # Call appropriate completer depending on type.
         if isinstance(completer, (list, tuple)) or isinstance(completer, str):
             completer = FileCompleter(completer)
@@ -553,11 +565,11 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
         # Filter using prefix.
         if prefix:
             completions = sorted(filter(lambda x: x.startswith(prefix), completions))
-        completions = ' '.join(map(str, completions))
+        completions = " ".join(map(str, completions))
 
         # Save results
         if SHELL == "bash":
-            print('COMPREPLY=(' + completions + ')')
+            print("COMPREPLY=(" + completions + ")")
         else:
             print(completions)
 
@@ -565,27 +577,27 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
     # the log file to monitor what is happening.
     if debugfn:
         txt = "\n".join([
-            '---------------------------------------------------------',
-            f'CWORDS {cwords}',
-            f'CLINE {cline}',
-            f'CPOINT {cpoint}',
-            f'CWORD {cword}',
-            '',
-            'Short options',
+            "---------------------------------------------------------",
+            f"CWORDS {cwords}",
+            f"CLINE {cline}",
+            f"CPOINT {cpoint}",
+            f"CWORD {cword}",
+            "",
+            "Short options",
             pformat(parser._short_opt),
-            '',
-            'Long options',
+            "",
+            "Long options",
             pformat(parser._long_opt),
-            f'Prefix {prefix}',
-            f'Suffix {suffix}',
-            f'completer_kwargs{str(completer_kwargs)}',
+            f"Prefix {prefix}",
+            f"Suffix {suffix}",
+            f"completer_kwargs{str(completer_kwargs)}",
             #'completer_completions %s' % completer_completions,
-            f'completions {completions}',
-            ])
+            f"completions {completions}",
+        ])
         if isinstance(debugfn, logging.Logger):
             debugfn.debug(txt)
         else:
-            with open(debugfn, 'a') as fih:
+            with open(debugfn, "a") as fih:
                 fih.write(txt)
 
     # Exit with error code (we do not let the caller continue on purpose, this
@@ -594,7 +606,6 @@ def autocomplete(parser, arg_completer=None, opt_completer=None, subcmd_complete
 
 
 class CmdComplete:
-
     """Simple default base class implementation for a subcommand that supports
     command completion.  This class is assuming that there might be a method
     addopts(self, parser) to declare options for this subcommand, and an
@@ -604,12 +615,12 @@ class CmdComplete:
 
     def autocomplete(self, completer=None):
         parser = OPTIONPARSER_CLASS(self.__doc__.strip())
-        if hasattr(self, 'addopts'):
-            fnc = getattr(self, 'addopts')
+        if hasattr(self, "addopts"):
+            fnc = getattr(self, "addopts")
             fnc(parser)
 
-        if hasattr(self, 'completer'):
-            completer = getattr(self, 'completer')
+        if hasattr(self, "completer"):
+            completer = getattr(self, "completer")
 
         return autocomplete(parser, completer)
 
@@ -620,7 +631,7 @@ def gen_cmdline(cmd_list, partial, shebang=True):
     @param partial: the string to autocomplete (typically, partial is an element of the cmd_list)
     @param shebang: script has python shebang (if not, add sys.executable)
     """
-    cmdline = ' '.join([shell_quote(cmd) for cmd in cmd_list])
+    cmdline = " ".join([shell_quote(cmd) for cmd in cmd_list])
 
     env = []
     env.append(f"{OPTCOMPLETE_ENVIRONMENT}=1")

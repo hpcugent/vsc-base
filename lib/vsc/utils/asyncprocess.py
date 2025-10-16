@@ -80,12 +80,12 @@ MESSAGE = "Other end disconnected!"
 
 class Popen(subprocess.Popen):
     def recv(self, maxsize=None):
-        return self._recv('stdout', maxsize)
+        return self._recv("stdout", maxsize)
 
     def recv_err(self, maxsize=None):
-        return self._recv('stderr', maxsize)
+        return self._recv("stderr", maxsize)
 
-    def send_recv(self, inp='', maxsize=None):
+    def send_recv(self, inp="", maxsize=None):
         return self.send(inp), self.recv(maxsize), self.recv_err(maxsize)
 
     def get_conn_maxsize(self, which, maxsize):
@@ -111,7 +111,7 @@ class Popen(subprocess.Popen):
             self.stdin.flush()
         except OSError as why:
             if why.args[0] == errno.EPIPE:  # broken pipe
-                return self._close('stdin')
+                return self._close("stdin")
             raise
 
         return written
@@ -127,7 +127,7 @@ class Popen(subprocess.Popen):
 
         try:
             if not select.select([conn], [], [], 0)[0]:
-                return ''
+                return ""
 
             r = conn.read(maxsize)
             if not r:
@@ -141,7 +141,7 @@ class Popen(subprocess.Popen):
                 fcntl.fcntl(conn, fcntl.F_SETFL, flags)
 
 
-def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
+def recv_some(p, t=0.1, e=False, tr=5, stderr=False, maxread=None):
     """
     @param p: process
     @param t: max time to wait without any output before returning
@@ -162,7 +162,7 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
     x = time.time() + t
     y = []
     len_y = 0
-    r = ''
+    r = ""
     pr = p.recv
     if stderr:
         pr = p.recv_err
@@ -178,7 +178,7 @@ def recv_some(p, t=.1, e=False, tr=5, stderr=False, maxread=None):
             len_y += len(r)
         else:
             time.sleep(max((x - time.time()) / tr, 0))
-    return b''.join(y)
+    return b"".join(y)
 
 
 def send_all(p, data):

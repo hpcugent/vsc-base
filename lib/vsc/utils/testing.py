@@ -29,5 +29,3 @@ Test utilities.
 Deprecated: use 'from vsc.install.testing import TestCase'
 
 """
-
-from vsc.install.testing import TestCase as EnhancedTestCase # pylint: disable=unused-import
