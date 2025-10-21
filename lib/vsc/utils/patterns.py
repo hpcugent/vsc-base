@@ -36,6 +36,7 @@ script.
 
 @author: Andy Georges (Ghent University)
 """
+
 from abc import ABCMeta
 
 
@@ -44,6 +45,7 @@ class Singleton(ABCMeta):
 
     See http://stackoverflow.com/questions/6760685/creating-a-singleton-in-python
     """
+
     _instances = {}
 
     def __call__(cls, *args, **kwargs):

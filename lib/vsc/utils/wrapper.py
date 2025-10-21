@@ -7,12 +7,13 @@ Original code by http://stackoverflow.com/users/416467/kindall from answer 4 of
 http://stackoverflow.com/questions/9057669/how-can-i-intercept-calls-to-pythons-magic-methods-in-new-style-classes
 """
 
+
 class WrapperMetaclass(type):
     def __init__(cls, name, bases, dct):
-
         def make_proxy(name):
-            def proxy(self, *args): # pylint:disable=unused-argument
+            def proxy(self, *args):  # pylint:disable=unused-argument
                 return getattr(self._obj, name)
+
             return proxy
 
         type.__init__(cls, name, bases, dct)
@@ -26,7 +27,7 @@ class WrapperMetaclass(type):
 
 class Wrapper(metaclass=WrapperMetaclass):
     """Wrapper class that provides proxy access to an instance of some
-       internal instance."""
+    internal instance."""
 
     __wraps__ = None
     __ignore__ = "class mro new init setattr getattr getattribute"

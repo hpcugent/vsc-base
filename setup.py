@@ -36,13 +36,13 @@ import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw, wdp
 
 PACKAGE = {
-    'version': '3.6.4',
-    'author': [sdw, jt, ag, kh],
-    'maintainer': [sdw, jt, ag, kh, wdp],
-    'install_requires': [
-        'vsc-install >= 0.17.19',
+    "version": "3.6.5",
+    "author": [sdw, jt, ag, kh],
+    "maintainer": [sdw, jt, ag, kh, wdp],
+    "install_requires": [
+        "vsc-install >= 0.17.19",
     ],
 }
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     shared_setup.action_target(PACKAGE)

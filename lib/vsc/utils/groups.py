@@ -26,10 +26,12 @@
 """
 This module contains tools related to users and groups
 """
+
 import grp
 import pwd
 from ctypes import c_char_p, c_uint, c_int32, POINTER, byref, cdll
 from ctypes.util import find_library
+
 
 def getgrouplist(user, groupnames=True):
     """
@@ -40,7 +42,7 @@ def getgrouplist(user, groupnames=True):
     returns a list of groupnames
     if groupames is false, returns a list of groupids (skip groupname lookups)
     """
-    libc = cdll.LoadLibrary(find_library('c'))
+    libc = cdll.LoadLibrary(find_library("c"))
 
     ngetgrouplist = libc.getgrouplist
     # max of 50 groups should be enough as first try

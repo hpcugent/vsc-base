@@ -39,6 +39,7 @@ Various functions that are missing from the default Python library.
 @author: Andy Georges (Ghent University)
 @author: Stijn De Weirdt (Ghent University)
 """
+
 import logging
 import shlex
 import time
@@ -48,6 +49,7 @@ from collections.abc import Mapping
 
 
 from vsc.utils.frozendict import FrozenDict
+
 
 def nub(list_):
     """Returns the unique items of a list of hashables, while preserving order of
@@ -95,7 +97,7 @@ def find_sublist_index(ls, sub_ls):
     """
     sub_length = len(sub_ls)
     for i in range(len(ls)):
-        if ls[i:(i + sub_length)] == sub_ls:
+        if ls[i : (i + sub_length)] == sub_ls:
             return i
 
     return None
@@ -123,11 +125,7 @@ class Monoid:
         if hasattr(xs, "__fold__"):
             return xs.__fold__(self)
         else:
-            return reduce(
-                self.mappend,
-                xs,
-                self.null
-            )
+            return reduce(self.mappend, xs, self.null)
 
     def __call__(self, *args):
         """When the monoid is called, the values are folded over and the resulting value is returned."""
@@ -160,7 +158,7 @@ class MonoidDict(dict):
             super().__setitem__(key, value)
 
     def __getitem__(self, key):
-        """ Obtain the dictionary value for the given key. If no value is present,
+        """Obtain the dictionary value for the given key. If no value is present,
         we return the monoid's mempty (null).
         """
         if not super().__contains__(key):
@@ -180,14 +178,14 @@ class RUDict(dict):
 
     def update(self, E=None, **F):
         if E is not None:
-            if 'keys' in dir(E) and callable(getattr(E, 'keys')):
+            if "keys" in dir(E) and callable(getattr(E, "keys")):
                 for k in E:
                     if k in self:  # existing ...must recurse into both sides
                         self.r_update(k, E)
                     else:  # doesn't currently exist, just update
                         self[k] = E[k]
             else:
-                for (k, v) in E:
+                for k, v in E:
                     self.r_update(k, {k: v})
 
         for k, v in F.items():
@@ -218,7 +216,7 @@ class FrozenDictKnownKeys(FrozenDict):
     def __init__(self, *args, **kwargs):
         """Constructor, only way to define the contents."""
         # support ignoring of unknown keys
-        ignore_unknown_keys = kwargs.pop('ignore_unknown_keys', False)
+        ignore_unknown_keys = kwargs.pop("ignore_unknown_keys", False)
 
         # handle unknown keys: either ignore them or raise an exception
         tmpdict = dict(*args, **kwargs)
@@ -234,6 +232,7 @@ class FrozenDictKnownKeys(FrozenDict):
                 raise KeyError("Encountered unknown keys")
 
         super().__init__(tmpdict)
+
     # pylint: disable=arguments-differ
     def __getitem__(self, key, *args, **kwargs):
         """Redefine __getitem__ to provide a better KeyError message."""
@@ -244,7 +243,8 @@ class FrozenDictKnownKeys(FrozenDict):
                 raise KeyError(err)
             else:
                 raise KeyError(
-                    f"Unknown key '{key}' for {self.__class__.__name__} instance (known keys: { self.KNOWN_KEYS})")
+                    f"Unknown key '{key}' for {self.__class__.__name__} instance (known keys: {self.KNOWN_KEYS})"
+                )
 
 
 def shell_quote(x):
@@ -255,7 +255,7 @@ def shell_quote(x):
 def shell_unquote(x):
     """Take a literal string, remove the quotes as if it were passed by shell"""
     # it expects a string
-    return ' '.join(shlex.split(str(x)))
+    return " ".join(shlex.split(str(x)))
 
 
 def get_class_for(modulepath, class_name):
@@ -267,7 +267,7 @@ def get_class_for(modulepath, class_name):
     """
     # try to import specified module path, reraise ImportError if it occurs
     try:
-        module = __import__(modulepath, globals(), locals(), [''])
+        module = __import__(modulepath, globals(), locals(), [""])
     except ImportError as err:
         raise ImportError(err)
     # try to import specified class name from specified module path, throw ImportError if this fails
@@ -300,6 +300,7 @@ class TryOrFail:
     Perform the function n times, catching each exception in the exception tuple except on the last try
     where it will be raised again.
     """
+
     def __init__(self, n, exceptions=(Exception,), sleep=0):
         self.n = n
         self.exceptions = exceptions
@@ -357,6 +358,7 @@ def namedtuple_with_defaults(typename, field_names, default_values=()):
     T.__new__.__defaults__ = tuple(prototype)
     return T
 
+
 def ensure_ascii_string(value):
     """
     Convert the provided value to an ASCII string (no Unicode characters).
@@ -364,11 +366,11 @@ def ensure_ascii_string(value):
     if isinstance(value, bytes):
         # if we have a bytestring, decode it to a regular string using ASCII encoding,
         # and replace Unicode characters with backslash escaped sequences
-        value = value.decode('ascii', 'backslashreplace')
+        value = value.decode("ascii", "backslashreplace")
     else:
         # for other values, just convert to a string (which may still include Unicode characters)
         # then convert to bytestring with UTF-8 encoding,
         # which can then be decoded to regular string using ASCII encoding
-        value = bytes(str(value), encoding='utf-8').decode(encoding='ascii', errors='backslashreplace')
+        value = bytes(str(value), encoding="utf-8").decode(encoding="ascii", errors="backslashreplace")
 
     return value
