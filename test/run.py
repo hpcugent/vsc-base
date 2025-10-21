@@ -249,7 +249,7 @@ class TestRun(TestCase):
             self.assertEqual(ec, RUNRUN_TIMEOUT_EXITCODE, msg=f'run_nested kill_pgid {kill_pgid} stopped due to timeout')
             self.assertTrue(stop - start < timeout + 1, msg=f'run_nested kill_pgid {kill_pgid} timeout within margin')  # give 1 sec margin
             # make it's not too fast
-            time.sleep(5)
+            time.sleep(10)
             # there's now 6 seconds to complete the remainder
             pids = list(range(depth+1))
             # normally this is ordered output, but you never know
