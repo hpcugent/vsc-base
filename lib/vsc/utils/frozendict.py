@@ -20,12 +20,13 @@
 frozendict is an immutable wrapper around dictionaries that implements the complete mapping interface.
 It can be used as a drop-in replacement for dictionaries where immutability is desired.
 """
+
 import operator
 from functools import reduce
 from collections.abc import Mapping
 
-class FrozenDict(Mapping):
 
+class FrozenDict(Mapping):
     def __init__(self, *args, **kwargs):
         self.__dict = dict(*args, **kwargs)
         self.__hash = None
@@ -43,7 +44,7 @@ class FrozenDict(Mapping):
         return len(self.__dict)
 
     def __repr__(self):
-        return f'<FrozenDict {repr(self.__dict)}>'
+        return f"<FrozenDict {repr(self.__dict)}>"
 
     def __hash__(self):
         if self.__hash is None:

@@ -45,15 +45,15 @@ usage:
 
 >>> from vsc.utils import fancylogger
 >>> # will log to screen by default
->>> fancylogger.logToFile('dir/filename')
+>>> fancylogger.logToFile("dir/filename")
 >>> fancylogger.setLogLevelDebug()  # set global loglevel to debug
 >>> logger = fancylogger.getLogger(name)  # get a logger with a specific name
 >>> logger.setLevel(level)  # set local debugging level
 >>> # If you want the logger to be showing modulename.functionname as the name, use
 >>> fancylogger.getLogger(fname=True)
 >>> # you can use the handler to set a different formatter by using
->>> handler = fancylogger.logToFile('dir/filename')
->>> formatstring = '%(asctime)-15s %(levelname)-10s %(mpirank)-5s %(funcname)-15s %(threadName)-10s %(message)s'
+>>> handler = fancylogger.logToFile("dir/filename")
+>>> formatstring = "%(asctime)-15s %(levelname)-10s %(mpirank)-5s %(funcname)-15s %(threadName)-10s %(message)s"
 >>> handler.setFormatter(logging.Formatter(formatstring))
 >>> # setting a global loglevel will impact all logers:
 >>> from vsc.utils import fancylogger
@@ -73,6 +73,7 @@ Logging to a udp server:
 @author: Stijn De Weirdt (Ghent University)
 @author: Kenneth Hoste (Ghent University)
 """
+
 import inspect
 import logging
 import logging.handlers
@@ -144,7 +145,7 @@ def _env_to_boolean(varname, default=False):
     if varname not in os.environ:
         return default
     else:
-        return os.environ.get(varname).lower() in ('1', 'yes', 'true', 'y')
+        return os.environ.get(varname).lower() in ("1", "yes", "true", "y")
 
 
 OPTIMIZED_ANSWER = "not available in optimized mode"
@@ -152,10 +153,11 @@ OPTIMIZED_ANSWER = "not available in optimized mode"
 HAVE_COLOREDLOGS_MODULE = False
 
 # constants
-TEST_LOGGING_FORMAT = '%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s'
-DEFAULT_LOGGING_FORMAT = '%(asctime)-15s ' + TEST_LOGGING_FORMAT
-DEFAULT_LOGGING_FORMAT_MPI = '%(asctime)-15s %(levelname)-10s %(name)-15s' \
-                             ' mpi: %(mpirank)s %(threadName)-10s  %(message)s'
+TEST_LOGGING_FORMAT = "%(levelname)-10s %(name)-15s %(threadName)-10s  %(message)s"
+DEFAULT_LOGGING_FORMAT = "%(asctime)-15s " + TEST_LOGGING_FORMAT
+DEFAULT_LOGGING_FORMAT_MPI = (
+    "%(asctime)-15s %(levelname)-10s %(name)-15s mpi: %(mpirank)s %(threadName)-10s  %(message)s"
+)
 MPIRANK_NO_MPI = "N/A"
 
 # keep the original logging root logger around for reset purposes
@@ -171,14 +173,14 @@ BACKUPCOUNT = 10  # number of rotating log files to save
 
 DEFAULT_UDP_PORT = 5005
 
-APOCALYPTIC = 'APOCALYPTIC'
+APOCALYPTIC = "APOCALYPTIC"
 logging.addLevelName(logging.CRITICAL * 2 + 1, APOCALYPTIC)
 
 # register QUIET, EXCEPTION and FATAL alias
 LOG_LEVEL_ALIASES = {
-    'EXCEPTION': logging.ERROR,
-    'FATAL': logging.CRITICAL,
-    'QUIET': logging.WARNING,
+    "EXCEPTION": logging.ERROR,
+    "FATAL": logging.CRITICAL,
+    "QUIET": logging.WARNING,
 }
 
 # logging._levelNames no longer exists in Python 3
@@ -191,9 +193,10 @@ for key, name in LOG_LEVEL_ALIASES.items():
 
 # mpi rank support
 _MPIRANK = MPIRANK_NO_MPI
-if not _env_to_boolean('FANCYLOGGER_IGNORE_MPI4PY'):
+if not _env_to_boolean("FANCYLOGGER_IGNORE_MPI4PY"):
     try:
         from mpi4py import MPI
+
         if MPI.Is_initialized():
             _MPIRANK = str(MPI.COMM_WORLD.Get_rank())
             if MPI.COMM_WORLD.Get_size() > 1:
@@ -211,21 +214,22 @@ class MissingLevelName(KeyError):
 def getLevelInt(level_name):
     """Given a level name, return the int value"""
     if not isinstance(level_name, str):
-        raise TypeError(f'Provided name {level_name} is not a string (type {type(level_name)})')
+        raise TypeError(f"Provided name {level_name} is not a string (type {type(level_name)})")
 
     level = logging.getLevelName(level_name)
     if not isinstance(level, int):
-        raise MissingLevelName(f'Unknown loglevel name {level_name}')
+        raise MissingLevelName(f"Unknown loglevel name {level_name}")
 
     return level
 
 
 class FancyStreamHandler(logging.StreamHandler):
     """The logging StreamHandler with uniform named arg in __init__ for selecting the stream."""
+
     def __init__(self, stream=None, stdout=None):
         """Initialize the stream (default is sys.stderr)
-            - stream : a specific stream to use
-            - stdout: if True and no stream specified, set stream to sys.stdout (False log to stderr)
+        - stream : a specific stream to use
+        - stdout: if True and no stream specified, set stream to sys.stdout (False log to stderr)
         """
         logging.StreamHandler.__init__(self)
         if stream is not None:
@@ -243,6 +247,7 @@ class FancyLogRecord(logging.LogRecord):
     This class defines a custom log record.
     Adding extra specifiers is as simple as adding attributes to the log record
     """
+
     def __init__(self, *args, **kwargs):
         logging.LogRecord.__init__(self, *args, **kwargs)
         # modify custom specifiers here
@@ -251,7 +256,7 @@ class FancyLogRecord(logging.LogRecord):
         if __debug__:
             self.className = _getCallingClassName(depth=5)
         else:
-            self.className = 'N/A'
+            self.className = "N/A"
         self.mpirank = _MPIRANK
 
 
@@ -262,6 +267,7 @@ class FancyLogger(logging.getLoggerClass()):
     and has extra log methods raiseException and deprecated and
     streaming versions for debug,info,warning and error.
     """
+
     # this attribute can be checked to know if the logger is thread aware
     _thread_aware = True
 
@@ -280,12 +286,12 @@ class FancyLogger(logging.getLoggerClass()):
         overwrite make record to use a fancy record (with more options)
         """
         logrecordcls = logging.LogRecord
-        if hasattr(self, 'fancyrecord') and self.fancyrecord:
+        if hasattr(self, "fancyrecord") and self.fancyrecord:
             logrecordcls = FancyLogRecord
         try:
             new_msg = str(msg)
         except UnicodeEncodeError:
-            new_msg = msg.encode('utf8', 'replace')
+            new_msg = msg.encode("utf8", "replace")
         return logrecordcls(name, level, pathname, lineno, new_msg, args, excinfo)
 
     def fail(self, message, *args):
@@ -380,7 +386,7 @@ class FancyLogger(logging.getLoggerClass()):
 
         def write_and_flush_stream(hdlr, data=None):
             """Write to stream and flush the handler"""
-            if (not hasattr(hdlr, 'stream')) or hdlr.stream is None:
+            if (not hasattr(hdlr, "stream")) or hdlr.stream is None:
                 # no stream or not initialised.
                 raise Exception("write_and_flush_stream failed. No active stream attribute.")
             if data is not None:
@@ -393,18 +399,19 @@ class FancyLogger(logging.getLoggerClass()):
 
     def streamDebug(self, data):
         """Get a DEBUG loglevel streamLog"""
-        self.streamLog('DEBUG', data)
+        self.streamLog("DEBUG", data)
 
     def streamInfo(self, data):
         """Get a INFO loglevel streamLog"""
-        self.streamLog('INFO', data)
+        self.streamLog("INFO", data)
 
     def streamError(self, data):
         """Get a ERROR loglevel streamLog"""
-        self.streamLog('ERROR', data)
+        self.streamLog("ERROR", data)
 
     def _get_parent_info(self, verbose=True):
         """Return some logger parent related information"""
+
         def info(x):
             res = [x, x.name, logging.getLevelName(x.getEffectiveLevel()), logging.getLevelName(x.level), x.disabled]
             if verbose:
@@ -476,12 +483,12 @@ def getLogger(name=None, fname=False, clsname=False, fancyrecord=None):
 
     l = logging.getLogger(fullname)
     l.fancyrecord = fancyrecord
-    if _env_to_boolean('FANCYLOGGER_GETLOGGER_DEBUG'):
-        print('FANCYLOGGER_GETLOGGER_DEBUG')
-        print(f'name {name} fname {fname} fullname {fullname}')
+    if _env_to_boolean("FANCYLOGGER_GETLOGGER_DEBUG"):
+        print("FANCYLOGGER_GETLOGGER_DEBUG")
+        print(f"name {name} fname {fname} fullname {fullname}")
         print(f"getRootLoggerName: {getRootLoggerName()}")
-        if hasattr(l, 'get_parent_info'):
-            print('parent_info verbose')
+        if hasattr(l, "get_parent_info"):
+            print("parent_info verbose")
             print("\n".join(l.get_parent_info("FANCYLOGGER_GETLOGGER_DEBUG")))
         sys.stdout.flush()
     return l
@@ -508,7 +515,7 @@ def _getCallingClassName(depth=2):
     """
     if __debug__:
         try:
-            return inspect.stack()[depth][0].f_locals['self'].__class__.__name__
+            return inspect.stack()[depth][0].f_locals["self"].__class__.__name__
         except Exception:
             return "unknown__getCallingClassName"
     else:
@@ -522,7 +529,7 @@ def getRootLoggerName():
     """
     if __debug__:
         try:
-            return inspect.stack()[-1][1].split('/')[-1].split('.')[0]
+            return inspect.stack()[-1][1].split("/")[-1].split(".")[0]
         except Exception:
             return "unknown_getRootLoggerName"
     else:
@@ -544,20 +551,21 @@ def logToScreen(enable=True, handler=None, name=None, stdout=False, colorize=Non
 
     The `colorize` is deprecated and does nothing.
     """
-    handleropts = {'stdout': stdout}
+    handleropts = {"stdout": stdout}
     if colorize is not None:
         logging.warning("Deprecated option colorize used. ignored.")
 
     formatter = _screenLogFormatterFactory(colorize=None, stream=None)
 
-    return _logToSomething(FancyStreamHandler,
-                           handleropts,
-                           loggeroption=f'logtoscreen_stdout_{str(stdout)}',
-                           name=name,
-                           enable=enable,
-                           handler=handler,
-                           formatterclass=formatter,
-                           )
+    return _logToSomething(
+        FancyStreamHandler,
+        handleropts,
+        loggeroption=f"logtoscreen_stdout_{str(stdout)}",
+        name=name,
+        enable=enable,
+        handler=handler,
+        formatterclass=formatter,
+    )
 
 
 def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_BYTES, backup_count=BACKUPCOUNT):
@@ -573,10 +581,10 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
     if you want to disable logging to file, pass the earlier obtained filehandler
     """
     handleropts = {
-        'filename': filename,
-        'mode': 'a',
-        'maxBytes': max_bytes,
-        'backupCount': backup_count,
+        "filename": filename,
+        "mode": "a",
+        "maxBytes": max_bytes,
+        "backupCount": backup_count,
     }
     # logging to a file is going to create the file later on, so let's try to be helpful and create the path if needed
     directory = os.path.dirname(filename)
@@ -585,12 +593,12 @@ def logToFile(filename, enable=True, filehandler=None, name=None, max_bytes=MAX_
             os.makedirs(directory)
         except Exception as ex:
             exc, detail, tb = sys.exc_info()
-            raise(exc(f"Cannot create logdirectory {directory}: {ex} \n detail: {detail}")).with_traceback(tb)
+            raise (exc(f"Cannot create logdirectory {directory}: {ex} \n detail: {detail}")).with_traceback(tb)
 
     return _logToSomething(
         logging.handlers.RotatingFileHandler,
         handleropts,
-        loggeroption=f'logtofile_{filename}',
+        loggeroption=f"logtofile_{filename}",
         name=name,
         enable=enable,
         handler=filehandler,
@@ -607,18 +615,18 @@ def logToUDP(hostname, port=5005, enable=True, datagramhandler=None, name=None):
     if you want to disable logging to udp, pass the earlier obtained filehandler,
     and set boolean = False
     """
-    handleropts = {'hostname': hostname, 'port': port}
-    return _logToSomething(logging.handlers.DatagramHandler,
-                           handleropts,
-                           loggeroption=f'logtoudp_{hostname}:{str(port)}',
-                           name=name,
-                           enable=enable,
-                           handler=datagramhandler,
-                           )
+    handleropts = {"hostname": hostname, "port": port}
+    return _logToSomething(
+        logging.handlers.DatagramHandler,
+        handleropts,
+        loggeroption=f"logtoudp_{hostname}:{str(port)}",
+        name=name,
+        enable=enable,
+        handler=datagramhandler,
+    )
 
 
-def _logToSomething(handlerclass, handleropts, loggeroption,
-                    enable=True, name=None, handler=None, formatterclass=None):
+def _logToSomething(handlerclass, handleropts, loggeroption, enable=True, name=None, handler=None, formatterclass=None):
     """
     internal function to enable (or disable) logging to handler named handlername
     handleropts is options dictionary passed to create the handler instance;
@@ -661,14 +669,14 @@ def _logToSomething(handlerclass, handleropts, loggeroption,
                 zerohandler = logger.handlers[0]
                 # no logging should be done with APOCALYPTIC, so silence happens
                 zerohandler.setLevel(getLevelInt(APOCALYPTIC))
-                if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
+                if _env_to_boolean("FANCYLOGGER_LOGLEVEL_DEBUG"):
                     print("FANCYLOGGER_LOGLEVEL_DEBUG DISABLE LAST HANDLER", zerohandler)
                     print("\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG")))
                     sys.stdout.flush()
             else:  # remove the handler set with this loggeroption
                 handler = getattr(logger, loggeroption)
                 logger.removeHandler(handler)
-                if hasattr(handler, 'close') and callable(handler.close):
+                if hasattr(handler, "close") and callable(handler.close):
                     handler.close()
         else:
             logger.removeHandler(handler)
@@ -688,33 +696,30 @@ def _screenLogFormatterFactory(colorize=None, stream=None):
 
 def _getSysLogFacility(name=None):
     """Look for proper syslog facility
-        typically the syslog/rsyslog config has an entry
-            # Log anything (except mail) of level info or higher.
-            # Don't log private authentication messages!
-            *.info;mail.none;authpriv.none;cron.none                /var/log/messages
+    typically the syslog/rsyslog config has an entry
+        # Log anything (except mail) of level info or higher.
+        # Don't log private authentication messages!
+        *.info;mail.none;authpriv.none;cron.none                /var/log/messages
 
-        name -> LOG_%s % name.upper()
-        Default log facility is user /LOG_USER
+    name -> LOG_%s % name.upper()
+    Default log facility is user /LOG_USER
     """
 
     if name is None:
-        name = 'user'
+        name = "user"
 
-    facility = getattr(logging.handlers.SysLogHandler,
-                       f"LOG_{name.upper()}", logging.handlers.SysLogHandler.LOG_USER)
+    facility = getattr(logging.handlers.SysLogHandler, f"LOG_{name.upper()}", logging.handlers.SysLogHandler.LOG_USER)
 
     return facility
 
 
 def logToDevLog(enable=True, name=None, handler=None):
     """Log to syslog through /dev/log"""
-    devlog = '/dev/log'
-    syslogoptions = {
-        'address': devlog,
-        'facility': _getSysLogFacility()
-    }
-    return _logToSomething(logging.handlers.SysLogHandler,
-                           syslogoptions, 'logtodevlog', enable=enable, name=name, handler=handler)
+    devlog = "/dev/log"
+    syslogoptions = {"address": devlog, "facility": _getSysLogFacility()}
+    return _logToSomething(
+        logging.handlers.SysLogHandler, syslogoptions, "logtodevlog", enable=enable, name=name, handler=handler
+    )
 
 
 #  Change loglevel
@@ -726,7 +731,7 @@ def setLogLevel(level):
         level = getLevelInt(level)
     logger = getLogger(fname=False, clsname=False)
     logger.setLevel(level)
-    if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
+    if _env_to_boolean("FANCYLOGGER_LOGLEVEL_DEBUG"):
         print("FANCYLOGGER_LOGLEVEL_DEBUG SETLOGLEVEL", level, logging.getLevelName(level))
         print("\n".join(logger.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG")))
         sys.stdout.flush()
@@ -736,28 +741,28 @@ def setLogLevelDebug():
     """
     shorthand for setting debug level
     """
-    setLogLevel('DEBUG')
+    setLogLevel("DEBUG")
 
 
 def setLogLevelInfo():
     """
     shorthand for setting loglevel to Info
     """
-    setLogLevel('INFO')
+    setLogLevel("INFO")
 
 
 def setLogLevelWarning():
     """
     shorthand for setting loglevel to Warning
     """
-    setLogLevel('WARNING')
+    setLogLevel("WARNING")
 
 
 def setLogLevelError():
     """
     shorthand for setting loglevel to Error
     """
-    setLogLevel('ERROR')
+    setLogLevel("ERROR")
 
 
 def getAllExistingLoggers():
@@ -766,7 +771,7 @@ def getAllExistingLoggers():
     """
     # not-so-well documented manager (in 2.6 and later)
     # return list of (name,logger) tuple
-    return [x for x in logging.Logger.manager.loggerDict.items()]+[(logging.root.name, logging.root)]
+    return [x for x in logging.Logger.manager.loggerDict.items()] + [(logging.root.name, logging.root)]
 
 
 def getAllNonFancyloggers():
@@ -827,7 +832,7 @@ def setroot(fancyrecord=FANCYLOG_FANCYRECORD):
     root.fancyrecord = fancyrecord
 
     # make copy, instead of the reference, because we are going to delete stuff
-    handlers = getattr(logger, 'handlers', [])[:]
+    handlers = getattr(logger, "handlers", [])[:]
     if handlers:
         # Move all existing handlers from root fancylogger to new root
         # getLogger() call used in logToSomething will retrun the root
@@ -835,7 +840,7 @@ def setroot(fancyrecord=FANCYLOG_FANCYRECORD):
             root.addHandler(hndlr)
             logger.removeHandler(hndlr)
     else:
-        handlers = getattr(logging.root, 'handlers', [])
+        handlers = getattr(logging.root, "handlers", [])
         # only copy the logging.root handlers
         for hndlr in handlers:
             root.addHandler(hndlr)
@@ -843,10 +848,10 @@ def setroot(fancyrecord=FANCYLOG_FANCYRECORD):
     # Swap out logging.root parent for all existing loggers
     for lgr in getAllExistingLoggers():
         # PlaceHolders have no parent
-        if hasattr(lgr[1], 'parent') and lgr[1].parent == logging.root:
+        if hasattr(lgr[1], "parent") and lgr[1].parent == logging.root:
             lgr[1].parent = root
 
-    if _env_to_boolean('FANCYLOGGER_LOGLEVEL_DEBUG'):
+    if _env_to_boolean("FANCYLOGGER_LOGLEVEL_DEBUG"):
         print("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ", lvl, logging.getLevelName(lvl))
         print("\n".join(root.get_parent_info("FANCYLOGGER_LOGLEVEL_DEBUG SETROOT ")))
         sys.stdout.flush()
@@ -877,7 +882,7 @@ def resetroot():
     # Swap out logging.root parent for all existing loggers
     for lgr in getAllExistingLoggers():
         # PlaceHolders have no parent
-        if hasattr(lgr[1], 'parent') and lgr[1].parent == logging.root:
+        if hasattr(lgr[1], "parent") and lgr[1].parent == logging.root:
             lgr[1].parent = root
 
     logging.root = root
@@ -890,15 +895,15 @@ logging.setLoggerClass(FancyLogger)
 
 # log to a server if FANCYLOG_SERVER is set.
 _default_logTo = None
-if 'FANCYLOG_SERVER' in os.environ:
-    server = os.environ['FANCYLOG_SERVER']
+if "FANCYLOG_SERVER" in os.environ:
+    server = os.environ["FANCYLOG_SERVER"]
     port = DEFAULT_UDP_PORT
-    if ':' in server:
-        server, port = server.split(':')
+    if ":" in server:
+        server, port = server.split(":")
 
     # maybe the port was specified in the FANCYLOG_SERVER_PORT env var. this takes precedence
-    if 'FANCYLOG_SERVER_PORT' in os.environ:
-        port = int(os.environ['FANCYLOG_SERVER_PORT'])
+    if "FANCYLOG_SERVER_PORT" in os.environ:
+        port = int(os.environ["FANCYLOG_SERVER_PORT"])
     port = int(port)
 
     logToUDP(server, port)
@@ -931,7 +936,7 @@ def _enable_disable_default_handlers(enable):
 
 def disableDefaultHandlers():
     """Disable the default handlers on all fancyloggers
-        - if this is the last logger, it will just set the logLevel very high
+    - if this is the last logger, it will just set the logLevel very high
     """
     _enable_disable_default_handlers(False)
 
@@ -957,7 +962,7 @@ def getDetailsLogLevels(fancy=True, numeric=False):
     res = []
     for name, logger in func():
         # PlaceHolder instances have no level attribute set
-        level_value = getattr(logger, 'level', logging.NOTSET)
+        level_value = getattr(logger, "level", logging.NOTSET)
         if numeric:
             level_name = level_value
         else:
