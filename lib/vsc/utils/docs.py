@@ -69,7 +69,7 @@ def mk_rst_table(titles, columns):
     for row in map(list, zip(*columns)):
         row_items = []
         for i, item in enumerate(row):
-            row_items.append((item.ljust(column_widths[i])))
+            row_items.append(item.ljust(column_widths[i]))
         table.append(" ".join(row_items))
 
     # footer
