@@ -2,7 +2,7 @@
 # This file was automatically generated using 'python -m vsc.install.ci'
 # DO NOT EDIT MANUALLY
 jobs:
-  python_ruff_format:
+  python_ruff_check: &id001
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout code
@@ -15,10 +15,13 @@ jobs:
       run: pip install 'ruff'
     - name: Run ruff format
       run: ruff format --check .
+    - name: Run ruff
+      run: ruff check .
     strategy:
       matrix:
         python:
         - 3.9
+  python_ruff_format: *id001
   python_unittests:
     runs-on: ubuntu-24.04
     steps:
