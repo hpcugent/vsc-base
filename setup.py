@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2009-2023 Ghent University
+# Copyright 2009-2025 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -36,7 +36,7 @@ import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, kh, jt, sdw, wdp
 
 PACKAGE = {
-    "version": "3.6.6",
+    "version": "3.6.7",
     "author": [sdw, jt, ag, kh],
     "maintainer": [sdw, jt, ag, kh, wdp],
     "install_requires": [
