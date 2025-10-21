@@ -894,7 +894,7 @@ class RunQA(RunLoop, RunAsync):
 
         def escape_special(string):
             specials = r".*+?(){}[]|\$^"
-            formatter = "".join([rf"\{x}" for x in specials]
+            formatter = "".join([rf"\{x}" for x in specials])
             return re.sub(rf"([{formatter}])", r"\\\1", string)
 
         SPLIT = "[\\s\n]+"

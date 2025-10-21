@@ -524,7 +524,7 @@ class ExtOptionParser(OptionParser):
         self.environment_arguments = None
         self.commandline_arguments = None
 
-    def is_value_a_commandline_option(self, opt, value, index=None): #noqa PLR0911
+    def is_value_a_commandline_option(self, opt, value, index=None):  # noqa PLR0911
         """
         Determine if value is/could be an option passed via the commandline.
         If it is, return the reason why (can be used as message); or return None if it isn't.
