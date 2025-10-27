@@ -2,6 +2,23 @@
 # This file was automatically generated using 'python -m vsc.install.ci'
 # DO NOT EDIT MANUALLY
 jobs:
+  python_ruff_check:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{matrix.python}}
+    - name: install ruff
+      run: pip install 'ruff'
+    - name: Run ruff
+      run: ruff check .
+    strategy:
+      matrix:
+        python:
+        - 3.9
   python_ruff_format:
     runs-on: ubuntu-24.04
     steps:
