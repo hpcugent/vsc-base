@@ -41,11 +41,17 @@ import copy
 import json
 import logging
 from functools import partial
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, before_sleep_log
+from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import Request, HTTPSHandler, build_opener
+from urllib.request import Request, HTTPSHandler,  build_opener
+
 
 CENSORED_MESSAGE = "<actual secret censored>"
 
+def is_transient_error(self, exception) -> bool:
+    """Returns True if the exception is a transient HTTP error worth retrying."""
+    return isinstance(exception, HTTPError) and exception.code >= 500
 
 class Client:
     """An implementation of a REST client"""
@@ -167,6 +173,31 @@ class Client:
         url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.PATCH, url, body, headers, content_type="application/json")
 
+
+    @retry(
+        retry=retry_if_exception(is_transient_error),
+        wait=wait_exponential(multiplier=1, min=2, max=30),
+        stop=stop_after_attempt(5),
+        before_sleep=before_sleep_log(logging.getLogger(__name__), logging.WARNING),
+    )
+    def _execute_request(self, method, url, body, headers):
+        """Execute the HTTP request with retry logic for transient errors."""
+        with self.get_connection(method, url, body, headers) as conn:
+            status = conn.code
+            if method == self.HEAD:
+                pybody = conn.headers
+            else:
+                body = conn.read()
+                body = body.decode("utf-8")  # byte encoded response
+                if self.decode:
+                    try:
+                        pybody = json.loads(body)
+                    except ValueError:
+                        pybody = body
+                else:
+                    pybody = body
+            return status, pybody
+
     def request(self, method, url, body, headers, content_type=None):
         """Low-level networking. All HTTP-method methods call this"""
         # format headers
@@ -198,22 +229,9 @@ class Client:
 
         logging.debug("cli request: %s, %s, %s, %s", method, url, body_censored, headers_censored)
 
-        with self.get_connection(method, url, body, headers) as conn:
-            status = conn.code
-            if method == self.HEAD:
-                pybody = conn.headers
-            else:
-                body = conn.read()
-                body = body.decode("utf-8")  # byte encoded response
-                if self.decode:
-                    try:
-                        pybody = json.loads(body)
-                    except ValueError:
-                        pybody = body
-                else:
-                    pybody = body
-            logging.debug("reponse len: %s ", len(pybody))
-            return status, pybody
+        status, pybody = self._execute_request(method, url, body, headers)
+        logging.debug("reponse len: %s ", len(pybody))
+        return status, pybody
 
     @staticmethod
     def censor_request(secrets, payload):
