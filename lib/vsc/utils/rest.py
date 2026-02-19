@@ -50,7 +50,7 @@ from urllib.request import Request, HTTPSHandler, build_opener
 CENSORED_MESSAGE = "<actual secret censored>"
 
 
-def is_transient_error(self, exception) -> bool:
+def is_transient_error(exception) -> bool:
     """Returns True if the exception is a transient HTTP error worth retrying."""
     return isinstance(exception, HTTPError) and exception.code >= 500
 
