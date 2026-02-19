@@ -44,14 +44,16 @@ from functools import partial
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, before_sleep_log
 from urllib.error import HTTPError
 from urllib.parse import urlencode
-from urllib.request import Request, HTTPSHandler,  build_opener
+from urllib.request import Request, HTTPSHandler, build_opener
 
 
 CENSORED_MESSAGE = "<actual secret censored>"
 
+
 def is_transient_error(self, exception) -> bool:
     """Returns True if the exception is a transient HTTP error worth retrying."""
     return isinstance(exception, HTTPError) and exception.code >= 500
+
 
 class Client:
     """An implementation of a REST client"""
@@ -172,7 +174,6 @@ class Client:
         """
         url = self._append_slash_to(url) + self.urlencode(params)
         return self.request(self.PATCH, url, body, headers, content_type="application/json")
-
 
     @retry(
         retry=retry_if_exception(is_transient_error),
