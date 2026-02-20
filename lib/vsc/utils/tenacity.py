@@ -1,15 +1,14 @@
-#!/usr/bin/env python
 #
-# Copyright 2009-2025 Ghent University
+# Copyright 2012-2026 Ghent University
 #
 # This file is part of vsc-base,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-base
+# https://github.com/hpcugent/vsc-base
 #
 # vsc-base is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -25,34 +24,9 @@
 # along with vsc-base. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-vsc-base base distribution setup.py
-
-@author: Stijn De Weirdt (Ghent University)
-@author: Andy Georges (Ghent University)
-@author: Kenneth Hoste (Ghent University)
+Wrapper module for tenacity, to do nothing when importing the
+actual tenacity module fails because the python version is not
+supported.
 """
 
-import sys
-
-from vsc.install import shared_setup
-from vsc.install.shared_setup import ag, jt, kh, sdw, wdp
-
-TENACITY_VERSION_LIMIT = "== 9.1.2"
-
-if sys.version_info >= (3, 10):
-    TENACITY_VERSION_LIMIT = ">= 9.1.2, <= 9.2.0"
-if sys.version_info < (3, 9):
-    TENACITY_VERSION_LIMIT = "<= 8.2.2"
-
-PACKAGE = {
-    "version": "3.6.9",
-    "author": [sdw, jt, ag, kh],
-    "maintainer": [sdw, jt, ag, kh, wdp],
-    "install_requires": [
-        "vsc-install >= 0.17.19",
-        f"tenacity {TENACITY_VERSION_LIMIT}",
-    ],
-}
-
-if __name__ == "__main__":
-    shared_setup.action_target(PACKAGE)
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, before_sleep_log  # noqa # pylint: disable=unused-import
