@@ -12,7 +12,7 @@ jobs:
       with:
         python-version: ${{matrix.python}}
     - name: install ruff
-      run: pip install 'ruff'
+      run: pip install 'ruff==0.15.1'
     - name: Run ruff
       run: ruff check .
     strategy:
@@ -29,7 +29,7 @@ jobs:
       with:
         python-version: ${{matrix.python}}
     - name: install ruff
-      run: pip install 'ruff'
+      run: pip install 'ruff==0.15.1'
     - name: Run ruff format
       run: ruff format --check .
     strategy:
