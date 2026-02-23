@@ -42,10 +42,10 @@ import json
 import logging
 
 from functools import partial
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, before_sleep_log
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, HTTPSHandler, build_opener
-from vsc.utils.tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, before_sleep_log
 
 CENSORED_MESSAGE = "<actual secret censored>"
 
