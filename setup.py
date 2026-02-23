@@ -32,15 +32,25 @@ vsc-base base distribution setup.py
 @author: Kenneth Hoste (Ghent University)
 """
 
+import sys
+
 from vsc.install import shared_setup
-from vsc.install.shared_setup import ag, kh, jt, sdw, wdp
+from vsc.install.shared_setup import ag, jt, kh, sdw, wdp
+
+TENACITY_VERSION_LIMIT = "== 9.1.2"
+
+if sys.version_info >= (3, 10):
+    TENACITY_VERSION_LIMIT = ">= 9.1.2, <= 9.2.0"
+if sys.version_info < (3, 9):
+    TENACITY_VERSION_LIMIT = "<= 8.2.2"
 
 PACKAGE = {
-    "version": "3.6.8",
+    "version": "3.6.9",
     "author": [sdw, jt, ag, kh],
     "maintainer": [sdw, jt, ag, kh, wdp],
     "install_requires": [
         "vsc-install >= 0.17.19",
+        f"tenacity {TENACITY_VERSION_LIMIT}",
     ],
 }
 
