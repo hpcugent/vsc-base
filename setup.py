@@ -45,7 +45,7 @@ if sys.version_info < (3, 9):
     TENACITY_VERSION_LIMIT = "<= 8.2.2"
 
 PACKAGE = {
-    "version": "3.6.9",
+    "version": "3.6.10",
     "author": [sdw, jt, ag, kh],
     "maintainer": [sdw, jt, ag, kh, wdp],
     "install_requires": [
