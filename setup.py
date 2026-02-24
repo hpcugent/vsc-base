@@ -40,7 +40,7 @@ from vsc.install.shared_setup import ag, jt, kh, sdw, wdp
 TENACITY_VERSION_LIMIT = "== 8.2.3"
 
 if sys.version_info >= (3, 10):
-    TENACITY_VERSION_LIMIT = ">= 9.1.2, <= 9.2.0"
+    TENACITY_VERSION_LIMIT = ">= 8.2.3"
 if sys.version_info < (3, 9):
     TENACITY_VERSION_LIMIT = "<= 8.2.2"
 
