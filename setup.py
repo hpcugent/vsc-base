@@ -37,22 +37,19 @@ import sys
 from vsc.install import shared_setup
 from vsc.install.shared_setup import ag, jt, kh, sdw, wdp
 
-TENACITY_VERSION_LIMIT = "== 8.2.3"
-
-if sys.version_info >= (3, 10):
-    TENACITY_VERSION_LIMIT = ">= 8.2.3"
-if sys.version_info < (3, 9):
-    TENACITY_VERSION_LIMIT = "<= 8.2.2"
-
 PACKAGE = {
     "version": "3.6.10",
     "author": [sdw, jt, ag, kh],
     "maintainer": [sdw, jt, ag, kh, wdp],
     "install_requires": [
-        "vsc-install >= 0.17.19",
-        f"tenacity {TENACITY_VERSION_LIMIT}",
+        "vsc-install >= 0.24.1",
     ],
 }
+
+if sys.version_info < (3, 7):  # noqa: UP036
+    PACKAGE["install_requires"].append("tenacity <= 8.2.3")
+else:
+    PACKAGE["install_requires"].append("tenacity")
 
 if __name__ == "__main__":
     shared_setup.action_target(PACKAGE)
