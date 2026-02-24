@@ -37,7 +37,7 @@ import sys
 from vsc.install import shared_setup
 from vsc.install.shared_setup import ag, jt, kh, sdw, wdp
 
-TENACITY_VERSION_LIMIT = "== 9.1.2"
+TENACITY_VERSION_LIMIT = "== 8.2.3"
 
 if sys.version_info >= (3, 10):
     TENACITY_VERSION_LIMIT = ">= 9.1.2, <= 9.2.0"
