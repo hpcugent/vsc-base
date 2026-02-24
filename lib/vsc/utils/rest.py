@@ -40,12 +40,38 @@ import base64
 import copy
 import json
 import logging
+import sys
 
 from functools import partial
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, before_sleep_log
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, HTTPSHandler, build_opener
+
+if sys.version_info >= (3, 9):
+    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, before_sleep_log
+else:
+    logging.warning("tenacity not available, HTTP retries are disabled")
+
+    def retry(**kwargs):  # noqa  # pylint: disable-unused-argument
+        """No-op fallback: returns the function unchanged."""
+
+        def decorator(func):  # noqa  # pylint: disable-unused-argument
+            return func
+
+        return decorator
+
+    def stop_after_attempt(n):  # noqa  # pylint: disable-unused-argument
+        return None
+
+    def wait_exponential(**kwargs):  # noqa  # pylint: disable-unused-argument
+        return None
+
+    def retry_if_exception(func):  # noqa  # pylint: disable-unused-argument
+        return None
+
+    def before_sleep_log(logger, level):  # noqa  # pylint: disable-unused-argument
+        return None
+
 
 CENSORED_MESSAGE = "<actual secret censored>"
 

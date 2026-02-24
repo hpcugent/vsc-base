@@ -46,10 +46,8 @@ PACKAGE = {
     ],
 }
 
-if sys.version_info < (3, 7):  # noqa: UP036
-    PACKAGE["install_requires"].append("tenacity <= 8.2.3")
-else:
-    PACKAGE["install_requires"].append("tenacity")
+if sys.version_info >= (3, 7):  # noqa: UP036
+    PACKAGE["install_requires"].append("tenacity >= 8.2.3, <= 9.1.2")
 
 if __name__ == "__main__":
     shared_setup.action_target(PACKAGE)
