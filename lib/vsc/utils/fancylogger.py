@@ -203,7 +203,7 @@ if not _env_to_boolean("FANCYLOGGER_IGNORE_MPI4PY"):
                 # enable mpi rank when mpi is used
                 FANCYLOG_FANCYRECORD = True
                 DEFAULT_LOGGING_FORMAT = DEFAULT_LOGGING_FORMAT_MPI
-    except ImportError:
+    except Exception:
         pass
 
 
