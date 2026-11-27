@@ -45,7 +45,7 @@ PACKAGE = {
         "vsc-install >= 0.24.1",
     ],
     "test_requires": [
-        "plette <= 2.2.0",
+        "plette <= 2.1.0",
     ],
 }
 
