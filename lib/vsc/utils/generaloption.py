@@ -59,20 +59,28 @@ HELP_OUTPUT_FORMATS = ["", "rst", "short", "config"]
 # logging.setLoggerClass(FancyLogger) when importing this module
 # # overriding other logging classes set for new loggers.
 
+
 def getLogger(*args, **kwargs):
     from vsc.utils import fancylogger
+
     return fancylogger.getLogger(*args, **kwargs)
+
 
 def setroot(*args, **kwargs):
     from vsc.utils import fancylogger
+
     return fancylogger.setroot(*args, **kwargs)
+
 
 def setLogLevel(*args, **kwargs):
     from vsc.utils import fancylogger
+
     return fancylogger.setLogLevel(*args, **kwargs)
+
 
 def getDetailsLogLevels(*args, **kwargs):
     from vsc.utils import fancylogger
+
     return fancylogger.getDetailsLogLevels(*args, **kwargs)
 
 
