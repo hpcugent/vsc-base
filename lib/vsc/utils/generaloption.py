@@ -48,12 +48,32 @@ from optparse import gettext as _gettext  # this is gettext.gettext normally
 from io import StringIO
 from vsc.utils.dateandtime import date_parser, datetime_parser
 from vsc.utils.docs import mk_rst_table
-from vsc.utils.fancylogger import getLogger, setroot, setLogLevel, getDetailsLogLevels
 from vsc.utils.missing import nub, shell_quote
 from vsc.utils.optcomplete import autocomplete, CompleterOption
 
 
 HELP_OUTPUT_FORMATS = ["", "rst", "short", "config"]
+
+
+# Lazily import the following from fancylogger to avoid running the
+# logging.setLoggerClass(FancyLogger) when importing this module
+# # overriding other logging classes set for new loggers.
+
+def getLogger(*args, **kwargs):
+    from vsc.utils import fancylogger
+    return fancylogger.getLogger(*args, **kwargs)
+
+def setroot(*args, **kwargs):
+    from vsc.utils import fancylogger
+    return fancylogger.setroot(*args, **kwargs)
+
+def setLogLevel(*args, **kwargs):
+    from vsc.utils import fancylogger
+    return fancylogger.setLogLevel(*args, **kwargs)
+
+def getDetailsLogLevels(*args, **kwargs):
+    from vsc.utils import fancylogger
+    return fancylogger.getDetailsLogLevels(*args, **kwargs)
 
 
 def set_columns(cols=None):
