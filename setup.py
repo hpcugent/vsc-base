@@ -38,7 +38,7 @@ from vsc.install import shared_setup
 from vsc.install.shared_setup import ag, jt, kh, sdw, wdp
 
 PACKAGE = {
-    "version": "3.6.10",
+    "version": "3.7.0",
     "author": [sdw, jt, ag, kh],
     "maintainer": [sdw, jt, ag, kh, wdp],
     "install_requires": [
