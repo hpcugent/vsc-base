@@ -292,7 +292,13 @@ class FancyLogger(logging.getLoggerClass()):
             new_msg = str(msg)
         except UnicodeEncodeError:
             new_msg = msg.encode("utf8", "replace")
-        return logrecordcls(name, level, pathname, lineno, new_msg, args, excinfo)
+        record = logrecordcls(name, level, pathname, lineno, new_msg, args, excinfo)
+        if extra is not None:
+            for key in extra:
+                if key in ("message", "asctime") or key in record.__dict__:
+                    raise KeyError(f"Attempt to overwrite {key!r} in LogRecord")
+                record.__dict__[key] = extra[key]
+        return record
 
     def fail(self, message, *args):
         """Log error message and raise exception."""
